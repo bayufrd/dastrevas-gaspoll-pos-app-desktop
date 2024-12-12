@@ -1,0 +1,48 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="KASIR.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="MacAddressKitchen" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">66:22:A6:D5:81:71</Value>
+    </Setting>
+    <Setting Name="MacAddressBar" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">66:22:A6:D5:81:71</Value>
+    </Setting>
+    <Setting Name="PinPrinterKasir" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">0000</Value>
+    </Setting>
+    <Setting Name="PinPrinterKitchen" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">0000</Value>
+    </Setting>
+    <Setting Name="PinPrinterBar" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">0000</Value>
+    </Setting>
+    <Setting Name="BaseAddressDev" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://api.gaspollmanagementcenter.com</Value>
+    </Setting>
+    <Setting Name="BaseOutletName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Development Testing</Value>
+    </Setting>
+    <Setting Name="BaseAddressProd" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://api.gaspollmanagementcenter.com</Value>
+    </Setting>
+    <Setting Name="BaseAddress" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://62.72.59.78:8080</Value>
+    </Setting>
+    <Setting Name="BaseAddressVersion" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://gaspollmanagementcenter.com/update/version.txt</Value>
+    </Setting>
+    <Setting Name="FooterStruk" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Password Wifi: JAPANESE Jempolan &lt;3</Value>
+    </Setting>
+    <Setting Name="BaseOutlet" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">4</Value>
+    </Setting>
+    <Setting Name="MacAddressKasir" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">66:22:A6:D5:81:71</Value>
+    </Setting>
+    <Setting Name="Version" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">1.0.8.0</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

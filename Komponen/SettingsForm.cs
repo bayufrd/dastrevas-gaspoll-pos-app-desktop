@@ -906,6 +906,8 @@ namespace KASIR.Komponen
         {
             DeathTimeBegin();
             SettingsDual u = new SettingsDual();
+            string data = "OFF";
+            await File.WriteAllTextAsync("setting\\configListMenu.data", data);
             this.Close();
 
             u.Show();

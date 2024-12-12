@@ -904,6 +904,7 @@ namespace KASIR.Komponen
 
         private void iconDual_Click(object sender, EventArgs e)
         {
+            DeathTimeBegin();
             SettingsDual u = new SettingsDual();
             this.Close();
 

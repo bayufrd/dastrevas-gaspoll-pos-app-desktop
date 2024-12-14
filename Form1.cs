@@ -230,7 +230,7 @@ namespace KASIR
         {
             await Task.Run(async () =>
             {
-                //await DualMonitorChecker();
+                await DualMonitorChecker();
                 await cekLastUpdaterApp();
                 await cekVersionAndData();
                 //await cekCacheData();
@@ -243,16 +243,19 @@ namespace KASIR
         {
             try
             {
-                string allSettingsData = await File.ReadAllTextAsync("setting\\configDualMonitor.data");
-                if (baseOutlet == "1")
+                if (!File.Exists("setting\\configDualMonitor.data"))
                 {
-                    await OpenDualMonitor();
-                    return;
+                    string data = "OFF";
+                    await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
                 }
-                if (allSettingsData == "ON")
+                else
                 {
-                    await OpenDualMonitor();
-                    return;
+                    string allSettingsData = await File.ReadAllTextAsync("setting\\configDualMonitor.data");
+                    if (allSettingsData == "ON")
+                    {
+                        await OpenDualMonitor();
+                        return;
+                    }
                 }
             }
             catch (Exception ex)

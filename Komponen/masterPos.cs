@@ -1920,8 +1920,8 @@ namespace KASIR.komponen
                     foreach (var group in menuGroups)
                     {
                         // Panggil metode untuk menambahkan separator row
-                        //AddSeparatorRow(dataTable, group.Key, dataGridView1);
-                        dataTable.Rows.Add(null, null, null, group.Key + "s\n", null, null); // Add a separator row
+                        AddSeparatorRow(dataTable, group.Key, dataGridView1);
+                        //dataTable.Rows.Add(null, null, null, group.Key + "s\n", null, null); // Add a separator row
 
 
                         foreach (DetailCart menu in group.Value)
@@ -2006,7 +2006,7 @@ namespace KASIR.komponen
                     dataGridView1.Columns["CartDetailID"].Visible = false;
                     dataGridView1.Columns["Jenis"].Visible = false;
                     dataGridView1.Columns["Note"].Visible = false;
-                    //dataGridView1.CellFormatting += DataGridView1_CellFormatting;
+                    dataGridView1.CellFormatting += DataGridView1_CellFormatting;
 
                     await LoadDataDiscount(); // Ensure LoadDataDiscount is awaited
 

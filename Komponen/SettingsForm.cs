@@ -682,11 +682,12 @@ namespace KASIR.Komponen
 
             }
         }
-        private async void DeathTimeBegin()
+        public async void DeathTimeBegin()
         {
             try
             {
-
+                string data = "OFF";
+                await File.WriteAllTextAsync("setting\\configListMenu.data", data);
 
                 Process[] processes = Process.GetProcesses();
                 foreach (Process process in processes)
@@ -906,8 +907,7 @@ namespace KASIR.Komponen
         {
             DeathTimeBegin();
             SettingsDual u = new SettingsDual();
-            string data = "OFF";
-            await File.WriteAllTextAsync("setting\\configListMenu.data", data);
+            
             this.Close();
 
             u.Show();

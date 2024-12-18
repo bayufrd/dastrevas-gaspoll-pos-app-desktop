@@ -1846,8 +1846,164 @@ namespace KASIR.komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
         public async Task LoadCart()
+        {
+            int retryCount = 3; // Maksimal 3 kali percobaan
+            int attempt = 0;
+            bool success = false;
+
+            while (attempt < retryCount && !success)
+            {
+                try
+                {
+                    attempt++;
+                    string response = await apiService.Get("/cart?outlet_id=" + (baseOutlet ?? "0"));
+
+                    if (string.IsNullOrEmpty(response))
+                    {
+                        throw new Exception("Response is null or empty");
+                    }
+
+                    GetCartModel dataModel = JsonConvert.DeserializeObject<GetCartModel>(response);
+                    if (dataModel == null || dataModel.data == null)
+                    {
+                        throw new Exception("Invalid cart data from server.");
+                    }
+
+                    SaveCartDataLocally(dataModel);
+
+                    // Proses data untuk UI dan tabel
+                    ProcessCartData(dataModel);
+
+                    success = true; // Tandai bahwa percobaan berhasil
+                }
+                catch (TaskCanceledException ex)
+                {
+                    if (attempt >= retryCount)
+                    {
+                        MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        LoggerUtil.LogError(ex, $"Timeout after {retryCount} attempts: {ex.Message}");
+                        return;
+                    }
+
+                    await Task.Delay(1000); // Tunggu 1 detik sebelum mencoba lagi
+                }
+                catch (Exception ex)
+                {
+                    if (attempt >= retryCount)
+                    {
+                        LoggerUtil.LogError(ex, $"An error occurred after {retryCount} attempts: {ex.Message}");
+                        MessageBox.Show("Terjadi kesalahan saat memuat data. Silakan coba lagi nanti.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    await Task.Delay(1000); // Tunggu 1 detik sebelum mencoba lagi
+                }
+            }
+        }
+
+        private async void ProcessCartData(GetCartModel dataModel)
+        {
+            // Menangani UI jika keranjang kosong
+            if (dataModel.data == null || dataModel.data.cart_details == null || dataModel.data.cart_details.Count == 0)
+            {
+                lblDetailKeranjang.Text = "Keranjang: Kosong";
+                lblDiskon1.Text = "Rp. 0";
+                lblSubTotal1.Text = "Rp. 0,-";
+                lblTotal1.Text = "Rp. 0,-";
+                iconButton1.Text = "Bayar ";
+                subTotalPrice = 0;
+                dataGridView1.DataSource = null;
+                return;
+            }
+
+            // Update UI untuk total, subtotal, dan diskon
+            lblDetailKeranjang.Text = "Keranjang: " + (string.IsNullOrEmpty(dataModel.data.customer_name) ? "name?" : dataModel.data.customer_name) +
+                                      " - " + (string.IsNullOrEmpty(dataModel.data.customer_seat) ? "seat?" : dataModel.data.customer_seat);
+            int result = dataModel.data.total - dataModel.data.subtotal;
+            lblDiskon1.Text = string.Format("Rp. {0:n0},-", result);
+            lblSubTotal1.Text = string.Format("Rp. {0:n0},-", dataModel.data.subtotal);
+            lblTotal1.Text = string.Format("Rp. {0:n0},-", dataModel.data.total);
+            iconButton1.Text = string.Format("Bayar Rp. {0:n0},-", dataModel.data.total);
+            subTotalPrice = dataModel.data.subtotal;
+
+            // Proses detail keranjang ke dalam DataTable
+            DataTable dataTable = new DataTable();
+            dataTable.Columns.Add("MenuID", typeof(string));
+            dataTable.Columns.Add("CartDetailID", typeof(int));
+            dataTable.Columns.Add("Jenis", typeof(string));
+            dataTable.Columns.Add("Menu", typeof(string));
+            dataTable.Columns.Add("Total Harga", typeof(string));
+            dataTable.Columns.Add("Note", typeof(string));
+
+            Dictionary<string, List<DetailCart>> menuGroups = new Dictionary<string, List<DetailCart>>();
+
+            foreach (DetailCart menu in dataModel.data.cart_details)
+            {
+                string servingTypeName = menu.serving_type_name ?? "Unknown";
+                if (!menuGroups.ContainsKey(servingTypeName))
+                {
+                    menuGroups[servingTypeName] = new List<DetailCart>();
+                }
+                menuGroups[servingTypeName].Add(menu);
+            }
+
+            foreach (var group in menuGroups)
+            {
+                AddSeparatorRow(dataTable, group.Key, dataGridView1);
+
+                foreach (DetailCart menu in group.Value)
+                {
+                    /*string menuName = menu.menu_name ?? "Unknown";
+                    string variant = menu.varian ?? "No variant";
+                    string note = menu.note_item ?? "";*/
+
+                    dataTable.Rows.Add(
+                        menu.menu_id ?? 0,
+                        menu.cart_detail_id,
+                        menu.serving_type_name ?? "",
+                        (menu.qty > 0 ? menu.qty.ToString() : "0") + "X " + (menu.is_ordered == "1" ? "(Ordered) " : "") + menu.menu_name + " " + menu.varian,
+                        string.Format("Rp. {0:n0},-", menu.total_price),
+                        menu.note_item
+                    );
+
+                    if (menu.discounted_price != 0)
+                    {
+                        dataTable.Rows.Add(
+                            null,
+                            null,
+                            null,
+                            "  *catatan : " + menu.note_item,
+                            "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code),
+                            null
+                        );
+                    }
+                }
+            }
+
+            // Update DataGridView
+            dataGridView1.DataSource = dataTable;
+            dataGridView1.Columns["MenuID"].Visible = false;
+            dataGridView1.Columns["CartDetailID"].Visible = false;
+            dataGridView1.Columns["Jenis"].Visible = false;
+            dataGridView1.Columns["Note"].Visible = false;
+
+            DataGridViewCellStyle boldStyle = new DataGridViewCellStyle();
+            boldStyle.Font = new Font(dataGridView1.Font, FontStyle.Italic);
+            dataGridView1.Columns["Menu"].DefaultCellStyle = boldStyle;
+            dataGridView1.Columns["Menu"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+            dataGridView1.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+            dataGridView1.Columns["Menu"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+
+            // Salin data ke tabel lain jika diperlukan
+            dataTable2 = dataTable.Copy();
+
+            // Muat diskon (asynchronous)
+            await LoadDataDiscount();
+            autoFillDiskon();
+        }
+
+        public async Task Ex_LoadCart()
         {
 
             try

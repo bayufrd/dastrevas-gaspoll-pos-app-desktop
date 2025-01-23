@@ -712,7 +712,7 @@ namespace KASIR
                     GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
 
                     DataShift datas = cekShift.data;
-                    lblNamaOutlet.Text = datas.outlet_name.ToString() + " (Marged Trial)";
+                    lblNamaOutlet.Text = datas.outlet_name.ToString();
                     baseOutletName = lblNamaOutlet.Text.ToString();
                 }
                 else

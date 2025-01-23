@@ -2610,7 +2610,7 @@ namespace KASIR.Printer
             strukText += FormatSimpleLine("Total Refund", string.Format("{0:n0}", datas.total_refund)) + "\n";
             strukText += "--------------------------------\n";
             strukText += CenterText("Meja No. " + datas.customer_seat.ToString()) + "\n";
-            strukText += "--------------------------------\n\n\n";
+            strukText += "--------------------------------\n";
             strukText += CenterText("Powered By");
 
             string NomorUrut = "\n" + kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n\n\n    ";
@@ -4995,65 +4995,10 @@ namespace KASIR.Printer
 
                         try
                         {
-                            if (System.Net.IPAddress.TryParse(printerName, out _))
-                            {
-                                // Connect via LAN
-                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
-                                stream = client.GetStream();
-                            }
-                            else
-                            {
-                                // Connect via Bluetooth dengan retry policy
-                                if (!await RetryPolicyAsync(async () =>
-                                {
-                                    // Connect via Bluetooth
-                                    BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                    if (printerDevice == null)
-                                    {
-                                        //MessageBox.Show("Printer " + printerName + " not found", "Error");
-                                        return false;
-                                    }
+                            // Filter checker cart details yang is_ordered == 1
+                            var orderedCheckerItems = cartDetails.Where(x => x.is_ordered != 1).ToList();
 
-                                    BluetoothClient client = new BluetoothClient();
-                                    BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-                                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                    {
-                                        //MessageBox.Show("Pairing failed to " + printerName, "Error");
-                                        return false;
-                                    }
-
-                                    client.Connect(endpoint);
-                                    stream = client.GetStream();
-
-                                    return true;
-                                }, maxRetries: 3))
-                                {
-                                    continue;
-                                }
-                            }
-
-                            // Setelah koneksi berhasil, cetak struk
-                            PrintCheckerReceipt(stream, datas, cartDetails, totalTransactions);
-
-                        }
-                        finally
-                        {
-                            if (stream != null)
-                            {
-                                stream.Close();
-                            }
-                        }
-                    }
-
-                    // Struct Kitchen
-                    if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
-                    {
-                        if (ShouldPrint(printerId, "Makanan"))
-                        {
-                            System.IO.Stream stream = null;
-
-                            try
+                            if (orderedCheckerItems.Any())
                             {
                                 if (System.Net.IPAddress.TryParse(printerName, out _))
                                 {
@@ -5094,8 +5039,75 @@ namespace KASIR.Printer
                                 }
 
                                 // Setelah koneksi berhasil, cetak struk
-                                PrintKitchenOrBarReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, totalTransactions, "Makanan");
+                                PrintCheckerReceipt(stream, datas, cartDetails, totalTransactions);
 
+                            }
+                        }
+                        finally
+                        {
+                            if (stream != null)
+                            {
+                                stream.Close();
+                            }
+                        }
+                    }
+
+                    // Struct Kitchen
+                    if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
+                    {
+                        if (ShouldPrint(printerId, "Makanan"))
+                        {
+                            System.IO.Stream stream = null;
+
+                            try
+                            {
+                                // Filter kitchen cart details yang is_ordered == 1
+                                var orderedKitchenItems = KitchenCartDetails.Where(x => x.is_ordered != 1).ToList();
+
+                                if (orderedKitchenItems.Any())
+                                {
+                                    if (System.Net.IPAddress.TryParse(printerName, out _))
+                                    {
+                                        // Connect via LAN
+                                        var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                        stream = client.GetStream();
+                                    }
+                                    else
+                                    {
+                                        // Connect via Bluetooth dengan retry policy
+                                        if (!await RetryPolicyAsync(async () =>
+                                        {
+                                            // Connect via Bluetooth
+                                            BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                            if (printerDevice == null)
+                                            {
+                                                //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                                                return false;
+                                            }
+
+                                            BluetoothClient client = new BluetoothClient();
+                                            BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                            {
+                                                //MessageBox.Show("Pairing failed to " + printerName, "Error");
+                                                return false;
+                                            }
+
+                                            client.Connect(endpoint);
+                                            stream = client.GetStream();
+
+                                            return true;
+                                        }, maxRetries: 3))
+                                        {
+                                            continue;
+                                        }
+                                    }
+
+                                    // Setelah koneksi berhasil, cetak struk
+                                    PrintKitchenOrBarReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, totalTransactions, "Makanan");
+
+                                }
                             }
                             finally
                             {
@@ -5116,47 +5128,53 @@ namespace KASIR.Printer
 
                             try
                             {
-                                if (System.Net.IPAddress.TryParse(printerName, out _))
+                                // Filter bar cart details yang is_ordered == 1
+                                var orderedBarItems = BarCartDetails.Where(x => x.is_ordered != 1).ToList();
+
+                                if (orderedBarItems.Any())
                                 {
-                                    // Connect via LAN
-                                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
-                                    stream = client.GetStream();
-                                }
-                                else
-                                {
-                                    // Connect via Bluetooth dengan retry policy
-                                    if (!await RetryPolicyAsync(async () =>
+                                    if (System.Net.IPAddress.TryParse(printerName, out _))
                                     {
-                                        // Connect via Bluetooth
-                                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                        if (printerDevice == null)
-                                        {
-                                            //MessageBox.Show("Printer " + printerName + " not found", "Error");
-                                            return false;
-                                        }
-
-                                        BluetoothClient client = new BluetoothClient();
-                                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                        {
-                                            //MessageBox.Show("Pairing failed to " + printerName, "Error");
-                                            return false;
-                                        }
-
-                                        client.Connect(endpoint);
+                                        // Connect via LAN
+                                        var client = new System.Net.Sockets.TcpClient(printerName, 9100);
                                         stream = client.GetStream();
-
-                                        return true;
-                                    }, maxRetries: 3))
-                                    {
-                                        continue;
                                     }
+                                    else
+                                    {
+                                        // Connect via Bluetooth dengan retry policy
+                                        if (!await RetryPolicyAsync(async () =>
+                                        {
+                                            // Connect via Bluetooth
+                                            BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                            if (printerDevice == null)
+                                            {
+                                                //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                                                return false;
+                                            }
+
+                                            BluetoothClient client = new BluetoothClient();
+                                            BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                            {
+                                                //MessageBox.Show("Pairing failed to " + printerName, "Error");
+                                                return false;
+                                            }
+
+                                            client.Connect(endpoint);
+                                            stream = client.GetStream();
+
+                                            return true;
+                                        }, maxRetries: 3))
+                                        {
+                                            continue;
+                                        }
+                                    }
+
+                                    // Setelah koneksi berhasil, cetak struk
+                                    PrintKitchenOrBarReceipt(stream, datas, BarCartDetails, BarCancelItems, totalTransactions, "Minuman");
+
                                 }
-
-                                // Setelah koneksi berhasil, cetak struk
-                                PrintKitchenOrBarReceipt(stream, datas, BarCartDetails, BarCancelItems, totalTransactions, "Minuman");
-
                             }
                             finally
                             {
@@ -5189,13 +5207,14 @@ namespace KASIR.Printer
             // Write initialization bytes
             stream.Write(InitPrinter, 0, InitPrinter.Length);
 
-            string strukText = kodeHeksadesimalNormal + kodeHeksadesimalBold + CenterText(datas.data?.outlet_name) + "\n";
+            string strukText = kodeHeksadesimalNormal;
+            strukText += kodeHeksadesimalBold + CenterText(datas.data?.outlet_name) + "\n";
             strukText += kodeHeksadesimalNormal;
             strukText += CenterText(datas.data?.outlet_address) + "\n";
             strukText += CenterText(datas.data?.outlet_phone_number) + "\n";
-            strukText += "--------------------------------\n";
+            //strukText += "--------------------------------\n";
             strukText += CenterText("Receipt No.: " + datas.data?.receipt_number) + "\n";
-            strukText += "--------------------------------\n";
+            //strukText += "--------------------------------\n";
             strukText += CenterText(datas.data?.invoice_due_date) + "\n";
             strukText += "Name: " + datas.data?.customer_name + "\n";
 
@@ -5210,9 +5229,9 @@ namespace KASIR.Printer
                     var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
                     if (itemsForServingType.Count == 0) continue;
 
-                    strukText += "--------------------------------\n";
+                    //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType) + "\n";
-                    strukText += "\n";
+                    //strukText += "\n";
 
                     foreach (var cartDetail in itemsForServingType)
                     {
@@ -5233,7 +5252,7 @@ namespace KASIR.Printer
                         //if (cartDetail.qty > 1)
                         //  strukText += "  Total Price: " + string.Format("{0:n0}", cartDetail.total_price) + "\n";
 
-                        strukText += "\n";
+                        //strukText += "\n";
                     }
                 }
             }
@@ -5252,7 +5271,7 @@ namespace KASIR.Printer
             strukText += CenterText(datas.data.outlet_footer) + "\n";
             strukText += CenterText(Kakimu.ToString()) + "\n";
             strukText += CenterText("Meja No. " + datas.data.customer_seat.ToString()) + "\n";
-            strukText += "--------------------------------\n\n\n";
+            strukText += "--------------------------------\n";
             strukText += CenterText("Powered By");
 
             string NomorUrut = "\n" + kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n\n\n    ";
@@ -5266,6 +5285,11 @@ namespace KASIR.Printer
             PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
             //strukText = "\n\n\n\n\n";
             stream.Write(NewLine, 0, NewLine.Length);
+            strukText = "--------------------------------";
+
+            buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+
+            stream.Write(buffer, 0, buffer.Length);
 
             stream.Flush();
         }
@@ -5285,12 +5309,12 @@ namespace KASIR.Printer
             stream.Write(InitPrinter, 0, InitPrinter.Length);
             stream.Write(NewLine, 0, NewLine.Length);
 
-            string strukText = kodeHeksadesimalNormal + "--------------------------------\n";
-            strukText += "\n" + kodeHeksadesimalBold + CenterText("Checker No. " + totalTransactions.ToString()) + "\n";
+            //string strukText = kodeHeksadesimalNormal + "--------------------------------\n";
+            string strukText = "\n" + kodeHeksadesimalBold + CenterText("Checker No. " + totalTransactions.ToString()) + "\n";
             strukText += kodeHeksadesimalNormal;
-            strukText += "--------------------------------\n";
+            //strukText += "--------------------------------\n";
             strukText += CenterText("Receipt No.: " + datas.data?.receipt_number) + "\n";
-            strukText += "--------------------------------\n";
+            //strukText += "--------------------------------\n";
             strukText += CenterText(datas.data?.invoice_due_date) + "\n";
             strukText += "Name: " + datas.data?.customer_name + "\n";
 
@@ -5305,9 +5329,9 @@ namespace KASIR.Printer
                     var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
                     if (itemsForServingType.Count == 0) continue;
 
-                    strukText += "--------------------------------\n";
+                    //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType) + "\n";
-                    strukText += "\n";
+                    //strukText += "\n";
 
                     foreach (var cartDetail in itemsForServingType)
                     {
@@ -5319,7 +5343,7 @@ namespace KASIR.Printer
                             strukText += "   Note: " + cartDetail.note_item + "\n";
                         strukText += kodeHeksadesimalNormal;
 
-                        strukText += "\n";
+                        //strukText += "\n";
                     }
                 }
             }
@@ -5347,13 +5371,13 @@ namespace KASIR.Printer
             // Write initialization bytes
             stream.Write(InitPrinter, 0, InitPrinter.Length);
 
-            string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
-            strukText += kodeHeksadesimalNormal;
-            strukText += "--------------------------------\n";
-            strukText += kodeHeksadesimalBold + CenterText(type.ToUpper()) + "\n";
+            //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
+            string strukText = kodeHeksadesimalNormal;
+            //strukText += "--------------------------------\n";
+            strukText += kodeHeksadesimalBold + CenterText(type.ToUpper() + " No. " + totalTransactions.ToString()) + "\n";
             strukText += CenterText("Receipt No.: " + datas.data?.receipt_number) + "\n";
             strukText += kodeHeksadesimalNormal;
-            strukText += "--------------------------------\n";
+            //strukText += "--------------------------------\n";
             strukText += CenterText(datas.data?.invoice_due_date) + "\n";
             strukText += "Name: " + datas.data?.customer_name + "\n";
 
@@ -5368,7 +5392,7 @@ namespace KASIR.Printer
                     var itemsForServingType = CartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
                     if (itemsForServingType.Count == 0) continue;
 
-                    strukText += "--------------------------------\n";
+                    //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType) + "\n";
                     strukText += "\n";
 
@@ -5382,7 +5406,7 @@ namespace KASIR.Printer
                             strukText += "   Note: " + cartDetail.note_item + "\n";
                         strukText += kodeHeksadesimalNormal;
 
-                        strukText += "\n";
+                        //strukText += "\n";
                     }
                 }
             }
@@ -5398,7 +5422,7 @@ namespace KASIR.Printer
                     var itemsForServingType = CancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
                     if (itemsForServingType.Count == 0) continue;
 
-                    strukText += "--------------------------------\n";
+                    //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType) + "\n";
                     strukText += "\n";
 
@@ -5414,7 +5438,7 @@ namespace KASIR.Printer
                             strukText += "   Canceled Reason: " + cancelItem.cancel_reason + "\n";
                         strukText += kodeHeksadesimalNormal;
 
-                        strukText += "\n";
+                        //strukText += "\n";
                     }
                 }
             }

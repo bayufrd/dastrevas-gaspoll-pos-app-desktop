@@ -25,6 +25,7 @@ namespace KASIR.Model
         public int total_price { get; set; }
         public int qty { get; set; }
         public object note_item { get; set; }
+        public int? is_ordered { get; set; }
     }
 
     public class KitchenAndBarCartDetails
@@ -46,6 +47,7 @@ namespace KASIR.Model
         public int total_price { get; set; }
         public int qty { get; set; }
         public object note_item { get; set; }
+        public int? is_ordered { get; set; }
     }
 
     public class CanceledItemStrukCustomerTransaction

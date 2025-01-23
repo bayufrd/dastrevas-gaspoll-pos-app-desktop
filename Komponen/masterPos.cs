@@ -35,6 +35,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.DirectoryServices.ActiveDirectory;
 using Button = System.Windows.Forms.Button;
 using SharpCompress.Common;
+using KASIR.DualScreen;
 
 
 namespace KASIR.komponen
@@ -1826,6 +1827,10 @@ namespace KASIR.komponen
         {
             try
             {
+                // Membuat instance dari pengirim dan penerima
+                //var sender = new SignalSender();
+
+                // Mengirimkan sinyal
                 string filePath = @"C:\Temp\Cart.data";
 
                 // Pastikan direktori ada
@@ -1840,13 +1845,15 @@ namespace KASIR.komponen
                     string jsonData = JsonConvert.SerializeObject(json);
                     writer.Write(jsonData);
                 }
+                //sender.SendSignal("ReloadChart");
+
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        public async Task LoadCart()
+        public async Task Ex_LoadCart()
         {
             int retryCount = 3; // Maksimal 3 kali percobaan
             int attempt = 0;
@@ -1857,7 +1864,7 @@ namespace KASIR.komponen
                 try
                 {
                     attempt++;
-                    string response = await apiService.Get("/cart?outlet_id=" + (baseOutlet ?? "0"));
+                    string response = await apiService.Get("/cart?outlet_id=" + baseOutlet);
 
                     if (string.IsNullOrEmpty(response))
                     {
@@ -1881,7 +1888,7 @@ namespace KASIR.komponen
                 {
                     if (attempt >= retryCount)
                     {
-                        MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        //MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         LoggerUtil.LogError(ex, $"Timeout after {retryCount} attempts: {ex.Message}");
                         return;
                     }
@@ -1893,7 +1900,7 @@ namespace KASIR.komponen
                     if (attempt >= retryCount)
                     {
                         LoggerUtil.LogError(ex, $"An error occurred after {retryCount} attempts: {ex.Message}");
-                        MessageBox.Show("Terjadi kesalahan saat memuat data. Silakan coba lagi nanti.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        //MessageBox.Show("Terjadi kesalahan saat memuat data. Silakan coba lagi nanti.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
 
@@ -2003,7 +2010,7 @@ namespace KASIR.komponen
             autoFillDiskon();
         }
 
-        public async Task Ex_LoadCart()
+        public async Task LoadCart()
         {
 
             try
@@ -2168,8 +2175,6 @@ namespace KASIR.komponen
 
                     autoFillDiskon();
                 }
-
-       
                 await SignalReload();
             }
             catch (TaskCanceledException ex)
@@ -2296,6 +2301,7 @@ namespace KASIR.komponen
 
         private async void button1_Click(object sender, EventArgs e)
         {
+            //var pengirim = new SignalSender();
             if (string.IsNullOrEmpty(cartID)) // For strings
             {
                 MessageBox.Show("Keranjang masih kosong", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -2318,6 +2324,8 @@ namespace KASIR.komponen
             using (payForm payForm = new payForm(baseOutlet, cartID, totalCart, lblTotal1.Text.ToString(), customer_seat, customer_name, this))
             {
                 SignalReloadPayform();
+
+                //pengirim.SendSignal("Payment");
                 payForm.Owner = background;
 
                 background.Show();
@@ -2336,12 +2344,14 @@ namespace KASIR.komponen
                     cartID = "";
                     // Settings were successfully updated, perform any necessary actions
                     SignalReloadPayformDone();
+                    //pengirim.SendSignal("Payment");
 
                 }
                 else
                 {
                     MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
                     SignalReloadPayformDone();
+                    //pengirim.SendSignal("PaymentDone");
                     background.Dispose();
                     ReloadCart();
                     LoadCart();

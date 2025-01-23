@@ -88,6 +88,7 @@ namespace KASIR.komponen
             //Kakimu = Properties.Settings.Default.FooterStruk;
             flowLayoutPanel1.FlowDirection = FlowDirection.TopDown;
             flowLayoutPanel1.WrapContents = true;
+
             ttl2 = ttl1;
             outletID = outlet_id;
             cartID = cart_id;

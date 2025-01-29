@@ -299,14 +299,14 @@ namespace KASIR.Printer
                             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
                             string Kategori = _kategori;
 
-                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori) + "\n";
+                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName) + "\n";
+                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
-                            strukText += CenterText("Test Tengah") + "\n";
+                            strukText += CenterText("Test Tengah");
                             strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                             strukText += kodeHeksadesimalBold;
                             strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
@@ -357,14 +357,14 @@ namespace KASIR.Printer
                             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
                             string Kategori = _kategori;
 
-                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori) + "\n";
+                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName) + "\n";
+                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
-                            strukText += CenterText("Test Tengah") + "\n";
+                            strukText += CenterText("Test Tengah");
                             strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                             strukText += kodeHeksadesimalBold;
                             strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
@@ -415,14 +415,14 @@ namespace KASIR.Printer
                             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
                             string Kategori = _kategori;
 
-                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori) + "\n";
+                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName) + "\n";
+                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
-                            strukText += CenterText("Test Tengah") + "\n";
+                            strukText += CenterText("Test Tengah");
                             strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                             strukText += kodeHeksadesimalBold;
                             strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
@@ -473,14 +473,14 @@ namespace KASIR.Printer
                             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
                             string Kategori = _kategori;
 
-                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori) + "\n";
+                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName) + "\n";
+                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
-                            strukText += CenterText("Test Tengah") + "\n";
+                            strukText += CenterText("Test Tengah");
                             strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                             strukText += kodeHeksadesimalBold;
                             strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
@@ -729,14 +729,14 @@ namespace KASIR.Printer
                             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
                             string Kategori = _kategori;
 
-                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori) + "\n";
+                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName) + "\n";
+                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
-                            strukText += CenterText("Test Tengah") + "\n";
+                            strukText += CenterText("Test Tengah");
                             strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                             strukText += kodeHeksadesimalBold;
                             strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
@@ -785,14 +785,14 @@ namespace KASIR.Printer
                             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
                             string Kategori = _kategori;
 
-                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori) + "\n";
+                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName) + "\n";
+                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
-                            strukText += CenterText("Test Tengah") + "\n";
+                            strukText += CenterText("Test Tengah");
                             strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                             strukText += kodeHeksadesimalBold;
                             strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
@@ -841,14 +841,14 @@ namespace KASIR.Printer
                             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
                             string Kategori = _kategori;
 
-                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori) + "\n";
+                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName) + "\n";
+                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
-                            strukText += CenterText("Test Tengah") + "\n";
+                            strukText += CenterText("Test Tengah");
                             strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                             strukText += kodeHeksadesimalBold;
                             strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
@@ -1148,14 +1148,14 @@ namespace KASIR.Printer
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
 
-            string strukText = "\n" + kodeHeksadesimalBold + CenterText(dataShifts.outlet_name) + "\n";
+            string strukText = "\n" + kodeHeksadesimalBold + CenterText(dataShifts.outlet_name);
             strukText += kodeHeksadesimalNormal;
-            strukText += CenterText(dataShifts.outlet_address) + "\n";
-            strukText += CenterText(dataShifts.outlet_phone_number) + "\n";
+            strukText += CenterText(dataShifts.outlet_address);
+            strukText += CenterText(dataShifts.outlet_phone_number);
 
             strukText += "--------------------------------\n";
 
-            strukText += kodeHeksadesimalSizeBesar + CenterText("SHIFT PRINT") + "\n";
+            strukText += kodeHeksadesimalSizeBesar + CenterText("SHIFT PRINT");
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
             strukText += FormatSimpleLine("Start Date", dataShifts.start_date) + "\n";
@@ -1164,7 +1164,7 @@ namespace KASIR.Printer
             strukText += FormatSimpleLine("Shift Number", dataShifts.shift_number.ToString()) + "\n";
             strukText += "--------------------------------\n";
 
-            strukText += kodeHeksadesimalBold + CenterText("ORDER DETAILS") + "\n";
+            strukText += kodeHeksadesimalBold + CenterText("ORDER DETAILS");
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + "SOLD ITEMS" + "\n";
@@ -1265,7 +1265,7 @@ namespace KASIR.Printer
             }
 
             strukText += "--------------------------------\n";
-            strukText += kodeHeksadesimalBold + CenterText("CASH MANAGEMENT") + "\n";
+            strukText += kodeHeksadesimalBold + CenterText("CASH MANAGEMENT");
 
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
@@ -1294,7 +1294,7 @@ namespace KASIR.Printer
             strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", dataShifts.discount_total_amount)) + "\n";
 
             strukText += "--------------------------------\n";
-            strukText += kodeHeksadesimalBold + CenterText("PAYMENT DETAIL") + "\n";
+            strukText += kodeHeksadesimalBold + CenterText("PAYMENT DETAIL");
             strukText += kodeHeksadesimalNormal;
 
             strukText += "--------------------------------\n";
@@ -1973,14 +1973,14 @@ namespace KASIR.Printer
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
 
-            string strukText = "\n" + kodeHeksadesimalBold + CenterText(dataShifts.outlet_name) + "\n";
+            string strukText = "\n" + kodeHeksadesimalBold + CenterText(dataShifts.outlet_name);
             strukText += kodeHeksadesimalNormal;
-            strukText += CenterText(dataShifts.outlet_address) + "\n";
-            strukText += CenterText(dataShifts.outlet_phone_number) + "\n";
+            strukText += CenterText(dataShifts.outlet_address);
+            strukText += CenterText(dataShifts.outlet_phone_number);
 
             strukText += "--------------------------------\n";
 
-            strukText += kodeHeksadesimalSizeBesar + CenterText("SHIFT PRINT") + "\n";
+            strukText += kodeHeksadesimalSizeBesar + CenterText("SHIFT PRINT");
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
             strukText += FormatSimpleLine("Start Date", dataShifts.start_date) + "\n";
@@ -1989,7 +1989,7 @@ namespace KASIR.Printer
             strukText += FormatSimpleLine("Shift Number", dataShifts.shift_number.ToString()) + "\n";
             strukText += "--------------------------------\n";
 
-            strukText += kodeHeksadesimalBold + CenterText("ORDER DETAILS") + "\n";
+            strukText += kodeHeksadesimalBold + CenterText("ORDER DETAILS");
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + "SOLD ITEMS" + "\n";
@@ -2090,7 +2090,7 @@ namespace KASIR.Printer
             }
 
             strukText += "--------------------------------\n";
-            strukText += kodeHeksadesimalBold + CenterText("CASH MANAGEMENT") + "\n";
+            strukText += kodeHeksadesimalBold + CenterText("CASH MANAGEMENT");
 
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
@@ -2119,7 +2119,7 @@ namespace KASIR.Printer
             strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", dataShifts.discount_total_amount)) + "\n";
 
             strukText += "--------------------------------\n";
-            strukText += kodeHeksadesimalBold + CenterText("PAYMENT DETAIL") + "\n";
+            strukText += kodeHeksadesimalBold + CenterText("PAYMENT DETAIL");
             strukText += kodeHeksadesimalNormal;
 
             strukText += "--------------------------------\n";
@@ -2558,12 +2558,12 @@ namespace KASIR.Printer
             //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
             string strukText = kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
-            strukText += kodeHeksadesimalBold + CenterText("REFUND") + "\n";
-            strukText += CenterText("Receipt No. " + datas?.receipt_number) + "\n";
+            strukText += kodeHeksadesimalBold + CenterText("REFUND");
+            strukText += CenterText("Receipt No. " + datas?.receipt_number);
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
             if (datas?.invoice_due_date != null)
-                strukText += CenterText(datas?.invoice_due_date) + "\n";
+                strukText += CenterText(datas?.invoice_due_date);
             strukText += "Name: " + datas?.customer_name + "\n";
 
             var servingTypes = refundDetailStruks.Select(cd => cd.serving_type_name).Distinct();
@@ -2575,7 +2575,7 @@ namespace KASIR.Printer
                     continue;
 
                 strukText += "--------------------------------\n";
-                strukText += CenterText(servingType) + "\n";
+                strukText += CenterText(servingType);
                 strukText += "\n";
 
                 foreach (var refundDetail in itemsForServingType)
@@ -2609,7 +2609,7 @@ namespace KASIR.Printer
                 strukText += "Refund Reason: " + datas.refund_reason + "\n";
             strukText += FormatSimpleLine("Total Refund", string.Format("{0:n0}", datas.total_refund)) + "\n";
             strukText += "--------------------------------\n";
-            strukText += CenterText("Meja No. " + datas.customer_seat.ToString()) + "\n";
+            strukText += CenterText("Meja No. " + datas.customer_seat.ToString());
             strukText += "--------------------------------\n";
             strukText += CenterText("Powered By");
 
@@ -2921,7 +2921,7 @@ namespace KASIR.Printer
         }
 
 
-        // Struct InputPin
+        // Struct InputPin cetak ulang struk
         public async Task PrintModelInputPin(DataRestruk datas,
         List<CartDetailRestruk> cartDetails,
         List<RefundDetailRestruk> cartRefundDetails,
@@ -3020,6 +3020,10 @@ namespace KASIR.Printer
             byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
             byte[] NewLine = new byte[] { 0x0A }; // New line
 
+            // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
+            byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
+            stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
+
             // Write initialization bytes
             stream.Write(InitPrinter, 0, InitPrinter.Length);
 
@@ -3029,14 +3033,14 @@ namespace KASIR.Printer
 
             //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
             string strukText = kodeHeksadesimalNormal;
-            strukText += "--------------------------------\n";
-            strukText += kodeHeksadesimalBold + CenterText("CHECKER") + "\n";
-            strukText += CenterText("Receipt No. " + datas?.receipt_number) + "\n";
+            //strukText += "--------------------------------\n";
+            //strukText += kodeHeksadesimalBold + CenterText("CHECKER") + "\n";
+            strukText += CenterText("Receipt No. " + datas?.receipt_number);
             strukText += kodeHeksadesimalNormal;
-            strukText += "--------------------------------\n";
+            //strukText += "--------------------------------\n";
 
             if (datas?.invoice_due_date != null)
-                strukText += CenterText(datas?.invoice_due_date) + "\n";
+                strukText += CenterText(datas?.invoice_due_date);
             strukText += "Name: " + datas?.customer_name + "\n";
 
             if (cartDetails.Count != 0)
@@ -3047,17 +3051,29 @@ namespace KASIR.Printer
                 {
                     var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
                     strukText += "--------------------------------\n";
-                    strukText += CenterText("ORDERED") + "\n";
+                    strukText += CenterText("ORDERED");
 
                     if (itemsForServingType.Count == 0)
                         continue;
 
-                    strukText += "--------------------------------\n";
+                    //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType) + "\n";
-                    strukText += "\n";
+                    //strukText += "\n";
 
                     foreach (var cartDetail in itemsForServingType)
                     {
+                        strukText += kodeHeksadesimalBold + $"{cartDetail.menu_name}" + "\n";
+                        strukText += kodeHeksadesimalNormal;
+                        strukText += FormatSimpleLine("@" + string.Format("{0:n0}", cartDetail.price) + " x" + cartDetail.qty, string.Format("{0:n0}", cartDetail.total_price)) + "\n";
+                        if (!string.IsNullOrEmpty(cartDetail.varian))
+                            strukText += "  Varian: " + cartDetail.varian + "\n";
+                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                            strukText += "  Note: " + cartDetail.note_item + "\n";
+                        if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                            strukText += "  Discount Code: " + cartDetail.discount_code + "\n";
+                        if (cartDetail.discounts_value != null && Convert.ToDecimal(cartDetail.discounts_value) != 0)
+                            strukText += "  Discount Value: " + (cartDetail.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", cartDetail.discounts_value.ToString()) : cartDetail.discounts_value.ToString() + " %") + "\n";
+/*
                         strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.price)) + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.varian))
                             strukText += "   Varian: " + cartDetail.varian + "\n";
@@ -3067,8 +3083,8 @@ namespace KASIR.Printer
                             strukText += "   Discount Code: " + cartDetail.discount_code + "\n";
                         if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
                             strukText += "   Total Discount: " + string.Format("{0:n0}", cartDetail.discounted_price) + "\n";
-                        strukText += "   Total Price: " + string.Format("{0:n0}", cartDetail.total_price) + "\n";
-                        strukText += "\n";
+                        strukText += "   Total Price: " + string.Format("{0:n0}", cartDetail.total_price) + "\n";*/
+                        //strukText += "\n";
                     }
                 }
             }
@@ -3077,7 +3093,7 @@ namespace KASIR.Printer
             {
                 var servingTypesCancel = canceledItems.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
-                strukText += CenterText("CANCELED") + "\n";
+                strukText += CenterText("CANCELED");
 
                 foreach (var servingType in servingTypesCancel)
                 {
@@ -3086,13 +3102,25 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0)
                         continue;
 
-                    strukText += "--------------------------------\n";
-                    strukText += CenterText(servingType) + "\n";
-                    strukText += "\n";
+                    //strukText += "--------------------------------\n";
+                    strukText += CenterText(servingType);
+                    //strukText += "\n";
 
                     foreach (var cancelItem in itemsForServingType)
                     {
-                        strukText += FormatSimpleLine(cancelItem.qty + " " + cancelItem.menu_name, string.Format("{0:n0}", cancelItem.price)) + "\n";
+                        strukText += kodeHeksadesimalBold + $"{cancelItem.menu_name}" + "\n";
+                        strukText += kodeHeksadesimalNormal;
+                        strukText += FormatSimpleLine("@" + string.Format("{0:n0}", cancelItem.price) + " x" + cancelItem.qty, string.Format("{0:n0}", cancelItem.total_price)) + "\n";
+                        if (!string.IsNullOrEmpty(cancelItem.varian))
+                            strukText += "  Varian: " + cancelItem.varian + "\n";
+                        if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                            strukText += "  Note: " + cancelItem.note_item + "\n";
+                        if (!string.IsNullOrEmpty(cancelItem.discount_code))
+                            strukText += "  Discount Code: " + cancelItem.discount_code + "\n";
+                        if (cancelItem.discounts_value != null && Convert.ToDecimal(cancelItem.discounts_value) != 0)
+                            strukText += "  Discount Value: " + (cancelItem.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", cancelItem.discounts_value.ToString()) : cancelItem.discounts_value.ToString() + " %") + "\n";
+
+                        /*strukText += FormatSimpleLine(cancelItem.qty + " " + cancelItem.menu_name, string.Format("{0:n0}", cancelItem.price)) + "\n";
                         if (!string.IsNullOrEmpty(cancelItem.varian))
                             strukText += "   Varian: " + cancelItem.varian + "\n";
                         if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
@@ -3102,8 +3130,8 @@ namespace KASIR.Printer
                         if (cancelItem.discounted_price.HasValue && cancelItem.discounted_price != 0)
                             strukText += "   Total Discount: " + string.Format("{0:n0}", cancelItem.discounted_price) + "\n";
                         if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
-                            strukText += "   Reason: " + cancelItem.cancel_reason + "\n";
-                        strukText += "\n";
+                            strukText += "   Reason: " + cancelItem.cancel_reason + "\n";*/
+                        //strukText += "\n";
                     }
                 }
             }
@@ -3111,7 +3139,7 @@ namespace KASIR.Printer
             if (cartRefundDetails.Count != 0)
             {
                 strukText += "--------------------------------\n";
-                strukText += CenterText("REFUNDED") + "\n";
+                strukText += CenterText("REFUNDED");
                 var servingTypesRefund = cartRefundDetails.Select(cd => cd.serving_type_name).Distinct();
                 foreach (var servingTypeRefund in servingTypesRefund)
                 {
@@ -3120,13 +3148,16 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0)
                         continue;
 
-                    strukText += "--------------------------------\n";
-                    strukText += CenterText(servingTypeRefund) + "\n";
-                    strukText += "\n";
+                    //strukText += "--------------------------------\n";
+                    strukText += CenterText(servingTypeRefund);
+                    //strukText += "\n";
 
                     foreach (var cartDetail in itemsForServingType)
                     {
-                        strukText += FormatSimpleLine(cartDetail.qty_refund_item + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.total_refund_price)) + "\n";
+                        strukText += kodeHeksadesimalBold + $"{cartDetail.menu_name}" + "\n";
+                        strukText += kodeHeksadesimalNormal;
+                        strukText += FormatSimpleLine("@" + string.Format("{0:n0}", cartDetail.menu_price) + " x" + cartDetail.qty_refund_item, string.Format("{0:n0}", cartDetail.total_refund_price)) + "\n";
+                        //strukText += FormatSimpleLine(cartDetail.qty_refund_item + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.total_refund_price)) + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.varian))
                             strukText += "   Varian: " + cartDetail.varian + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
@@ -3139,7 +3170,7 @@ namespace KASIR.Printer
                             strukText += "   Payment Type: " + cartDetail.payment_type_name + "\n";
                         if (cartDetail.refund_reason_item != null)
                             strukText += "   Refund Reason: " + cartDetail.refund_reason_item + "\n";
-                        strukText += "\n";
+                        //strukText += "\n";
                     }
                 }
             }
@@ -3159,11 +3190,11 @@ namespace KASIR.Printer
                 strukText += FormatSimpleLine("Total Refund", string.Format("{0:n0}", datas.total_refund)) + "\n";
             strukText += "--------------------------------\n";
 
-            strukText += CenterText("Meja No. " + datas.customer_seat.ToString()) + "\n";
-            strukText += "--------------------------------\n\n";
+            strukText += CenterText("Meja No. " + datas.customer_seat.ToString());
+            //strukText += "--------------------------------\n\n";
             strukText += CenterText("Powered By");
 
-            string NomorUrut = "\n" + kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n\n\n    ";
+            string NomorUrut = "\n" + kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
 
             byte[] buffer1 = System.Text.Encoding.UTF8.GetBytes(NomorUrut);
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
@@ -3747,10 +3778,10 @@ namespace KASIR.Printer
             byte[] NewLine = new byte[] { 0x0A }; // New line
 
             // Construct receipt text
-            string strukText = kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions.ToString()) + "\n";
+            string strukText = kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions.ToString());
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
-            strukText += kodeHeksadesimalBold + CenterText("CHECKER") + "\n";
+            strukText += kodeHeksadesimalBold + CenterText("CHECKER");
             if (!string.IsNullOrEmpty(datas?.receipt_number))
             {
                 // Periksa apakah panjang receipt_number lebih dari 32 karakter
@@ -3762,13 +3793,13 @@ namespace KASIR.Printer
                 else
                 {
                     // Jika tidak lebih dari 32 karakter, gunakan CenterText
-                    strukText += CenterText("Receipt No." + datas.receipt_number.ToString()) + "\n";
+                    strukText += CenterText("Receipt No." + datas.receipt_number.ToString());
                 }
             }
             else
             {
                 // Jika receipt_number null atau kosong, cetak pesan alternatif
-                strukText += CenterText("Receipt No. Tidak Tersedia") + "\n";
+                strukText += CenterText("Receipt No. Tidak Tersedia");
             }
 
 
@@ -3776,7 +3807,7 @@ namespace KASIR.Printer
             strukText += "--------------------------------\n";
             
             if (datas?.invoice_due_date != null)
-                strukText += CenterText(datas?.invoice_due_date) + "\n";
+                strukText += CenterText(datas?.invoice_due_date);
 
             strukText += "Name: " + datas?.customer_name + "\n";
             
@@ -3789,13 +3820,13 @@ namespace KASIR.Printer
                 {
                     var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
                     strukText += "--------------------------------\n";
-                    strukText += CenterText("ORDERED") + "\n";
+                    strukText += CenterText("ORDERED");
 
                     if (itemsForServingType.Count == 0)
                         continue;
 
                     strukText += "--------------------------------\n";
-                    strukText += CenterText(servingType) + "\n";
+                    strukText += CenterText(servingType);
                     strukText += "\n";
 
                     foreach (var cartDetail in itemsForServingType)
@@ -3825,7 +3856,7 @@ namespace KASIR.Printer
             {
                 var servingTypesCancel = canceledItems.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
-                strukText += CenterText("CANCELED") + "\n";
+                strukText += CenterText("CANCELED");
 
                 foreach (var servingType in servingTypesCancel)
                 {
@@ -3866,7 +3897,7 @@ namespace KASIR.Printer
             strukText += "--------------------------------\n";
             
             // Add the "Meja No." at the bottom
-            strukText += kodeHeksadesimalNormal + CenterText("Meja No. " + datas?.customer_seat) + "\n\n\n\n";
+            strukText += kodeHeksadesimalNormal + CenterText("Meja No. " + datas?.customer_seat) + "\n\n";
             strukText += "--------------------------------\n";
 
             // Convert the final string to bytes and send to the printer
@@ -4299,21 +4330,21 @@ namespace KASIR.Printer
             //PrintLogo(stream, "icon\\OutletLogo.bmp", 50); // Larger logo size
 
             // Print the rest of the receipt
-            string strukText = "\n" + kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions.ToString()) + "\n";
+            string strukText = "\n" + kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions.ToString());
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
-            strukText += kodeHeksadesimalBold + CenterText(type.ToUpper()) + "\n";
-            strukText += CenterText("Receipt No.: " + datas.data?.receipt_number) + "\n";
+            strukText += kodeHeksadesimalBold + CenterText(type.ToUpper());
+            strukText += CenterText("Receipt No.: " + datas.data?.receipt_number);
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
-            strukText += CenterText(datas.data?.invoice_due_date) + "\n";
+            strukText += CenterText(datas.data?.invoice_due_date);
             strukText += "Name: " + datas.data?.customer_name + "\n";
 
             if (type == "Makanan" && KitchenCartDetails.Count != 0)
             {
                 var servingTypes = KitchenCartDetails.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
-                strukText += CenterText("ORDER") + "\n";
+                strukText += CenterText("ORDER");
 
                 foreach (var servingType in servingTypes)
                 {
@@ -4321,7 +4352,7 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0) continue;
 
                     strukText += "--------------------------------\n";
-                    strukText += CenterText(servingType) + "\n";
+                    strukText += CenterText(servingType);
                     strukText += "\n";
 
                     foreach (var cartDetail in itemsForServingType)
@@ -4344,7 +4375,7 @@ namespace KASIR.Printer
             {
                 var servingTypes = KitchenCancelItems.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
-                strukText += CenterText("CANCELED") + "\n";
+                strukText += CenterText("CANCELED");
 
                 foreach (var servingType in servingTypes)
                 {
@@ -4352,7 +4383,7 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0) continue;
 
                     strukText += "--------------------------------\n";
-                    strukText += CenterText(servingType) + "\n";
+                    strukText += CenterText(servingType);
                     strukText += "\n";
 
                     foreach (var cancelItem in itemsForServingType)
@@ -4377,7 +4408,7 @@ namespace KASIR.Printer
             {
                 var servingTypes = BarCartDetails.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
-                strukText += CenterText("ORDER") + "\n";
+                strukText += CenterText("ORDER");
 
                 foreach (var servingType in servingTypes)
                 {
@@ -4385,7 +4416,7 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0) continue;
 
                     strukText += "--------------------------------\n";
-                    strukText += CenterText(servingType) + "\n";
+                    strukText += CenterText(servingType);
                     strukText += "\n";
 
                     foreach (var cartDetail in itemsForServingType)
@@ -4408,7 +4439,7 @@ namespace KASIR.Printer
             {
                 var servingTypes = BarCancelItems.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
-                strukText += CenterText("CANCELED") + "\n";
+                strukText += CenterText("CANCELED");
 
                 foreach (var servingType in servingTypes)
                 {
@@ -4416,7 +4447,7 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0) continue;
 
                     strukText += "--------------------------------\n";
-                    strukText += CenterText(servingType) + "\n";
+                    strukText += CenterText(servingType);
                     strukText += "\n";
 
                     foreach (var cancelItem in itemsForServingType)
@@ -5204,25 +5235,29 @@ namespace KASIR.Printer
             byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
             byte[] NewLine = new byte[] { 0x0A }; // New line
 
+            // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
+            byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
+            stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
+
             // Write initialization bytes
             stream.Write(InitPrinter, 0, InitPrinter.Length);
 
             string strukText = kodeHeksadesimalNormal;
-            strukText += kodeHeksadesimalBold + CenterText(datas.data?.outlet_name) + "\n";
+            strukText += kodeHeksadesimalBold + CenterText(datas.data?.outlet_name);
             strukText += kodeHeksadesimalNormal;
-            strukText += CenterText(datas.data?.outlet_address) + "\n";
-            strukText += CenterText(datas.data?.outlet_phone_number) + "\n";
+            strukText += CenterText(datas.data?.outlet_address);
+            strukText += CenterText(datas.data?.outlet_phone_number);
             //strukText += "--------------------------------\n";
-            strukText += CenterText("Receipt No.: " + datas.data?.receipt_number) + "\n";
+            strukText += CenterText("Receipt No.: " + datas.data?.receipt_number);
             //strukText += "--------------------------------\n";
-            strukText += CenterText(datas.data?.invoice_due_date) + "\n";
+            strukText += CenterText(datas.data?.invoice_due_date);
             strukText += "Name: " + datas.data?.customer_name + "\n";
 
             if (cartDetails.Count != 0)
             {
                 var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
-                strukText += CenterText("ORDER") + "\n";
+                strukText += CenterText("ORDER");
 
                 foreach (var servingType in servingTypes)
                 {
@@ -5230,7 +5265,7 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0) continue;
 
                     //strukText += "--------------------------------\n";
-                    strukText += CenterText(servingType) + "\n";
+                    strukText += CenterText(servingType);
                     //strukText += "\n";
 
                     foreach (var cartDetail in itemsForServingType)
@@ -5268,9 +5303,9 @@ namespace KASIR.Printer
             strukText += FormatSimpleLine("Cash", string.Format("{0:n0}", datas.data.customer_cash)) + "\n";
             strukText += FormatSimpleLine("Change", string.Format("{0:n0}", datas.data.customer_change)) + "\n";
             strukText += "--------------------------------\n";
-            strukText += CenterText(datas.data.outlet_footer) + "\n";
-            strukText += CenterText(Kakimu.ToString()) + "\n";
-            strukText += CenterText("Meja No. " + datas.data.customer_seat.ToString()) + "\n";
+            strukText += CenterText(datas.data.outlet_footer);
+            strukText += CenterText(Kakimu.ToString());
+            strukText += CenterText("Meja No. " + datas.data.customer_seat.ToString());
             strukText += "--------------------------------\n";
             strukText += CenterText("Powered By");
 
@@ -5305,24 +5340,28 @@ namespace KASIR.Printer
             byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
             byte[] NewLine = new byte[] { 0x0A }; // New line
 
+            // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
+            byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
+            stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
             // Write initialization bytes
             stream.Write(InitPrinter, 0, InitPrinter.Length);
             stream.Write(NewLine, 0, NewLine.Length);
 
             //string strukText = kodeHeksadesimalNormal + "--------------------------------\n";
-            string strukText = "\n" + kodeHeksadesimalBold + CenterText("Checker No. " + totalTransactions.ToString()) + "\n";
+            string strukText = kodeHeksadesimalNormal;
+            strukText += kodeHeksadesimalBold + CenterText("Checker No. " + totalTransactions.ToString());
             strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
-            strukText += CenterText("Receipt No.: " + datas.data?.receipt_number) + "\n";
+            strukText += CenterText("Receipt No.: " + datas.data?.receipt_number);
             //strukText += "--------------------------------\n";
-            strukText += CenterText(datas.data?.invoice_due_date) + "\n";
+            strukText += CenterText(datas.data?.invoice_due_date);
             strukText += "Name: " + datas.data?.customer_name + "\n";
 
             if (cartDetails.Count != 0)
             {
                 var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
-                strukText += CenterText("ORDER") + "\n";
+                strukText += CenterText("ORDER");
 
                 foreach (var servingType in servingTypes)
                 {
@@ -5330,7 +5369,7 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0) continue;
 
                     //strukText += "--------------------------------\n";
-                    strukText += CenterText(servingType) + "\n";
+                    strukText += CenterText(servingType);
                     //strukText += "\n";
 
                     foreach (var cartDetail in itemsForServingType)
@@ -5347,7 +5386,7 @@ namespace KASIR.Printer
                     }
                 }
             }
-            strukText += CenterText("Meja No." + datas.data?.customer_seat + "\n");
+            strukText += CenterText("Meja No." + datas.data?.customer_seat);
             strukText += "--------------------------------\n\n\n\n\n";
 
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
@@ -5374,18 +5413,18 @@ namespace KASIR.Printer
             //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
             string strukText = kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
-            strukText += kodeHeksadesimalBold + CenterText(type.ToUpper() + " No. " + totalTransactions.ToString()) + "\n";
-            strukText += CenterText("Receipt No.: " + datas.data?.receipt_number) + "\n";
+            strukText += kodeHeksadesimalBold + CenterText(type.ToUpper() + " No. " + totalTransactions.ToString());
+            strukText += CenterText("Receipt No.: " + datas.data?.receipt_number);
             strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
-            strukText += CenterText(datas.data?.invoice_due_date) + "\n";
+            strukText += CenterText(datas.data?.invoice_due_date);
             strukText += "Name: " + datas.data?.customer_name + "\n";
 
             if (CartDetails.Count > 0 && CartDetails != null)
             {
                 var servingTypes = CartDetails.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
-                strukText += CenterText("ORDER") + "\n";
+                strukText += CenterText("ORDER");
 
                 foreach (var servingType in servingTypes)
                 {
@@ -5393,7 +5432,7 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0) continue;
 
                     //strukText += "--------------------------------\n";
-                    strukText += CenterText(servingType) + "\n";
+                    strukText += CenterText(servingType);
                     strukText += "\n";
 
                     foreach (var cartDetail in itemsForServingType)
@@ -5406,7 +5445,7 @@ namespace KASIR.Printer
                             strukText += "   Note: " + cartDetail.note_item + "\n";
                         strukText += kodeHeksadesimalNormal;
 
-                        //strukText += "\n";
+                        strukText += "\n";
                     }
                 }
             }
@@ -5415,7 +5454,7 @@ namespace KASIR.Printer
             {
                 var servingTypes = CancelItems.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
-                strukText += CenterText("CANCELED") + "\n";
+                strukText += CenterText("CANCELED");
 
                 foreach (var servingType in servingTypes)
                 {
@@ -5423,7 +5462,7 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0) continue;
 
                     //strukText += "--------------------------------\n";
-                    strukText += CenterText(servingType) + "\n";
+                    strukText += CenterText(servingType);
                     strukText += "\n";
 
                     foreach (var cancelItem in itemsForServingType)

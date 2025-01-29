@@ -397,7 +397,7 @@ namespace KASIR.komponen
             // 
             // panel1
             // 
-            panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             panel1.Controls.Add(button7);
             panel1.Controls.Add(iconButton1);
             panel1.Controls.Add(iconButton3);
@@ -440,9 +440,9 @@ namespace KASIR.komponen
             iconButton1.IconFont = IconFont.Auto;
             iconButton1.IconSize = 30;
             iconButton1.ImageAlign = ContentAlignment.MiddleRight;
-            iconButton1.Location = new Point(4, 52);
+            iconButton1.Location = new Point(5, 52);
             iconButton1.Name = "iconButton1";
-            iconButton1.Size = new Size(400, 49);
+            iconButton1.Size = new Size(392, 49);
             iconButton1.TabIndex = 22;
             iconButton1.Text = "Bayar";
             iconButton1.TextImageRelation = TextImageRelation.ImageBeforeText;

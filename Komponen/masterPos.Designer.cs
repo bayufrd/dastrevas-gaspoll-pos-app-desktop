@@ -286,7 +286,7 @@ namespace KASIR.komponen
             lblTotal1.ForeColor = Color.FromArgb(31, 30, 68);
             lblTotal1.Location = new Point(273, 112);
             lblTotal1.Name = "lblTotal1";
-            lblTotal1.Size = new Size(32, 15);
+            lblTotal1.Size = new Size(33, 15);
             lblTotal1.TabIndex = 3;
             lblTotal1.Text = "Total";
             lblTotal1.Click += lblTotal1_Click;
@@ -298,7 +298,7 @@ namespace KASIR.komponen
             lblSubTotal1.ForeColor = Color.FromArgb(31, 30, 68);
             lblSubTotal1.Location = new Point(273, 87);
             lblSubTotal1.Name = "lblSubTotal1";
-            lblSubTotal1.Size = new Size(52, 15);
+            lblSubTotal1.Size = new Size(53, 15);
             lblSubTotal1.TabIndex = 2;
             lblSubTotal1.Text = "SubTotal";
             lblSubTotal1.Click += lblSubTotal1_Click;
@@ -310,7 +310,7 @@ namespace KASIR.komponen
             lblTotal.ForeColor = Color.FromArgb(31, 30, 68);
             lblTotal.Location = new Point(3, 112);
             lblTotal.Name = "lblTotal";
-            lblTotal.Size = new Size(41, 15);
+            lblTotal.Size = new Size(42, 15);
             lblTotal.TabIndex = 1;
             lblTotal.Text = "Total : ";
             // 
@@ -321,7 +321,7 @@ namespace KASIR.komponen
             lblSubTotal.ForeColor = Color.FromArgb(31, 30, 68);
             lblSubTotal.Location = new Point(3, 86);
             lblSubTotal.Name = "lblSubTotal";
-            lblSubTotal.Size = new Size(58, 15);
+            lblSubTotal.Size = new Size(59, 15);
             lblSubTotal.TabIndex = 0;
             lblSubTotal.Text = "SubTotal :";
             // 
@@ -645,6 +645,7 @@ namespace KASIR.komponen
             dataGridView2.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle7;
             dataGridView2.ColumnHeadersHeight = 30;
             dataGridView2.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+            dataGridView2.ColumnHeadersVisible = false;
             dataGridViewCellStyle8.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle8.BackColor = Color.White;
             dataGridViewCellStyle8.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);

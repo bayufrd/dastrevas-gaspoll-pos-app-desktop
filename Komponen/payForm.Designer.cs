@@ -561,6 +561,7 @@ namespace KASIR.komponen
             ClientSize = new Size(600, 530);
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
+            MaximumSize = new Size(600, 530);
             Name = "payForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "create1";

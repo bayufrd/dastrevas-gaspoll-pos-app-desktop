@@ -497,6 +497,7 @@ namespace KASIR.Komponen
             ClientSize = new Size(600, 537);
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
+            MaximumSize = new Size(600, 537);
             Name = "inputPin";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "inputPin";

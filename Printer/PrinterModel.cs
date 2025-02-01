@@ -249,6 +249,8 @@ namespace KASIR.Printer
             }
         }
 
+        //TEST PRINTER
+
         public async Task SelectAndPrintAsync()
         {
             try
@@ -3019,11 +3021,11 @@ namespace KASIR.Printer
 
             byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
             byte[] NewLine = new byte[] { 0x0A }; // New line
-
+/*
             // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
             byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
             stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
-
+*/
             // Write initialization bytes
             stream.Write(InitPrinter, 0, InitPrinter.Length);
 
@@ -3034,9 +3036,10 @@ namespace KASIR.Printer
             //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
             string strukText = kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
-            //strukText += kodeHeksadesimalBold + CenterText("CHECKER") + "\n";
-            strukText += CenterText("Receipt No. " + datas?.receipt_number);
+            strukText += kodeHeksadesimalBold + CenterText("RE-PRINT STRUCT");
             strukText += kodeHeksadesimalNormal;
+
+            strukText += CenterText("Receipt No. " + datas?.receipt_number);
             //strukText += "--------------------------------\n";
 
             if (datas?.invoice_due_date != null)
@@ -3780,7 +3783,7 @@ namespace KASIR.Printer
             // Construct receipt text
             string strukText = kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions.ToString());
             strukText += kodeHeksadesimalNormal;
-            strukText += "--------------------------------\n";
+            //strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + CenterText("CHECKER");
             if (!string.IsNullOrEmpty(datas?.receipt_number))
             {
@@ -3804,8 +3807,8 @@ namespace KASIR.Printer
 
 
             strukText += kodeHeksadesimalNormal;
-            strukText += "--------------------------------\n";
-            
+            //strukText += "--------------------------------\n";
+
             if (datas?.invoice_due_date != null)
                 strukText += CenterText(datas?.invoice_due_date);
 
@@ -3825,9 +3828,9 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0)
                         continue;
 
-                    strukText += "--------------------------------\n";
+                    //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
-                    strukText += "\n";
+                    //strukText += "\n";
 
                     foreach (var cartDetail in itemsForServingType)
                     {
@@ -3846,7 +3849,7 @@ namespace KASIR.Printer
                         //if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
                         //    strukText += "   Total Discount: " + string.Format("{0:n0}", cartDetail.discounted_price) + "\n";
                         //strukText += "   Total Price: " + string.Format("{0:n0}", cartDetail.total_price) + "\n";
-                        strukText += "\n";
+                        //strukText += "\n";
                     }
                 }
             }
@@ -3865,9 +3868,9 @@ namespace KASIR.Printer
                     if (itemsForServingType.Count == 0)
                         continue;
 
-                    strukText += "--------------------------------\n";
-                    strukText += CenterText(servingType) + "\n";
-                    strukText += "\n";
+                    //strukText += "--------------------------------\n";
+                    strukText += CenterText(servingType);
+                    //strukText += "\n";
 
                     foreach (var cancelItem in itemsForServingType)
                     {
@@ -3881,7 +3884,7 @@ namespace KASIR.Printer
                             strukText += "   Note: " + cancelItem.note_item + "\n";
                         if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
                             strukText += "   Reason: " + cancelItem.cancel_reason + "\n";
-                        strukText += "\n";
+                        //strukText += "\n";
                     }
                 }
             }
@@ -3894,11 +3897,11 @@ namespace KASIR.Printer
             if (datas?.discounts_value != null && datas.discounts_value != "")
                 strukText += FormatSimpleLine("Discount Value: ", (datas.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", datas.discounts_value.ToString()) : datas.discounts_value.ToString() + " %")) + "\n";
             strukText += FormatSimpleLine("Total", string.Format("{0:n0}", datas.total)) + "\n";
-            strukText += "--------------------------------\n";
-            
+
             // Add the "Meja No." at the bottom
-            strukText += kodeHeksadesimalNormal + CenterText("Meja No. " + datas?.customer_seat) + "\n\n";
+            strukText += kodeHeksadesimalNormal + CenterText("Meja No. " + datas?.customer_seat); 
             strukText += "--------------------------------\n";
+            //strukText += "--------------------------------\n";
 
             // Convert the final string to bytes and send to the printer
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
@@ -5234,11 +5237,11 @@ namespace KASIR.Printer
 
             byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
             byte[] NewLine = new byte[] { 0x0A }; // New line
-
+/*
             // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
             byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
             stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
-
+*/
             // Write initialization bytes
             stream.Write(InitPrinter, 0, InitPrinter.Length);
 
@@ -5340,16 +5343,16 @@ namespace KASIR.Printer
             byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
             byte[] NewLine = new byte[] { 0x0A }; // New line
 
-            // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
+            /*// Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
             byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
-            stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
+            stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing*/
             // Write initialization bytes
             stream.Write(InitPrinter, 0, InitPrinter.Length);
             stream.Write(NewLine, 0, NewLine.Length);
 
             //string strukText = kodeHeksadesimalNormal + "--------------------------------\n";
             string strukText = kodeHeksadesimalNormal;
-            strukText += kodeHeksadesimalBold + CenterText("Checker No. " + totalTransactions.ToString());
+            strukText += kodeHeksadesimalBold + CenterText("CHECKER No. " + totalTransactions.ToString());
             strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
             strukText += CenterText("Receipt No.: " + datas.data?.receipt_number);

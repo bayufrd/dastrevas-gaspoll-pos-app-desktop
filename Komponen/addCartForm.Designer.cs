@@ -419,6 +419,7 @@ namespace KASIR.komponen
             Controls.Add(flowLayoutPanel1);
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
+            MaximumSize = new Size(600, 600);
             Name = "addCartForm";
             StartPosition = FormStartPosition.CenterParent;
             TopMost = true;

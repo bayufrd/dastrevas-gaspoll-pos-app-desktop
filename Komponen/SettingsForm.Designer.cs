@@ -48,6 +48,7 @@ namespace KASIR.Komponen
             panel7 = new Panel();
             txtFooter = new TextBox();
             gradientPanel1 = new Model.GradientPanel();
+            iconButton1 = new IconButton();
             panel14 = new Panel();
             txtRunningText = new TextBox();
             label12 = new Label();
@@ -104,7 +105,6 @@ namespace KASIR.Komponen
             label1 = new Label();
             label3 = new Label();
             label6 = new Label();
-            iconButton1 = new IconButton();
             panel1.SuspendLayout();
             panel6.SuspendLayout();
             panel7.SuspendLayout();
@@ -412,6 +412,28 @@ namespace KASIR.Komponen
             gradientPanel1.TabIndex = 53;
             gradientPanel1.TopColor = Color.Gainsboro;
             // 
+            // iconButton1
+            // 
+            iconButton1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            iconButton1.AutoSize = true;
+            iconButton1.BackColor = Color.Transparent;
+            iconButton1.Cursor = Cursors.Hand;
+            iconButton1.FlatAppearance.BorderSize = 0;
+            iconButton1.FlatStyle = FlatStyle.Flat;
+            iconButton1.ForeColor = Color.FromArgb(31, 30, 68);
+            iconButton1.IconChar = IconChar.Gear;
+            iconButton1.IconColor = Color.FromArgb(31, 30, 68);
+            iconButton1.IconFont = IconFont.Auto;
+            iconButton1.IconSize = 30;
+            iconButton1.Location = new Point(343, 573);
+            iconButton1.Name = "iconButton1";
+            iconButton1.Size = new Size(53, 55);
+            iconButton1.TabIndex = 63;
+            iconButton1.Text = "Config";
+            iconButton1.TextImageRelation = TextImageRelation.ImageAboveText;
+            iconButton1.UseVisualStyleBackColor = false;
+            iconButton1.Click += iconButton1_Click;
+            // 
             // panel14
             // 
             panel14.BorderStyle = BorderStyle.FixedSingle;
@@ -615,9 +637,9 @@ namespace KASIR.Komponen
             checkBoxCheckerPrinter3.AutoSize = true;
             checkBoxCheckerPrinter3.Location = new Point(9, 30);
             checkBoxCheckerPrinter3.Name = "checkBoxCheckerPrinter3";
-            checkBoxCheckerPrinter3.Size = new Size(69, 19);
+            checkBoxCheckerPrinter3.Size = new Size(112, 19);
             checkBoxCheckerPrinter3.TabIndex = 7;
-            checkBoxCheckerPrinter3.Text = "Checker";
+            checkBoxCheckerPrinter3.Text = "Checker (Server)";
             checkBoxCheckerPrinter3.UseVisualStyleBackColor = true;
             // 
             // checkBoxMakananPrinter3
@@ -625,9 +647,9 @@ namespace KASIR.Komponen
             checkBoxMakananPrinter3.AutoSize = true;
             checkBoxMakananPrinter3.Location = new Point(9, 53);
             checkBoxMakananPrinter3.Name = "checkBoxMakananPrinter3";
-            checkBoxMakananPrinter3.Size = new Size(75, 19);
+            checkBoxMakananPrinter3.Size = new Size(126, 19);
             checkBoxMakananPrinter3.TabIndex = 4;
-            checkBoxMakananPrinter3.Text = "Makanan";
+            checkBoxMakananPrinter3.Text = "Makanan (Kitchen)";
             checkBoxMakananPrinter3.UseVisualStyleBackColor = true;
             // 
             // checkBoxMinumanPrinter3
@@ -635,9 +657,9 @@ namespace KASIR.Komponen
             checkBoxMinumanPrinter3.AutoSize = true;
             checkBoxMinumanPrinter3.Location = new Point(9, 75);
             checkBoxMinumanPrinter3.Name = "checkBoxMinumanPrinter3";
-            checkBoxMinumanPrinter3.Size = new Size(78, 19);
+            checkBoxMinumanPrinter3.Size = new Size(106, 19);
             checkBoxMinumanPrinter3.TabIndex = 5;
-            checkBoxMinumanPrinter3.Text = "Minuman";
+            checkBoxMinumanPrinter3.Text = "Minuman (Bar)";
             checkBoxMinumanPrinter3.UseVisualStyleBackColor = true;
             // 
             // checkBoxKasirPrinter3
@@ -645,9 +667,9 @@ namespace KASIR.Komponen
             checkBoxKasirPrinter3.AutoSize = true;
             checkBoxKasirPrinter3.Location = new Point(9, 8);
             checkBoxKasirPrinter3.Name = "checkBoxKasirPrinter3";
-            checkBoxKasirPrinter3.Size = new Size(51, 19);
+            checkBoxKasirPrinter3.Size = new Size(114, 19);
             checkBoxKasirPrinter3.TabIndex = 3;
-            checkBoxKasirPrinter3.Text = "Kasir";
+            checkBoxKasirPrinter3.Text = "Kasir (Customer)";
             checkBoxKasirPrinter3.UseVisualStyleBackColor = true;
             // 
             // panel9
@@ -667,9 +689,9 @@ namespace KASIR.Komponen
             checkBoxCheckerPrinter2.AutoSize = true;
             checkBoxCheckerPrinter2.Location = new Point(9, 30);
             checkBoxCheckerPrinter2.Name = "checkBoxCheckerPrinter2";
-            checkBoxCheckerPrinter2.Size = new Size(69, 19);
+            checkBoxCheckerPrinter2.Size = new Size(112, 19);
             checkBoxCheckerPrinter2.TabIndex = 6;
-            checkBoxCheckerPrinter2.Text = "Checker";
+            checkBoxCheckerPrinter2.Text = "Checker (Server)";
             checkBoxCheckerPrinter2.UseVisualStyleBackColor = true;
             // 
             // checkBoxMakananPrinter2
@@ -677,9 +699,9 @@ namespace KASIR.Komponen
             checkBoxMakananPrinter2.AutoSize = true;
             checkBoxMakananPrinter2.Location = new Point(9, 51);
             checkBoxMakananPrinter2.Name = "checkBoxMakananPrinter2";
-            checkBoxMakananPrinter2.Size = new Size(75, 19);
+            checkBoxMakananPrinter2.Size = new Size(126, 19);
             checkBoxMakananPrinter2.TabIndex = 4;
-            checkBoxMakananPrinter2.Text = "Makanan";
+            checkBoxMakananPrinter2.Text = "Makanan (Kitchen)";
             checkBoxMakananPrinter2.UseVisualStyleBackColor = true;
             // 
             // checkBoxMinumanPrinter2
@@ -687,9 +709,9 @@ namespace KASIR.Komponen
             checkBoxMinumanPrinter2.AutoSize = true;
             checkBoxMinumanPrinter2.Location = new Point(9, 73);
             checkBoxMinumanPrinter2.Name = "checkBoxMinumanPrinter2";
-            checkBoxMinumanPrinter2.Size = new Size(78, 19);
+            checkBoxMinumanPrinter2.Size = new Size(106, 19);
             checkBoxMinumanPrinter2.TabIndex = 5;
-            checkBoxMinumanPrinter2.Text = "Minuman";
+            checkBoxMinumanPrinter2.Text = "Minuman (Bar)";
             checkBoxMinumanPrinter2.UseVisualStyleBackColor = true;
             // 
             // checkBoxKasirPrinter2
@@ -697,9 +719,9 @@ namespace KASIR.Komponen
             checkBoxKasirPrinter2.AutoSize = true;
             checkBoxKasirPrinter2.Location = new Point(9, 8);
             checkBoxKasirPrinter2.Name = "checkBoxKasirPrinter2";
-            checkBoxKasirPrinter2.Size = new Size(51, 19);
+            checkBoxKasirPrinter2.Size = new Size(114, 19);
             checkBoxKasirPrinter2.TabIndex = 3;
-            checkBoxKasirPrinter2.Text = "Kasir";
+            checkBoxKasirPrinter2.Text = "Kasir (Customer)";
             checkBoxKasirPrinter2.UseVisualStyleBackColor = true;
             // 
             // panel8
@@ -719,9 +741,9 @@ namespace KASIR.Komponen
             checkBoxCheckerPrinter1.AutoSize = true;
             checkBoxCheckerPrinter1.Location = new Point(9, 28);
             checkBoxCheckerPrinter1.Name = "checkBoxCheckerPrinter1";
-            checkBoxCheckerPrinter1.Size = new Size(69, 19);
+            checkBoxCheckerPrinter1.Size = new Size(112, 19);
             checkBoxCheckerPrinter1.TabIndex = 7;
-            checkBoxCheckerPrinter1.Text = "Checker";
+            checkBoxCheckerPrinter1.Text = "Checker (Server)";
             checkBoxCheckerPrinter1.UseVisualStyleBackColor = true;
             // 
             // checkBoxMakananPrinter1
@@ -729,9 +751,9 @@ namespace KASIR.Komponen
             checkBoxMakananPrinter1.AutoSize = true;
             checkBoxMakananPrinter1.Location = new Point(9, 48);
             checkBoxMakananPrinter1.Name = "checkBoxMakananPrinter1";
-            checkBoxMakananPrinter1.Size = new Size(75, 19);
+            checkBoxMakananPrinter1.Size = new Size(126, 19);
             checkBoxMakananPrinter1.TabIndex = 4;
-            checkBoxMakananPrinter1.Text = "Makanan";
+            checkBoxMakananPrinter1.Text = "Makanan (Kitchen)";
             checkBoxMakananPrinter1.UseVisualStyleBackColor = true;
             // 
             // checkBoxMinumanPrinter1
@@ -739,9 +761,9 @@ namespace KASIR.Komponen
             checkBoxMinumanPrinter1.AutoSize = true;
             checkBoxMinumanPrinter1.Location = new Point(9, 70);
             checkBoxMinumanPrinter1.Name = "checkBoxMinumanPrinter1";
-            checkBoxMinumanPrinter1.Size = new Size(78, 19);
+            checkBoxMinumanPrinter1.Size = new Size(106, 19);
             checkBoxMinumanPrinter1.TabIndex = 5;
-            checkBoxMinumanPrinter1.Text = "Minuman";
+            checkBoxMinumanPrinter1.Text = "Minuman (Bar)";
             checkBoxMinumanPrinter1.UseVisualStyleBackColor = true;
             // 
             // checkBoxKasirPrinter1
@@ -749,9 +771,9 @@ namespace KASIR.Komponen
             checkBoxKasirPrinter1.AutoSize = true;
             checkBoxKasirPrinter1.Location = new Point(9, 8);
             checkBoxKasirPrinter1.Name = "checkBoxKasirPrinter1";
-            checkBoxKasirPrinter1.Size = new Size(51, 19);
+            checkBoxKasirPrinter1.Size = new Size(114, 19);
             checkBoxKasirPrinter1.TabIndex = 3;
-            checkBoxKasirPrinter1.Text = "Kasir";
+            checkBoxKasirPrinter1.Text = "Kasir (Customer)";
             checkBoxKasirPrinter1.UseVisualStyleBackColor = true;
             // 
             // ComboBoxPrinter3
@@ -1092,28 +1114,6 @@ namespace KASIR.Komponen
             label6.TabIndex = 42;
             label6.Text = "Pin (Default: 0000)";
             // 
-            // iconButton1
-            // 
-            iconButton1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            iconButton1.AutoSize = true;
-            iconButton1.BackColor = Color.Transparent;
-            iconButton1.Cursor = Cursors.No;
-            iconButton1.FlatAppearance.BorderSize = 0;
-            iconButton1.FlatStyle = FlatStyle.Flat;
-            iconButton1.ForeColor = Color.FromArgb(31, 30, 68);
-            iconButton1.IconChar = IconChar.Gear;
-            iconButton1.IconColor = Color.FromArgb(31, 30, 68);
-            iconButton1.IconFont = IconFont.Auto;
-            iconButton1.IconSize = 30;
-            iconButton1.Location = new Point(343, 573);
-            iconButton1.Name = "iconButton1";
-            iconButton1.Size = new Size(53, 55);
-            iconButton1.TabIndex = 63;
-            iconButton1.Text = "Config";
-            iconButton1.TextImageRelation = TextImageRelation.ImageAboveText;
-            iconButton1.UseVisualStyleBackColor = false;
-            iconButton1.Click += iconButton1_Click;
-            // 
             // SettingsForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -1126,6 +1126,7 @@ namespace KASIR.Komponen
             Controls.Add(gradientPanel1);
             Controls.Add(panel1);
             Controls.Add(panel6);
+            MaximumSize = new Size(498, 674);
             Name = "SettingsForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "DT-Setting";

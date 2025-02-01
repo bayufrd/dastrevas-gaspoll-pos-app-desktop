@@ -28,11 +28,19 @@ namespace KASIR.Komponen
         private readonly string API = Properties.Settings.Default.BaseAddressDev;
         private readonly string VersionAddress = Properties.Settings.Default.BaseAddressVersion;
         string PathLogo = "icon\\OutletLogo.bmp";
+        int status = 0;
 
         public SettingsConfig()
         {
             InitializeComponent();
             loadConfig();
+            loadLogo();
+        }
+
+        private void loadLogo()
+        {
+            string PathLogo = "icon\\OutletLogo.bmp";
+
             // Menyeting ukuran dan lokasi untuk PictureBox (untuk thumbnail)
             picThumbnail.Size = new Size(100, 100);  // Ukuran thumbnail
             picThumbnail.SizeMode = PictureBoxSizeMode.Zoom;  // Agar gambar ter-pastikan tidak pecah
@@ -45,11 +53,15 @@ namespace KASIR.Komponen
                 using (FileStream fs = new FileStream(defaultImagePath, FileMode.Open, FileAccess.Read))
                 {
                     picThumbnail.Image = new Bitmap(fs);  // Menampilkan gambar di PictureBox
+                    status = 1;
+                    lblStatus.Text = "Gambar sukses terload";
+                    lblStatus.ForeColor = Color.Green;
                 }
             }
             else
             {
-                MessageBox.Show("Gambar default tidak ditemukan.");
+                lblStatus.Text = "Gambar default tidak ditemukan.";
+                lblStatus.ForeColor = Color.Red;
             }
         }
 
@@ -64,6 +76,26 @@ namespace KASIR.Komponen
         {
             try
             {
+                //PASSWORD CHECKER
+                if (string.IsNullOrEmpty(lblPassword.Text))
+                {
+                    lblStatus.Text = "Silahkan masukkan Password Konfirmasi.";
+                    lblStatus.ForeColor = Color.Red;
+                    return;
+                }
+                if(lblPassword.Text != "GMC1234")
+                {
+                    lblStatus.Text = "Password salah.";
+                    lblStatus.ForeColor = Color.Red;
+                    return;
+                }
+                if (status != 1)
+                {
+                    lblStatus.Text = "Masukkan logo yang valid dahulu.";
+                    lblStatus.ForeColor = Color.Red;
+                    return;
+                }
+
                 //MAIN APP
                 var kasirConfigPath = "KASIR.dll.config";
                 var doc = new XmlDocument();

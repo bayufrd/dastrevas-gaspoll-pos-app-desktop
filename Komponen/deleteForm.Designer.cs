@@ -32,6 +32,7 @@ namespace KASIR.Komponen
         {
             panel1 = new Panel();
             panel5 = new Panel();
+            txtPin = new MaskedTextBox();
             label2 = new Label();
             label5 = new Label();
             panel4 = new Panel();
@@ -41,7 +42,6 @@ namespace KASIR.Komponen
             Button1 = new IconButton();
             btnSimpan = new Button();
             btnKeluar = new Button();
-            txtPin = new MaskedTextBox();
             panel1.SuspendLayout();
             panel5.SuspendLayout();
             panel4.SuspendLayout();
@@ -71,6 +71,17 @@ namespace KASIR.Komponen
             panel5.Name = "panel5";
             panel5.Size = new Size(576, 36);
             panel5.TabIndex = 17;
+            // 
+            // txtPin
+            // 
+            txtPin.BorderStyle = BorderStyle.None;
+            txtPin.Location = new Point(24, 15);
+            txtPin.Name = "txtPin";
+            txtPin.PasswordChar = '*';
+            txtPin.Size = new Size(521, 16);
+            txtPin.TabIndex = 6;
+            txtPin.TextAlign = HorizontalAlignment.Center;
+            txtPin.UseSystemPasswordChar = true;
             // 
             // label2
             // 
@@ -192,17 +203,6 @@ namespace KASIR.Komponen
             btnKeluar.UseVisualStyleBackColor = false;
             btnKeluar.Click += btnKeluar_Click;
             // 
-            // txtPin
-            // 
-            txtPin.BorderStyle = BorderStyle.None;
-            txtPin.Location = new Point(24, 15);
-            txtPin.Name = "txtPin";
-            txtPin.PasswordChar = '*';
-            txtPin.Size = new Size(521, 16);
-            txtPin.TabIndex = 6;
-            txtPin.TextAlign = HorizontalAlignment.Center;
-            txtPin.UseSystemPasswordChar = true;
-            // 
             // deleteForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -211,6 +211,7 @@ namespace KASIR.Komponen
             ClientSize = new Size(600, 530);
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
+            MaximumSize = new Size(600, 530);
             Name = "deleteForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "refund";

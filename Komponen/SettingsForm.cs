@@ -123,8 +123,8 @@ namespace KASIR.Komponen
             this.ControlBox = false;
             InitializeComponent();
             LoadConfig();
-            lblNewVersion.Visible = false;
-            lblNewVersionNow.Visible = false;
+            lblNewVersion.Visible = true;
+            lblNewVersionNow.Visible = true;
             btnUpdate.Text = "Repair";
             lblVersion.Text = Properties.Settings.Default.Version.ToString();
             baseOutlet = Properties.Settings.Default.BaseOutlet;
@@ -536,13 +536,16 @@ namespace KASIR.Komponen
                 }
                 else
                 {
-                    lblNewVersion.Visible = false;
-                    lblNewVersionNow.Visible = false;
+                    lblNewVersion.Visible = true;
+                    lblNewVersionNow.Visible = true;
+                    lblNewVersionNow.Text = (new WebClient().DownloadString(urlVersion));
+
                     btnUpdate.Text = "Fix";
                 }
             }
             catch (Exception ex)
             {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
 
             }
         }

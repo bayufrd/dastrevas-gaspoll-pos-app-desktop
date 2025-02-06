@@ -1424,7 +1424,7 @@ namespace KASIR.Printer
         {
             if (text == null)
             {
-                LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                 return string.Empty;
             }
 
@@ -2935,7 +2935,9 @@ namespace KASIR.Printer
                 await LoadPrinterSettings(); // Load printer settings
                 await LoadSettingsAsync();   // Load additional settings
 
-                foreach (var printer in printerSettings)
+                var printerSettingsCopy = printerSettings.ToList(); // Create a copy of the collection
+
+                foreach (var printer in printerSettingsCopy /*printerSettings*/)
                 {
                     var printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))
@@ -6380,12 +6382,12 @@ namespace KASIR.Printer
             if (lastException != null)
             {
                 // Jika gagal karena exception
-                util.sendLogTelegram($"Semua percobaan ({maxRetries}x) gagal dengan error: {lastException.Message}.");
+                util.sendLogTelegramNetworkError($"Semua percobaan ({maxRetries}x) gagal dengan error: {lastException.Message}.");
             }
             else
             {
                 // Jika gagal tanpa exception, hanya action() yang mengembalikan false
-                util.sendLogTelegram($"Semua percobaan ({maxRetries}x) gagal.");
+                util.sendLogTelegramNetworkError($"Semua percobaan ({maxRetries}x) gagal.");
             }
 
             return false;

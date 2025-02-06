@@ -740,10 +740,9 @@ namespace KASIR.komponen
 
                     if (currentAttempt >= maxAttempts)
                     {
-                        Util u = new Util();
-                        // Semua percobaan gagal, tampilkan pesan error
                         MessageBox.Show("Gagal mencetak setelah beberapa kali percobaan.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        u.sendLogTelegram("Gagal Mencetak, Log Outlet : " + BaseOutletName);
+                        LoggerUtil.LogError(ex, $"Gagal mencetak setelah beberapa kali percobaan. {currentAttempt}.");
+
                         return;
                     }
 

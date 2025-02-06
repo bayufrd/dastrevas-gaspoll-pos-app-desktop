@@ -115,7 +115,17 @@ namespace KASIR.Komponen
                             dataTable.Rows.Add(null, null, null, group.Key + "s", null, null, null, null, null, null); // Add a separator row
                             foreach (DetailCart menu in group.Value)
                             {
-                                dataTable.Rows.Add(menu.menu_id, menu.cart_detail_id, menu.serving_type_name, menu.menu_name + " " + menu.varian, "x" + menu.qty, "Rp " + menu.total_price, null, "-", "0", "+");
+                                dataTable.Rows.Add(
+                                    menu.menu_id, 
+                                    menu.cart_detail_id, 
+                                    menu.serving_type_name, 
+                                    menu.menu_name + " " + menu.varian, 
+                                    "x" + menu.qty, 
+                                    "Rp " + menu.total_price, 
+                                    null, 
+                                    "-", 
+                                    "0", 
+                                    "+");
                                 if (!string.IsNullOrEmpty(menu.note_item))
                                 {
                                     dataTable.Rows.Add(null, null, null, "*catatan : " + menu.note_item, null, null, null, null, null, null);

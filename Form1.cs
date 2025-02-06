@@ -655,7 +655,7 @@ namespace KASIR
                     currentVersion = Properties.Settings.Default.Version.ToString();
 
                     Util n = new Util();
-                    n.sendLogTelegram("Open Updater");
+                    n.sendLogTelegramNetworkError("Open Updater");
                     headerOutletName();
 
                     lblNamaOutlet.Text += $"Opening Kasir Updater...";

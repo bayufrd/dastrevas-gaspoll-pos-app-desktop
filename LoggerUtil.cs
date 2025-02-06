@@ -31,7 +31,6 @@ namespace KASIR
                 }
                 
             }
-
             _log.Error(ex, message, properties);
             util.sendLogTelegramBy(ex, message, properties);
         }

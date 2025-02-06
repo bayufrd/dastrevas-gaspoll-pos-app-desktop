@@ -917,7 +917,6 @@ namespace KASIR.Komponen
                     {
                         // Jika sudah mencapai batas retry, log error
                         LoggerUtil.LogError(ex, $"Error printing transaction after {currentRetry} attempts", ex);
-                        util.sendLogTelegram($"An error printing occurred after {currentRetry} attempts {BaseOutletName}");
                     }
                     else
                     {

@@ -554,7 +554,7 @@ namespace KASIR.Komponen
         {
             ////LoggerUtil.LogPrivateMethod(nameof(btnUpdate_Click));
             Util n = new Util();
-            n.sendLogTelegram("Open Updater Manual" + BaseOutletName);
+            n.sendLogTelegramNetworkError("Open Updater Manual" + BaseOutletName);
             btnUpdate.Enabled = false;
 
             try

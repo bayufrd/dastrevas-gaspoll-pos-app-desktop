@@ -81,7 +81,7 @@ namespace KASIR
                     await SendMessageToTelegram(client, botToken, chatId3, messageWithDatetime);
                 }
 
-        }
+        }/*
         public async void sendLogTelegram(string message)
         {
             IApiService apiService = new ApiService();
@@ -123,7 +123,7 @@ namespace KASIR
                 // Send to the second chat ID
                 await SendMessageToTelegram(client, botToken, chatId3, messageWithDatetime);
             }
-        }
+        }*/
 
         private async Task SendMessageToTelegram(HttpClient client, string botToken, long chatId, string message)
         {

@@ -278,7 +278,7 @@ namespace KASIR.komponen
                         Util u = new Util();
                         // Semua percobaan gagal, tampilkan pesan error
                         MessageBox.Show("Gagal mencetak setelah beberapa kali percobaan.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        u.sendLogTelegram("Gagal Mencetak, Log Outlet : " + BaseOutletName);
+                        u.sendLogTelegramNetworkError("Gagal Mencetak, Log Outlet : " + BaseOutletName);
                         return;
                     }
 

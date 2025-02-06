@@ -647,7 +647,6 @@ namespace KASIR.Komponen
                         // Jika sudah mencapai batas retry, tampilkan pesan error
                         //MessageBox.Show("Error printing after multiple attempts: " + ex.Message);
                         LoggerUtil.LogError(ex, $"Error printing after {currentRetry}", ex);
-                        util.sendLogTelegram($"An error printing occurred after {currentRetry} attempts {BaseOutletName}");
                     }
                     else
                     {

@@ -48,7 +48,7 @@ namespace KASIR.Komponen
             }
             if (TypeCacheEksekusi == "Reset" || TypeCacheEksekusi != "Sync")
             {
-                util.sendLogTelegram("Open Reset Data. Outlet ID: " + baseOutlet);
+                util.sendLogTelegramNetworkError("Open Reset Data. Outlet ID: " + baseOutlet);
                 await DeleteDataCache();
             }
         }

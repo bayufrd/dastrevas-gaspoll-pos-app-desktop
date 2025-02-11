@@ -74,8 +74,7 @@ namespace KASIR.Komponen
         }
         private void Button2_Click(object sender, EventArgs e)
         {
-            try
-            {
+            
                 //PASSWORD CHECKER
                 if (string.IsNullOrEmpty(lblPassword.Text))
                 {
@@ -95,7 +94,9 @@ namespace KASIR.Komponen
                     lblStatus.ForeColor = Color.Red;
                     return;
                 }
-
+            try
+            {
+                lblStatus.Text = "Menyimpan...";
                 //MAIN APP
                 var kasirConfigPath = "KASIR.dll.config";
                 var doc = new XmlDocument();
@@ -186,12 +187,13 @@ namespace KASIR.Komponen
 
                     // Refresh PictureBox dengan gambar yang baru saja disalin
                     picThumbnail.Image = new Bitmap(destinationPath);  // Muat ulang gambar dari path baru
-
+                    status = 1;
                     MessageBox.Show("Logo berhasil di-upload dan disimpan.");
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show("Terjadi kesalahan saat membuka file: " + ex.Message);
+                    status = 0;
                 }
             }
         }

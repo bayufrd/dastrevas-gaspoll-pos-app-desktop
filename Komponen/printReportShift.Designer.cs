@@ -207,6 +207,7 @@ namespace KASIR.Komponen
             // 
             lblTotalPayment.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblTotalPayment.AutoSize = true;
+            lblTotalPayment.BackColor = Color.Transparent;
             lblTotalPayment.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblTotalPayment.Location = new Point(433, 415);
             lblTotalPayment.Name = "lblTotalPayment";
@@ -218,6 +219,7 @@ namespace KASIR.Komponen
             // 
             lblTotalExpense.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblTotalExpense.AutoSize = true;
+            lblTotalExpense.BackColor = Color.Transparent;
             lblTotalExpense.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblTotalExpense.Location = new Point(151, 415);
             lblTotalExpense.Name = "lblTotalExpense";
@@ -229,6 +231,7 @@ namespace KASIR.Komponen
             // 
             label6.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             label6.AutoSize = true;
+            label6.BackColor = Color.Transparent;
             label6.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label6.Location = new Point(387, 295);
             label6.Name = "label6";
@@ -251,6 +254,7 @@ namespace KASIR.Komponen
             dataGridView6.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView6.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridView6.BackgroundColor = Color.White;
+            dataGridView6.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView6.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle2.BackColor = Color.FromArgb(31, 30, 68);
@@ -307,6 +311,7 @@ namespace KASIR.Komponen
             // 
             label5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             label5.AutoSize = true;
+            label5.BackColor = Color.Transparent;
             label5.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label5.Location = new Point(121, 294);
             label5.Name = "label5";
@@ -329,6 +334,7 @@ namespace KASIR.Komponen
             dataGridView5.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView5.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridView5.BackgroundColor = Color.White;
+            dataGridView5.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView5.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle7.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle7.BackColor = Color.FromArgb(31, 30, 68);
@@ -385,6 +391,7 @@ namespace KASIR.Komponen
             // 
             lblTotal4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblTotal4.AutoSize = true;
+            lblTotal4.BackColor = Color.Transparent;
             lblTotal4.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblTotal4.Location = new Point(433, 268);
             lblTotal4.Name = "lblTotal4";
@@ -396,6 +403,7 @@ namespace KASIR.Komponen
             // 
             lblQTY4.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblQTY4.AutoSize = true;
+            lblQTY4.BackColor = Color.Transparent;
             lblQTY4.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblQTY4.Location = new Point(285, 268);
             lblQTY4.Name = "lblQTY4";
@@ -407,6 +415,7 @@ namespace KASIR.Komponen
             // 
             lblTotal3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblTotal3.AutoSize = true;
+            lblTotal3.BackColor = Color.Transparent;
             lblTotal3.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblTotal3.Location = new Point(151, 268);
             lblTotal3.Name = "lblTotal3";
@@ -418,6 +427,7 @@ namespace KASIR.Komponen
             // 
             lblQTY3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblQTY3.AutoSize = true;
+            lblQTY3.BackColor = Color.Transparent;
             lblQTY3.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblQTY3.Location = new Point(3, 268);
             lblQTY3.Name = "lblQTY3";
@@ -429,6 +439,7 @@ namespace KASIR.Komponen
             // 
             lblTotal2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblTotal2.AutoSize = true;
+            lblTotal2.BackColor = Color.Transparent;
             lblTotal2.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblTotal2.Location = new Point(433, 122);
             lblTotal2.Name = "lblTotal2";
@@ -440,6 +451,7 @@ namespace KASIR.Komponen
             // 
             lblQTY2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblQTY2.AutoSize = true;
+            lblQTY2.BackColor = Color.Transparent;
             lblQTY2.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblQTY2.Location = new Point(285, 122);
             lblQTY2.Name = "lblQTY2";
@@ -451,6 +463,7 @@ namespace KASIR.Komponen
             // 
             lblTotal1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblTotal1.AutoSize = true;
+            lblTotal1.BackColor = Color.Transparent;
             lblTotal1.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblTotal1.Location = new Point(151, 122);
             lblTotal1.Name = "lblTotal1";
@@ -462,6 +475,7 @@ namespace KASIR.Komponen
             // 
             lblQTY1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblQTY1.AutoSize = true;
+            lblQTY1.BackColor = Color.Transparent;
             lblQTY1.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblQTY1.Location = new Point(3, 122);
             lblQTY1.Name = "lblQTY1";
@@ -473,6 +487,7 @@ namespace KASIR.Komponen
             // 
             label3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             label3.AutoSize = true;
+            label3.BackColor = Color.Transparent;
             label3.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label3.Location = new Point(396, 147);
             label3.Name = "label3";
@@ -495,6 +510,7 @@ namespace KASIR.Komponen
             dataGridView4.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView4.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridView4.BackgroundColor = Color.White;
+            dataGridView4.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView4.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle12.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle12.BackColor = Color.FromArgb(31, 30, 68);
@@ -551,6 +567,7 @@ namespace KASIR.Komponen
             // 
             label2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             label2.AutoSize = true;
+            label2.BackColor = Color.Transparent;
             label2.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label2.Location = new Point(105, 147);
             label2.Name = "label2";
@@ -573,6 +590,7 @@ namespace KASIR.Komponen
             dataGridView3.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView3.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridView3.BackgroundColor = Color.White;
+            dataGridView3.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView3.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle17.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle17.BackColor = Color.FromArgb(31, 30, 68);
@@ -629,6 +647,7 @@ namespace KASIR.Komponen
             // 
             label1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             label1.AutoSize = true;
+            label1.BackColor = Color.Transparent;
             label1.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label1.Location = new Point(390, 1);
             label1.Name = "label1";
@@ -651,6 +670,7 @@ namespace KASIR.Komponen
             dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridView1.BackgroundColor = Color.White;
+            dataGridView1.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView1.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle22.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle22.BackColor = Color.FromArgb(31, 30, 68);
@@ -707,6 +727,7 @@ namespace KASIR.Komponen
             // 
             lblOrderDetails.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblOrderDetails.AutoSize = true;
+            lblOrderDetails.BackColor = Color.Transparent;
             lblOrderDetails.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblOrderDetails.Location = new Point(110, 1);
             lblOrderDetails.Name = "lblOrderDetails";
@@ -729,6 +750,7 @@ namespace KASIR.Komponen
             dataGridView2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView2.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridView2.BackgroundColor = Color.White;
+            dataGridView2.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView2.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle27.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle27.BackColor = Color.FromArgb(31, 30, 68);
@@ -912,6 +934,7 @@ namespace KASIR.Komponen
             ClientSize = new Size(600, 630);
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
+            MaximumSize = new Size(600, 630);
             Name = "printReportShift";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "refund";

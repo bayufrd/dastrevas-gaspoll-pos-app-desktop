@@ -68,7 +68,7 @@ namespace KASIR
             this.MaximizedBounds = Screen.FromHandle(this.Handle).WorkingArea;
             leftBorderBtn = new Panel();
             leftBorderBtn.Size = new Size(7, 60);
-            headerOutletName();
+            headerOutletName("");
             panel2.Controls.Add(leftBorderBtn);
             masterPos m = new masterPos();
             m.TopLevel = false;
@@ -105,10 +105,13 @@ namespace KASIR
         {
             try
             {
-                headerOutletName();
-
-                lblNamaOutlet.Text += $"Checking cache data...";
-
+                await headerOutletName("Checking cache data...");
+                // Pastikan folder 'setting' ada
+                string settingsFolder = "setting";
+                if (!Directory.Exists(settingsFolder))
+                {
+                    Directory.CreateDirectory(settingsFolder);
+                }
                 if (!File.Exists("setting\\printerSettings.data"))
                 {
                     //settingPrinter
@@ -263,42 +266,51 @@ namespace KASIR
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
-        private void headerOutletName()
+        private async Task headerOutletName(string text)
         {
-            lblNamaOutlet.Text = "Please Wait..";
+            if (lblNamaOutlet.InvokeRequired)
+            {
+                // Jika kita berada di thread yang berbeda, panggil metode ini di UI thread
+                lblNamaOutlet.Invoke(new Action(() => headerOutletName(text)));
+            }
+            else
+            {
+                // Jika kita berada di UI thread, lakukan pembaruan langsung
+                lblNamaOutlet.Text = "Please Wait.. " + text;
+            }
         }
         private async Task cekLastUpdaterApp()
         {
             try
             {
-                headerOutletName();
-
-                lblNamaOutlet.Text += "Check Last Update..";
+                await headerOutletName("Check Last Update..");
                 findingdownloadpath();
                 string startupPath = AppDomain.CurrentDomain.BaseDirectory;
                 string linkFolderName = "KASIRinstaller";
                 PathKasir = startupPath;
-                if (File.Exists($"update\\versionUpdater.txt"))
-                {
-                    string filePath = $"update\\versionUpdater.txt";
-                    VersionUpdaterApp = File.ReadAllText(filePath);
-                    headerOutletName();
-                    lblNamaOutlet.Text += $"Version Updater {VersionUpdaterApp.ToString()}";
+                string directoryPath = "update";
+                string filePath = Path.Combine(directoryPath, "versionUpdater.txt");
 
+                if (Directory.Exists(directoryPath) && File.Exists(filePath))
+                {
+                    VersionUpdaterApp = File.ReadAllText(filePath);
+                    await headerOutletName($"Version Updater {VersionUpdaterApp.ToString()}");
                 }
                 else
                 {
-                    string filePath = $"update\\versionUpdater.txt";
-                    string contentToWrite = "1.0.0.1";
+                    // Jika folder tidak ada, buat foldernya
+                    if (!Directory.Exists(directoryPath))
+                    {
+                        Directory.CreateDirectory(directoryPath);
+                    }
 
+                    // Tulis konten default ke file
+                    string contentToWrite = "1.0.0.1";
                     File.WriteAllText(filePath, contentToWrite);
                     VersionUpdaterApp = File.ReadAllText(filePath);
-                    headerOutletName();
-
-                    lblNamaOutlet.Text += $"Version Updater {VersionUpdaterApp.ToString()}";
+                    await headerOutletName($"Version Updater {VersionUpdaterApp.ToString()}");
                 }
-                DownloadUpdaterApp();
+                await DownloadUpdaterApp();
             }
             catch (Exception ex)
             {
@@ -336,31 +348,24 @@ namespace KASIR
                 LoggerUtil.LogError(ex, "Terjadi kesalahan:", ex.Message);
             }
         }
-        private async void DownloadUpdaterApp()
+        private async Task DownloadUpdaterApp()
         {
             try
             {
-                headerOutletName();
-
-                lblNamaOutlet.Text += $"Checking New Updater...";
+                await headerOutletName("Checking New Updater...");
                 string changeVersion;
                 var urlVersion = "https://raw.githubusercontent.com/bayufrd/update/main/updaterVersionApp.txt";
                 var newVersion = (new WebClient().DownloadString(urlVersion));
                 string fileUrl2 = "https://raw.githubusercontent.com/bayufrd/update/main/Dastrevas.rar";
                 changeVersion = newVersion.ToString();
-                headerOutletName();
-
-
-                lblNamaOutlet.Text += $"New Version Updater is {changeVersion}";
+                await headerOutletName($"New Version Updater is {changeVersion}");
 
                 newVersion = newVersion.Replace(".", "");
                 VersionUpdaterApp = VersionUpdaterApp.Replace(".", "");
 
                 if (Convert.ToInt32(newVersion) > Convert.ToInt32(VersionUpdaterApp))
                 {
-                    headerOutletName();
-
-                    lblNamaOutlet.Text += $"Downloading New Updater...";
+                    await headerOutletName("Downloading New Updater...");
 
                     string destinationPath2 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), $"{DownloadPath}\\Dastrevas.rar");
                     using (WebClient wb = new WebClient())
@@ -376,9 +381,7 @@ namespace KASIR
 
                     try
                     {
-                        headerOutletName();
-
-                        lblNamaOutlet.Text += $"Extracting New Updater...";
+                        await headerOutletName("Extracting New Updater...");
 
                         // Ensure the extraction directory exists
                         if (!Directory.Exists(extractDirectory))
@@ -408,9 +411,7 @@ namespace KASIR
 
                         // Konten baru yang akan ditulis ke file
                         string contentToWrite = changeVersion.ToString();
-                        headerOutletName();
-
-                        lblNamaOutlet.Text += $"Installing New Updater...";
+                        await headerOutletName("Installing New Updater...");
 
                         // Menulis konten baru ke file
                         File.WriteAllText(filePath, contentToWrite);
@@ -633,16 +634,12 @@ namespace KASIR
         {
             try
             {
-                headerOutletName();
-
-                lblNamaOutlet.Text += $"Checking Kasir Version...";
+                await headerOutletName("Checking Kasir Version...");
 
                 var urlVersion = Properties.Settings.Default.BaseAddressVersion.ToString();
                 var newVersion = (new WebClient().DownloadString(urlVersion));
                 string currentVersion = Properties.Settings.Default.Version.ToString();
-                headerOutletName();
-
-                lblNamaOutlet.Text += $"Current Version is {currentVersion}, New is {newVersion}";
+                await headerOutletName($"Current Version is {currentVersion}, New is {newVersion}");
 
                 newVersion = newVersion.Replace(".", "");
                 currentVersion = currentVersion.Replace(".", "");
@@ -656,9 +653,7 @@ namespace KASIR
 
                     Util n = new Util();
                     n.sendLogTelegramNetworkError("Open Updater");
-                    headerOutletName();
-
-                    lblNamaOutlet.Text += $"Opening Kasir Updater...";
+                    await headerOutletName("Opening Kasir Updater...");
 
                     OpenUpdaterExe();
                 }

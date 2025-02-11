@@ -124,7 +124,7 @@ namespace KASIR.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("4")]
+        [global::System.Configuration.DefaultSettingValueAttribute("6")]
         public string BaseOutlet {
             get {
                 return ((string)(this["BaseOutlet"]));

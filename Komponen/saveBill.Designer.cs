@@ -228,6 +228,7 @@ namespace KASIR.komponen
             Controls.Add(panel1);
             Controls.Add(btnTunai);
             FormBorderStyle = FormBorderStyle.None;
+            MaximumSize = new Size(600, 600);
             Name = "saveBill";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "create1";

@@ -709,6 +709,14 @@ namespace KASIR
                     DataShift datas = cekShift.data;
                     lblNamaOutlet.Text = datas.outlet_name.ToString();
                     baseOutletName = lblNamaOutlet.Text.ToString();
+                    var kasirConfigPath = "KASIR.dll.config";
+                    var doc = new XmlDocument();
+                    doc.Load(kasirConfigPath);
+
+                    var OutletName = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseOutletName']/value");
+                    OutletName.InnerText = lblNamaOutlet.Text.ToString();
+
+                    doc.Save(kasirConfigPath);
                 }
                 else
                 {
@@ -1084,7 +1092,7 @@ namespace KASIR
                 UpdatePingLabel(Color.Red, "Tidak ada akses \nInternet");
                 return;
             }
-            string server = "www.google.com"; // Ubah ke server Anda jika diperlukan, misalnya "yourserver.com"
+            string server = "62.72.59.78"; // Ubah ke server Anda jika diperlukan, misalnya "yourserver.com"
 
             using (Ping ping = new Ping())
             {

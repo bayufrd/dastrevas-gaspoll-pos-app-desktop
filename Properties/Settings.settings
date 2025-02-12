@@ -36,7 +36,7 @@
       <Value Profile="(Default)">Password Wifi: JAPANESE Jempolan &lt;3</Value>
     </Setting>
     <Setting Name="BaseOutlet" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">6</Value>
+      <Value Profile="(Default)">4</Value>
     </Setting>
     <Setting Name="MacAddressKasir" Type="System.String" Scope="Application">
       <Value Profile="(Default)">66:22:A6:D5:81:71</Value>

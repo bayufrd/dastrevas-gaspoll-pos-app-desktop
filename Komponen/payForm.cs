@@ -503,14 +503,18 @@ namespace KASIR.komponen
                         throw new InvalidOperationException("printerModel is null");
                     }
                 }
-                btnSimpan.Text = "Selesai.";
-                btnSimpan.Enabled = true;
                 DialogResult = DialogResult.OK;
                 Close();
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                // Optionally, you can show a message to the user about the error
+                if (btnSimpan != null)
+                {
+                    btnSimpan.Text = "Print Ulang,";
+                    btnSimpan.Enabled = true;
+                }
             }
         }
 

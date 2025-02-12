@@ -23,6 +23,8 @@ using Serilog.Sinks.File;
 using System.Xml.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms.Design;
+using KASIR.Printer;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 
 
 namespace KASIR.komponen
@@ -392,7 +394,7 @@ namespace KASIR.komponen
                 IApiService apiService = new ApiService();
                 HttpResponseMessage response = await apiService.CreateCart(jsonString, "/cart");
 
-                if (response != null)
+                /*if (response != null)
                 {
                     if (response.IsSuccessStatusCode)
                     {
@@ -410,7 +412,9 @@ namespace KASIR.komponen
                 {
                     MessageBox.Show("Gagal tambah data silahkan coba ulang" + response.ToString(), "Gaspol");
                     DialogResult = DialogResult.Cancel;
-                }
+                }*/
+                masterPos m = new masterPos();
+                m.ReloadCart();
             }
             catch (TaskCanceledException ex)
             {
@@ -461,8 +465,12 @@ namespace KASIR.komponen
                         return;
                     }
                 }
+                // Call SendDataAsync without awaiting it
+                _ = SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
+                /*await SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);*/
 
-                await SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
+                DialogResult = DialogResult.OK;
+                Close();
             }
             catch (Exception ex)
             {

@@ -48,6 +48,8 @@ namespace KASIR.Komponen
             panel7 = new Panel();
             txtFooter = new TextBox();
             gradientPanel1 = new Model.GradientPanel();
+            sButtonOffline = new Model.SButton();
+            iconOfflineMode = new IconButton();
             iconButton1 = new IconButton();
             panel14 = new Panel();
             txtRunningText = new TextBox();
@@ -378,6 +380,8 @@ namespace KASIR.Komponen
             // 
             gradientPanel1.Angle = 90F;
             gradientPanel1.BottomColor = Color.White;
+            gradientPanel1.Controls.Add(sButtonOffline);
+            gradientPanel1.Controls.Add(iconOfflineMode);
             gradientPanel1.Controls.Add(iconButton1);
             gradientPanel1.Controls.Add(panel14);
             gradientPanel1.Controls.Add(label12);
@@ -411,6 +415,45 @@ namespace KASIR.Komponen
             gradientPanel1.Size = new Size(482, 639);
             gradientPanel1.TabIndex = 53;
             gradientPanel1.TopColor = Color.Gainsboro;
+            // 
+            // sButtonOffline
+            // 
+            sButtonOffline.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            sButtonOffline.AutoSize = true;
+            sButtonOffline.BackColor = Color.White;
+            sButtonOffline.FlatStyle = FlatStyle.Flat;
+            sButtonOffline.Location = new Point(28, 612);
+            sButtonOffline.MinimumSize = new Size(45, 22);
+            sButtonOffline.Name = "sButtonOffline";
+            sButtonOffline.OffBackColor = Color.Gray;
+            sButtonOffline.OffToggleColor = Color.Gainsboro;
+            sButtonOffline.OnBackColor = Color.FromArgb(31, 30, 68);
+            sButtonOffline.OnToggleColor = Color.WhiteSmoke;
+            sButtonOffline.Size = new Size(45, 22);
+            sButtonOffline.TabIndex = 65;
+            sButtonOffline.UseVisualStyleBackColor = false;
+            sButtonOffline.CheckedChanged += sButtonOffline_CheckedChanged;
+            // 
+            // iconOfflineMode
+            // 
+            iconOfflineMode.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            iconOfflineMode.AutoSize = true;
+            iconOfflineMode.BackColor = Color.Transparent;
+            iconOfflineMode.BackgroundImageLayout = ImageLayout.None;
+            iconOfflineMode.FlatAppearance.BorderSize = 0;
+            iconOfflineMode.FlatStyle = FlatStyle.Flat;
+            iconOfflineMode.ForeColor = Color.FromArgb(31, 30, 68);
+            iconOfflineMode.IconChar = IconChar.WifiStrong;
+            iconOfflineMode.IconColor = Color.FromArgb(31, 30, 68);
+            iconOfflineMode.IconFont = IconFont.Auto;
+            iconOfflineMode.IconSize = 30;
+            iconOfflineMode.Location = new Point(12, 563);
+            iconOfflineMode.Name = "iconOfflineMode";
+            iconOfflineMode.Size = new Size(68, 55);
+            iconOfflineMode.TabIndex = 64;
+            iconOfflineMode.Text = "OFF";
+            iconOfflineMode.TextImageRelation = TextImageRelation.TextBeforeImage;
+            iconOfflineMode.UseVisualStyleBackColor = false;
             // 
             // iconButton1
             // 
@@ -1118,7 +1161,7 @@ namespace KASIR.Komponen
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(482, 635);
+            ClientSize = new Size(466, 637);
             ControlBox = false;
             Controls.Add(btnUpdate);
             Controls.Add(Button2);
@@ -1126,7 +1169,6 @@ namespace KASIR.Komponen
             Controls.Add(gradientPanel1);
             Controls.Add(panel1);
             Controls.Add(panel6);
-            MaximumSize = new Size(498, 674);
             Name = "SettingsForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "DT-Setting";
@@ -1242,5 +1284,7 @@ namespace KASIR.Komponen
         private TextBox txtRunningText;
         private Label label12;
         private IconButton iconButton1;
+        private IconButton iconOfflineMode;
+        private Model.SButton sButtonOffline;
     }
 }

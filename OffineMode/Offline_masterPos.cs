@@ -1,8 +1,8 @@
-﻿using KASIR.Komponen;
-using KASIR.Model;
+﻿using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
 using Serilog;
+using KASIR.OfflineMode;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -38,13 +38,13 @@ using SharpCompress.Common;
 using KASIR.DualScreen;
 
 
-namespace KASIR.komponen
+namespace KASIR.OfflineMode
 {
-    public partial class masterPos : Form
+    public partial class Offline_masterPos : Form
     {
         private readonly ILogger _log = LoggerService.Instance._log;
 
-        private payForm _payForm;
+        private Offline_payForm Offline_payForm;
         int jenisColumnIndex = -1;
         private ApiService apiService;
         private DataTable originalDataTable, listDataTable;
@@ -86,7 +86,7 @@ namespace KASIR.komponen
         private bool isLoading = false;
         private bool allDataLoaded = false;
 
-        public masterPos()
+        public Offline_masterPos()
         {
             baseOutlet = Properties.Settings.Default.BaseOutlet;
             baseUrl = Properties.Settings.Default.BaseAddress;
@@ -378,12 +378,12 @@ namespace KASIR.komponen
                 ShowInTaskbar = false,
             };
 
-            using (addCartForm addCartForm = new addCartForm(menu.id.ToString(), menu.name.ToString()))
+            using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(menu.id.ToString(), menu.name.ToString()))
             {
-                addCartForm.Owner = background;
+                Offline_addCartForm.Owner = background;
                 background.Show();
 
-                DialogResult result = addCartForm.ShowDialog();
+                DialogResult result = Offline_addCartForm.ShowDialog();
 
                 if (result == DialogResult.OK)
                 {
@@ -727,68 +727,12 @@ namespace KASIR.komponen
                     return;
                 }
             }
-            /*
-            try
-            {
-                //string json = File.ReadAllText("DT-Cache\\MenuListPanel_Outlet_" + baseOutlet + ".data");
-                //List<Panel> originalPanelControls = JsonConvert.DeserializeObject<List<Panel>>(json);
 
-                // Create a copy of the original data source
-                var clonedPanelControls = new List<Panel>(originalPanelControls);
-                // If the search query is empty, show the original data source
-                if (string.IsNullOrEmpty(searchQuery))
-                {
-                    // Clear the original data source
-                    dataGridView3.Controls.Clear();
-                    items = 0;
-                    // Add the original items to the original data source
-                    foreach (var panelControl in originalPanelControls)
-                    {
-                        dataGridView3.Controls.Add(panelControl);
-                        items++;
-                    }
-
-
-                }
-                // Filter the Panel controls based on the search query
-                var filteredPanelControls = clonedPanelControls.Where(panel =>
-                {
-                    if (panel.Controls.OfType<Label>().Any())
-                    {
-                        items = 0;
-
-                        var labelControl = panel.Controls.OfType<Label>().First();
-                        string itemName = labelControl.Text.ToLower();
-                        return string.IsNullOrEmpty(searchQuery) || itemName.Contains(searchQuery);
-                    }
-                    return false;
-                }).ToList();
-
-                // Clear the original data source
-                dataGridView3.Controls.Clear();
-
-                // Add the filtered items to the original data source
-                foreach (var panelControl in filteredPanelControls)
-                {
-                    dataGridView3.Controls.Add(panelControl);
-
-                    items++;
-
-                }
-
-                lblCountingItems.Text = $"{items} items";
-            }
-            */
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
-
-
-
-
 
         private async Task EmptyCart()
         {
@@ -798,8 +742,6 @@ namespace KASIR.komponen
 
                 if (responseMessage.IsSuccessStatusCode)
                 {
-                    //cartID = "";
-                    //terjadi bug GhostMenu jika dihidupkan
                     ReloadCart();
                 }
                 else
@@ -844,11 +786,11 @@ namespace KASIR.komponen
                 CheckIsOrderedModel data = JsonConvert.DeserializeObject<CheckIsOrderedModel>(await apiService.CheckIsOrdered("/check-ordered-cart?outlet_id=", baseOutlet));
                 if (data.data?.is_ordered != 1)
                 {
-                    await EmptyCart(); //API Empty
+                    await EmptyCart();
                     return;
                 }
 
-                ////API DeleteCart
+                ////LoggerUtil.LogPrivateMethod(nameof(button5_ClickAsync));
 
                 using (var background = new Form
                 {
@@ -861,12 +803,12 @@ namespace KASIR.komponen
                     Location = this.Location,
                     ShowInTaskbar = false,
                 })
-                using (var deleteForm = new deleteForm(cartID.ToString()))
+                using (var Offline_deleteForm = new Offline_deleteForm(cartID.ToString()))
                 {
-                    deleteForm.Owner = background;
+                    Offline_deleteForm.Owner = background;
                     background.Show();
 
-                    DialogResult result = deleteForm.ShowDialog();
+                    DialogResult result = Offline_deleteForm.ShowDialog();
 
                     if (result == DialogResult.OK)
                     {
@@ -1007,13 +949,13 @@ namespace KASIR.komponen
                 ShowInTaskbar = false,
             };
 
-            using (addCartForm addCartForm = new addCartForm(id.ToString(), nama.ToString()))
+            using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(id.ToString(), nama.ToString()))
             {
-                addCartForm.Owner = background;
+                Offline_addCartForm.Owner = background;
 
                 background.Show();
 
-                DialogResult result = addCartForm.ShowDialog();
+                DialogResult result = Offline_addCartForm.ShowDialog();
 
                 if (result == DialogResult.OK)
                 {
@@ -1145,13 +1087,13 @@ namespace KASIR.komponen
                             };
 
                             // Create the addCartForm on the UI thread
-                            using (addCartForm addCartForm = new addCartForm(menu.id.ToString(), menu.name.ToString()))
+                            using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(menu.id.ToString(), menu.name.ToString()))
                             {
-                                addCartForm.Owner = background;
+                                Offline_addCartForm.Owner = background;
 
                                 background.Show();
 
-                                DialogResult result = addCartForm.ShowDialog();
+                                DialogResult result = Offline_addCartForm.ShowDialog();
 
                                 if (result == DialogResult.OK)
                                 {
@@ -1358,13 +1300,13 @@ namespace KASIR.komponen
                         };
 
                         // Create the addCartForm on the UI thread
-                        using (addCartForm addCartForm = new addCartForm(menu.id.ToString(), menu.name.ToString()))
+                        using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(menu.id.ToString(), menu.name.ToString()))
                         {
-                            addCartForm.Owner = background;
+                            Offline_addCartForm.Owner = background;
 
                             background.Show();
 
-                            DialogResult result = addCartForm.ShowDialog();
+                            DialogResult result = Offline_addCartForm.ShowDialog();
 
                             if (result == DialogResult.OK)
                             {
@@ -1494,7 +1436,7 @@ namespace KASIR.komponen
 
                     try //just add try for error except
                     {
-                      
+
                         using (Graphics graphics = Graphics.FromHwnd(pictureBox.Handle))
                         {
                             Rectangle rect = new Rectangle(0, 0, pictureBox.Width, pictureBox.Height);
@@ -2091,7 +2033,12 @@ namespace KASIR.komponen
                         {
                             if (menu.is_ordered == "1")
                             {
-                       
+                                /*dataTable.Rows.Add(
+                                    menu.menu_id,
+                                    menu.cart_detail_id,
+                                    menu.serving_type_name,
+                                    menu.qty + "X " + "(Ordered) " + menu.menu_name + " " + menu.varian,
+                                    string.Format("Rp. {0:n0},-", menu.total_price), null);*/
                                 dataTable.Rows.Add(
                                 menu.menu_id ?? 0,  // Ensure menu_id is always non-null
                                 menu.cart_detail_id,
@@ -2105,11 +2052,11 @@ namespace KASIR.komponen
                             else
                             {
                                 dataTable.Rows.Add(
-                                    menu.menu_id, 
-                                    menu.cart_detail_id, 
-                                    menu.serving_type_name, 
-                                    menu.qty + "X " + menu.menu_name + " " + menu.varian, 
-                                    string.Format("Rp. {0:n0},-", menu.total_price), 
+                                    menu.menu_id,
+                                    menu.cart_detail_id,
+                                    menu.serving_type_name,
+                                    menu.qty + "X " + menu.menu_name + " " + menu.varian,
+                                    string.Format("Rp. {0:n0},-", menu.total_price),
                                     null);
                             }
                             if (menu.discounted_price != 0)
@@ -2117,21 +2064,21 @@ namespace KASIR.komponen
                                 if (!string.IsNullOrEmpty(menu.note_item))
                                 {
                                     dataTable.Rows.Add(
-                                        null, 
-                                        null, 
-                                        null, 
-                                        "  *catatan : " + (menu.note_item ?? ""), 
-                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code), 
+                                        null,
+                                        null,
+                                        null,
+                                        "  *catatan : " + (menu.note_item ?? ""),
+                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code),
                                         null);
                                 }
                                 else
                                 {
                                     dataTable.Rows.Add(
-                                        null, 
-                                        null, 
-                                        null, 
-                                        null, 
-                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code), 
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code),
                                         null);
                                 }
                             }
@@ -2140,11 +2087,11 @@ namespace KASIR.komponen
                                 if (!string.IsNullOrEmpty(menu.note_item))
                                 {
                                     dataTable.Rows.Add(
-                                        null, 
-                                        null, 
-                                        null, 
-                                        "  *catatan : " + (menu.note_item ?? ""), 
-                                        null, 
+                                        null,
+                                        null,
+                                        null,
+                                        "  *catatan : " + (menu.note_item ?? ""),
+                                        null,
                                         null);
                                 }
                             }
@@ -2275,7 +2222,7 @@ namespace KASIR.komponen
         {
 
         }
-        
+
         //reload dual monitor pembayaran
         public void SignalReloadPayform()
         {
@@ -2316,19 +2263,19 @@ namespace KASIR.komponen
                 ShowInTaskbar = false,
             };
 
-            using (payForm payForm = new payForm(baseOutlet, cartID, totalCart, lblTotal1.Text.ToString(), customer_seat, customer_name, this))
+            using (Offline_payForm Offline_payForm = new Offline_payForm(baseOutlet, cartID, totalCart, lblTotal1.Text.ToString(), customer_seat, customer_name, this))
             {
                 SignalReloadPayform();
 
                 //pengirim.SendSignal("Payment");
-                payForm.Owner = background;
+                Offline_payForm.Owner = background;
 
                 background.Show();
 
                 //DialogResult dialogResult = dataBill.ShowDialog();
 
                 //background.Dispose();
-                DialogResult result = payForm.ShowDialog();
+                DialogResult result = Offline_payForm.ShowDialog();
 
                 // Handle the result if needed
                 if (result == DialogResult.OK)
@@ -2411,13 +2358,13 @@ namespace KASIR.komponen
                     };
                     this.Invoke((MethodInvoker)delegate
                     {
-                        using (updateCartForm updateCartForm = new updateCartForm(id.ToString(), cartdetailid.ToString()))
+                        using (Offline_updateCartForm Offline_updateCartForm = new Offline_updateCartForm(id.ToString(), cartdetailid.ToString()))
                         {
-                            updateCartForm.Owner = background;
+                            Offline_updateCartForm.Owner = background;
 
                             background.Show();
 
-                            DialogResult result = updateCartForm.ShowDialog();
+                            DialogResult result = Offline_updateCartForm.ShowDialog();
 
                             // Handle the result if needed
                             if (result == DialogResult.OK)
@@ -2447,9 +2394,9 @@ namespace KASIR.komponen
 
 
 
-        private void button2_Click(object sender, EventArgs e)
+        private void SimpanBill_Click(object sender, EventArgs e)
         {
-            int rowCount = dataGridView1.RowCount;
+            /*int rowCount = dataGridView1.RowCount;
             if (rowCount == 0)
             {
                 MessageBox.Show("Keranjang masih kosong!", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -2475,9 +2422,6 @@ namespace KASIR.komponen
             }
             else
             {
-
-
-
                 using (saveBill saveBill = new saveBill(cartID, customer_name, customer_seat))
                 {
                     saveBill.Owner = background;
@@ -2505,7 +2449,7 @@ namespace KASIR.komponen
                         LoadCart();
                     }
                 }
-            }
+            }*/
         }
         private async void btnGet_Click(object sender, EventArgs e)
         {
@@ -2625,8 +2569,7 @@ namespace KASIR.komponen
 
 
         private void listBill_Click(object sender, EventArgs e)
-        {
-            ////LoggerUtil.LogPrivateMethod(nameof(listBill_Click));
+        {/*
 
             Form background = new Form
             {
@@ -2668,7 +2611,7 @@ namespace KASIR.komponen
                 }
             }
 
-
+*/
         }
 
         private void FilterMenuItems(string selectedMenuType)
@@ -2713,7 +2656,7 @@ namespace KASIR.komponen
                 //if (cmbFilter.SelectedItem != null)
                 //{
                 string selectedFilter = cmbFilter.SelectedItem.ToString();
-               
+
                 //LoadFlowLayoutPanelBasedOnLabelType(cmbFilter.SelectedItem.ToString());
                 items = 0;
                 string config = File.ReadAllText(configFilePath);
@@ -2826,17 +2769,17 @@ namespace KASIR.komponen
                 ShowInTaskbar = false,
             };
 
-            using (dataDiskon dataDiskon = new dataDiskon())
+            using (Offline_dataDiskon Offline_dataDiskon = new Offline_dataDiskon())
             {
-                dataDiskon.Owner = background;
+                Offline_dataDiskon.Owner = background;
 
                 background.Show();
 
-                DialogResult dialogResult = dataDiskon.ShowDialog();
+                DialogResult dialogResult = Offline_dataDiskon.ShowDialog();
 
                 background.Dispose();
 
-                if (dialogResult == DialogResult.OK && dataDiskon.ReloadDataInBaseForm)
+                if (dialogResult == DialogResult.OK && Offline_dataDiskon.ReloadDataInBaseForm)
                 {
                     ReloadData();
                 }
@@ -2848,104 +2791,53 @@ namespace KASIR.komponen
 
         }
 
-        private void button7_Click(object sender, EventArgs e)
+        private void ButtonSplit_Click(object sender, EventArgs e)
         {
+            /*
+                        if (string.IsNullOrEmpty(cartID))
+                        {
+                            MessageBox.Show("Keranjang masih kosong ");
+                            return;
+                        }
+                        Form background = new Form
+                        {
+                            StartPosition = FormStartPosition.Manual,
+                            FormBorderStyle = FormBorderStyle.None,
+                            Opacity = 0.7d,
+                            BackColor = Color.Black,
+                            WindowState = FormWindowState.Maximized,
+                            TopMost = true,
+                            Location = this.Location,
+                            ShowInTaskbar = false,
+                        };
+                        ////LoggerUtil.LogPrivateMethod(nameof(button7_Click));
+                        using (splitBill splitBill = new splitBill(cartID))
+                        {
+                            splitBill.Owner = background;
 
-            if (string.IsNullOrEmpty(cartID))
-            {
-                MessageBox.Show("Keranjang masih kosong ");
-                return;
-            }
-            Form background = new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
-            };
-            ////LoggerUtil.LogPrivateMethod(nameof(button7_Click));
-            using (splitBill splitBill = new splitBill(cartID))
-            {
-                splitBill.Owner = background;
+                            background.Show();
 
-                background.Show();
+                            //DialogResult dialogResult = dataBill.ShowDialog();
 
-                //DialogResult dialogResult = dataBill.ShowDialog();
+                            //background.Dispose();
+                            DialogResult result = splitBill.ShowDialog();
 
-                //background.Dispose();
-                DialogResult result = splitBill.ShowDialog();
-
-                // Handle the result if needed
-                if (result == DialogResult.OK)
-                {
-                    background.Dispose();
-                    ReloadCart();
-                    LoadCart();
-                    // Settings were successfully updated, perform any necessary actions
-                }
-                else
-                {
-                    MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
-                    background.Dispose();
-                    ReloadCart();
-                    LoadCart();
-                }
-            }
-        }
-
-        private void iconButton4_Click(object sender, EventArgs e)
-        {
-
-            if (string.IsNullOrEmpty(cartID))
-            {
-                MessageBox.Show("Keranjang masih kosong ");
-                return;
-            }
-            Form background = new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
-            };
-            ////LoggerUtil.LogPrivateMethod(nameof(iconButton4_Click));
-
-            using (splitBill splitBill = new splitBill(cartID))
-            {
-
-                splitBill.Owner = background;
-
-                background.Show();
-
-                //DialogResult dialogResult = dataBill.ShowDialog();
-
-                //background.Dispose();
-                DialogResult result = splitBill.ShowDialog();
-
-                // Handle the result if needed
-                if (result == DialogResult.OK)
-                {
-                    background.Dispose();
-                    ReloadCart();
-                    LoadCart();
-                    // Settings were successfully updated, perform any necessary actions
-                }
-                else
-                {
-                    MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
-                    background.Dispose();
-                    ReloadCart();
-                    LoadCart();
-                }
-            }
+                            // Handle the result if needed
+                            if (result == DialogResult.OK)
+                            {
+                                background.Dispose();
+                                ReloadCart();
+                                LoadCart();
+                                // Settings were successfully updated, perform any necessary actions
+                            }
+                            else
+                            {
+                                MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
+                                background.Dispose();
+                                ReloadCart();
+                                LoadCart();
+                            }
+                        }*/
         }
 
         private void iconButton4_Click_1(object sender, EventArgs e)
@@ -2964,48 +2856,6 @@ namespace KASIR.komponen
             PerformSearchList();
         }
 
-        /*
-        private void sButton1_CheckedChanged(object sender, EventArgs e)
-        {
-            if (sButton1.Checked == true)
-            {
-                MessageBox.Show("Demo ListView! Contact PM Project");
-
-                // ListView Active
-                dataGridView3.Enabled = false;
-                dataGridView3.Visible = false;
-                dataGridView2.Enabled = true;
-                dataGridView2.Visible = true;
-                // Pencarian Active
-                txtCariMenu.Visible = false;
-                txtCariMenu.Enabled = false;
-                txtCariMenuList.Visible = true;
-                txtCariMenuList.Enabled = true;
-
-                System.Timers.Timer t = new System.Timers.Timer();
-                t.Interval = 1000 * 60 * 60;
-                t.Elapsed += OnTimedEvent;
-                t.AutoReset = false;
-                t.Start();
-                LoadDataListby();
-            }
-            else
-            {
-                // GridView Active
-                dataGridView3.Enabled = true;
-                dataGridView3.Visible = true;
-                dataGridView2.Enabled = false;
-                dataGridView2.Visible = false;
-                // Pencarian Active
-                txtCariMenu.Visible = true;
-                txtCariMenu.Enabled = true;
-                txtCariMenuList.Visible = false;
-                txtCariMenuList.Enabled = false;
-                loadDataAsync();
-            }
-        }
-
-        */
         private async void OnTimedEvent(object source, ElapsedEventArgs e)
         {
             try
@@ -3036,8 +2886,5 @@ namespace KASIR.komponen
                 PerformSearch(); // Panggil metode yang diinginkan
             }
         }
-
-
-
     }
 }

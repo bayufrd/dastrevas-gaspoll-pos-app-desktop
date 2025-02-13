@@ -27,10 +27,10 @@ using KASIR.Printer;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 
 
-namespace KASIR.komponen
+namespace KASIR.OfflineMode
 {
     [Serializable]
-    public partial class addCartForm : Form
+    public partial class Offline_addCartForm : Form
     {
         private List<Button> radioButtonsList = new List<Button>();
         string idmenu;
@@ -44,7 +44,7 @@ namespace KASIR.komponen
         private readonly ILogger _log = LoggerService.Instance._log;
         string namelabel;
         string folder = "DT-Cache\\addCartForm";
-        public addCartForm(string id, string name)
+        public Offline_addCartForm(string id, string name)
         {
             baseOutlet = Properties.Settings.Default.BaseOutlet;
             InitializeComponent();
@@ -466,8 +466,8 @@ namespace KASIR.komponen
                     }
                 }
                 // Call SendDataAsync without awaiting it
-                //_ = SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
-                await SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
+                _ = SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
+                /*await SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);*/
 
                 DialogResult = DialogResult.OK;
                 Close();

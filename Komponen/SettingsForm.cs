@@ -656,7 +656,7 @@ namespace KASIR.Komponen
                 {
                     string data = "OFF";
                     await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
-                    DeathTimeBegin();
+                    /*DeathTimeBegin();*/
                 }
             }
             catch (Exception ex)
@@ -910,7 +910,7 @@ namespace KASIR.Komponen
         {
             DeathTimeBegin();
             SettingsDual u = new SettingsDual();
-            
+
             this.Close();
 
             u.Show();
@@ -940,5 +940,24 @@ namespace KASIR.Komponen
 
             u.Show();
         }
+
+        private async void sButtonOffline_CheckedChanged(object sender, EventArgs e)
+        {
+            string data, Config= "setting\\OfflineMode.data";
+            if (sButtonOffline.Checked == true)
+            {
+                data = "ON";
+                await File.WriteAllTextAsync(Config, data);
+                string TypeCacheEksekusi = "Sync";
+                CacheDataApp form3 = new CacheDataApp(TypeCacheEksekusi);
+                form3.Show();
+            }
+            else
+            {
+                data = "OFF";
+                await File.WriteAllTextAsync(Config, data);
+            }
+
+         }
     }
 }

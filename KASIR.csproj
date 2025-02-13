@@ -16,7 +16,31 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="OffineMode\Offline_updatePerItemForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="OffineMode\Offline_deletePerItemForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="OffineMode\Offline_dataDiskon.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="OffineMode\Offline_updateCartForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="OffineMode\Offline_deleteForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="OffineMode\Offline_payForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="OffineMode\Offline_addCartForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="Komponen\addCartForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="OffineMode\Offline_masterPos.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="Komponen\SettingsConfig.cs">

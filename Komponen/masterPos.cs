@@ -819,7 +819,7 @@ namespace KASIR.komponen
             }
         }
 
-        //button Bayar
+        //button deletecart
         private async void button5_ClickAsync(object sender, EventArgs e)
         {
             try

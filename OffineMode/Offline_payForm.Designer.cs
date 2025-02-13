@@ -445,6 +445,7 @@ namespace KASIR.OfflineMode
             // sButton1
             // 
             sButton1.AutoSize = true;
+            sButton1.Enabled = false;
             sButton1.Location = new Point(8, 3);
             sButton1.MinimumSize = new Size(45, 22);
             sButton1.Name = "sButton1";
@@ -554,7 +555,7 @@ namespace KASIR.OfflineMode
             label2.TabIndex = 1;
             label2.Text = "TIPE PEMBAYARAN";
             // 
-            // payForm
+            // Offline_payForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -562,7 +563,7 @@ namespace KASIR.OfflineMode
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
             MaximumSize = new Size(600, 530);
-            Name = "payForm";
+            Name = "Offline_payForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "create1";
             TopMost = true;

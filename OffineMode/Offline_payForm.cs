@@ -1,6 +1,4 @@
 ﻿
-
-using FontAwesome.Sharp;
 using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
@@ -8,41 +6,14 @@ using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
 using System.Text.RegularExpressions;
-using System.Linq.Expressions;
-using System.Windows.Forms.VisualStyles;
-using System.Windows.Controls;
-using System.Net.NetworkInformation;
-using System.Xaml;
-using InTheHand.Net.Bluetooth.AttributeIds;
 using KASIR.Komponen;
 using System.Globalization;
-using System.Windows.Forms.Design;
 using System.Net.Sockets;
-using System.Net.Sockets;
-using System.Text;
-using System.Net.Mail;
 using KASIR.Printer;
-using System.Windows.Markup;
-using KASIR.OfflineMode;
-
+using Newtonsoft.Json.Linq;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_payForm : Form
@@ -96,8 +67,8 @@ namespace KASIR.OfflineMode
             cartID = cart_id;
             totalCart = total_cart;
             txtJumlahPembayaran.Text = ttl2;
-            txtSeat.Text = seat;
-            txtNama.Text = name;
+            /*txtSeat.Text = seat;
+            txtNama.Text = name;*/
             generateRandomFill();
             string cleanedTtl1 = Regex.Replace(ttl1, "[^0-9]", "");
             loadFooterStruct();
@@ -106,7 +77,6 @@ namespace KASIR.OfflineMode
             customePrice = Int32.Parse(cleanedTtl1);
 
             txtJumlahPembayaran.Text = ttl1;
-            //int customePrice = Int32.Parse(ttl1.Replace("Rp.", "").Replace(",", "").Replace(",-", "").Replace(" ", ""));
 
             btnSetPrice1.Text = ttl1;
             if (customePrice < 10000)
@@ -150,10 +120,6 @@ namespace KASIR.OfflineMode
             cmbPayform.DrawItem += CmbPayform_DrawItem;
 
             cmbPayform.ItemHeight = 25;
-            //default
-            //cmbPayform.SelectedItem = 1;
-            /* int newHeight = Screen.PrimaryScreen.WorkingArea.Height - 100;
-             Height = newHeight;*/
             LoadDataPaymentType();
 
             //auto keisi payment minimum
@@ -169,27 +135,48 @@ namespace KASIR.OfflineMode
         {
                 Kakimu = await File.ReadAllTextAsync("setting\\FooterStruk.data");
         }
-        private async void loadCountingStruct()
+        private void loadCountingStruct()
         {
             try
             {
-                apiService = new ApiService();
-                string response = await apiService.Get("/transaction?outlet_id=" + baseOutlet + "&is_success=true");
+                // Path untuk file transaction.data
+                string transactionFilePath = "DT-Cache\\Transaction\\transaction.data";
 
-                GetMenuModel menuModel = JsonConvert.DeserializeObject<GetMenuModel>(response);
-                List<KASIR.Model.Menu> menuList = menuModel.data.ToList();
-                totalTransactions = menuList.Count + 1;
-            }
-            catch (TaskCanceledException ex)
-            {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                // Cek apakah file transaction.data ada
+                if (File.Exists(transactionFilePath))
+                {
+                    // Membaca isi file transaction.data
+                    string transactionJson = File.ReadAllText(transactionFilePath);
+
+                    // Deserialize data file transaction.data
+                    var transactionData = JsonConvert.DeserializeObject<JObject>(transactionJson);
+
+                    // Pastikan data ada di dalam file
+                    if (transactionData["data"] == null)
+                    {
+                        totalTransactions = 1;
+                        return;
+                    }
+
+                    // Ambil array data transaksi
+                    var transactionDetails = transactionData["data"] as JArray;
+
+                    // Hitung jumlah transaksi berdasarkan transaction_id
+                    totalTransactions = transactionDetails.Count + 1;
+
+                }
+                else
+                {
+                    totalTransactions = 1;
+                }
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                totalTransactions = 1;
             }
         }
+
 
         private void generateRandomFill()
         {
@@ -225,34 +212,31 @@ namespace KASIR.OfflineMode
                     string json = File.ReadAllText("DT-Cache" + "\\LoadDataPayment_" + "Outlet_" + baseOutlet + ".data");
                     PaymentTypeModel payment = JsonConvert.DeserializeObject<PaymentTypeModel>(json);
                     List<PaymentType> data = payment.data;
-                    //data.Insert(0, new PaymentType { id = -1, name = "Pilih Tipe Pembayaran" });
-                    //default
                     cmbPayform.DataSource = data;
                     cmbPayform.DisplayMember = "name";
                     cmbPayform.ValueMember = "id";
                 }
                 else
                 {
-                    IApiService apiService = new ApiService();
+                    MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                    CacheDataApp form3 = new CacheDataApp("Sync");
+                    this.Close();
+                    form3.Show();
+                    /*IApiService apiService = new ApiService();
                     string response = await apiService.GetPaymentType("/payment-type");
                     PaymentTypeModel payment = JsonConvert.DeserializeObject<PaymentTypeModel>(response);
                     List<PaymentType> data = payment.data;
-                    //data.Insert(0, new PaymentType { id = -1, name = "Pilih Tipe Pembayaran" });
-                    //default
                     cmbPayform.DataSource = data;
                     cmbPayform.DisplayMember = "name";
-                    cmbPayform.ValueMember = "id";
+                    cmbPayform.ValueMember = "id";*/
                 }
-
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data tipe serving " + ex.Message, "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             finally
@@ -288,6 +272,30 @@ namespace KASIR.OfflineMode
                 }
             }
         }
+        private string ConvertDateTimeFormat(string input)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(input) || input.Length != 14)
+                {
+                    throw new ArgumentException("Input string must be 14 characters long.");
+                }
+
+                // Memecah string input menjadi dua bagian
+                string datePart = input.Substring(0, 8); // Ambil tanggal (YYYYMMDD)
+                string timePart = input.Substring(8); // Ambil waktu (HHMMSS)
+
+                // Format tanggal dan waktu sesuai dengan format yang diinginkan
+                string formattedString = $"{datePart}-{timePart}";
+
+                return formattedString;
+            }
+            catch (Exception ex)
+            {
+                return "DateTime_Invalid";
+            }
+        }
+
         private async void btnSimpan_Click(object sender, EventArgs e)
         {
             btnSimpan.Enabled = false;
@@ -311,9 +319,10 @@ namespace KASIR.OfflineMode
                         ResetButtonState();
                         return;
                     }
-                    if (string.IsNullOrEmpty(txtSeat.Text))
+                    int seatAmount;
+                    if (!int.TryParse(txtSeat.Text, out seatAmount))
                     {
-                        MessageBox.Show("Masukan seat pelanggan", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Masukan seat pelanggan dengan benar", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         ResetButtonState();
                         return;
                     }
@@ -321,7 +330,7 @@ namespace KASIR.OfflineMode
                     int fulusAmount;
                     if (!int.TryParse(fulus, out fulusAmount))
                     {
-                        MessageBox.Show("Invalid amount entered.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Masukkan harga dengan benar.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         ResetButtonState();
                         return;
                     }
@@ -329,7 +338,7 @@ namespace KASIR.OfflineMode
                     int totalCartAmount;
                     if (!int.TryParse(totalCart, out totalCartAmount))
                     {
-                        MessageBox.Show("Invalid total cart value.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Harga gagal diolah.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         ResetButtonState();
                         return;
                     }
@@ -350,119 +359,74 @@ namespace KASIR.OfflineMode
 
                     int change = fulusAmount - totalCartAmount;
 
-                    var json = new
+                    // Read cart.data to extract cart details and transaction id
+                    string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
+                    if (!File.Exists(cartDataPath))
                     {
-                        outlet_id = baseOutlet,
-                        cart_id = int.Parse(cartID),
+                        MessageBox.Show("Keranjang Masih Kosong", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ResetButtonState();
+                        return;
+                    }
+
+                    string cartDataJson = File.ReadAllText(cartDataPath);
+                    var cartData = JsonConvert.DeserializeObject<JObject>(cartDataJson);
+
+                    // Get the first cart_detail_id to set as transaction_id
+                    var cartDetails = cartData["cart_details"] as JArray;
+                    string firstCartDetailId = cartDetails?.FirstOrDefault()?["cart_detail_id"].ToString();
+                    string transactionId = firstCartDetailId ?? "0";
+                    string receiptReformat = ConvertDateTimeFormat(transactionId);
+                    // Prepare transaction data
+                    var transactionData = new
+                    {
+                        transaction_id = transactionId,
+                        receipt_number = $"AT-{txtNama.Text}-{txtSeat.Text}-" + receiptReformat,
+                        invoice_number = $"INV-" + (DateTime.Now.ToString("yyyyMMdd-HHmmss")) + cmbPayform.SelectedValue.ToString(),  // Adjust if you want to implement custom invoice numbers
+                        payment_type_id = cmbPayform.SelectedValue.ToString(),
+                        payment_type_name = cmbPayform.SelectedText.ToString(),
                         customer_name = txtNama.Text,
-                        customer_seat = txtSeat.Text,
+                        customer_seat = int.Parse(txtSeat.Text),
                         customer_cash = fulusAmount,
-                        payment_type_id = cmbPayform.SelectedValue.ToString(),
-                        member_id = SelectedId
+                        total = totalCartAmount,
+                        subtotal = totalCartAmount, // Or use subtotal from cart
+                        created_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                        updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                        is_refund = 0,
+                        refund_reason = "null",
+                        cart_details = cartDetails
                     };
-                    string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
-                    IApiService apiService = new ApiService();
-                    string response = await apiService.PayBillTransaction(jsonString, "/transaction");
 
-                    if (response != null)
+                    // Save transaction data to transaction.data
+                    string transactionDataPath = "DT-Cache\\Transaction\\transaction.data";
+                    JArray transactionDataArray = new JArray();
+                    if (File.Exists(transactionDataPath))
                     {
-                        HandleSuccessfulTransaction(response, fulus);
+                        // If the transaction file exists, read and append the new transaction
+                        string existingData = File.ReadAllText(transactionDataPath);
+                        var existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
+                        transactionDataArray = existingTransactions["data"] as JArray ?? new JArray();
                     }
-                    else
-                    {
-                        MessageBox.Show("Gagal memproses transaksi. Silahkan coba lagi.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        ResetButtonState();
-                    }
+
+                    // Add new transaction
+                    transactionDataArray.Add(JToken.FromObject(transactionData));
+
+                    // Serialize and save back to transaction.data
+                    var newTransactionData = new JObject { { "data", transactionDataArray } };
+                    File.WriteAllText(transactionDataPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
+
+                    Offline_masterPos offline_MasterPos = new Offline_masterPos();
+                    offline_MasterPos.DeleteCartFile();
+                    //HandleSuccessfulTransaction(response, fulus);
                 }
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show("Terjadi kesalahan, silakan coba lagi.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Terjadi kesalahan, silakan coba lagi.{ex}", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 ResetButtonState();
             }
         }
 
-        private async void Ex_btnSimpan_Click(object sender, EventArgs e)
-        {
-            btnSimpan.Enabled = false;
-            ////LoggerUtil.LogPrivateMethod(nameof(btnSimpan_Click));
-            btnSimpan.Text = "Waiting...";
-            btnSimpan.BackColor = Color.Gainsboro;
-
-            try
-            {
-                if (btnSimpan.Text == "Selesai.")
-                {
-                    btnSimpan.Enabled = true;
-                    DialogResult = DialogResult.OK;
-                    Close();
-                }
-                else
-                {
-                    string fulus = Regex.Replace(txtCash.Text, "[^0-9]", "");
-
-                    if (string.IsNullOrEmpty(txtNama.Text))
-                    {
-                        MessageBox.Show("Masukan nama pelanggan", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        ResetButtonState();
-                        return;
-                    }
-                    if (string.IsNullOrEmpty(txtSeat.Text))
-                    {
-                        MessageBox.Show("Masukan seat pelanggan", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        ResetButtonState();
-                        return;
-                    }
-                    if (int.Parse(fulus) < int.Parse(totalCart))
-                    {
-                        MessageBox.Show("Uang anda belum cukup ", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        ResetButtonState();
-                        return;
-                    }
-                    if (cmbPayform.Text == "Pilih Tipe Pembayaran")
-                    {
-                        MessageBox.Show("Pilih tipe pembayaran", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        ResetButtonState();
-                        return;
-                    }
-
-                    int change = int.Parse(fulus) - int.Parse(totalCart);
-
-                    var json = new
-                    {
-                        outlet_id = baseOutlet,
-                        cart_id = int.Parse(cartID),
-                        customer_name = txtNama.Text,
-                        customer_seat = txtSeat.Text,
-                        customer_cash = int.Parse(fulus),
-                        payment_type_id = cmbPayform.SelectedValue.ToString(),
-                        member_id = SelectedId
-                    };
-                    string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
-                    IApiService apiService = new ApiService();
-                    string response = await apiService.PayBillTransaction(jsonString, "/transaction");
-
-                    if (response != null)
-                    {
-                        HandleSuccessfulTransaction(response, fulus);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Gagal memproses transaksi. Silahkan coba lagi.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        ResetButtonState();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                //karena keadaan kecetak jadi gaperlu notif ganggu ini
-                //MessageBox.Show("Gagal bayar menu " + ex.Message, "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show("Terjadi kesalahan, silakan coba lagi.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                ResetButtonState();
-            }
-        }
         private async Task HandleSuccessfulTransaction(string response, string fulus)
         {
             try

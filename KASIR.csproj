@@ -16,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="OffineMode\Offline_successTransaction.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Update="OffineMode\Offline_updatePerItemForm.cs">
       <SubType>Form</SubType>
     </Compile>

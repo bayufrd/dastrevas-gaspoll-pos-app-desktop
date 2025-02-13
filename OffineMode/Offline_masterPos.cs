@@ -2,50 +2,22 @@
 using KASIR.Network;
 using Newtonsoft.Json;
 using Serilog;
-using KASIR.OfflineMode;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using Menu = KASIR.Model.Menu;
 using FontAwesome.Sharp;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-
-using System.IO;
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using Serilog.Context;
 using System.Net.NetworkInformation;
 using System.Timers;
-using System.Text.RegularExpressions;
-using System.Windows.Markup;
-using System.Security.Cryptography;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.DirectoryServices.ActiveDirectory;
-using Button = System.Windows.Forms.Button;
-using SharpCompress.Common;
-using KASIR.DualScreen;
+using Newtonsoft.Json.Linq;
 
 
 namespace KASIR.OfflineMode
 {
     public partial class Offline_masterPos : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
-
         private Offline_payForm Offline_payForm;
-        int jenisColumnIndex = -1;
         private ApiService apiService;
         private DataTable originalDataTable, listDataTable;
         string totalCart;
@@ -58,7 +30,6 @@ namespace KASIR.OfflineMode
         private DataTable dataTable2;
         List<DataDiscountCart> dataDiscountListCart;
         int subTotalPrice;
-        // List<DataTable> dataList;
         Dictionary<Menu, Image> menuImageDictionary = new Dictionary<Menu, Image>();
         public bool ReloadDataInBaseForm { get; private set; }
 
@@ -761,69 +732,85 @@ namespace KASIR.OfflineMode
             }
         }
 
-        //button Bayar
+        //button delete
         private async void button5_ClickAsync(object sender, EventArgs e)
         {
             try
             {
-                string response = await apiService.Get("/cart?outlet_id=" + baseOutlet);
-                if (string.IsNullOrEmpty(response))
+                // Path for the cart data cache file
+                string filePath = "DT-Cache\\Transaction\\Cart.data";
+
+                // Cek apakah file Cart.data ada
+                if (File.Exists(filePath))
                 {
-                    // Handle the case where the API call returned no data
-                    return;
-                }
+                    // Membaca isi file Cart.data
+                    string cartJson = File.ReadAllText(filePath);
 
-                GetCartModel dataModel = JsonConvert.DeserializeObject<GetCartModel>(response);
-                if (dataModel == null || dataModel.data == null)
-                {
-                    // Handle the case where the deserialization failed or the data object is null
-                    MessageBox.Show("Keranjang Kosong!");
+                    // Deserialize data file Cart.data
+                    var cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
 
-                    return;
-                }
-
-                cartID = dataModel.data.cart_id.ToString();
-                CheckIsOrderedModel data = JsonConvert.DeserializeObject<CheckIsOrderedModel>(await apiService.CheckIsOrdered("/check-ordered-cart?outlet_id=", baseOutlet));
-                if (data.data?.is_ordered != 1)
-                {
-                    await EmptyCart();
-                    return;
-                }
-
-                ////LoggerUtil.LogPrivateMethod(nameof(button5_ClickAsync));
-
-                using (var background = new Form
-                {
-                    StartPosition = FormStartPosition.Manual,
-                    FormBorderStyle = FormBorderStyle.None,
-                    Opacity = 0.7d,
-                    BackColor = Color.Black,
-                    WindowState = FormWindowState.Maximized,
-                    TopMost = true,
-                    Location = this.Location,
-                    ShowInTaskbar = false,
-                })
-                using (var Offline_deleteForm = new Offline_deleteForm(cartID.ToString()))
-                {
-                    Offline_deleteForm.Owner = background;
-                    background.Show();
-
-                    DialogResult result = Offline_deleteForm.ShowDialog();
-
-                    if (result == DialogResult.OK)
+                    // Pastikan cart_details ada di dalam file
+                    if (cartData["cart_details"] == null)
                     {
-                        background.Dispose();
-                        ReloadCart();
-                        LoadCart();
+                        MessageBox.Show("Keranjang Kosong!");
+                        return;
                     }
-                    else
+
+                    // Ambil daftar cart_details
+                    var cartDetails = cartData["cart_details"] as JArray;
+
+                    // Cek apakah ada item yang sudah dipesan (is_ordered == 1)
+                    bool isAnyOrdered = cartDetails.Any(item => item["is_ordered"].ToString() == "1");
+
+                    if (!isAnyOrdered)
                     {
-                        MessageBox.Show("Gagal hapus keranjang, Silahkan coba lagi");
+                        // Jika tidak ada yang dipesan, hapus file Cart.data
+                        await DeleteCartFile();
                         ReloadCart();
-                        LoadCart();
-                        background.Dispose();
+                        return;
                     }
+
+
+                    using (var background = new Form
+                    {
+                        StartPosition = FormStartPosition.Manual,
+                        FormBorderStyle = FormBorderStyle.None,
+                        Opacity = 0.7d,
+                        BackColor = Color.Black,
+                        WindowState = FormWindowState.Maximized,
+                        TopMost = true,
+                        Location = this.Location,
+                        ShowInTaskbar = false,
+                    })
+                    using (var Offline_deleteForm = new Offline_deleteForm(cartID.ToString()))
+                    {
+                        Offline_deleteForm.Owner = background;
+                        background.Show();
+
+                        DialogResult result = Offline_deleteForm.ShowDialog();
+
+                        if (result == DialogResult.OK)
+                        {
+                            background.Dispose();
+                            ReloadCart();
+                            LoadCart();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Gagal hapus keranjang, Silahkan coba lagi");
+                            ReloadCart();
+                            LoadCart();
+                            background.Dispose();
+                        }
+                    }
+
                 }
+                else
+                {
+                    MessageBox.Show("Keranjang kosong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                }
+
             }
             catch (TaskCanceledException ex)
             {
@@ -832,12 +819,36 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-
-                MessageBox.Show("An error occurred while retrieving data: " + ex.Message);
+                MessageBox.Show("An error occurred while reading the cart file: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
             }
         }
+
+        public async Task DeleteCartFile()
+        {
+            try
+            {
+                // Tentukan lokasi path file yang ingin dihapus
+                string filePath = "DT-Cache\\Transaction\\Cart.data";
+
+                // Cek apakah file tersebut ada
+                if (File.Exists(filePath))
+                {
+                    // Hapus file
+                    File.Delete(filePath);
+                }
+                else
+                {
+                    MessageBox.Show("Keranjang kosong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Menangani error jika terjadi masalah saat penghapusan file
+                MessageBox.Show("Terjadi kesalahan saat menghapus file: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         public async Task LoadDataListby()
         {
             if (!NetworkInterface.GetIsNetworkAvailable())
@@ -1634,12 +1645,6 @@ namespace KASIR.OfflineMode
                 {
                     bmp.Save(stream, ImageFormat.Jpeg);
                 }
-                /*
-                using (FileStream stream = new FileStream(localImagePath, FileMode.Create, FileAccess.Write))
-                {
-                    image.Save(stream, ImageFormat.Jpeg);
-                }
-                */
             }
             catch (Exception ex)
             {
@@ -1660,12 +1665,6 @@ namespace KASIR.OfflineMode
                 HttpResponseMessage response = await httpClient.GetAsync(imageUrl);
                 response.EnsureSuccessStatusCode();
 
-                /*
-                using (Stream stream = await response.Content.ReadAsStreamAsync())
-                {
-                    return Image.FromStream(stream);
-                }
-                */
 
                 using (Stream stream = await response.Content.ReadAsStreamAsync())
                 {
@@ -1769,8 +1768,6 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                // Membuat instance dari pengirim dan penerima
-                //var sender = new SignalSender();
 
                 // Mengirimkan sinyal
                 string filePath = @"C:\Temp\Cart.data";
@@ -1795,329 +1792,132 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        public async Task Ex_LoadCart()
-        {
-            int retryCount = 3; // Maksimal 3 kali percobaan
-            int attempt = 0;
-            bool success = false;
-
-            while (attempt < retryCount && !success)
-            {
-                try
-                {
-                    attempt++;
-                    string response = await apiService.Get("/cart?outlet_id=" + baseOutlet);
-
-                    if (string.IsNullOrEmpty(response))
-                    {
-                        throw new Exception("Response is null or empty");
-                    }
-
-                    GetCartModel dataModel = JsonConvert.DeserializeObject<GetCartModel>(response);
-                    if (dataModel == null || dataModel.data == null)
-                    {
-                        throw new Exception("Invalid cart data from server.");
-                    }
-
-                    SaveCartDataLocally(dataModel);
-
-                    // Proses data untuk UI dan tabel
-                    ProcessCartData(dataModel);
-
-                    success = true; // Tandai bahwa percobaan berhasil
-                }
-                catch (TaskCanceledException ex)
-                {
-                    if (attempt >= retryCount)
-                    {
-                        //MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        LoggerUtil.LogError(ex, $"Timeout after {retryCount} attempts: {ex.Message}");
-                        return;
-                    }
-
-                    await Task.Delay(1000); // Tunggu 1 detik sebelum mencoba lagi
-                }
-                catch (Exception ex)
-                {
-                    if (attempt >= retryCount)
-                    {
-                        LoggerUtil.LogError(ex, $"An error occurred after {retryCount} attempts: {ex.Message}");
-                        //MessageBox.Show("Terjadi kesalahan saat memuat data. Silakan coba lagi nanti.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-
-                    await Task.Delay(1000); // Tunggu 1 detik sebelum mencoba lagi
-                }
-            }
-        }
-
-        private async void ProcessCartData(GetCartModel dataModel)
-        {
-            // Menangani UI jika keranjang kosong
-            if (dataModel.data == null || dataModel.data.cart_details == null || dataModel.data.cart_details.Count == 0)
-            {
-                lblDetailKeranjang.Text = "Keranjang: Kosong";
-                lblDiskon1.Text = "Rp. 0";
-                lblSubTotal1.Text = "Rp. 0,-";
-                lblTotal1.Text = "Rp. 0,-";
-                iconButton1.Text = "Bayar ";
-                subTotalPrice = 0;
-                dataGridView1.DataSource = null;
-                return;
-            }
-
-            // Update UI untuk total, subtotal, dan diskon
-            lblDetailKeranjang.Text = "Keranjang: " + (string.IsNullOrEmpty(dataModel.data.customer_name) ? "name?" : dataModel.data.customer_name) +
-                                      " - " + (string.IsNullOrEmpty(dataModel.data.customer_seat) ? "seat?" : dataModel.data.customer_seat);
-            int result = dataModel.data.total - dataModel.data.subtotal;
-            lblDiskon1.Text = string.Format("Rp. {0:n0},-", result);
-            lblSubTotal1.Text = string.Format("Rp. {0:n0},-", dataModel.data.subtotal);
-            lblTotal1.Text = string.Format("Rp. {0:n0},-", dataModel.data.total);
-            iconButton1.Text = string.Format("Bayar Rp. {0:n0},-", dataModel.data.total);
-            subTotalPrice = dataModel.data.subtotal;
-
-            // Proses detail keranjang ke dalam DataTable
-            DataTable dataTable = new DataTable();
-            dataTable.Columns.Add("MenuID", typeof(string));
-            dataTable.Columns.Add("CartDetailID", typeof(int));
-            dataTable.Columns.Add("Jenis", typeof(string));
-            dataTable.Columns.Add("Menu", typeof(string));
-            dataTable.Columns.Add("Total Harga", typeof(string));
-            dataTable.Columns.Add("Note", typeof(string));
-
-            Dictionary<string, List<DetailCart>> menuGroups = new Dictionary<string, List<DetailCart>>();
-
-            foreach (DetailCart menu in dataModel.data.cart_details)
-            {
-                string servingTypeName = menu.serving_type_name ?? "Unknown";
-                if (!menuGroups.ContainsKey(servingTypeName))
-                {
-                    menuGroups[servingTypeName] = new List<DetailCart>();
-                }
-                menuGroups[servingTypeName].Add(menu);
-            }
-
-            foreach (var group in menuGroups)
-            {
-                AddSeparatorRow(dataTable, group.Key, dataGridView1);
-
-                foreach (DetailCart menu in group.Value)
-                {
-                    /*string menuName = menu.menu_name ?? "Unknown";
-                    string variant = menu.varian ?? "No variant";
-                    string note = menu.note_item ?? "";*/
-
-                    dataTable.Rows.Add(
-                        menu.menu_id ?? 0,
-                        menu.cart_detail_id,
-                        menu.serving_type_name ?? "",
-                        (menu.qty > 0 ? menu.qty.ToString() : "0") + "X " + (menu.is_ordered == "1" ? "(Ordered) " : "") + menu.menu_name + " " + menu.varian,
-                        string.Format("Rp. {0:n0},-", menu.total_price),
-                        menu.note_item
-                    );
-
-                    if (menu.discounted_price != 0)
-                    {
-                        dataTable.Rows.Add(
-                            null,
-                            null,
-                            null,
-                            "  *catatan : " + menu.note_item,
-                            "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code),
-                            null
-                        );
-                    }
-                }
-            }
-
-            // Update DataGridView
-            dataGridView1.DataSource = dataTable;
-            dataGridView1.Columns["MenuID"].Visible = false;
-            dataGridView1.Columns["CartDetailID"].Visible = false;
-            dataGridView1.Columns["Jenis"].Visible = false;
-            dataGridView1.Columns["Note"].Visible = false;
-
-            DataGridViewCellStyle boldStyle = new DataGridViewCellStyle();
-            boldStyle.Font = new Font(dataGridView1.Font, FontStyle.Italic);
-            dataGridView1.Columns["Menu"].DefaultCellStyle = boldStyle;
-            dataGridView1.Columns["Menu"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-            dataGridView1.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
-            dataGridView1.Columns["Menu"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-
-            // Salin data ke tabel lain jika diperlukan
-            dataTable2 = dataTable.Copy();
-
-            // Muat diskon (asynchronous)
-            await LoadDataDiscount();
-            autoFillDiskon();
-        }
 
         public async Task LoadCart()
         {
-
             try
             {
-                string response = await apiService.Get("/cart?outlet_id=" + baseOutlet);
-                GetCartModel dataModel = JsonConvert.DeserializeObject<GetCartModel>(response);
-                SaveCartDataLocally(dataModel);
+                // Path for the cart data cache
+                string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
 
-                if (dataModel.data == null)
+                // Check if the cart file exists
+                if (File.Exists(cacheFilePath))
                 {
-                    lblDetailKeranjang.Text = "Keranjang: Kosong";
-                    lblDiskon1.Text = "Rp. 0";
-                    lblSubTotal1.Text = "Rp. 0,-";
-                    lblTotal1.Text = "Rp. 0,-";
-                    iconButton1.Text = "Bayar ";
-                    subTotalPrice = 0;
-                }
-                else
-                {
-                    lblDetailKeranjang.Text = "Keranjang: Kosong";
+                    string cartJson = File.ReadAllText(cacheFilePath);
+                    var cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
 
-                    if (dataModel.data.total == 0)
+                    // Initialize default values in case no data is available
+                    if (cartData["cart_details"] == null || cartData["cart_details"].Count() == 0)
                     {
-                        customer_seat = "";
-                        customer_name = "";
+                        lblDetailKeranjang.Text = "Keranjang: Kosong";
                         lblDiskon1.Text = "Rp. 0";
                         lblSubTotal1.Text = "Rp. 0,-";
                         lblTotal1.Text = "Rp. 0,-";
-                        iconButton1.Text = "Bayar ";
+                        buttonPayment.Text = "Bayar ";
                         subTotalPrice = 0;
                     }
                     else
                     {
-                        customer_seat = dataModel.data.customer_seat.ToString();
-                        customer_name = dataModel.data.customer_name.ToString();
-                        int result = dataModel.data.total - dataModel.data.subtotal;
-                        lblDiskon1.Text = string.Format("Rp. {0:n0},-", result);
-                        subTotalPrice = dataModel.data.subtotal;
-                        lblSubTotal1.Text = string.Format("Rp. {0:n0},-", dataModel.data.subtotal);
-                        lblTotal1.Text = string.Format("Rp. {0:n0},-", dataModel.data.total);
-                        iconButton1.Text = string.Format("Bayar Rp. {0:n0},-", dataModel.data.total);
-                        lblDetailKeranjang.Text = "Keranjang: " + (string.IsNullOrEmpty(customer_name) ? "name?" : customer_name) + " - " + (string.IsNullOrEmpty(customer_seat) ? "seat?" : customer_seat);
-                    }
+                        // Retrieve cart details
+                        var cartDetails = cartData["cart_details"] as JArray;
 
-                    totalCart = dataModel.data.total.ToString();
-                    cartID = dataModel.data.cart_id.ToString();
-                    isSplitted = dataModel.data.is_splitted;
-                    diskonID = dataModel.data.discount_id;
-                    List<DetailCart> cartList = dataModel.data.cart_details;
+                        // Set the first cart_detail_id as cart_id
+                        var cartDetail = cartDetails.FirstOrDefault();
+                        cartID = cartDetail?["cart_detail_id"].ToString() ?? "null"; // Get first cart_detail_id for cart_id
+                        totalCart = cartData["total"]?.ToString() ?? "0";
+                        diskonID = 0; //belum pakai disc
 
-                    Dictionary<string, List<DetailCart>> menuGroups = new Dictionary<string, List<DetailCart>>();
+                        // Set customer information
+                        customer_name = cartData["customer_name"]?.ToString() ?? "Unknown";
+                        customer_seat = cartData["customer_seat"]?.ToString() ?? "Unknown";
 
-                    foreach (DetailCart menu in cartList)
-                    {
-                        if (!menuGroups.ContainsKey(menu.serving_type_name))
+                        // Calculate subtotal and total
+                        decimal subtotal = cartData["subtotal"] != null ? decimal.Parse(cartData["subtotal"].ToString()) : 0;
+                        int subtotalint = (int)subtotal;  // Explicitly cast decimal to int
+
+                        decimal total = cartData["total"] != null ? decimal.Parse(cartData["total"].ToString()) : 0;
+                        int totalInt = (int)total;  // Explicitly cast decimal to int
+
+
+                        lblDiskon1.Text = string.Format("Rp. {0:n0},-", total - subtotal);
+                        subTotalPrice = subtotalint;
+                        lblSubTotal1.Text = string.Format("Rp. {0:n0},-", subtotal);
+                        lblTotal1.Text = string.Format("Rp. {0:n0},-", total);
+                        buttonPayment.Text = string.Format("Bayar Rp. {0:n0},-", total);
+                        lblDetailKeranjang.Text = $"Keranjang: {customer_name} - {customer_seat}";
+
+                        // Prepare data for the DataGrid
+                        DataTable dataTable = new DataTable();
+                        dataTable.Columns.Add("MenuID", typeof(string));
+                        dataTable.Columns.Add("CartDetailID", typeof(string));
+                        dataTable.Columns.Add("Jenis", typeof(string));
+                        dataTable.Columns.Add("Menu", typeof(string));
+                        dataTable.Columns.Add("Total Harga", typeof(string));
+                        dataTable.Columns.Add("Note", typeof(string));
+
+                        // Group cart items by serving type
+                        var menuGroups = cartDetails.GroupBy(x => x["serving_type_name"].ToString()).ToList();
+
+                        foreach (var group in menuGroups)
                         {
-                            menuGroups[menu.serving_type_name] = new List<DetailCart>();
-                        }
-                        menuGroups[menu.serving_type_name].Add(menu);
-                    }
+                            // Add a separator row for each serving type group
+                            AddSeparatorRow(dataTable, group.Key, dataGridView1);
 
-                    DataTable dataTable = new DataTable();
-                    dataTable.Columns.Add("MenuID", typeof(string));
-                    dataTable.Columns.Add("CartDetailID", typeof(int));
-                    dataTable.Columns.Add("Jenis", typeof(string));
-                    dataTable.Columns.Add("Menu", typeof(string));
-                    //dataTable.Columns.Add("Jumlah", typeof(string));
-                    dataTable.Columns.Add("Total Harga", typeof(string));
-                    dataTable.Columns.Add("Note", typeof(string));
-                    foreach (var group in menuGroups)
-                    {
-                        // Panggil metode untuk menambahkan separator row
-                        AddSeparatorRow(dataTable, group.Key, dataGridView1);
-                        //dataTable.Rows.Add(null, null, null, group.Key + "s\n", null, null); // Add a separator row
-
-
-                        foreach (DetailCart menu in group.Value)
-                        {
-                            if (menu.is_ordered == "1")
+                            foreach (var menu in group)
                             {
-                                /*dataTable.Rows.Add(
-                                    menu.menu_id,
-                                    menu.cart_detail_id,
-                                    menu.serving_type_name,
-                                    menu.qty + "X " + "(Ordered) " + menu.menu_name + " " + menu.varian,
-                                    string.Format("Rp. {0:n0},-", menu.total_price), null);*/
+                                string menuName = menu["menu_name"].ToString();
+                                string menuType = menu["menu_type"].ToString();
+                                string servingTypeName = menu["serving_type_name"].ToString();
+                                int quantity = menu["qty"] != null ? (int)menu["qty"] : 0;
+                                decimal price = menu["price"] != null ? decimal.Parse(menu["price"].ToString()) : 0;
+                                string noteItem = menu["note_item"]?.ToString() ?? "";
+                                decimal totalPrice = price * quantity;
+
+                                // Add rows for each cart item
                                 dataTable.Rows.Add(
-                                menu.menu_id ?? 0,  // Ensure menu_id is always non-null
-                                menu.cart_detail_id,
-                                menu.serving_type_name ?? "",  // Ensure serving_type_name is non-null
-                                (menu.qty > 0 ? menu.qty.ToString() : "0") + "X " + "(Ordered) " + (menu.menu_name ?? "Unknown") + " " + (menu.varian ?? "No variant"),
-                                string.Format("Rp. {0:n0},-", menu.total_price),
-                                menu.note_item ?? ""  // Ensure note_item is always non-null
-                            );
-
-                            }
-                            else
-                            {
-                                dataTable.Rows.Add(
-                                    menu.menu_id,
-                                    menu.cart_detail_id,
-                                    menu.serving_type_name,
-                                    menu.qty + "X " + menu.menu_name + " " + menu.varian,
-                                    string.Format("Rp. {0:n0},-", menu.total_price),
-                                    null);
-                            }
-                            if (menu.discounted_price != 0)
-                            {
-                                if (!string.IsNullOrEmpty(menu.note_item))
-                                {
-                                    dataTable.Rows.Add(
-                                        null,
-                                        null,
-                                        null,
-                                        "  *catatan : " + (menu.note_item ?? ""),
-                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code),
-                                        null);
-                                }
-                                else
-                                {
-                                    dataTable.Rows.Add(
-                                        null,
-                                        null,
-                                        null,
-                                        null,
-                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code),
-                                        null);
-                                }
-                            }
-                            else
-                            {
-                                if (!string.IsNullOrEmpty(menu.note_item))
-                                {
-                                    dataTable.Rows.Add(
-                                        null,
-                                        null,
-                                        null,
-                                        "  *catatan : " + (menu.note_item ?? ""),
-                                        null,
-                                        null);
-                                }
+                                    menu["menu_id"]?.ToString(),
+                                    menu["cart_detail_id"]?.ToString(),
+                                    servingTypeName,
+                                    $"{quantity}X {menuName} {menu["menu_detail_name"]}",
+                                    string.Format("Rp. {0:n0},-", totalPrice),
+                                    noteItem
+                                );
                             }
                         }
+
+                        // Bind the data to the DataGridView
+                        dataGridView1.DataSource = dataTable;
+
+                        // Hide unnecessary columns
+                        dataGridView1.Columns["MenuID"].Visible = false;
+                        dataGridView1.Columns["CartDetailID"].Visible = false;
+                        dataGridView1.Columns["Jenis"].Visible = false;
+                        dataGridView1.Columns["Note"].Visible = false;
+
+                        // Apply formatting to the DataGridView
+                        DataGridViewCellStyle boldStyle = new DataGridViewCellStyle();
+                        boldStyle.Font = new Font(dataGridView1.Font, FontStyle.Italic);
+                        dataGridView1.Columns["Menu"].DefaultCellStyle = boldStyle;
+                        dataGridView1.Columns["Menu"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+                        dataGridView1.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+                        dataGridView1.Columns["Menu"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+
+                        await LoadDataDiscount(); // Ensure LoadDataDiscount is awaited
+                        autoFillDiskon(); // Automatically fill discount if applicable
                     }
-
-                    dataGridView1.DataSource = dataTable;
-
-                    dataTable2 = dataTable.Copy();
-                    dataGridView1.Columns["MenuID"].Visible = false;
-                    DataGridViewCellStyle boldStyle = new DataGridViewCellStyle();
-                    boldStyle.Font = new Font(dataGridView1.Font, FontStyle.Italic);
-                    dataGridView1.Columns["Menu"].DefaultCellStyle = boldStyle;
-                    dataGridView1.Columns["Menu"].DefaultCellStyle.WrapMode = DataGridViewTriState.True; // Enable text wrapping
-                    dataGridView1.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells; // Auto size rows to fit text
-                    dataGridView1.Columns["Menu"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-                    dataGridView1.Columns["CartDetailID"].Visible = false;
-                    dataGridView1.Columns["Jenis"].Visible = false;
-                    dataGridView1.Columns["Note"].Visible = false;
-                    dataGridView1.CellFormatting += DataGridView1_CellFormatting;
-
-                    await LoadDataDiscount(); // Ensure LoadDataDiscount is awaited
-
-                    autoFillDiskon();
                 }
-                await SignalReload();
+                else
+                {
+                    // If file does not exist, set defaults
+                    lblDetailKeranjang.Text = "Keranjang: Kosong";
+                    lblDiskon1.Text = "Rp. 0";
+                    lblSubTotal1.Text = "Rp. 0,-";
+                    lblTotal1.Text = "Rp. 0,-";
+                    buttonPayment.Text = "Bayar ";
+                    subTotalPrice = 0;
+                }
+
+                await SignalReload(); // Ensure the UI is updated
             }
             catch (TaskCanceledException ex)
             {
@@ -2129,6 +1929,8 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
+
         private void DataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex >= 0) // Memastikan kita hanya memformat sel data
@@ -2209,7 +2011,7 @@ namespace KASIR.OfflineMode
         {
             cartID = null;
             totalCart = null;
-            iconButton1.Text = "Bayar";
+            buttonPayment.Text = "Bayar";
             lblDiskon1.Text = null;
             lblSubTotal1.Text = null;
             lblTotal1.Text = null;
@@ -2241,67 +2043,6 @@ namespace KASIR.OfflineMode
             File.WriteAllText("C:\\Temp\\payment_signal.txt", "PaymentDone");
         }
 
-        private async void button1_Click(object sender, EventArgs e)
-        {
-            //var pengirim = new SignalSender();
-            if (string.IsNullOrEmpty(cartID)) // For strings
-            {
-                MessageBox.Show("Keranjang masih kosong", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-            ////LoggerUtil.LogPrivateMethod(nameof(button1_Click));
-
-            Form background = new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
-            };
-
-            using (Offline_payForm Offline_payForm = new Offline_payForm(baseOutlet, cartID, totalCart, lblTotal1.Text.ToString(), customer_seat, customer_name, this))
-            {
-                SignalReloadPayform();
-
-                //pengirim.SendSignal("Payment");
-                Offline_payForm.Owner = background;
-
-                background.Show();
-
-                //DialogResult dialogResult = dataBill.ShowDialog();
-
-                //background.Dispose();
-                DialogResult result = Offline_payForm.ShowDialog();
-
-                // Handle the result if needed
-                if (result == DialogResult.OK)
-                {
-                    background.Dispose();
-                    ReloadCart();
-                    LoadCart();
-                    cartID = "";
-                    // Settings were successfully updated, perform any necessary actions
-                    SignalReloadPayformDone();
-                    //pengirim.SendSignal("Payment");
-
-                }
-                else
-                {
-                    MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
-                    SignalReloadPayformDone();
-                    //pengirim.SendSignal("PaymentDone");
-                    background.Dispose();
-                    ReloadCart();
-                    LoadCart();
-                }
-            }
-
-
-        }
 
         private void panel3_Paint(object sender, PaintEventArgs e)
         {
@@ -2569,49 +2310,7 @@ namespace KASIR.OfflineMode
 
 
         private void listBill_Click(object sender, EventArgs e)
-        {/*
-
-            Form background = new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
-            };
-
-            using (dataBill dataBill = new dataBill())
-            {
-                dataBill.Owner = background;
-
-                background.Show();
-
-                //DialogResult dialogResult = dataBill.ShowDialog();
-
-                //background.Dispose();
-                DialogResult result = dataBill.ShowDialog();
-
-                // Handle the result if needed
-                if (result == DialogResult.OK)
-                {
-                    background.Dispose();
-                    ReloadCart();
-                    LoadCart();
-                    // Settings were successfully updated, perform any necessary actions
-                }
-                else
-                {
-                    MessageBox.Show("gagal menampilkan, silahkan coba lagi");
-                    ReloadCart();
-                    LoadCart();
-                    background.Dispose();
-                }
-            }
-
-*/
+        {
         }
 
         private void FilterMenuItems(string selectedMenuType)
@@ -2702,9 +2401,6 @@ namespace KASIR.OfflineMode
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                //MessageBox.Show("Error: terlalu banyak aksi, aplikasi akan dijalankan ulang");
-                //Application.Restart();
-                //Environment.Exit(0);
             }
 
         }
@@ -2884,6 +2580,66 @@ namespace KASIR.OfflineMode
             {
                 e.SuppressKeyPress = true; // Menghentikan bunyi "ding" saat Enter ditekan
                 PerformSearch(); // Panggil metode yang diinginkan
+            }
+        }
+
+        private void buttonPayment_Click(object sender, EventArgs e)
+        {
+            //var pengirim = new SignalSender();
+            if (string.IsNullOrEmpty(cartID)) // For strings
+            {
+                MessageBox.Show("Keranjang masih kosong", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            ////LoggerUtil.LogPrivateMethod(nameof(button1_Click));
+
+            Form background = new Form
+            {
+                StartPosition = FormStartPosition.Manual,
+                FormBorderStyle = FormBorderStyle.None,
+                Opacity = 0.7d,
+                BackColor = Color.Black,
+                WindowState = FormWindowState.Maximized,
+                TopMost = true,
+                Location = this.Location,
+                ShowInTaskbar = false,
+            };
+
+            using (Offline_payForm Offline_payForm = new Offline_payForm(baseOutlet, cartID, totalCart, lblTotal1.Text.ToString(), customer_seat, customer_name, this))
+            {
+                SignalReloadPayform();
+
+                //pengirim.SendSignal("Payment");
+                Offline_payForm.Owner = background;
+
+                background.Show();
+
+                //DialogResult dialogResult = dataBill.ShowDialog();
+
+                //background.Dispose();
+                DialogResult result = Offline_payForm.ShowDialog();
+
+                // Handle the result if needed
+                if (result == DialogResult.OK)
+                {
+                    background.Dispose();
+                    ReloadCart();
+                    LoadCart();
+                    cartID = "";
+                    // Settings were successfully updated, perform any necessary actions
+                    SignalReloadPayformDone();
+                    //pengirim.SendSignal("Payment");
+
+                }
+                else
+                {
+                    MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
+                    SignalReloadPayformDone();
+                    //pengirim.SendSignal("PaymentDone");
+                    background.Dispose();
+                    ReloadCart();
+                    LoadCart();
+                }
             }
         }
     }

@@ -9,30 +9,17 @@ using System.Diagnostics;
 using KASIR.Model;
 using System.Net.NetworkInformation;
 using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Timers;
-using System.Windows.Forms;
-using static System.Windows.Forms.DataFormats;
-using System.Runtime.CompilerServices;
-using System.Net.Http.Headers;
 using KASIR.Network;
 using Newtonsoft.Json;
-using System.Windows.Forms.Design;
 using Menu = KASIR.Model.Menu;
-using System.Drawing;
-using System.Windows.Documents;
 using Path = System.IO.Path;
 using System.Xml;
 using SharpCompress.Archives;
 using SharpCompress.Common;
-using System.Windows.Markup;
-using System.Windows.Media;
 using DrawingColor = System.Drawing.Color;
 using Color = System.Drawing.Color;
-
-
+using KASIR.OfflineMode;
+using Newtonsoft.Json.Linq;
 
 
 namespace KASIR
@@ -70,12 +57,13 @@ namespace KASIR
             leftBorderBtn.Size = new Size(7, 60);
             headerOutletName("");
             panel2.Controls.Add(leftBorderBtn);
-            masterPos m = new masterPos();
+            ConfigOfflineMode();
+            /*masterPos m = new masterPos();
             m.TopLevel = false;
             m.Dock = DockStyle.Fill;
             panel1.Controls.Add(m);
             m.BringToFront();
-            m.Show();
+            m.Show();*/
             this.Height += 100;
             button2.Visible = true;
             lblDetail.Visible = false;
@@ -86,6 +74,104 @@ namespace KASIR
             //headerName();
 
         }
+        private async void ConfigOfflineMode()
+        {
+            // Mengecek apakah sButtonOffline dalam status checked
+            string Config = "setting\\OfflineMode.data";
+            // Ensure the directory exists
+            string directoryPath = Path.GetDirectoryName(Config);
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+            string allSettingsData = File.ReadAllText(Config); // Ambil status offline
+
+            // Jika status offline ON, tampilkan Offline_masterPos
+            if (allSettingsData == "ON")
+            {
+                Offline_masterPos offlineMasterPos = new Offline_masterPos();
+                offlineMasterPos.TopLevel = false;
+                offlineMasterPos.Dock = DockStyle.Fill;
+
+                // Jika ada form masterPos yang sudah terbuka, tutup dulu
+                foreach (Control c in panel1.Controls)
+                {
+                    if (c is masterPos)
+                    {
+                        c.Dispose(); // Menutup form masterPos jika ada
+                    }
+                }
+
+                panel1.Controls.Add(offlineMasterPos);
+                offlineMasterPos.BringToFront();
+                offlineMasterPos.Show();
+            }
+            else
+            {
+                masterPos m = new masterPos();
+                m.TopLevel = false;
+                m.Dock = DockStyle.Fill;
+
+                // Jika ada form Offline_masterPos yang sudah terbuka, tutup dulu
+                foreach (Control c in panel1.Controls)
+                {
+                    if (c is Offline_masterPos)
+                    {
+                        c.Dispose(); // Menutup form Offline_masterPos jika ada
+                    }
+                }
+
+                panel1.Controls.Add(m);
+                m.BringToFront();
+                m.Show();
+            }
+        }
+        public async void UpdateContent()
+        {
+            string Config = "setting\\OfflineMode.data";
+            string allSettingsData = File.ReadAllText(Config); // Ambil status offline
+
+            // Jika status offline ON, tampilkan Offline_masterPos
+            if (allSettingsData == "ON")
+            {
+                Offline_masterPos offlineMasterPos = new Offline_masterPos();
+                offlineMasterPos.TopLevel = false;
+                offlineMasterPos.Dock = DockStyle.Fill;
+
+                // Menutup form masterPos jika ada
+                foreach (Control c in panel1.Controls)
+                {
+                    if (c is masterPos)
+                    {
+                        c.Dispose();
+                    }
+                }
+
+                panel1.Controls.Add(offlineMasterPos);
+                offlineMasterPos.BringToFront();
+                offlineMasterPos.Show();
+            }
+            else
+            {
+                masterPos m = new masterPos();
+                m.TopLevel = false;
+                m.Dock = DockStyle.Fill;
+
+                // Menutup form Offline_masterPos jika ada
+                foreach (Control c in panel1.Controls)
+                {
+                    if (c is Offline_masterPos)
+                    {
+                        c.Dispose();
+                    }
+                }
+
+                panel1.Controls.Add(m);
+                m.BringToFront();
+                m.Show();
+            }
+        }
+
 
         public void initPingTest()
         {
@@ -161,16 +247,12 @@ namespace KASIR
                 }
                 //DuplicateTemp();
                 string TypeCacheEksekusi = "Sync";
-                await Task.Delay(500);
 
-                CacheDataApp form3 = new CacheDataApp(TypeCacheEksekusi);
-
-                // Show the new form before closing the current one
-                form3.LoadData(TypeCacheEksekusi);
+                CacheDataApp form3 = new CacheDataApp("Sync");
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Gagal Download Data : {ex}");
+                LoggerUtil.LogError(ex, "Terjadi kesalahan:", ex.Message);
             }
         }
 
@@ -670,7 +752,6 @@ namespace KASIR
         {
             if (File.Exists(System.Windows.Forms.Application.StartupPath + "update\\update.exe"))
             {
-                DeathTimeBegin();
                 LoggerUtil.LogWarning("Open Update.exe");
 
 
@@ -699,45 +780,94 @@ namespace KASIR
         {
             try
             {
-                IApiService apiService = new ApiService();
+                // Tentukan path file
+                string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
 
-                string response = await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-                if (response != null)
+                // Cek apakah file ada
+                if (File.Exists(filePath))
                 {
-                    GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
+                    // Jika file ada, baca file tersebut
+                    string fileContent = File.ReadAllText(filePath);
+                    var outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
 
-                    DataShift datas = cekShift.data;
-                    lblNamaOutlet.Text = datas.outlet_name.ToString();
-                    baseOutletName = lblNamaOutlet.Text.ToString();
-                    var kasirConfigPath = "KASIR.dll.config";
-                    var doc = new XmlDocument();
-                    doc.Load(kasirConfigPath);
+                    // Ambil data dan tampilkan di label
+                    string outletName = outletData["data"]?["name"]?.ToString();
 
-                    var OutletName = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseOutletName']/value");
-                    OutletName.InnerText = lblNamaOutlet.Text.ToString();
+                    // Jika UI tidak berada di thread utama, gunakan Invoke
+                    if (lblNamaOutlet.InvokeRequired)
+                    {
+                        lblNamaOutlet.Invoke(new MethodInvoker(delegate {
+                            lblNamaOutlet.Text = outletName;
+                        }));
+                    }
+                    else
+                    {
+                        lblNamaOutlet.Text = outletName;
+                    }
 
-                    doc.Save(kasirConfigPath);
+                    baseOutletName = lblNamaOutlet.Text;
                 }
                 else
                 {
-                    lblNamaOutlet.Text = namaOutlet.ToString().Replace("&", "&&");
-                    baseOutletName = lblNamaOutlet.Text.ToString();
+                    // Jika file tidak ada, ambil data dari API
+                    IApiService apiService = new ApiService();
+                    string response = await apiService.CekShift("/outlet/" + baseOutlet);
 
+                    if (response != null)
+                    {
+                        // Deserialize data JSON dari API
+                        var apiResponse = JsonConvert.DeserializeObject<JObject>(response);
+                        var outletData = apiResponse["data"];
+
+                        // Ambil nama outlet dari data API
+                        string outletName = outletData?["name"]?.ToString();
+
+                        // Jika UI tidak berada di thread utama, gunakan Invoke
+                        if (lblNamaOutlet.InvokeRequired)
+                        {
+                            lblNamaOutlet.Invoke(new MethodInvoker(delegate {
+                                lblNamaOutlet.Text = outletName;
+                            }));
+                        }
+                        else
+                        {
+                            lblNamaOutlet.Text = outletName;
+                        }
+
+                        baseOutletName = lblNamaOutlet.Text;
+
+                        // Simpan data ke file
+                        File.WriteAllText(filePath, JsonConvert.SerializeObject(apiResponse));
+                    }
+                    else
+                    {
+                        // Jika response null, gunakan data default
+                        if (lblNamaOutlet.InvokeRequired)
+                        {
+                            lblNamaOutlet.Invoke(new MethodInvoker(delegate {
+                                lblNamaOutlet.Text = "Outlet Tidak Ditemukan";
+                            }));
+                        }
+                        else
+                        {
+                            lblNamaOutlet.Text = "Outlet Tidak Ditemukan";
+                        }
+
+                        baseOutletName = lblNamaOutlet.Text;
+                    }
                 }
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
             }
-
-
         }
+
+
 
         private struct RGBColors
         {
@@ -829,7 +959,7 @@ namespace KASIR
             lblTitleChildForm.Text = "Menu";
         }
 
-        private void button6_Click(object sender, EventArgs e)
+        /*private void button6_Click(object sender, EventArgs e)
         {
             Color randomColor = PickRandomColor();
             ActivateButton(sender, randomColor);
@@ -859,7 +989,72 @@ namespace KASIR
                 MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 // Log error jika diperlukan
             }
+        }*/
+        private void button6_Click(object sender, EventArgs e)
+        {
+            Color randomColor = PickRandomColor();  // Pick a random color for button
+            ActivateButton(sender, randomColor);    // Activate the button
+            try
+            {
+                // Read the OfflineMode status
+                string config = "setting\\OfflineMode.data";
+                string allSettingsData = File.ReadAllText(config);  // Get the current OfflineMode setting
+
+                // Check if OfflineMode is ON
+                if (allSettingsData == "ON")
+                {
+                    // If OfflineMode is ON, load the Offline_masterPos form
+                    Offline_masterPos offlineMasterPos = new Offline_masterPos();
+                    offlineMasterPos.TopLevel = false;
+                    offlineMasterPos.Dock = DockStyle.Fill;
+
+                    // Close any existing masterPos form
+                    foreach (Control c in panel1.Controls)
+                    {
+                        if (c is masterPos)
+                        {
+                            c.Dispose(); // Dispose of the masterPos form
+                        }
+                    }
+
+                    // Add the Offline_masterPos form to the panel
+                    panel1.Controls.Add(offlineMasterPos);
+                    offlineMasterPos.BringToFront();
+                    offlineMasterPos.Show();
+
+                    lblTitleChildForm.Text = "Menu - Offline Mode Transaksi"; // Update label for Offline Mode
+                }
+                else
+                {
+                    // If OfflineMode is OFF, load the masterPos form
+                    masterPos m = new masterPos();
+                    m.TopLevel = false;
+                    m.Dock = DockStyle.Fill;
+
+                    // Close any existing Offline_masterPos form
+                    foreach (Control c in panel1.Controls)
+                    {
+                        if (c is Offline_masterPos)
+                        {
+                            c.Dispose(); // Dispose of the Offline_masterPos form
+                        }
+                    }
+
+                    // Add the masterPos form to the panel
+                    panel1.Controls.Add(m);
+                    m.BringToFront();
+                    m.Show();
+
+                    lblTitleChildForm.Text = "Menu - Semua Transaksi"; // Update label for normal mode
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions that occur during the process
+                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
+
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -921,48 +1116,66 @@ namespace KASIR
 
             try
             {
-                successTransaction c = new successTransaction();
+                // Read the OfflineMode status
+                string config = "setting\\OfflineMode.data";
+                string allSettingsData = File.ReadAllText(config);  // Get the current OfflineMode setting
 
-                // Misalkan 'obj' adalah objek yang mungkin null
-                if (c == null)
+                // Check if OfflineMode is ON
+                if (allSettingsData == "ON")
                 {
-                    MessageBox.Show("Terjadi kesalahan cek koneksi anda", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
+                    // If OfflineMode is ON, load the Offline_masterPos form
+                    Offline_successTransaction c = new Offline_successTransaction();
+                    if (c == null)
+                    {
+                        MessageBox.Show("Terjadi kesalah coba restart aplikasi", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                    //panel3.Height = btn1.Height;
+                    //panel3.Top = btn1.Top;
+                    c.Dock = DockStyle.Fill;
+                    panel1.Controls.Add(c);
+                    c.BringToFront();
+                    c.Show();
+                    lblTitleChildForm.Text = "Transactions - History Transactions";
                 }
-                //panel3.Height = btn1.Height;
-                //panel3.Top = btn1.Top;
-                c.Dock = DockStyle.Fill;
-                panel1.Controls.Add(c);
-                c.BringToFront();
-                c.Show();
-                lblTitleChildForm.Text = "Transactions - History Transactions";
-                Form background = new Form
+                else
                 {
-                    StartPosition = FormStartPosition.Manual,
-                    FormBorderStyle = FormBorderStyle.None,
-                    Opacity = 0.7d,
-                    BackColor = Color.Black,
-                    WindowState = FormWindowState.Maximized,
-                    TopMost = true,
-                    Location = this.Location,
-                    ShowInTaskbar = false,
-                };
-                // Lakukan operasi dengan 'obj'
-                // ...
+                    successTransaction c = new successTransaction();
+
+                    // Misalkan 'obj' adalah objek yang mungkin null
+                    if (c == null)
+                    {
+                        return;
+                    }
+                    //panel3.Height = btn1.Height;
+                    //panel3.Top = btn1.Top;
+                    c.Dock = DockStyle.Fill;
+                    panel1.Controls.Add(c);
+                    c.BringToFront();
+                    c.Show();
+                    lblTitleChildForm.Text = "Transactions - History Transactions";
+                    Form background = new Form
+                    {
+                        StartPosition = FormStartPosition.Manual,
+                        FormBorderStyle = FormBorderStyle.None,
+                        Opacity = 0.7d,
+                        BackColor = Color.Black,
+                        WindowState = FormWindowState.Maximized,
+                        TopMost = true,
+                        Location = this.Location,
+                        ShowInTaskbar = false,
+                    };
+                    // Lakukan operasi dengan 'obj'
+                    // ...
+                }
+
             }
             catch (NullReferenceException ex)
             {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+
                 MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                // Log error jika diperlukan
             }
-            //====by
-
-
-            /* inputPin payForm = new inputPin();
-             background.Show();
-             payForm.Owner = background;
-             payForm.ShowDialog();
-             background.Dispose();*/
         }
 
         //Drag Form
@@ -981,27 +1194,7 @@ namespace KASIR
             //string data = "OFF";
             //await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
 
-            await DeathTimeBegin();
             Application.Exit();
-        }
-        private async Task DeathTimeBegin()
-        {
-            try
-            {
-                Process[] processes = Process.GetProcesses();
-                foreach (Process process in processes)
-                {
-                    if (process.ProcessName.Equals("KASIR Dual Monitor", StringComparison.OrdinalIgnoreCase))
-                    {
-                        process.Kill();
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                //MessageBox.Show($"{ex}");
-            }
         }
         private void btnMaximize_Click(object sender, EventArgs e)
         {
@@ -1040,7 +1233,7 @@ namespace KASIR
             };
 
             // Create the SettingsForm
-            using (SettingsForm settingsForm = new SettingsForm())
+            using (SettingsForm settingsForm = new SettingsForm(this))
             {
                 // Set the position of the SettingsForm manually
                 settingsForm.StartPosition = FormStartPosition.CenterParent;
@@ -1122,6 +1315,8 @@ namespace KASIR
                 }
                 catch (PingException ex)
                 {
+                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+
                     // Log error here if needed
                     UpdatePingLabel(Color.Red, "Tidak ada akses \nInternet");
                 }
@@ -1153,6 +1348,8 @@ namespace KASIR
             }
             catch (Exception ex)
             {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+
                 UpdatePingLabel(Color.Red, $"Error: {ex.Message}");
             }
         }
@@ -1179,8 +1376,10 @@ namespace KASIR
                     stopwatch.Stop();
                     break; // Keluar dari loop jika berhasil mengunduh
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+
                     stopwatch.Reset();
                 }
             }
@@ -1316,6 +1515,8 @@ namespace KASIR
             }
             catch (NullReferenceException ex)
             {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+
                 MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 // Log error jika diperlukan
             }
@@ -1324,12 +1525,12 @@ namespace KASIR
 
         private void iconButton3_Click(object sender, EventArgs e)
         {
-            //settingsButton
+           /* //settingsButton
             //====by
             ActivateButton(sender, RGBColors.color4);
             try
             {
-                SettingsForm c = new SettingsForm();
+                SettingsForm c = new SettingsForm(this);
 
                 // Misalkan 'obj' adalah objek yang mungkin null
                 if (c == null)
@@ -1362,7 +1563,7 @@ namespace KASIR
             {
                 MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 // Log error jika diperlukan
-            }
+            }*/
         }
     }
 }

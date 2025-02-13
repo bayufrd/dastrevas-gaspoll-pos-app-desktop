@@ -93,11 +93,13 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.Button;
 using TextBox = System.Windows.Forms.TextBox;
 using SharpCompress.Common;
 using SharpCompress.Compressors.Xz;
+using KASIR.OfflineMode;
 
 namespace KASIR.Komponen
 {
     public partial class SettingsForm : Form
     {
+        public Form1 MainForm { get; set; }
         private PrinterItem selectedPrinterItem;
         //private IPrinterModel printerModel;
         private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
@@ -118,10 +120,11 @@ namespace KASIR.Komponen
         int retryDelayMilliseconds = 10000;
         private string configFolderPath = "setting";
         private string configFilePath = "setting\\configListMenu.txt";
-        public SettingsForm()
+        public SettingsForm(Form1 mainForm)
         {
             this.ControlBox = false;
             InitializeComponent();
+            MainForm = mainForm;
             LoadConfig();
             lblNewVersion.Visible = true;
             lblNewVersionNow.Visible = true;
@@ -685,28 +688,6 @@ namespace KASIR.Komponen
 
             }
         }
-        public async void DeathTimeBegin()
-        {
-            try
-            {
-                string data = "OFF";
-                await File.WriteAllTextAsync("setting\\configListMenu.data", data);
-
-                Process[] processes = Process.GetProcesses();
-                foreach (Process process in processes)
-                {
-                    if (process.ProcessName.Equals("KASIR Dual Monitor", StringComparison.OrdinalIgnoreCase))
-                    {
-                        process.Kill();
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"{ex}");
-            }
-        }
 
         private void Redownload_Click(object sender, EventArgs e)
         {
@@ -848,6 +829,36 @@ namespace KASIR.Komponen
                 }
             }
 
+            //loadOfflinemode
+            string Configflie = "setting\\OfflineMode.data";
+            if (!File.Exists(Configflie))
+            {
+                string data = "OFF";
+                await File.WriteAllTextAsync(Configflie, data);
+            }
+            else
+            {
+                string allSettingsData = await File.ReadAllTextAsync(Configflie);
+
+                if (!string.IsNullOrEmpty(allSettingsData))
+                {
+                    if (allSettingsData == "ON")
+                    {
+                        sButtonOffline.Checked = true;
+                    }
+                    else
+                    {
+                        sButtonOffline.Checked = false;
+                    }
+                }
+                else
+                {
+                    sButtonOffline.Checked = false;
+                    string data = "OFF";
+                    await File.WriteAllTextAsync(Configflie, data);
+                }
+            }
+
         }
         private async void sButtonListMenu_CheckedChanged(object sender, EventArgs e)
         {
@@ -908,7 +919,7 @@ namespace KASIR.Komponen
 
         private void iconDual_Click(object sender, EventArgs e)
         {
-            DeathTimeBegin();
+            
             SettingsDual u = new SettingsDual();
 
             this.Close();
@@ -943,21 +954,40 @@ namespace KASIR.Komponen
 
         private async void sButtonOffline_CheckedChanged(object sender, EventArgs e)
         {
-            string data, Config= "setting\\OfflineMode.data";
-            if (sButtonOffline.Checked == true)
+            if (!Directory.Exists(configFolderPath))
+            {
+                Directory.CreateDirectory(configFolderPath);
+            }
+            string data, Config = "setting\\OfflineMode.data";
+            string allSettingsData = await File.ReadAllTextAsync(Config);
+
+            // Cek apakah Offline mode diaktifkan
+            if (sButtonOffline.Checked == true && allSettingsData == "OFF")
             {
                 data = "ON";
                 await File.WriteAllTextAsync(Config, data);
+
+                // Memanggil UpdateContent pada Form1 yang sudah ada
+                MainForm.UpdateContent(); // Mengupdate konten pada Form1 yang sudah ada
+
                 string TypeCacheEksekusi = "Sync";
                 CacheDataApp form3 = new CacheDataApp(TypeCacheEksekusi);
+                this.Close();
                 form3.Show();
             }
-            else
+
+            // Cek apakah Offline mode dimatikan
+            if (sButtonOffline.Checked == false && allSettingsData == "ON")
             {
                 data = "OFF";
                 await File.WriteAllTextAsync(Config, data);
-            }
 
-         }
+                // Memanggil UpdateContent pada Form1 yang sudah ada
+                MainForm.UpdateContent(); // Mengupdate konten pada Form1 yang sudah ada
+                this.Close();
+
+            }
+        }
+
     }
 }

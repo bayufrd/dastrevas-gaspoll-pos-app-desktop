@@ -194,6 +194,7 @@ namespace KASIR.OfflineMode
             // 
             cmbDiskon.BackColor = Color.White;
             cmbDiskon.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbDiskon.Enabled = false;
             cmbDiskon.FlatStyle = FlatStyle.Flat;
             cmbDiskon.FormattingEnabled = true;
             cmbDiskon.Location = new Point(3, 3);
@@ -208,9 +209,9 @@ namespace KASIR.OfflineMode
             label5.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label5.Location = new Point(4, 6);
             label5.Name = "label5";
-            label5.Size = new Size(52, 15);
+            label5.Size = new Size(109, 15);
             label5.TabIndex = 4;
-            label5.Text = "DISKON";
+            label5.Text = "DISKON (Disabled)";
             // 
             // panel8
             // 
@@ -413,14 +414,14 @@ namespace KASIR.OfflineMode
             label3.TabIndex = 8;
             label3.Text = "CATATAN";
             // 
-            // addCartForm
+            // Offline_addCartForm
             // 
             ClientSize = new Size(600, 600);
             Controls.Add(flowLayoutPanel1);
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
             MaximumSize = new Size(600, 600);
-            Name = "addCartForm";
+            Name = "Offline_addCartForm";
             StartPosition = FormStartPosition.CenterParent;
             TopMost = true;
             Click += addCartForm_Click;

@@ -14,6 +14,7 @@ using System.Globalization;
 using System.Net.Sockets;
 using KASIR.Printer;
 using Newtonsoft.Json.Linq;
+using System.Windows.Markup;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_payForm : Form
@@ -413,9 +414,7 @@ namespace KASIR.OfflineMode
                     // Serialize and save back to transaction.data
                     var newTransactionData = new JObject { { "data", transactionDataArray } };
                     File.WriteAllText(transactionDataPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
-
-                    Offline_masterPos offline_MasterPos = new Offline_masterPos();
-                    offline_MasterPos.DeleteCartFile();
+                    convertData(fulus);
                     //HandleSuccessfulTransaction(response, fulus);
                 }
             }
@@ -425,6 +424,101 @@ namespace KASIR.OfflineMode
                 MessageBox.Show($"Terjadi kesalahan, silakan coba lagi.{ex}", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 ResetButtonState();
             }
+        }
+
+        private async Task convertData(string fulus)
+        {
+            try
+            {
+                // Read cart.data to extract cart details and transaction id
+                string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
+                if (!File.Exists(cartDataPath))
+                {
+                    MessageBox.Show("Keranjang Masih Kosong", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ResetButtonState();
+                    return;
+                }
+
+                string cartDataJson = File.ReadAllText(cartDataPath);
+                // Deserialize cart data
+                var cartData = JsonConvert.DeserializeObject<CartData>(cartDataJson);
+
+                // Konversi ke format GetStrukCustomerTransaction
+                var strukCustomerTransaction = new GetStrukCustomerTransaction
+                {
+                    code = 201,
+                    message = "Transaksi Sukses!",
+                    data = new DataStrukCustomerTransaction
+                    {
+                        outlet_name = "Development Testing",
+                        outlet_address = "Ngalik kosnya bayu",
+                        outlet_phone_number = "123456789",
+                        outlet_footer = "TERIMAKASIH ATAS KUNJUNGANNYA",
+                        transaction_id = 350248,
+                        receipt_number = "AT-bayarr-3-20250214-032429",
+                        customer_name = "bayarr",
+                        customer_seat = 3,
+                        payment_type = "EDC Debit BCA",
+                        delivery_type = null,
+                        delivery_note = null,
+                        cart_id = 350310,
+                        subtotal = (int)cartData.subtotal,
+                        total = (int)cartData.total,
+                        discount_id = 0,
+                        discount_code = null,
+                        discounts_value = null,
+                        discounts_is_percent = null,
+                        cart_details = new List<CartDetailStrukCustomerTransaction>(),
+                        canceled_items = new List<CanceledItemStrukCustomerTransaction>(),
+                        kitchenBarCartDetails = new List<KitchenAndBarCartDetails>(),
+                        kitchenBarCanceledItems = new List<KitchenAndBarCanceledItems>(),
+                        customer_cash = 500000,
+                        customer_change = 369000,
+                        invoice_due_date = "14 Feb 2025, 3:24",
+                        member_name = null,
+                        member_phone_number = null
+                    }
+                };
+
+                // Mengisi cart_details
+                foreach (var item in cartData.cart_details)
+                {
+                    var cartDetail = new CartDetailStrukCustomerTransaction
+                    {
+                        cart_detail_id = 1,//int.Parse(item.cart_detail_id), // Mengonversi string ke int
+                        menu_id = item.menu_id,
+                        menu_name = item.menu_name,
+                        menu_type = item.menu_type,
+                        menu_detail_id = 1,//item.menu_detail_id,
+                        varian = null, // Tidak ada data varian
+                        serving_type_id = item.serving_type_id,
+                        serving_type_name = item.serving_type_name,
+                        discount_id = null, // Tidak ada data discount
+                        discount_code = null,
+                        discounts_value = null,
+                        discounted_price = 0,
+                        discounts_is_percent = null,
+                        price = int.Parse(item.price), // Mengonversi string ke int
+                        total_price = int.Parse(item.price) * item.qty, // Total price dihitung dari price * qty
+                        qty = item.qty,
+                        note_item = string.IsNullOrEmpty(item.note_item) ? "" : item.note_item,
+                        is_ordered = item.is_ordered
+                    };
+
+                    strukCustomerTransaction.data.cart_details.Add(cartDetail);/*
+                strukCustomerTransaction.data.kitchenBarCartDetails.Add(cartDetail); // Menambahkan ke KitchenBarCartDetails juga*/
+                }
+
+                // Serialisasi ke JSON
+                string response = JsonConvert.SerializeObject(strukCustomerTransaction);
+                HandleSuccessfulTransaction(response, fulus);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+
+            }
+
         }
 
         private async Task HandleSuccessfulTransaction(string response, string fulus)
@@ -470,6 +564,10 @@ namespace KASIR.OfflineMode
                     }
                 }
                 DialogResult = DialogResult.OK;
+
+                Offline_masterPos offline_MasterPos = new Offline_masterPos();
+                offline_MasterPos.DeleteCartFile();
+
                 Close();
             }
             catch (Exception ex)

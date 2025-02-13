@@ -135,4 +135,27 @@ namespace KASIR.Model
     }
 
 
+    public class CartData
+    {
+        public List<CartDetail> cart_details { get; set; }
+        public decimal subtotal { get; set; }
+        public decimal total { get; set; }
+    }
+
+    public class CartDetail
+    {
+        public string cart_detail_id { get; set; }
+        public int menu_id { get; set; }
+        public string menu_name { get; set; }
+        public string menu_type { get; set; }
+        public int menu_detail_id { get; set; }
+        public string menu_detail_name { get; set; }
+        public int is_ordered { get; set; }
+        public int serving_type_id { get; set; }
+        public string serving_type_name { get; set; }
+        public string price { get; set; }
+        public int qty { get; set; }
+        public string note_item { get; set; }
+    }
+
 }

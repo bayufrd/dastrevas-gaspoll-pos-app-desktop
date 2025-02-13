@@ -959,37 +959,6 @@ namespace KASIR
             lblTitleChildForm.Text = "Menu";
         }
 
-        /*private void button6_Click(object sender, EventArgs e)
-        {
-            Color randomColor = PickRandomColor();
-            ActivateButton(sender, randomColor);
-            try
-            {
-                masterPos m = new masterPos();
-                if (m == null)
-                {
-                    MessageBox.Show("Terjadi kesalahan cek koneksi anda", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-                m.TopLevel = false;
-                m.Dock = DockStyle.Fill;
-                panel1.Controls.Add(m);
-                m.BringToFront();
-                m.Show();
-                lblTitleChildForm.Text = "Menu - Semua Transaksi";
-                // Misalkan 'obj' adalah objek yang mungkin null
-
-
-
-                // Lakukan operasi dengan 'obj'
-                // ...
-            }
-            catch (NullReferenceException ex)
-            {
-                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                // Log error jika diperlukan
-            }
-        }*/
         private void button6_Click(object sender, EventArgs e)
         {
             Color randomColor = PickRandomColor();  // Pick a random color for button

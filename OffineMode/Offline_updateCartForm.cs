@@ -21,6 +21,7 @@ using Serilog.Core;
 using Serilog.Sinks.File;
 using System.Windows.Forms.Design;
 using KASIR.Komponen;
+using Newtonsoft.Json.Linq;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_updateCartForm : Form
@@ -71,9 +72,55 @@ namespace KASIR.OfflineMode
             cmbVarian.DrawItem += CmbVarian_DrawItem;
             cmbVarian.ItemHeight = 25; // Set the desired item height
             LoadDataVarianAsync();
-
+            //LoadDataDiscount();
             /*int newHeight = Screen.PrimaryScreen.WorkingArea.Height - 100;
             Height = newHeight;*/
+        }
+        private async void LoadDataDiscount()
+        {
+            if (!Directory.Exists(folder)) { Directory.CreateDirectory(folder); }
+
+            // Load menu data from local file if available
+            if (File.Exists(folder + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data"))
+            {
+                try
+                {
+                    string json = File.ReadAllText(folder + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data");
+                    DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(json);
+                    List<DataDiscountCart> data = menuModel.data;
+                    var options = data;
+                    dataDiskonList = data;
+                    options.Insert(0, new DataDiscountCart { id = -1, code = "Pilih Diskon" });
+                    cmbDiskon.DataSource = options;
+                    cmbDiskon.DisplayMember = "code";
+                    cmbDiskon.ValueMember = "id";
+
+                }
+                catch (Exception ex)
+                {
+                    //MessageBox.Show("Gagal tambah data " + ex.Message, "Gaspol");
+                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                }
+            }
+            try
+            {
+                MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                CacheDataApp form3 = new CacheDataApp("Sync");
+                this.Close();
+                form3.Show();
+            }
+            catch (TaskCanceledException ex)
+            {
+                //MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+
+                MessageBox.Show("Gagal tampil data diskon " + ex.Message, "Gaspol");
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+
         }
         private async void LoadDataVarianAsync()
         {
@@ -122,86 +169,60 @@ namespace KASIR.OfflineMode
             {
                 string ConfigCart = "DT-Cache\\Transaction\\Cart.data";
                 string json = File.ReadAllText(ConfigCart);
-                // Deserialisasi JSON ke CartData
                 CartDataCache cartData = JsonConvert.DeserializeObject<CartDataCache>(json);
 
-                // Fungsi untuk mendapatkan item berdasarkan cart_detail_id
+                // Helper function to get item by cart detail ID
                 DataItemOnCart GetItemByCartDetailId(string cartDetailId)
                 {
-                    var item = cartData.cart_details
-                        .FirstOrDefault(c => c.cart_detail_id == cartDetailId);
-
-                    if (item != null)
-                    {
-                        // Mapped data ke DataItemOnCart
-                        return new DataItemOnCart
+                    return cartData.cart_details
+                        .Where(c => c.cart_detail_id == cartDetailId)
+                        .Select(item => new DataItemOnCart
                         {
                             cart_detail_id = int.Parse(item.cart_detail_id),
                             menu_id = item.menu_id,
                             menu_name = item.menu_name,
                             menu_type = item.menu_type,
                             menu_detail_id = item.menu_detail_id,
+                            varian = item.menu_detail_name,
+                            menu_detail_name = item.menu_detail_name,
                             is_ordered = item.is_ordered.ToString(),
                             serving_type_id = item.serving_type_id,
-                            serving_type_name = item.serving_type_name,
-                            price = int.Parse(item.price),
+                            serving_type_name = item.serving_type_name.ToString(),
+                            price = item.price,
+                            subtotal = item.subtotal,
+                            total_price = item.total_price,
                             qty = item.qty,
                             note_item = item.note_item
-                        };
-                    }
-
-                    return null; // Tidak ditemukan
+                        })
+                        .FirstOrDefault();
                 }
 
-                // Contoh penggunaan: Ambil item dengan cart_detail_id "081322"
                 string cartDetailIdToFind = cartdetail;
                 DataItemOnCart data = GetItemByCartDetailId(cartDetailIdToFind);
 
                 if (data != null)
                 {
                     Console.WriteLine($"Menu Name: {data.menu_name}, Price: {data.price}, Quantity: {data.qty}");
+                    // Set labels and fields based on the data retrieved
+                    is_ordered = data.is_ordered;
+                    lblTipe.Text = $"Tipe Penjualan : {data.serving_type_name ?? "Dine In"}";
+                    txtKuantitas.Text = data.qty.ToString();
+                    txtNotes.Text = data.note_item ?? string.Empty;
+                    lblVarian.Text = $"Varian : {data.menu_detail_name ?? "Normal"}";
+                    lblVarian.Enabled = true;
+                    lblTipe.Enabled = true;
+                    searchTextserving = data.serving_type_name ?? string.Empty;
+                    lblnamaitem = data.menu_name ?? "Tidak tersedia";
+
+                    LoadDataServingType(searchTextserving);
+                    // Ensure that menu_detail_id is converted to a non-nullable int (default to 0 if null)
+                    //LoadDataVariants(data.menu_detail_id ?? 0);
+                    SetComboBoxSelectionByNameVarian(data.menu_detail_name);  // Search by variant name
+
                 }
                 else
                 {
                     Console.WriteLine("Item not found.");
-                }
-
-                //LoadDataDiscount(data.discount_id);
-
-                is_ordered = data.is_ordered;
-
-                List<DataDiscountCart> dataDiscounts = dataDiscount;
-
-                lblTipe.Text = "Tipe Penjualan : " + (data.serving_type_name?.ToString() ?? "Tidak tersedia");
-
-                txtKuantitas.Text = data.qty.ToString() ?? "0";
-                kuantitas = int.Parse(txtKuantitas.Text);
-
-                txtNotes.Text = data.note_item?.ToString() ?? "";
-
-                lblVarian.Text = "Varian : " + (data.varian?.ToString() ?? "Tidak tersedia");
-                lblVarian.Enabled = true;
-                lblTipe.Enabled = true;
-
-                searchTextserving = data.serving_type_name?.ToString() ?? "";
-
-                lblnamaitem = data.menu_name?.ToString() ?? "Tidak tersedia";
-
-                LoadDataServingType();
-
-                // Set varian
-                searchText = data.varian?.ToString() ?? "";
-                if (!string.IsNullOrEmpty(searchText))
-                {
-                    for (int kimak = 0; kimak < cmbVarian.Items.Count; kimak++)
-                    {
-                        cmbVarian.SelectedIndex = kimak;
-                        if (cmbVarian.Text.ToString() == searchText)
-                        {
-                            cmbVarian.SelectedIndex = kimak;
-                            break;
-                        }
-                    }
                 }
             }
             catch (TaskCanceledException ex)
@@ -211,45 +232,33 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data " + ex.Message);
+                MessageBox.Show($"Gagal tampil data: {ex.Message}");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
 
 
 
-
-
-
-        private async void LoadDataServingType()
+        private async void LoadDataServingType(string servingTypeName)
         {
             try
             {
-                if (File.Exists(folder + "\\LoadDataServingType_" + idmenu + "_Outlet_" + baseOutlet + ".data"))
+                string filePath = $"{folder}\\LoadDataServingType_{idmenu}_Outlet_{baseOutlet}.data";
+                if (File.Exists(filePath))
                 {
-                    string json = File.ReadAllText(folder + "\\LoadDataServingType_" + idmenu + "_Outlet_" + baseOutlet + ".data");
+                    string json = File.ReadAllText(filePath);
                     GetMenuByIdModel menuModel = JsonConvert.DeserializeObject<GetMenuByIdModel>(json);
                     DataMenu data = menuModel.data;
+
+                    // Ensure that the data.serving_types is the correct list of ServingType objects
                     var options = data.serving_types;
 
-                    //options.Insert(0, new ServingType { id = -1, name = "Pilih Tipe Serving" });
-                    //default
-
-                    comboBox1.DataSource = options;
+                    comboBox1.DataSource = options;  // Ensure this is a list of ServingType
                     comboBox1.DisplayMember = "name";
                     comboBox1.ValueMember = "id";
-                    if (!string.IsNullOrEmpty(searchTextserving))
-                    {
-                        for (int kimak = 0; kimak < comboBox1.Items.Count; kimak++)
-                        {
-                            comboBox1.SelectedIndex = kimak;
-                            if (comboBox1.Text.ToString() == searchTextserving)
-                            {
-                                comboBox1.SelectedIndex = kimak;
-                                break;
-                            }
-                        }
-                    }
+
+                    // Set selected item based on serving_type_id
+                    SetComboBoxSelectionByName(data.serving_types, comboBox1, servingTypeName);
                 }
                 else
                 {
@@ -258,9 +267,6 @@ namespace KASIR.OfflineMode
                     this.Close();
                     form3.Show();
                 }
-
-
-
             }
             catch (TaskCanceledException ex)
             {
@@ -269,7 +275,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data tipe serving " + ex.Message, "Gaspol");
+                MessageBox.Show($"Gagal tampil data tipe serving: {ex.Message}", "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             finally
@@ -278,27 +284,96 @@ namespace KASIR.OfflineMode
                 btnSimpan.Enabled = true;
                 btnTambah.Enabled = true;
                 btnKurang.Enabled = true;
-                lblNameCart.Text = lblnamaitem.ToString();
+                lblNameCart.Text = lblnamaitem;
+            }
+        }
+        // Helper method to set ComboBox selection by name (search by name/text)
+        private void SetComboBoxSelectionByNameVarian(string searchText)
+        {
+            if (!string.IsNullOrEmpty(searchText))
+            {
+                for (int kimak = 0; kimak < cmbVarian.Items.Count; kimak++)
+                {
+                    cmbVarian.SelectedIndex = kimak;
+                    if (cmbVarian.Text == searchText)
+                    {
+                        cmbVarian.SelectedIndex = kimak;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Helper method to set ComboBox selection by name (search by name/text)
+        private void SetComboBoxSelectionByName(List<ServingType> serving_types, ComboBox comboBox, string servingTypeName)
+        {
+            for (int i = 0; i < comboBox.Items.Count; i++)
+            {
+                var item = (ServingType)comboBox.Items[i];  // Assumed ServingType is the type of items in comboBox1
+                if (item.name.Equals(servingTypeName, StringComparison.OrdinalIgnoreCase)) // Compare by name
+                {
+                    comboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        private async Task<string> returnPriceByServingTypeAsync(string serving_type_id, string varian)
+        {
+            // Membaca data dari file cache
+            string cachedData = File.ReadAllText(folder + "\\LoadDataServingType_" + idmenu + "_Outlet_" + baseOutlet + ".data");
+
+            // Deserialize data dari cache
+            GetMenuByIdModel menuModel = JsonConvert.DeserializeObject<GetMenuByIdModel>(cachedData);
+
+            // Validasi data
+            if (menuModel == null || menuModel.data == null)
+            {
+                throw new InvalidOperationException("Menu data is invalid.");
             }
 
-        }
-        private async Task<string> returnPriceByServingTypeAsync(string id, string varian)
-        {
-            IApiService apiService = new ApiService();
-            string response = await apiService.GetMenuDetailByID("/menu-detail", "" + idmenu + "?menu_detail_id=" + varian);
-            GetMenuDetailCartModel menuModel = JsonConvert.DeserializeObject<GetMenuDetailCartModel>(response);
-            DataMenuDetail data = menuModel.data;
-            List<MenuDetailDataCart> menuDetailDataList = data.menu_details;
-            List<ServingTypes> servingTypes = menuDetailDataList[0].serving_types;
-            var servingType = servingTypes.FirstOrDefault(serving => serving.id == int.Parse(id));
-            if (servingType != null)
+            DataMenu data = menuModel.data;
+            List<MenuDetailS> menuDetailDataList = data.menu_details;
+
+            // Jika varian tidak dipilih (selectedVarian == -1)
+            if (string.IsNullOrEmpty(varian) || varian == "0")
             {
-                return servingType.price.ToString();
+                // Cari harga berdasarkan serving_type_id di menu_prices
+                var menuPrice = data.menu_prices
+                    .FirstOrDefault(price => price.serving_type_id == int.Parse(serving_type_id));
+
+                if (menuPrice != null)
+                {
+                    return menuPrice.price.ToString(); // Return harga dari menu utama
+                }
             }
             else
             {
-                return "0";
+                // Jika varian dipilih, varian adalah menu_detail_id
+                int varianId = int.Parse(varian);
+
+                if (varianId != -1)
+                {
+                    // Cari menu_detail yang memiliki menu_detail_id yang sesuai dengan varian
+                    var menuDetail = menuDetailDataList
+                        .FirstOrDefault(detail => detail.menu_detail_id == varianId); // Mencocokkan menu_detail_id
+
+                    if (menuDetail != null)
+                    {
+                        // Cari harga berdasarkan serving_type_id dari menu_prices dalam menu_detail
+                        var menuPrice = menuDetail.menu_prices
+                            .FirstOrDefault(price => price.serving_type_id == int.Parse(serving_type_id)); // Mencocokkan serving_type_id
+
+                        if (menuPrice != null)
+                        {
+                            return menuPrice.price.ToString(); // Return harga berdasarkan menu_detail_id
+                        }
+                    }
+                }
             }
+
+            // Jika tidak ditemukan harga untuk serving_type_id yang diminta
+            return "0"; // Kembalikan "0" jika tidak ditemukan
         }
 
         private async void btnSimpan_ClickAsync(object sender, EventArgs e)
@@ -387,46 +462,58 @@ namespace KASIR.OfflineMode
             {
                 try
                 {
-                    lblNameCart.Text = "Mengirim Data...";
+                    lblNameCart.Text = "Menghapus Data...";
 
-                    IApiService apiService = new ApiService();
-                    HttpResponseMessage response = await apiService.DeleteCart("/cart/" + cartdetail + "?outlet_id=" + baseOutlet);
-                    if (response != null)
+                    string configCart = "DT-Cache\\Transaction\\Cart.data";
+
+                    if (File.Exists(configCart))
                     {
-                        DialogResult = DialogResult.OK;
-                        if (response.IsSuccessStatusCode)
+                        // Read the cart file content as a string
+                        string json = File.ReadAllText(configCart);
+
+                        // Parse the JSON string into a JObject (dynamic)
+                        JObject cartData = JObject.Parse(json);
+
+                        // Find and remove the item with the matching cart_detail_id
+                        JArray cartDetails = (JArray)cartData["cart_details"];
+                        var itemToRemove = cartDetails.FirstOrDefault(item => item["cart_detail_id"].ToString() == cartdetail);
+
+                        if (itemToRemove != null)
                         {
-                            DialogResult = DialogResult.OK;
+                            // Remove the item from the array
+                            cartDetails.Remove(itemToRemove);
 
-                            if (Application.OpenForms["masterPos"] is masterPos masterPosForm)
+                            // Recalculate subtotal and total
+                            decimal subtotal = 0;
+                            foreach (var item in cartDetails)
                             {
-                                // Call a method in the MasterPos form to refresh the cart
-                                masterPosForm.LoadCart(); // You'll need to define this method in MasterPos
+                                subtotal += (decimal)item["total_price"];
                             }
-                            /*
-                            DialogResult result = MessageBox.Show("Menu berhasil dihapus", "Gaspol", MessageBoxButtons.OK);
 
-                            if (result == DialogResult.OK)
-                            {
-                               
-                                ReloadDataInBaseForm = true;
+                            // Update the cart totals
+                            cartData["subtotal"] = subtotal;
+                            cartData["total"] = subtotal;
 
-                            }
-                            this.DialogResult = result;
-                            */
-                            Close();
+                            // Save the updated cart data back to the file
+                            File.WriteAllText(configCart, cartData.ToString(Formatting.Indented));
+
+                            Console.WriteLine("Item successfully removed.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Item not found in the cart.");
                         }
                     }
+                    DialogResult = DialogResult.OK;
+                    this.Close();
                 }
                 catch (TaskCanceledException ex)
                 {
-                    MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
                 catch (Exception ex)
                 {
                     DialogResult = DialogResult.Cancel;
-                    MessageBox.Show("Gagal tampil data " + ex.Message);
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                     Close();
                 }
@@ -488,40 +575,13 @@ namespace KASIR.OfflineMode
         private async void btnSimpan_Click(object sender, EventArgs e)
         {
             //LoggerUtil.LogPrivateMethod(nameof(btnSimpan_Click));
-            cekKeranjangDiskon();
+            //cekKeranjangDiskon();
 
             try
             {
-                int selectedVarian = int.Parse(cmbVarian.SelectedValue.ToString());
-                int selectedDiskon = int.Parse(cmbDiskon.SelectedValue.ToString());
-                int diskon = 0;
-                if (comboBox1.Text.ToString() == "Pilih Tipe Serving")
-                {
-                    MessageBox.Show("Pilih tipe serving", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-                if (int.Parse(txtKuantitas.Text.ToString()) <= 0 || txtKuantitas.Text.ToString() == "")
-                {
-                    MessageBox.Show("Masukan jumlah kuantitas!", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-                int serving_type = int.Parse(comboBox1.SelectedValue.ToString());
-                var quantity = int.Parse(txtKuantitas.Text.ToString());
-                var notes = txtNotes.Text.ToString();
-                int? menuDetailIdValue = null;
-                string pricefix = "0";
-
-                if (selectedVarian == null || selectedVarian == -1)
-                {
-                    // MenuDetailDataCart paramData = menuDetailDataCarts[0];
-                    pricefix = await returnPriceByServingTypeAsync(serving_type.ToString(), "0");
-                }
-                else
-                {
-                    // MenuDetailDataCart paramData = menuDetailDataCarts[selectedVarian];
-                    pricefix = await returnPriceByServingTypeAsync(serving_type.ToString(), "" + selectedVarian);
-                }
-                if (selectedDiskon == -1)
+                
+                
+               /* if (selectedDiskon == -1)
                 {
                     diskon = 0;
                 }
@@ -538,96 +598,15 @@ namespace KASIR.OfflineMode
                             return;
                         }
                     }
-                }
-                lblNameCart.Text = "Mengirim Data...";
-                btnSimpan.Enabled = false;
-                Dictionary<string, object> json = new Dictionary<string, object>
-                {
-                    { "outlet_id", baseOutlet },
-                    { "menu_id", datas.id },
-                    { "serving_type_id", serving_type },
-                    { "price", pricefix },
-                    { "discount_id", diskon.ToString() },
-                    { "qty", quantity },
-                    { "note_item", notes }
-                };
-                if (selectedVarian != null && selectedVarian != -1)
-                {
-                    json["menu_detail_id"] = selectedVarian;
-                    // Now you can use the selectedValueAsString as needed
-                }
-                string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
-                if (is_ordered == "1")
-                {
-                    Form background = new Form
-                    {
-                        StartPosition = FormStartPosition.Manual,
-                        FormBorderStyle = FormBorderStyle.None,
-                        Opacity = 0.7d,
-                        BackColor = Color.Black,
-                        WindowState = FormWindowState.Maximized,
-                        TopMost = true,
-                        Location = this.Location,
-                        ShowInTaskbar = false,
-                    };
+                }*/
+                await UpdateCartItemLocally(cartdetail);
 
-                    using (Offline_updatePerItemForm Offline_updatePerItemForm = new Offline_updatePerItemForm(json, cartdetail))
-                    {
-                        Offline_updatePerItemForm.Owner = background;
 
-                        background.Show();
-
-                        DialogResult dialogResult = Offline_updatePerItemForm.ShowDialog();
-
-                        background.Dispose();
-
-                        if (dialogResult == DialogResult.OK)
-                        {
-                            masterPos m = new masterPos();
-                            m.ReloadCart();
-                            DialogResult = DialogResult.OK;
-
-                            this.Close();
-                        }
-                    }
-                }
-                else
-                {
-                    IApiService apiService = new ApiService();
-                    HttpResponseMessage response = await apiService.UpdateCart(jsonString, "/cart/" + cartdetail);
-                    if (response != null)
-                    {
-                        if (response.IsSuccessStatusCode)
-                        {
-
-                            if (Application.OpenForms["masterPos"] is masterPos masterPosForm)
-                            {
-                                // Call a method in the MasterPos form to refresh the cart
-                                masterPosForm.LoadCart();
-                            }
-                            DialogResult = DialogResult.OK;
-                            Close();
-                            /*
-                        DialogResult result = MessageBox.Show("Menu berhasil diperbaharui", "Gaspol", MessageBoxButtons.OK);
-
-                        if (result == DialogResult.OK)
-                        {
-                            ReloadDataInBaseForm = true;
-
-                        }
-                        this.DialogResult = result;
-                            */
-                        }
-                        else
-                        {
-                            DialogResult = DialogResult.Cancel;
-                            MessageBox.Show("Menu gagal diperbaharui", "Gaspol");
-                            Close();
-                        }
-                    }
-                }
-
+                DialogResult = DialogResult.OK;
+                Close();
             }
+
+            
             catch (TaskCanceledException ex)
             {
                 MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -640,7 +619,114 @@ namespace KASIR.OfflineMode
             }
 
         }
+        private async Task UpdateCartItemLocally(string cartDetailId)
+        {
+            try
+            {
+                string configCart = "DT-Cache\\Transaction\\Cart.data";
 
+                if (File.Exists(configCart))
+                {
+                    // Read the cart file content as a string
+                    string json = File.ReadAllText(configCart);
+
+                    // Parse the JSON string into a JObject (dynamic)
+                    JObject cartData = JObject.Parse(json);
+
+                    // Find the item with the matching cart_detail_id
+                    JArray cartDetails = (JArray)cartData["cart_details"];
+                    var itemToUpdate = cartDetails.FirstOrDefault(item => item["cart_detail_id"].ToString() == cartDetailId);
+
+                    if (itemToUpdate != null)
+                    {
+                        int selectedVarian = int.TryParse(cmbVarian.SelectedValue?.ToString(), out var varianResult) ? varianResult : -1;
+                        string VarianName = cmbVarian.Text.ToString() ?? "Normal";
+                        int serving_type = int.Parse(comboBox1.SelectedValue.ToString());
+                        var quantity = int.Parse(txtKuantitas.Text.ToString());
+                        var notes = txtNotes.Text.ToString();
+                        int? menuDetailIdValue = null;
+                        string pricefix = "0", servingTypeName = comboBox1.Text.ToString();
+                        //int selectedDiskon = int.Parse(cmbDiskon.SelectedValue.ToString());
+                        int diskon = 0;
+                        if (comboBox1.Text.ToString() == "Pilih Tipe Serving")
+                        {
+                            MessageBox.Show("Pilih tipe serving", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            return;
+                        }
+                        if (int.Parse(txtKuantitas.Text.ToString()) <= 0 || txtKuantitas.Text.ToString() == "")
+                        {
+                            MessageBox.Show("Masukan jumlah kuantitas!", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            return;
+                        }
+                        // Update the item with the new values
+                        itemToUpdate["qty"] = quantity;  // Update quantity
+                        itemToUpdate["note_item"] = notes;  // Update notes
+
+                        // Update serving type (serving_type_id and serving_type_name)
+                        itemToUpdate["serving_type_id"] = serving_type;
+                        itemToUpdate["serving_type_name"] = servingTypeName;
+
+
+                        // Update serving type (serving_type_id and serving_type_name)
+                        itemToUpdate["menu_detail_id"] = selectedVarian;
+                        itemToUpdate["menu_detail_name"] = VarianName;
+                        itemToUpdate["varian"] = VarianName;
+
+
+                        if (selectedVarian == -1)
+                        {
+                            pricefix = await returnPriceByServingTypeAsync(serving_type.ToString(), "0");
+                        }
+                        else
+                        {
+                            pricefix = await returnPriceByServingTypeAsync(serving_type.ToString(), selectedVarian.ToString());
+                        }
+
+
+                        // Recalculate price (price * quantity)
+                        pricefix = itemToUpdate["price"].ToString();
+                        int discountedPrice = int.Parse(pricefix) * quantity;
+                        itemToUpdate["total_price"] = discountedPrice;
+
+                        /*// Optionally, apply discount based on selectedDiskon (if necessary)
+                        if (selectedDiskon != -1)
+                        {
+                            // Apply discount logic here
+                            int diskonValue = GetDiskonValue(selectedDiskon); // Assuming GetDiskonValue() is your logic to get the discount
+                            discountedPrice -= diskonValue;
+                            itemToUpdate["total_price"] = discountedPrice;
+                        }*/
+
+                        // Recalculate subtotal and total
+                        decimal subtotal = 0;
+                        foreach (var item in cartDetails)
+                        {
+                            subtotal += (decimal)item["total_price"];
+                        }
+
+                        // Update the cart totals
+                        cartData["subtotal"] = subtotal;
+                        cartData["total"] = subtotal;
+
+                        // Save the updated cart data back to the file
+                        File.WriteAllText(configCart, cartData.ToString(Formatting.Indented));
+
+                    }
+                    else
+                    {
+                        MessageBox.Show("Item not found in the cart.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Cart file not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
         private async void LoadDataDiscount(int? discount_id)
         {
             try

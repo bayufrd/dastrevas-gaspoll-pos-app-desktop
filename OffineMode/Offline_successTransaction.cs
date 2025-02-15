@@ -103,9 +103,9 @@ namespace KASIR.OfflineMode
 
                         // Format total price and other values
                         decimal total = transaction["total"] != null ? decimal.Parse(transaction["total"].ToString()) : 0;
-                        string customerName = transaction["customer_name"]?.ToString() ?? "Unknown";
+                        string customerName = transaction["customer_name"]?.ToString() ?? "-";
                         string customerSeat = transaction["customer_seat"]?.ToString() ?? "0";
-                        string paymentType = transaction["payment_type_name"]?.ToString() ?? "Unknown";
+                        string paymentType = transaction["payment_type_name"]?.ToString() ?? "-";
 
                         DateTime transactionTime;
                         // Parse the created_at field and format it
@@ -114,8 +114,7 @@ namespace KASIR.OfflineMode
                             string formattedDate = transactionTime.ToString("dd MMM yyyy, HH:mm");
                             dataTable.Rows.Add(
                                 transaction["transaction_id"]?.ToString(),
-                                numberQueue + ". " +
-                                transaction["receipt_number"]?.ToString(),
+                                numberQueue + ". " +transaction["receipt_number"]?.ToString(),
                                 customerName,
                                 customerSeat,
                                 string.Format("Rp. {0:n0},-", total),
@@ -128,8 +127,7 @@ namespace KASIR.OfflineMode
                             // If parsing fails, show original date
                             dataTable.Rows.Add(
                                 transaction["transaction_id"]?.ToString(),
-                                numberQueue + ". " +
-                                transaction["receipt_number"]?.ToString(),
+                                numberQueue + ". " +transaction["receipt_number"]?.ToString(),
                                 customerName,
                                 customerSeat,
                                 string.Format("Rp. {0:n0},-", total),

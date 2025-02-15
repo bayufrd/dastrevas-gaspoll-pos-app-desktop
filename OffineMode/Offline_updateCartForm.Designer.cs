@@ -376,9 +376,9 @@
             lblDiscount.AutoSize = true;
             lblDiscount.Location = new Point(5, 24);
             lblDiscount.Name = "lblDiscount";
-            lblDiscount.Size = new Size(43, 15);
+            lblDiscount.Size = new Size(46, 15);
             lblDiscount.TabIndex = 7;
-            lblDiscount.Text = "Diskon";
+            lblDiscount.Text = "Diskon ";
             // 
             // panel11
             // 
@@ -409,9 +409,9 @@
             label5.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label5.Location = new Point(4, 6);
             label5.Name = "label5";
-            label5.Size = new Size(52, 15);
+            label5.Size = new Size(109, 15);
             label5.TabIndex = 4;
-            label5.Text = "DISKON";
+            label5.Text = "DISKON (Disabled)";
             // 
             // panel8
             // 
@@ -472,6 +472,7 @@
             Controls.Add(panel1);
             Controls.Add(flowLayoutPanel1);
             FormBorderStyle = FormBorderStyle.None;
+            MaximumSize = new Size(600, 600);
             Name = "Offline_updateCartForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "updateCart";

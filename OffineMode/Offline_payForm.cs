@@ -15,6 +15,7 @@ using System.Net.Sockets;
 using KASIR.Printer;
 using Newtonsoft.Json.Linq;
 using System.Windows.Markup;
+using System.Windows.Forms.VisualStyles;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_payForm : Form
@@ -131,10 +132,21 @@ namespace KASIR.OfflineMode
             panel14.Visible = false;
             btnDataMember.Visible = false;
             lblPoint.Visible = false;
+            // Attach the KeyPress event handler
+            txtSeat.KeyPress += new KeyPressEventHandler(txtNumberOnly_KeyPress);
+        }
+        // KeyPress event handler to allow numbers only
+        private void txtNumberOnly_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            // Allow only digits and Backspace (to delete characters)
+            if (!Char.IsDigit(e.KeyChar) && e.KeyChar != (char)Keys.Back)
+            {
+                e.Handled = true; // Prevent non-numeric characters
+            }
         }
         private async void loadFooterStruct()
         {
-                Kakimu = await File.ReadAllTextAsync("setting\\FooterStruk.data");
+            Kakimu = await File.ReadAllTextAsync("setting\\FooterStruk.data");
         }
         private void loadCountingStruct()
         {
@@ -364,6 +376,8 @@ namespace KASIR.OfflineMode
                     var cartDetails = cartData["cart_details"] as JArray;
                     string firstCartDetailId = cartDetails?.FirstOrDefault()?["cart_detail_id"].ToString();
                     transactionId = firstCartDetailId ?? "0";
+                    string paymentTypeName = cmbPayform.Text.ToString();
+                    int paymentTypedId = int.Parse(cmbPayform.SelectedValue.ToString());
                     string receiptReformat = ConvertDateTimeFormat(transactionId);
                     // Prepare transaction data
                     var transactionData = new
@@ -371,8 +385,8 @@ namespace KASIR.OfflineMode
                         transaction_id = transactionId,
                         receipt_number = $"AT-{txtNama.Text}-{txtSeat.Text}-" + receiptReformat,
                         invoice_number = $"INV-" + (DateTime.Now.ToString("yyyyMMdd-HHmmss")) + cmbPayform.SelectedValue.ToString(),  // Adjust if you want to implement custom invoice numbers
-                        payment_type_id = cmbPayform.SelectedValue.ToString(),
-                        payment_type_name = cmbPayform.SelectedText.ToString(),
+                        payment_type_id = paymentTypedId,
+                        payment_type_name = paymentTypeName.ToString(),
                         customer_name = txtNama.Text,
                         customer_seat = int.Parse(txtSeat.Text),
                         customer_cash = fulusAmount,
@@ -380,10 +394,20 @@ namespace KASIR.OfflineMode
                         subtotal = totalCartAmount, // Or use subtotal from cart
                         created_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                         updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                        deleted_at = "null",
                         is_refund = 0,
                         refund_reason = "null",
-                        cart_details = cartDetails,
-                        customer_change = change
+                        customer_change = change,
+                        delivery_type = "null",
+                        delivery_note = "null",
+                        discount_id = 0,
+                        discount_code = "null",
+                        discounts_value = "null",
+                        discounts_is_percent = "null",
+                        invoice_due_date = "14 Feb 2025, 3:24",
+                        member_name = "null",
+                        member_phone_number = "null",
+                        cart_details = cartDetails
                     };
 
                     // Save transaction data to transaction.data
@@ -403,7 +427,7 @@ namespace KASIR.OfflineMode
                     // Serialize and save back to transaction.data
                     var newTransactionData = new JObject { { "data", transactionDataArray } };
                     File.WriteAllText(transactionDataPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
-                    convertData(fulus, change);
+                    convertData(fulus, change, paymentTypeName);
                     //HandleSuccessfulTransaction(response, fulus);
                 }
             }
@@ -415,7 +439,7 @@ namespace KASIR.OfflineMode
             }
         }
 
-        private async Task convertData(string fulus, int change)
+        private async Task convertData(string fulus, int change, string paymentTypeName)
         {
             try
             {
@@ -435,7 +459,6 @@ namespace KASIR.OfflineMode
 
                 // Membaca file JSON
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
-
                 // Deserialize JSON ke object CartDataCache
                 var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
                 // Konversi ke format GetStrukCustomerTransaction
@@ -453,7 +476,7 @@ namespace KASIR.OfflineMode
                         receipt_number = $"AT-{txtNama.Text}-{txtSeat.Text}-" + receiptReformat,
                         customer_name = txtNama.Text,
                         customer_seat = int.Parse(txtSeat.Text),
-                        payment_type = cmbPayform.SelectedText.ToString(),
+                        payment_type = paymentTypeName.ToString(),
                         delivery_type = null,
                         delivery_note = null,
                         cart_id = 0,
@@ -495,8 +518,9 @@ namespace KASIR.OfflineMode
                         discounts_value = null,
                         discounted_price = 0,
                         discounts_is_percent = null,
-                        price = int.Parse(item.price), // Mengonversi string ke int
-                        total_price = int.Parse(item.price) * item.qty, // Total price dihitung dari price * qty
+                        price = item.price, // Mengonversi string ke int
+                        total_price = item.price * item.qty, // Total price dihitung dari price * qty
+                        subtotal = item.price * item.qty, // Total price dihitung dari price * qty
                         qty = item.qty,
                         note_item = string.IsNullOrEmpty(item.note_item) ? "" : item.note_item,
                         is_ordered = item.is_ordered
@@ -606,60 +630,6 @@ namespace KASIR.OfflineMode
             }
         }
 
-        /*
-        private async void HandleSuccessfulTransaction(string response, string fulus)
-        {
-            try
-            {
-                GetStrukCustomerTransaction menuModel = JsonConvert.DeserializeObject<GetStrukCustomerTransaction>(response);
-
-                if (menuModel != null && menuModel.data != null)
-                {
-                    DataStrukCustomerTransaction data = menuModel.data;
-                    List<CartDetailStrukCustomerTransaction> listCart = data.cart_details;
-                    List<KitchenAndBarCartDetails> kitchenBarCart = data.kitchenBarCartDetails;
-                    List<KitchenAndBarCanceledItems> kitchenBarCanceled = data.kitchenBarCanceledItems;
-
-                    List<CartDetailStrukCustomerTransaction> cartDetails = data.cart_details;
-                    List<KitchenAndBarCartDetails> kitchenItems = kitchenBarCart.Where(cd => cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList();
-                    List<KitchenAndBarCartDetails> barItems = kitchenBarCart.Where(cd => cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList();
-                    List<KitchenAndBarCanceledItems> canceledKitchenItems = kitchenBarCanceled.Where(cd => cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList();
-                    List<KitchenAndBarCanceledItems> canceledBarItems = kitchenBarCanceled.Where(cd => cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList();
-
-                    btnSimpan.Text = "Mencetak...";
-                    var tasks = new List<Task>();
-
-                    if (MacAddressKitchen.Length > 10 && (kitchenItems.Any() || canceledKitchenItems.Any()))
-                    {
-                        tasks.Add(PrintKitchenAndBarReceiptsAsync(menuModel, kitchenItems, "Kitchen", MacAddressKitchen, PinPrinterKitchen, canceledKitchenItems));
-
-                        //PrintKitchenAndBarReceipts(menuModel, kitchenItems, "Kitchen", MacAddressKitchen, PinPrinterKitchen, canceledKitchenItems);
-                    }
-
-                    if (MacAddressBar.Length > 10 && (barItems.Any() || canceledBarItems.Any()))
-                    {
-                        tasks.Add(PrintKitchenAndBarReceiptsAsync(menuModel, barItems, "Bar", MacAddressBar, PinPrinterBar, canceledBarItems));
-
-                        //PrintKitchenAndBarReceipts(menuModel, barItems, "Bar", MacAddressBar, PinPrinterBar, canceledBarItems);
-                    }
-                    tasks.Add(PrintPurchaseReceiptAsync(menuModel, cartDetails));
-
-
-                    // Run all print tasks in parallel
-                    await Task.WhenAll(tasks);
-                    //PrintPurchaseReceipt(menuModel, cartDetails);
-                }
-                btnSimpan.Text = "Selesai.";
-                btnSimpan.Enabled = true;
-                DialogResult = DialogResult.OK;
-                Close();
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
-        */
         private void ResetButtonState()
         {
             btnSimpan.Enabled = true;
@@ -700,960 +670,7 @@ namespace KASIR.OfflineMode
         }
         private ApiService apiService;
 
-        // Fungsi untuk mengatur teks di tengah
-        private string CenterText(string text)
-        {
 
-            //outlet 2 try fix by
-            if (text == null)
-            {
-                return string.Empty; // or some other default value
-            }
-            //
-
-            int spaces = Math.Max(0, (32 - text.Length) / 2);
-            return new string(' ', spaces) + text;
-        }
-
-        
-        // Fungsi untuk memformat baris dengan dua kolom (key, value)
-        private string FormatSimpleLine(string left, object right)
-        {
-            // Jika objek right null, maka atur rightString sebagai string kosong
-            string rightString = right != null ? right.ToString() : string.Empty;
-
-            // Hitung panjang teks yang seharusnya ditambahkan ke kiri
-            int paddingLength = Math.Max(0, 32 - rightString.Length);
-
-            // Format baris dengan padding dan alignment yang benar
-            string formattedLine = left.PadRight(paddingLength) + rightString;
-
-            return formattedLine;
-        }
-
-        // Fungsi untuk memformat baris dengan tiga kolom (Item, Kuantitas, Harga)
-        private string FormatItemLine(string item, object quantity, object price)
-        {
-            int column1Width = 20; // Adjust as needed
-            int column2Width = 6;  // Adjust as needed
-
-            string quantityString = quantity.ToString() + "x ";
-            string priceString = price.ToString();
-
-            // Format the line with padding and alignment
-            string formattedLine = "\x1B\x45\x01" + item.PadRight(column1Width) + "\x1B\x45\x00" +
-                                   quantityString.PadLeft(column2Width) +
-                                   priceString.PadLeft(priceString.Length);
-            return formattedLine;
-        }
-
-        // Fungsi untuk memformat baris dengan dua kolom detail item
-        private string FormatDetailItemLine(string column1, object column2)
-        {
-            // Gabungkan kolom menjadi satu string dengan format "column1: column2"
-            string combinedColumns = column1 + ": " + column2.ToString();
-
-            // Jika panjang kombinasi kolom lebih dari 32 karakter
-            if (combinedColumns.Length > 32)
-            {
-                // Inisialisasi string untuk menyimpan hasil yang akan dikembalikan
-                string formattedLine = "";
-
-                // Hitung berapa karakter yang masih dapat dimasukkan ke baris ini
-                int charactersToFitInLine = 32;
-
-                // Indeks untuk memulai bagian berikutnya dari teks yang akan diproses
-                int startIndex = 0;
-
-                while (startIndex < combinedColumns.Length)
-                {
-                    // Bagian berikutnya dari teks yang akan diproses
-                    string nextPart = combinedColumns.Substring(startIndex, Math.Min(charactersToFitInLine, combinedColumns.Length - startIndex));
-
-                    // Tambahkan ke baris yang akan dikembalikan
-                    formattedLine += nextPart;
-
-                    // Periksa apakah masih ada lebih banyak teks yang harus diproses
-                    if (startIndex + nextPart.Length < combinedColumns.Length)
-                    {
-                        // Tambahkan newline (\n) jika masih ada teks yang harus diproses
-                        formattedLine += "\n";
-
-                        // Sisakan karakter yang dapat dimasukkan ke baris berikutnya
-                        charactersToFitInLine = 32;
-                    }
-
-                    // Perbarui indeks untuk memulai bagian berikutnya
-                    startIndex += nextPart.Length;
-                }
-
-                return formattedLine;
-            }
-            else
-            {
-                // Jika panjang tidak melebihi 32 karakter, langsung lakukan padding
-                int paddingSpaces = 32 - combinedColumns.Length;
-                string formattedLine = "".PadLeft(paddingSpaces) + combinedColumns;
-                return formattedLine;
-            }
-        }
-
-        private string FormatKitchenBarLine(string left, object right)
-        {
-            // Jika objek right null, maka atur rightString sebagai string kosong
-            string rightString = right.ToString();
-
-            // Tambahkan tanda kurung buka dan tutup ke string "left"
-            left = "( " + left + " )";
-
-            // Gabungkan string "left" dengan string "right" tanpa spasi tambahan di antaranya
-            string formattedLine = left + " " + rightString;
-
-            return formattedLine;
-        }
-
-        private async Task RetryPolicyAsync(Func<Task> printTask, int maxAttempts, int retryDelayMilliseconds)
-        {
-            int currentAttempt = 1;
-            Exception lastException = null;
-
-            while (currentAttempt <= maxAttempts)
-            {
-                try
-                {
-                    // Menjalankan tugas cetak yang diterima dari parameter printTask
-                    await printTask();
-                    return; // Keluar dari loop jika cetak berhasil
-                }
-                catch (Exception ex)
-                {
-                    LoggerUtil.LogError(ex, $"Printing failed on attempt {currentAttempt}.");
-                    lastException = ex;
-
-                    if (currentAttempt >= maxAttempts)
-                    {
-                        MessageBox.Show("Gagal mencetak setelah beberapa kali percobaan.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        LoggerUtil.LogError(ex, $"Gagal mencetak setelah beberapa kali percobaan. {currentAttempt}.");
-
-                        return;
-                    }
-
-                    // Menunggu sebelum mencoba lagi
-                    await Task.Delay(retryDelayMilliseconds);
-                }
-
-                currentAttempt++;
-            }
-
-            // Jika sampai di sini, maka seluruh percobaan gagal, lempar pengecualian terakhir
-            if (lastException != null)
-            {
-                throw lastException;
-            }
-        }
-
-        // Struct Pembayaran
-        private async Task PrintPurchaseReceiptAsync(GetStrukCustomerTransaction datas, List<CartDetailStrukCustomerTransaction> cartDetails)
-        {
-            await RetryPolicyAsync(async () =>
-            {
-                try
-                {
-                    // Panggil metode ConnectToBluetoothPrinter dengan timeout 10 detik
-                    BluetoothClient clientSocket = await ConnectToBluetoothPrinter(MacAddressKasir, PinPrinterKasir, 10);
-                    System.IO.Stream stream = clientSocket.GetStream();
-
-                    // Custom variable
-                    string kodeHeksadesimalBold = "\x1B\x45\x01";
-                    string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                    string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-                    string kodeHeksadesimalSpasiKarakter = "\x1B\x20\x02";
-                    string nomorMeja = "Meja No." + datas.data.customer_seat;
-
-                    // Struct template pembelian
-                    string strukText = kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText(totalTransactions.ToString()) + "\n";
-                    strukText += "\n" + kodeHeksadesimalBold + CenterText(datas.data.outlet_name) + "\n";
-                    strukText += kodeHeksadesimalNormal;
-                    strukText += CenterText(datas.data.outlet_address) + "\n";
-                    strukText += CenterText(datas.data.outlet_phone_number) + "\n";
-                    strukText += "--------------------------------\n";
-
-                    strukText += kodeHeksadesimalSizeBesar + CenterText("Pembelian") + "\n";
-                    strukText += kodeHeksadesimalNormal;
-                    strukText += "--------------------------------\n";
-                    strukText += CenterText(datas.data.receipt_number) + "\n";
-                    strukText += CenterText(datas.data.invoice_due_date) + "\n \n";
-                    strukText += FormatSimpleLine(datas.data.customer_name, nomorMeja) + "\n";
-
-                    // Membership area
-                    if (datas.data.member_name != null)
-                    {
-                        strukText += "--------------------------------\n";
-                        strukText += FormatSimpleLine("MEMBER : ", datas.data.member_name) + "\n";
-                        strukText += FormatSimpleLine("No. HP : ", datas.data.member_phone_number) + "\n";
-                        strukText += "--------------------------------\n";
-                    }
-
-                    // Iterate through cart details and group by serving_type_name
-                    var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
-
-                    foreach (var servingType in servingTypes)
-                    {
-                        // Filter cart details by serving_type_name
-                        var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                        // Skip if there are no items for this serving type
-                        if (itemsForServingType.Count == 0)
-                            continue;
-
-                        // Add a section for the serving type
-                        strukText += "--------------------------------\n";
-                        strukText += CenterText(servingType) + "\n";
-                        strukText += "--------------------------------\n";
-
-                        // Iterate through items for this serving type
-                        foreach (var cartDetail in itemsForServingType)
-                        {
-                            strukText += FormatItemLine(cartDetail.menu_name, cartDetail.qty, cartDetail.price) + "\n";
-                            // Add detail items
-                            if (!string.IsNullOrEmpty(cartDetail.varian))
-                                strukText += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
-                            if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                strukText += FormatDetailItemLine("Note", cartDetail.note_item) + "\n";
-                            if (!string.IsNullOrEmpty(cartDetail.discount_code))
-                                strukText += FormatDetailItemLine("Discount Code", cartDetail.discount_code) + "\n";
-                            if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
-                                strukText += FormatDetailItemLine("Total Discount", string.Format("Rp. {0:n0},-", cartDetail.discounted_price)) + "\n";
-                            strukText += FormatDetailItemLine("Total Price", string.Format("Rp. {0:n0},-", cartDetail.total_price)) + "\n";
-
-                            // Add an empty line between items
-                            strukText += "\n";
-                        }
-                    }
-                    strukText += "--------------------------------\n";
-                    strukText += FormatSimpleLine("Subtotal", string.Format("Rp. {0:n0},-", datas.data.subtotal)) + "\n";
-                    if (!string.IsNullOrEmpty(datas.data.discount_code))
-                        strukText += FormatSimpleLine("Discount Code", datas.data.discount_code) + "\n";
-                    if (datas.data.discounts_value.HasValue && datas.data.discounts_value != 0)
-                        strukText += FormatSimpleLine("Discount Value", datas.data.discounts_value) + "\n";
-                    strukText += FormatSimpleLine("Total", string.Format("Rp. {0:n0},-", datas.data.total)) + "\n";
-                    strukText += FormatSimpleLine("Payment Type", datas.data.payment_type) + "\n";
-                    strukText += FormatSimpleLine("Cash", string.Format("Rp. {0:n0},-", datas.data.customer_cash)) + "\n";
-                    strukText += FormatSimpleLine("Change", string.Format("Rp. {0:n0},-", datas.data.customer_change)) + "\n";
-                    strukText += "--------------------------------\n";
-                    strukText += CenterText(Kakimu) + "\n";
-                    strukText += CenterText(datas.data.outlet_footer) + "\n\n\n\n\n\n\n\n\n\n\n";
-
-                    string strukTextChecker = kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText(totalTransactions.ToString()) + "\n";
-                    strukTextChecker += "\n" + kodeHeksadesimalBold + CenterText(datas.data.outlet_name) + "\n";
-                    strukTextChecker += kodeHeksadesimalNormal;
-                    strukTextChecker += CenterText(datas.data.outlet_address) + "\n";
-                    strukTextChecker += CenterText(datas.data.outlet_phone_number) + "\n";
-                    strukTextChecker += "--------------------------------\n";
-
-                    strukTextChecker += kodeHeksadesimalSizeBesar + CenterText("Checker") + "\n";
-                    strukTextChecker += kodeHeksadesimalNormal;
-                    strukTextChecker += "--------------------------------\n";
-                    strukTextChecker += CenterText(datas.data.receipt_number) + "\n";
-                    strukTextChecker += CenterText(datas.data.invoice_due_date) + "\n \n";
-                    strukTextChecker += kodeHeksadesimalSizeBesar + FormatSimpleLine(datas.data.customer_name, nomorMeja) + kodeHeksadesimalNormal + "\n";
-
-                    // Iterate through cart details and group by serving_type_name
-                    var checkerServingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
-
-                    foreach (var checkerServingType in checkerServingTypes)
-                    {
-                        // Filter cart details by serving_type_name
-                        var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == checkerServingType).ToList();
-
-                        // Skip if there are no items for this serving type
-                        if (itemsForServingType.Count == 0)
-                            continue;
-
-                        // Add a section for the serving type
-                        strukTextChecker += "--------------------------------\n";
-                        strukTextChecker += CenterText(checkerServingType) + "\n";
-                        strukTextChecker += "--------------------------------\n";
-
-                        // Iterate through items for this serving type
-                        foreach (var cartDetail in itemsForServingType)
-                        {
-                            strukTextChecker += kodeHeksadesimalBold + FormatSimpleLine(cartDetail.menu_name, cartDetail.qty) + kodeHeksadesimalNormal + "\n";
-                            // Add detail items
-                            if (!string.IsNullOrEmpty(cartDetail.varian))
-                                strukTextChecker += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
-                            if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                strukTextChecker += FormatDetailItemLine("Note", cartDetail.note_item) + "\n";
-
-                            // Add an empty line between itemsprint
-                            strukTextChecker += "\n";
-                        }
-                    }
-                    strukTextChecker += "--------------------------------\n";
-                    strukTextChecker += CenterText(datas.data.outlet_footer) + "\n\n\n\n\n\n";
-
-
-                    // Encode your text into bytes (you might need to adjust the encoding)
-                    byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
-                    byte[] bufferChecker = System.Text.Encoding.UTF8.GetBytes(strukTextChecker);
-
-                    // Create a combined byte array
-                    byte[] combinedBuffer = new byte[buffer.Length + bufferChecker.Length];
-                    Buffer.BlockCopy(buffer, 0, combinedBuffer, 0, buffer.Length);
-                    Buffer.BlockCopy(bufferChecker, 0, combinedBuffer, buffer.Length, bufferChecker.Length);
-
-                    // Send the combined text to the printer
-                    stream.Write(combinedBuffer, 0, combinedBuffer.Length);
-
-                    // Flush the stream to ensure all data is sent to the printer
-                    stream.Flush();
-
-                    // Close the stream and disconnect
-                    clientSocket.GetStream().Close();
-                    stream.Close();
-                    clientSocket.Close();
-                }
-                
-                catch (TaskCanceledException ex)
-                {
-                    throw new Exception("Pairing with the printer timed out.", ex);
-                }
-                catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                throw; // Lempar ulang exception untuk di-handle di RetryPolicyAsync
-                }
-            }, maxAttempts: 3, retryDelayMilliseconds: 2000);
-        }
-
-
-
-        private async void PrintPurchaseReceipt(GetStrukCustomerTransaction datas, List<CartDetailStrukCustomerTransaction> cartDetails)
-        {
-            try
-            {
-                BluetoothDeviceInfo printer = new BluetoothDeviceInfo(BluetoothAddress.Parse(MacAddressKasir));
-                if (printer == null)
-                {
-                    //MessageBox.Show("Printer" + MacAddressKasir + "not found.", "Gaspol");
-                    return;
-                }
-
-                BluetoothClient client = new BluetoothClient();
-                BluetoothEndPoint endpoint = new BluetoothEndPoint(printer.DeviceAddress, BluetoothService.SerialPort);
-
-                using (BluetoothClient clientSocket = new BluetoothClient())
-                {
-                    if (!BluetoothSecurity.PairRequest(printer.DeviceAddress, PinPrinterKasir))
-                    {
-                        //MessageBox.Show("Pairing failed to " + MacAddressKasir, "Gaspol");
-                        return;
-                    }
-
-                    clientSocket.Connect(endpoint);
-                    System.IO.Stream stream = clientSocket.GetStream();
-
-                    // Custom variable
-                    string kodeHeksadesimalBold = "\x1B\x45\x01";
-                    string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                    string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-                    string kodeHeksadesimalSpasiKarakter = "\x1B\x20\x02";
-                    string nomorMeja = "Meja No." + datas.data.customer_seat;
-
-                    // Struct template pembelian
-                    string strukText = kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText(totalTransactions.ToString()) + "\n";
-                    strukText += "\n" + kodeHeksadesimalBold + CenterText(datas.data.outlet_name) + "\n";
-                    strukText += kodeHeksadesimalNormal;
-                    strukText += CenterText(datas.data.outlet_address) + "\n";
-                    strukText += CenterText(datas.data.outlet_phone_number) + "\n";
-                    strukText += "--------------------------------\n";
-
-                    strukText += kodeHeksadesimalSizeBesar + CenterText("Pembelian") + "\n";
-                    strukText += kodeHeksadesimalNormal;
-                    strukText += "--------------------------------\n";
-                    strukText += CenterText(datas.data.receipt_number) + "\n";
-                    strukText += CenterText(datas.data.invoice_due_date) + "\n \n";
-                    strukText += FormatSimpleLine(datas.data.customer_name, nomorMeja) + "\n";
-
-                    // Membership area
-                    if(datas.data.member_name != null)
-                    {
-                        strukText += "--------------------------------\n";
-                        strukText += FormatSimpleLine("MEMBER : ",datas.data.member_name) + "\n";
-                        strukText += FormatSimpleLine("No. HP : ",datas.data.member_phone_number) + "\n";
-                        strukText += "--------------------------------\n";
-                    }
-
-                    // Iterate through cart details and group by serving_type_name
-                    var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
-
-                    foreach (var servingType in servingTypes)
-                    {
-                        // Filter cart details by serving_type_name
-                        var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                        // Skip if there are no items for this serving type
-                        if (itemsForServingType.Count == 0)
-                            continue;
-
-                        // Add a section for the serving type
-                        strukText += "--------------------------------\n";
-                        strukText += CenterText(servingType) + "\n";
-                        strukText += "--------------------------------\n";
-
-                        // Iterate through items for this serving type
-                        foreach (var cartDetail in itemsForServingType)
-                        {
-                            strukText += FormatItemLine(cartDetail.menu_name, cartDetail.qty, cartDetail.price) + "\n";
-                            // Add detail items
-                            if (!string.IsNullOrEmpty(cartDetail.varian))
-                                strukText += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
-                            if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                strukText += FormatDetailItemLine("Note", cartDetail.note_item) + "\n";
-                            if (!string.IsNullOrEmpty(cartDetail.discount_code))
-                                strukText += FormatDetailItemLine("Discount Code", cartDetail.discount_code) + "\n";
-                            if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
-                                strukText += FormatDetailItemLine("Total Discount", string.Format("Rp. {0:n0},-", cartDetail.discounted_price)) + "\n";
-                            strukText += FormatDetailItemLine("Total Price", string.Format("Rp. {0:n0},-", cartDetail.total_price)) + "\n";
-
-                            // Add an empty line between items
-                            strukText += "\n";
-                        }
-                    }
-                    strukText += "--------------------------------\n";
-                    strukText += FormatSimpleLine("Subtotal", string.Format("Rp. {0:n0},-", datas.data.subtotal)) + "\n";
-                    if (!string.IsNullOrEmpty(datas.data.discount_code))
-                        strukText += FormatSimpleLine("Discount Code", datas.data.discount_code) + "\n";
-                    if (datas.data.discounts_value.HasValue && datas.data.discounts_value != 0)
-                        strukText += FormatSimpleLine("Discount Value", datas.data.discounts_value) + "\n";
-                    strukText += FormatSimpleLine("Total", string.Format("Rp. {0:n0},-", datas.data.total)) + "\n";
-                    strukText += FormatSimpleLine("Payment Type", datas.data.payment_type) + "\n";
-                    strukText += FormatSimpleLine("Cash", string.Format("Rp. {0:n0},-", datas.data.customer_cash)) + "\n";
-                    strukText += FormatSimpleLine("Change", string.Format("Rp. {0:n0},-", datas.data.customer_change)) + "\n";
-                    strukText += "--------------------------------\n";
-                    strukText += CenterText(Kakimu) + "\n";
-                    strukText += CenterText(datas.data.outlet_footer) + "\n\n\n\n\n\n\n\n\n\n\n";
-
-                    string strukTextChecker = kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText(totalTransactions.ToString()) + "\n";
-                    strukTextChecker += "\n" + kodeHeksadesimalBold + CenterText(datas.data.outlet_name) + "\n";
-                    strukTextChecker += kodeHeksadesimalNormal;
-                    strukTextChecker += CenterText(datas.data.outlet_address) + "\n";
-                    strukTextChecker += CenterText(datas.data.outlet_phone_number) + "\n";
-                    strukTextChecker += "--------------------------------\n";
-
-                    strukTextChecker += kodeHeksadesimalSizeBesar + CenterText("Checker") + "\n";
-                    strukTextChecker += kodeHeksadesimalNormal;
-                    strukTextChecker += "--------------------------------\n";
-                    strukTextChecker += CenterText(datas.data.receipt_number) + "\n";
-                    strukTextChecker += CenterText(datas.data.invoice_due_date) + "\n \n";
-                    strukTextChecker += kodeHeksadesimalSizeBesar + FormatSimpleLine(datas.data.customer_name, nomorMeja) + kodeHeksadesimalNormal + "\n";
-
-                    // Iterate through cart details and group by serving_type_name
-                    var checkerServingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
-
-                    foreach (var checkerServingType in checkerServingTypes)
-                    {
-                        // Filter cart details by serving_type_name
-                        var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == checkerServingType).ToList();
-
-                        // Skip if there are no items for this serving type
-                        if (itemsForServingType.Count == 0)
-                            continue;
-
-                        // Add a section for the serving type
-                        strukTextChecker += "--------------------------------\n";
-                        strukTextChecker += CenterText(checkerServingType) + "\n";
-                        strukTextChecker += "--------------------------------\n";
-
-                        // Iterate through items for this serving type
-                        foreach (var cartDetail in itemsForServingType)
-                        {
-                            strukTextChecker += kodeHeksadesimalBold + FormatSimpleLine(cartDetail.menu_name, cartDetail.qty) + kodeHeksadesimalNormal + "\n";
-                            // Add detail items
-                            if (!string.IsNullOrEmpty(cartDetail.varian))
-                                strukTextChecker += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
-                            if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                strukTextChecker += FormatDetailItemLine("Note", cartDetail.note_item) + "\n";
-
-                            // Add an empty line between itemsprint
-                            strukTextChecker += "\n";
-                        }
-                    }
-                    strukTextChecker += "--------------------------------\n";
-                    strukTextChecker += CenterText(datas.data.outlet_footer) + "\n\n\n\n\n\n";
-
-
-                    // Encode your text into bytes (you might need to adjust the encoding)
-                    byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
-                    byte[] bufferChecker = System.Text.Encoding.UTF8.GetBytes(strukTextChecker);
-
-                    // Create a combined byte array
-                    byte[] combinedBuffer = new byte[buffer.Length + bufferChecker.Length];
-                    Buffer.BlockCopy(buffer, 0, combinedBuffer, 0, buffer.Length);
-                    Buffer.BlockCopy(bufferChecker, 0, combinedBuffer, buffer.Length, bufferChecker.Length);
-
-                    // Send the combined text to the printer
-                    stream.Write(combinedBuffer, 0, combinedBuffer.Length);
-
-                    // Flush the stream to ensure all data is sent to the printer
-                    stream.Flush();
-
-                    // Close the stream and disconnect
-                    clientSocket.GetStream().Close();
-                    stream.Close();
-                    clientSocket.Close();
-                }
-            }
-            catch (Exception ex)
-            {
-                //MessageBox.Show("Gagal bayar menu " + ex.Message, "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
-        private bool IsValidIPAddress(string address)
-        {
-            // Try to parse the string as an IP address
-            return System.Net.IPAddress.TryParse(address, out _);
-        }
-
-        private async Task<BluetoothClient> ConnectToBluetoothPrinter(string macAddress, string pinPrinter, int timeoutSeconds = 10)
-        {
-            BluetoothDeviceInfo printer = new BluetoothDeviceInfo(BluetoothAddress.Parse(macAddress));
-            if (printer == null)
-            {
-                throw new Exception("Printer tidak ditemukan: " + macAddress);
-            }
-
-            BluetoothClient clientSocket = new BluetoothClient();
-            BluetoothEndPoint endpoint = new BluetoothEndPoint(printer.DeviceAddress, BluetoothService.SerialPort);
-
-            // Mengatur timeout menggunakan CancellationTokenSource
-            using (CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)))
-            {
-                bool isPaired = await Task.Run(() => BluetoothSecurity.PairRequest(printer.DeviceAddress, pinPrinter), cts.Token);
-
-                if (!isPaired)
-                {
-                    throw new Exception("Gagal melakukan pairing dengan printer: " + macAddress);
-                }
-
-                clientSocket.Connect(endpoint);
-            }
-
-            return clientSocket;
-        }
-
-
-        // Struct Kitchen&Bar
-        private async Task PrintKitchenAndBarReceiptsAsync(GetStrukCustomerTransaction datas, List<KitchenAndBarCartDetails> cartDetails, string header, string macAddress, string pinPrinter, List<KitchenAndBarCanceledItems> cancelItems)
-        {
-            await RetryPolicyAsync(async () =>
-            {
-                try
-            {
-                    // Panggil metode ConnectToBluetoothPrinter dengan timeout 10 detik
-                    BluetoothClient clientSocket = await ConnectToBluetoothPrinter(macAddress, pinPrinter, 10);
-                    System.IO.Stream stream = clientSocket.GetStream();
-
-                    // Template
-                    string kodeHeksadesimalBold = "\x1B\x45\x01";
-                    string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                    string kodeHeksadesimalSpasiKarakter = "\x1B\x20\x02";
-                    string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00" + "\x1B\x20\x00";
-
-                    // Custom variable
-                    string nomorMeja = "Meja No." + datas.data.customer_seat;
-
-                    // Generate struk text
-                    string strukText = kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText(totalTransactions.ToString()) + "\n";
-
-                    strukText += "--------------------------------\n";
-                    strukText += kodeHeksadesimalBold + CenterText(header) + "\n";
-                    //string strukText = kodeHeksadesimalBold + CenterText(header) + "\n";
-                    //strukText += kodeHeksadesimalBold + CenterText(totalTransactions + 1) + "\n";
-                    strukText += kodeHeksadesimalNormal;
-                    strukText += "--------------------------------\n";
-                    strukText += CenterText(datas.data.receipt_number) + "\n";
-                    strukText += CenterText(datas.data.customer_name) + "\n";
-                    strukText += CenterText(nomorMeja) + "\n";
-
-                    if (cartDetails.Count != 0)
-                    {
-                        var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
-                        strukText += "\n--------------------------------\n";
-                        strukText += kodeHeksadesimalBold + CenterText("ORDER") + "\n";
-                        strukText += kodeHeksadesimalNormal;
-
-                        foreach (var servingType in servingTypes)
-                        {
-                            var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                            if (itemsForServingType.Count == 0)
-                                continue;
-
-                            strukText += "--------------------------------\n";
-                            strukText += CenterText(servingType) + "\n\n";
-
-                            foreach (var cartDetail in itemsForServingType)
-                            {
-                                string qtyMenu = "x " + cartDetail.qty.ToString();
-                                strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + kodeHeksadesimalSpasiKarakter + FormatKitchenBarLine(qtyMenu, cartDetail.menu_name) + kodeHeksadesimalNormal + "\n";
-
-                                if (!string.IsNullOrEmpty(cartDetail.varian))
-                                    strukText += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
-                                if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                    strukText += FormatDetailItemLine("Note", cartDetail.note_item) + "\n";
-
-                                // Add an empty line between items
-                                strukText += "\n";
-                            }
-                        }
-                    }
-
-                    if (cancelItems.Count != 0)
-                    {
-                        var servingTypes = cancelItems.Select(cd => cd.serving_type_name).Distinct();
-                        strukText += "\n--------------------------------\n";
-                        strukText += kodeHeksadesimalBold + CenterText("CANCELED") + "\n";
-                        strukText += kodeHeksadesimalNormal;
-
-                        foreach (var servingType in servingTypes)
-                        {
-                            var itemsForServingType = cancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                            if (itemsForServingType.Count == 0)
-                                continue;
-
-                            strukText += "--------------------------------\n";
-                            strukText += CenterText(servingType) + "\n\n";
-
-                            foreach (var cancelItem in itemsForServingType)
-                            {
-                                string qtyMenu = "x " + cancelItem.qty.ToString();
-                                strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + kodeHeksadesimalSpasiKarakter + FormatKitchenBarLine(qtyMenu, cancelItem.menu_name) + kodeHeksadesimalNormal + "\n";
-
-                                if (!string.IsNullOrEmpty(cancelItem.varian))
-                                    strukText += FormatDetailItemLine("Varian", cancelItem.varian) + "\n";
-                                if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
-                                    strukText += FormatDetailItemLine("Note", cancelItem.note_item) + "\n";
-                                if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
-                                    strukText += FormatDetailItemLine("Canceled Reason", cancelItem.cancel_reason) + "\n";
-                                // Add an empty line between items
-                                strukText += "\n";
-                            }
-                        }
-                    }
-
-                    strukText += "--------------------------------\n\n\n\n\n";
-
-                    // Encode your text into bytes (you might need to adjust the encoding)
-                    byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
-
-                    // Send the text to the printer
-                    stream.Write(buffer, 0, buffer.Length);
-
-                    // Flush the stream to ensure all data is sent to the printer
-                    stream.Flush();
-
-                    // Close the stream and disconnect
-                    clientSocket.GetStream().Close();
-                    stream.Close();
-                    clientSocket.Close();
-                    btnSimpan.Text = "Selesai.";
-
-                
-            }
-
-                catch (TaskCanceledException ex)
-                {
-                    throw new Exception("Pairing with the printer timed out.", ex);
-                }
-                catch (Exception ex)
-            {
-                btnSimpan.Text = "Selesai.";
-                //MessageBox.Show("Gagal bayar menu " + ex.Message, "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                    throw;
-            }
-            }, maxAttempts: 3, retryDelayMilliseconds: 2000);
-        }
-
-        private async void PrintKitchenAndBarReceipts(GetStrukCustomerTransaction datas, List<KitchenAndBarCartDetails> cartDetails, string header, string macAddress, string pinPrinter, List<KitchenAndBarCanceledItems> cancelItems)
-        {
-            try
-            {
-
-
-                BluetoothDeviceInfo printer = new BluetoothDeviceInfo(BluetoothAddress.Parse(macAddress));
-                if (printer == null)
-                {
-                    //MessageBox.Show("Printer" + macAddress + "not found.", "Gaspol");
-                    return;
-                }
-
-                BluetoothClient client = new BluetoothClient();
-                BluetoothEndPoint endpoint = new BluetoothEndPoint(printer.DeviceAddress, BluetoothService.SerialPort);
-
-                using (BluetoothClient clientSocket = new BluetoothClient())
-                {
-                    if (!BluetoothSecurity.PairRequest(printer.DeviceAddress, pinPrinter))
-                    {
-                        //MessageBox.Show("Pairing failed to " + macAddress, "Gaspol");
-                        return;
-                    }
-                    clientSocket.Connect(endpoint);
-                    // Kode setelah koneksi berhasil
-                    System.IO.Stream stream = clientSocket.GetStream();
-
-                    // Template
-                    string kodeHeksadesimalBold = "\x1B\x45\x01";
-                    string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                    string kodeHeksadesimalSpasiKarakter = "\x1B\x20\x02";
-                    string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00" + "\x1B\x20\x00";
-
-                    // Custom variable
-                    string nomorMeja = "Meja No." + datas.data.customer_seat;
-
-                    // Generate struk text
-                    string strukText = kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText(totalTransactions.ToString()) + "\n";
-
-                    strukText += "--------------------------------\n";
-                    strukText += kodeHeksadesimalBold + CenterText(header) + "\n";
-                    //string strukText = kodeHeksadesimalBold + CenterText(header) + "\n";
-                    //strukText += kodeHeksadesimalBold + CenterText(totalTransactions + 1) + "\n";
-                    strukText += kodeHeksadesimalNormal;
-                    strukText += "--------------------------------\n";
-                    strukText += CenterText(datas.data.receipt_number) + "\n";
-                    strukText += CenterText(datas.data.customer_name) + "\n";
-                    strukText += CenterText(nomorMeja) + "\n";
-
-                    if (cartDetails.Count != 0)
-                    {
-                        var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
-                        strukText += "\n--------------------------------\n";
-                        strukText += kodeHeksadesimalBold + CenterText("ORDER") + "\n";
-                        strukText += kodeHeksadesimalNormal;
-
-                        foreach (var servingType in servingTypes)
-                        {
-                            var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                            if (itemsForServingType.Count == 0)
-                                continue;
-
-                            strukText += "--------------------------------\n";
-                            strukText += CenterText(servingType) + "\n\n";
-
-                            foreach (var cartDetail in itemsForServingType)
-                            {
-                                string qtyMenu = "x " + cartDetail.qty.ToString();
-                                strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + kodeHeksadesimalSpasiKarakter + FormatKitchenBarLine(qtyMenu, cartDetail.menu_name) + kodeHeksadesimalNormal + "\n";
-
-                                if (!string.IsNullOrEmpty(cartDetail.varian))
-                                    strukText += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
-                                if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                    strukText += FormatDetailItemLine("Note", cartDetail.note_item) + "\n";
-
-                                // Add an empty line between items
-                                strukText += "\n";
-                            }
-                        }
-                    }
-
-                    if (cancelItems.Count != 0)
-                    {
-                        var servingTypes = cancelItems.Select(cd => cd.serving_type_name).Distinct();
-                        strukText += "\n--------------------------------\n";
-                        strukText += kodeHeksadesimalBold + CenterText("CANCELED") + "\n";
-                        strukText += kodeHeksadesimalNormal;
-
-                        foreach (var servingType in servingTypes)
-                        {
-                            var itemsForServingType = cancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                            if (itemsForServingType.Count == 0)
-                                continue;
-
-                            strukText += "--------------------------------\n";
-                            strukText += CenterText(servingType) + "\n\n";
-
-                            foreach (var cancelItem in itemsForServingType)
-                            {
-                                string qtyMenu = "x " + cancelItem.qty.ToString();
-                                strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + kodeHeksadesimalSpasiKarakter + FormatKitchenBarLine(qtyMenu, cancelItem.menu_name) + kodeHeksadesimalNormal + "\n";
-
-                                if (!string.IsNullOrEmpty(cancelItem.varian))
-                                    strukText += FormatDetailItemLine("Varian", cancelItem.varian) + "\n";
-                                if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
-                                    strukText += FormatDetailItemLine("Note", cancelItem.note_item) + "\n";
-                                if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
-                                    strukText += FormatDetailItemLine("Canceled Reason", cancelItem.cancel_reason) + "\n";
-                                // Add an empty line between items
-                                strukText += "\n";
-                            }
-                        }
-                    }
-
-                    strukText += "--------------------------------\n\n\n\n\n";
-
-                    // Encode your text into bytes (you might need to adjust the encoding)
-                    byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
-
-                    // Send the text to the printer
-                    stream.Write(buffer, 0, buffer.Length);
-
-                    // Flush the stream to ensure all data is sent to the printer
-                    stream.Flush();
-
-                    // Close the stream and disconnect
-                    clientSocket.GetStream().Close();
-                    stream.Close();
-                    clientSocket.Close();
-                    btnSimpan.Text = "Selesai.";
-                    //OnSimpanSuccess();
-
-                }
-            }
-            catch (Exception ex)
-            {
-                btnSimpan.Text = "Selesai.";
-
-                //OnSimpanSuccess();
-
-                //karena keadaan kecetak jadi gaperlu notif ganggu ini
-                //MessageBox.Show("Gagal bayar menu " + ex.Message, "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
-        private async void PrintKitchenAndBarReceiptsLAN(GetStrukCustomerTransaction datas, List<KitchenAndBarCartDetails> cartDetails, string header, string macAddress, string pinPrinter, List<KitchenAndBarCanceledItems> cancelItems)
-        {
-            try
-            {
-                string printerIpAddress = MacAddressKasir; // Ganti dengan IP address printer Anda
-                int printerPort = Int32.Parse(PinPrinterKasir.ToString()); // Port standar untuk printer jaringan
-
-                using (TcpClient client = new TcpClient(printerIpAddress, printerPort))
-                {
-                    using (NetworkStream stream = client.GetStream())
-                    {
-
-                        // Template
-                        string kodeHeksadesimalBold = "\x1B\x45\x01";
-                        string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                        string kodeHeksadesimalSpasiKarakter = "\x1B\x20\x02";
-                        string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00" + "\x1B\x20\x00";
-
-                        // Custom variable
-                        string nomorMeja = "Meja No." + datas.data.customer_seat;
-
-                        // Generate struk text
-                        string strukText = kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText(totalTransactions.ToString()) + "\n";
-
-                        strukText += "--------------------------------\n";
-                        strukText += kodeHeksadesimalBold + CenterText(header) + "\n";
-                        //string strukText = kodeHeksadesimalBold + CenterText(header) + "\n";
-                        //strukText += kodeHeksadesimalBold + CenterText(totalTransactions + 1) + "\n";
-                        strukText += kodeHeksadesimalNormal;
-                        strukText += "--------------------------------\n";
-                        strukText += CenterText(datas.data.receipt_number) + "\n";
-                        strukText += CenterText(datas.data.customer_name) + "\n";
-                        strukText += CenterText(nomorMeja) + "\n";
-
-                        if (cartDetails.Count != 0)
-                        {
-                            var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
-                            strukText += "\n--------------------------------\n";
-                            strukText += kodeHeksadesimalBold + CenterText("ORDER") + "\n";
-                            strukText += kodeHeksadesimalNormal;
-
-                            foreach (var servingType in servingTypes)
-                            {
-                                var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                                if (itemsForServingType.Count == 0)
-                                    continue;
-
-                                strukText += "--------------------------------\n";
-                                strukText += CenterText(servingType) + "\n\n";
-
-                                foreach (var cartDetail in itemsForServingType)
-                                {
-                                    string qtyMenu = "x " + cartDetail.qty.ToString();
-                                    strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + kodeHeksadesimalSpasiKarakter + FormatKitchenBarLine(qtyMenu, cartDetail.menu_name) + kodeHeksadesimalNormal + "\n";
-
-                                    if (!string.IsNullOrEmpty(cartDetail.varian))
-                                        strukText += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
-                                    if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                        strukText += FormatDetailItemLine("Note", cartDetail.note_item) + "\n";
-
-                                    // Add an empty line between items
-                                    strukText += "\n";
-                                }
-                            }
-                        }
-
-                        if (cancelItems.Count != 0)
-                        {
-                            var servingTypes = cancelItems.Select(cd => cd.serving_type_name).Distinct();
-                            strukText += "\n--------------------------------\n";
-                            strukText += kodeHeksadesimalBold + CenterText("CANCELED") + "\n";
-                            strukText += kodeHeksadesimalNormal;
-
-                            foreach (var servingType in servingTypes)
-                            {
-                                var itemsForServingType = cancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                                if (itemsForServingType.Count == 0)
-                                    continue;
-
-                                strukText += "--------------------------------\n";
-                                strukText += CenterText(servingType) + "\n\n";
-
-                                foreach (var cancelItem in itemsForServingType)
-                                {
-                                    string qtyMenu = "x " + cancelItem.qty.ToString();
-                                    strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + kodeHeksadesimalSpasiKarakter + FormatKitchenBarLine(qtyMenu, cancelItem.menu_name) + kodeHeksadesimalNormal + "\n";
-
-                                    if (!string.IsNullOrEmpty(cancelItem.varian))
-                                        strukText += FormatDetailItemLine("Varian", cancelItem.varian) + "\n";
-                                    if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
-                                        strukText += FormatDetailItemLine("Note", cancelItem.note_item) + "\n";
-                                    if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
-                                        strukText += FormatDetailItemLine("Canceled Reason", cancelItem.cancel_reason) + "\n";
-                                    // Add an empty line between items
-                                    strukText += "\n";
-                                }
-                            }
-                        }
-
-                        strukText += "--------------------------------\n\n\n\n\n";
-
-
-                        // Encode your text into bytes (you might need to adjust the encoding)
-                        byte[] buffer = Encoding.UTF8.GetBytes(strukText);
-
-
-                        // Send the combined text to the printer
-                        await stream.WriteAsync(buffer, 0, buffer.Length);
-
-                        // Flush the stream to ensure all data is sent to the printer
-                        await stream.FlushAsync();
-                        btnSimpan.Text = "Selesai.";
-
-                    }
-                }
-                }
-            catch (Exception ex)
-            {
-                btnSimpan.Text = "Selesai.";
-
-                //OnSimpanSuccess();
-
-                //karena keadaan kecetak jadi gaperlu notif ganggu ini
-                //MessageBox.Show("Gagal bayar menu " + ex.Message, "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
 
         private void label3_Click(object sender, EventArgs e)
         {
@@ -1714,7 +731,7 @@ namespace KASIR.OfflineMode
 
         private void sButton1_CheckedChanged(object sender, EventArgs e)
         {
-            if(sButton1.Checked == true)
+            if (sButton1.Checked == true)
             {
                 panel8.Visible = true;
                 panel13.Visible = true;
@@ -1785,6 +802,11 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 Close();
             }
+        }
+
+        private void txtSeat_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -58,6 +58,8 @@ namespace KASIR.OfflineMode
             panel6 = new Panel();
             txtNotes = new TextBox();
             label3 = new Label();
+            lblPrice = new IconButton();
+            lblTotsl = new IconButton();
             panel1.SuspendLayout();
             flowLayoutPanel1.SuspendLayout();
             panel10.SuspendLayout();
@@ -165,6 +167,8 @@ namespace KASIR.OfflineMode
             flowLayoutPanel1.Controls.Add(panel2);
             flowLayoutPanel1.Controls.Add(panel5);
             flowLayoutPanel1.Controls.Add(panel6);
+            flowLayoutPanel1.Controls.Add(lblPrice);
+            flowLayoutPanel1.Controls.Add(lblTotsl);
             flowLayoutPanel1.Location = new Point(0, 70);
             flowLayoutPanel1.Name = "flowLayoutPanel1";
             flowLayoutPanel1.Size = new Size(600, 530);
@@ -414,6 +418,53 @@ namespace KASIR.OfflineMode
             label3.TabIndex = 8;
             label3.Text = "CATATAN";
             // 
+            // lblPrice
+            // 
+            lblPrice.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            lblPrice.BackColor = Color.White;
+            lblPrice.Cursor = Cursors.Cross;
+            lblPrice.FlatAppearance.BorderSize = 0;
+            lblPrice.FlatStyle = FlatStyle.Flat;
+            lblPrice.Font = new Font("Segoe UI", 10F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point);
+            lblPrice.ForeColor = Color.FromArgb(30, 31, 68);
+            lblPrice.IconChar = IconChar.Carrot;
+            lblPrice.IconColor = Color.FromArgb(30, 31, 68);
+            lblPrice.IconFont = IconFont.Auto;
+            lblPrice.IconSize = 23;
+            lblPrice.ImageAlign = ContentAlignment.MiddleRight;
+            lblPrice.Location = new Point(3, 441);
+            lblPrice.Name = "lblPrice";
+            lblPrice.Size = new Size(585, 29);
+            lblPrice.TabIndex = 27;
+            lblPrice.Text = "Konfirmasi";
+            lblPrice.TextImageRelation = TextImageRelation.ImageBeforeText;
+            lblPrice.UseVisualStyleBackColor = false;
+            lblPrice.Visible = false;
+            lblPrice.Click += iconButton1_Click;
+            // 
+            // lblTotsl
+            // 
+            lblTotsl.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            lblTotsl.BackColor = Color.White;
+            lblTotsl.Cursor = Cursors.Cross;
+            lblTotsl.FlatAppearance.BorderSize = 0;
+            lblTotsl.FlatStyle = FlatStyle.Flat;
+            lblTotsl.Font = new Font("Segoe UI", 10F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point);
+            lblTotsl.ForeColor = Color.FromArgb(30, 31, 68);
+            lblTotsl.IconChar = IconChar.Carrot;
+            lblTotsl.IconColor = Color.FromArgb(30, 31, 68);
+            lblTotsl.IconFont = IconFont.Auto;
+            lblTotsl.IconSize = 23;
+            lblTotsl.ImageAlign = ContentAlignment.MiddleRight;
+            lblTotsl.Location = new Point(3, 476);
+            lblTotsl.Name = "lblTotsl";
+            lblTotsl.Size = new Size(585, 29);
+            lblTotsl.TabIndex = 28;
+            lblTotsl.Text = "Konfirmasi";
+            lblTotsl.TextImageRelation = TextImageRelation.ImageBeforeText;
+            lblTotsl.UseVisualStyleBackColor = false;
+            lblTotsl.Visible = false;
+            // 
             // Offline_addCartForm
             // 
             ClientSize = new Size(600, 600);
@@ -481,5 +532,7 @@ namespace KASIR.OfflineMode
         private IconButton lblNameCart;
         private IconButton btnTambah;
         private IconButton btnKurang;
+        private IconButton lblPrice;
+        private IconButton lblTotsl;
     }
 }

@@ -140,6 +140,7 @@ namespace KASIR.OfflineMode
             txtSeat.PlaceholderText = "Masukan Nomor Seat ...";
             txtSeat.Size = new Size(246, 16);
             txtSeat.TabIndex = 0;
+            txtSeat.TextChanged += txtSeat_TextChanged;
             // 
             // label5
             // 
@@ -465,9 +466,9 @@ namespace KASIR.OfflineMode
             label7.ForeColor = Color.Black;
             label7.Location = new Point(60, 8);
             label7.Name = "label7";
-            label7.Size = new Size(114, 15);
+            label7.Size = new Size(171, 15);
             label7.TabIndex = 4;
-            label7.Text = "MEMBERSHIP AREA";
+            label7.Text = "MEMBERSHIP AREA (Disabled)";
             // 
             // panel2
             // 

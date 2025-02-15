@@ -46,6 +46,7 @@ namespace KASIR.OfflineMode
         private readonly ILogger _log = LoggerService.Instance._log;
         string namelabel;
         string folder = "DT-Cache\\addCartForm";
+        int lblprice, lblsubtotal, lbltotal;
         public Offline_addCartForm(string id, string name)
         {
             baseOutlet = Properties.Settings.Default.BaseOutlet;
@@ -328,6 +329,7 @@ namespace KASIR.OfflineMode
                     { "menu_type", menuData["menu_type"] },  // Menu type from the loaded data
                     { "menu_detail_id", selectedVarian ?? null },
                     { "menu_detail_name", menuDetailName },  // Varian name
+                    { "varian", menuDetailName },  // Varian name
                     { "is_ordered", 0 },
                     { "serving_type_id", serving_type },
                     { "serving_type_name", servingTypeName },  // Serving type name
@@ -341,6 +343,7 @@ namespace KASIR.OfflineMode
                     { "discounts_value", null },
                     { "discounted_price", 0 },
                     { "discounts_is_percent", null },
+                    { "subtotal", total_item },
                     { "total_price", total_item }
                 };
 
@@ -590,19 +593,6 @@ namespace KASIR.OfflineMode
                 CacheDataApp form3 = new CacheDataApp("Sync");
                 this.Close();
                 form3.Show();
-                /* IApiService apiService = new ApiService();
-                 string response = await apiService.GetDiscount($"/discount?outlet_id={baseOutlet}&is_discount_cart=", "0");
-                 DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(response);
-                 File.WriteAllText(folder + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data", JsonConvert.SerializeObject(menuModel));
-                 List<DataDiscountCart> data = menuModel.data;
-                 var options = data;
-                 dataDiskonList = data;
-                 options.Insert(0, new DataDiscountCart { id = -1, code = "Pilih Diskon" });
-                 cmbDiskon.DataSource = options;
-                 cmbDiskon.DisplayMember = "code";
-                 cmbDiskon.ValueMember = "id";
-
-                 LoadDataServingType();*/
             }
             catch (TaskCanceledException ex)
             {
@@ -665,6 +655,11 @@ namespace KASIR.OfflineMode
         }
 
         private void panel12_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void iconButton1_Click(object sender, EventArgs e)
         {
 
         }

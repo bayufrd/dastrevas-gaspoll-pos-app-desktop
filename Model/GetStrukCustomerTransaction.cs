@@ -22,6 +22,7 @@ namespace KASIR.Model
         public int? discounted_price { get; set; }
         public object discounts_is_percent { get; set; }
         public int price { get; set; }
+        public int subtotal { get; set; }
         public int total_price { get; set; }
         public int qty { get; set; }
         public object note_item { get; set; }
@@ -153,7 +154,10 @@ namespace KASIR.Model
         public int is_ordered { get; set; }
         public int serving_type_id { get; set; }
         public string serving_type_name { get; set; }
-        public string price { get; set; }
+        public int price { get; set; }
+        public int total_price { get; set; }
+        public int subtotal { get; set; }
+
         public int qty { get; set; }
         public string note_item { get; set; }
     }

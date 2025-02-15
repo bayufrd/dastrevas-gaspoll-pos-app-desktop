@@ -1880,6 +1880,16 @@ namespace KASIR.OfflineMode
                                     string.Format("Rp. {0:n0},-", totalPrice),
                                     noteItem
                                 );
+                                if (!string.IsNullOrEmpty(noteItem))
+                                {
+                                    dataTable.Rows.Add(
+                                        null,
+                                        null,
+                                        null,
+                                        "  *catatan : " + (noteItem),
+                                        null,
+                                        null);
+                                }
                             }
                         }
 

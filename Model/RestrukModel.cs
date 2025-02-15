@@ -60,6 +60,7 @@ namespace KASIR.Model
         public string payment_category { get; set; }
         public int cart_id { get; set; }
         public int subtotal { get; set; }
+        public int subtotal_price { get; set; }
         public int total { get; set; }
         public string? discount_id { get; set; }
         public string? discount_code { get; set; }

@@ -439,7 +439,6 @@ namespace KASIR.komponen
                 }
 
                 int selectedVarian = int.TryParse(cmbVarian.SelectedValue?.ToString(), out var varianResult) ? varianResult : -1;
-                MessageBox.Show(selectedVarian.ToString());
                 int selectedDiskon = int.TryParse(cmbDiskon.SelectedValue?.ToString(), out var diskonResult) ? diskonResult : -1;
                 int diskon = 0;
 

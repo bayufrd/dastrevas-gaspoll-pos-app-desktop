@@ -16,6 +16,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="OffineMode\Offline_refund.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="OffineMode\Offline_inputPin.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="OffineMode\Offline_successTransaction.cs">
       <SubType>UserControl</SubType>
     </Compile>

@@ -107,7 +107,7 @@ namespace KASIR.OfflineMode
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Gagal tampil data " + ex.Message, "Gaspol");
+                    MessageBox.Show("Gagal tampil data " + ex, "Gaspol");
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
@@ -125,7 +125,7 @@ namespace KASIR.OfflineMode
             catch (Exception ex)
             {
 
-                MessageBox.Show("Gagal tampil data " + ex.Message, "Gaspol");
+                MessageBox.Show("Gagal tampil data " + ex, "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
 
@@ -168,7 +168,7 @@ namespace KASIR.OfflineMode
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Gagal tampil data " + ex.Message, "Gaspol");
+                    MessageBox.Show("Gagal tampil data " + ex, "Gaspol");
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
@@ -188,7 +188,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data tipe serving " + ex.Message, "Gaspol");
+                MessageBox.Show("Gagal tampil data tipe serving " + ex, "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
 
@@ -320,10 +320,11 @@ namespace KASIR.OfflineMode
                 var selectedServingType = servingTypes.FirstOrDefault(type => (int)type["id"] == serving_type);
                 string servingTypeName = selectedServingType?["name"]?.ToString();
                 int total_item = int.Parse(pricefix) * quantity;
+                int price_item = int.Parse(pricefix);
                 // Prepare the new item for cart_details
                 var newItem = new JObject
                 {
-                    { "cart_detail_id", DateTime.Now.ToString("HHmmss") },  // Unique ID based on timestamp
+                    { "cart_detail_id", int.Parse(baseOutlet + DateTime.Now.ToString("HHmmss")) },  // Unique ID based on timestamp
                     { "menu_id", datas.id },
                     { "menu_name", menuData["name"] },  // Menu name from the loaded data
                     { "menu_type", menuData["menu_type"] },  // Menu type from the loaded data
@@ -333,7 +334,7 @@ namespace KASIR.OfflineMode
                     { "is_ordered", 0 },
                     { "serving_type_id", serving_type },
                     { "serving_type_name", servingTypeName },  // Serving type name
-                    { "price", pricefix },
+                    { "price", price_item },
                     { "qty", quantity },
                     { "note_item", notes },
                     { "created_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
@@ -343,8 +344,8 @@ namespace KASIR.OfflineMode
                     { "discounts_value", null },
                     { "discounted_price", 0 },
                     { "discounts_is_percent", null },
-                    { "subtotal", total_item },
-                    { "total_price", total_item }
+                    { "subtotal_price", int.Parse(total_item.ToString()) },
+                    { "total_price", int.Parse(total_item.ToString()) }
                 };
 
                 // Set file path for cart data cache
@@ -366,8 +367,8 @@ namespace KASIR.OfflineMode
 
                 // Update the subtotal and total based on cart details
                 var total = cartDetailsArray.Sum(item => (decimal)item["price"] * (int)item["qty"]);
-                cartData["subtotal"] = total;
-                cartData["total"] = total;
+                cartData["subtotal"] = int.Parse(total.ToString());
+                cartData["total"] = int.Parse(total.ToString());
 
                 // Serialize the updated cart data back to JSON
                 string updatedJsonString = JsonConvert.SerializeObject(cartData, Formatting.Indented);

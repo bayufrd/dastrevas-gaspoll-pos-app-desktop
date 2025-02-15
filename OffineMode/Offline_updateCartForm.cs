@@ -159,7 +159,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data " + ex.Message, "Gaspol");
+                MessageBox.Show("Gagal tampil data " + ex, "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -189,7 +189,8 @@ namespace KASIR.OfflineMode
                             serving_type_id = item.serving_type_id,
                             serving_type_name = item.serving_type_name.ToString(),
                             price = item.price,
-                            subtotal = item.subtotal,
+                            subtotal_price = int.Parse(item.subtotal_price.ToString()),
+                            subtotal = int.Parse(item.subtotal_price.ToString()),
                             total_price = item.total_price,
                             qty = item.qty,
                             note_item = item.note_item
@@ -232,7 +233,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Gagal tampil data: {ex.Message}");
+                MessageBox.Show($"Gagal tampil data: {ex}");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -491,8 +492,9 @@ namespace KASIR.OfflineMode
                             }
 
                             // Update the cart totals
-                            cartData["subtotal"] = subtotal;
-                            cartData["total"] = subtotal;
+                            cartData["subtotal"] = int.Parse(subtotal.ToString());
+                            cartData["subtotal_price"] = int.Parse(subtotal.ToString());
+                            cartData["total"] = int.Parse(subtotal.ToString());
 
                             // Save the updated cart data back to the file
                             File.WriteAllText(configCart, cartData.ToString(Formatting.Indented));
@@ -642,8 +644,8 @@ namespace KASIR.OfflineMode
                         int selectedVarian = int.TryParse(cmbVarian.SelectedValue?.ToString(), out var varianResult) ? varianResult : -1;
                         string VarianName = cmbVarian.Text.ToString() ?? "Normal";
                         int serving_type = int.Parse(comboBox1.SelectedValue.ToString());
-                        var quantity = int.Parse(txtKuantitas.Text.ToString());
-                        var notes = txtNotes.Text.ToString();
+                        int quantity = int.Parse(txtKuantitas.Text.ToString());
+                        string notes = txtNotes.Text.ToString();
                         int? menuDetailIdValue = null;
                         string pricefix = "0", servingTypeName = comboBox1.Text.ToString();
                         //int selectedDiskon = int.Parse(cmbDiskon.SelectedValue.ToString());
@@ -684,8 +686,11 @@ namespace KASIR.OfflineMode
 
 
                         // Recalculate price (price * quantity)
-                        pricefix = itemToUpdate["price"].ToString();
+                        //pricefix = itemToUpdate["price"].ToString();
+                        itemToUpdate["price"] = int.Parse(pricefix);
                         int discountedPrice = int.Parse(pricefix) * quantity;
+                        itemToUpdate["subtotal"] = discountedPrice;
+                        itemToUpdate["subtotal_price"] = discountedPrice;
                         itemToUpdate["total_price"] = discountedPrice;
 
                         /*// Optionally, apply discount based on selectedDiskon (if necessary)
@@ -698,14 +703,15 @@ namespace KASIR.OfflineMode
                         }*/
 
                         // Recalculate subtotal and total
-                        decimal subtotal = 0;
+                        int subtotal = 0;
                         foreach (var item in cartDetails)
                         {
-                            subtotal += (decimal)item["total_price"];
+                            subtotal += (int)item["total_price"];
                         }
 
                         // Update the cart totals
                         cartData["subtotal"] = subtotal;
+                        cartData["subtotal_price"] = subtotal;
                         cartData["total"] = subtotal;
 
                         // Save the updated cart data back to the file

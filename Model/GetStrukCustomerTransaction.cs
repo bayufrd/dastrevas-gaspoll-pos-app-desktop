@@ -23,6 +23,7 @@ namespace KASIR.Model
         public object discounts_is_percent { get; set; }
         public int price { get; set; }
         public int subtotal { get; set; }
+        public int subtotal_price { get; set; }
         public int total_price { get; set; }
         public int qty { get; set; }
         public object note_item { get; set; }
@@ -138,9 +139,79 @@ namespace KASIR.Model
 
     public class CartDataCache
     {
+        public string transaction_id { get; set; }
+        public string receipt_number { get; set; }
+        public string invoice_number { get; set; }
+        public object payment_type_id { get; set; }
+        public string payment_type_name { get; set; }
+        public string customer_name { get; set; }
+        public int customer_seat { get; set; }
+        public int customer_cash { get; set; }
+        public int total { get; set; }
+        public int subtotal { get; set; }
+        public string created_at { get; set; }
+        public string updated_at { get; set; }
+        public int is_refund { get; set; }
+        public string refund_reason { get; set; }
+        public int? customer_change { get; set; }
+        public string deleted_at { get; set; }
+        public string delivery_type { get; set; }
+        public string delivery_note { get; set; }
+        public int? discount_id { get; set; }
+        public string discount_code { get; set; }
+        public string discounts_value { get; set; }
+        public string discounts_is_percent { get; set; }
+        public string invoice_due_date { get; set; }
+        public string member_name { get; set; }
+        public string member_phone_number { get; set; }
+        // Cart details for each item in the transaction
         public List<CartDetail> cart_details { get; set; }
-        public decimal subtotal { get; set; }
-        public decimal total { get; set; }
+
+        // Refund details
+        public List<RefundDetail> refund_details { get; set; }
+
+        // Canceled items
+        public List<CanceledItem> canceled_items { get; set; }
+    }
+
+    public class RefundDetail
+    {
+        public int cart_detail_id { get; set; }
+        public string refund_reason_item { get; set; }
+        public int qty_refund_item { get; set; }
+        public int total_refund_price { get; set; }
+        public string payment_type_name { get; set; }
+        public string payment_category_name { get; set; }
+        public string menu_name { get; set; }
+        public string? varian { get; set; }
+        public string serving_type_name { get; set; }
+        public string? discount_code { get; set; }
+        public string? discounts_value { get; set; }
+        public string? discounted_price { get; set; }
+        public int menu_price { get; set; }
+        public string? note_item { get; set; }
+    }
+
+    public class CanceledItem
+    {
+        public string cancel_reason { get; set; }
+        public int cart_detail_id { get; set; }
+        public int menu_id { get; set; }
+        public string menu_name { get; set; }
+        public string menu_type { get; set; }
+        public object menu_detail_id { get; set; }
+        public string varian { get; set; }
+        public int serving_type_id { get; set; }
+        public string serving_type_name { get; set; }
+        public int? discount_id { get; set; }
+        public string? discount_code { get; set; }
+        public object discounts_value { get; set; }
+        public int? discounted_price { get; set; }
+        public string discounts_is_percent { get; set; }
+        public int price { get; set; }
+        public int total_price { get; set; }
+        public int qty { get; set; }
+        public string note_item { get; set; }
     }
 
     public class CartDetail
@@ -155,13 +226,24 @@ namespace KASIR.Model
         public int serving_type_id { get; set; }
         public string serving_type_name { get; set; }
         public int price { get; set; }
-        public int total_price { get; set; }
-        public int subtotal { get; set; }
-
         public int qty { get; set; }
         public string note_item { get; set; }
+        public string created_at { get; set; }
+        public string update_at { get; set; }
+        public object discount_id { get; set; }
+        public object discount_code { get; set; }
+        public object discounts_value { get; set; }
+        public int discounted_price { get; set; }
+        public object discounts_is_percent { get; set; }
+        public int total_price { get; set; }
+        public int subtotal { get; set; }
+        public int subtotal_price { get; set; }
+        public string varian { get; set; }
     }
-
+    public class TransactionCache
+    {
+        public List<CartDataCache> data { get; set; }
+    }
     public class Data
     {
         public int id { get; set; }

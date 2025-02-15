@@ -375,39 +375,60 @@ namespace KASIR.OfflineMode
                     // Get the first cart_detail_id to set as transaction_id
                     var cartDetails = cartData["cart_details"] as JArray;
                     string firstCartDetailId = cartDetails?.FirstOrDefault()?["cart_detail_id"].ToString();
-                    transactionId = firstCartDetailId ?? "0";
+                    transactionId = firstCartDetailId;
                     string paymentTypeName = cmbPayform.Text.ToString();
                     int paymentTypedId = int.Parse(cmbPayform.SelectedValue.ToString());
-                    string receiptReformat = ConvertDateTimeFormat(transactionId);
+                    string receiptMaker = cartDetails?.FirstOrDefault()?["created_at"].ToString(); 
+                    string invoiceMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+                    string formattedreceiptMaker;
+                    DateTime invoiceDate;
+                    if (DateTime.TryParse(invoiceMaker, out invoiceDate))
+                    {
+                        // Jika berhasil, format tanggal invoice sesuai kebutuhan
+                        formattedreceiptMaker = invoiceDate.ToString("yyyyMMdd-HHmmss");
+                    }
+                    else
+                    {
+                        // Jika parsing gagal, berikan nilai default atau tampilkan error
+                        formattedreceiptMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+                    }
+                    string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{receiptMaker}";
+                    string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                     // Prepare transaction data
                     var transactionData = new
                     {
-                        transaction_id = transactionId,
-                        receipt_number = $"AT-{txtNama.Text}-{txtSeat.Text}-" + receiptReformat,
-                        invoice_number = $"INV-" + (DateTime.Now.ToString("yyyyMMdd-HHmmss")) + cmbPayform.SelectedValue.ToString(),  // Adjust if you want to implement custom invoice numbers
+                        transaction_id = int.Parse(transactionId),
+                        receipt_number = receipt_numberfix,
+                        invoice_number = $"INV-{formattedreceiptMaker}{paymentTypedId}",  // Custom invoice number with formatted date
+                        invoice_due_date = invoiceDue, // Adjust due date as needed
                         payment_type_id = paymentTypedId,
-                        payment_type_name = paymentTypeName.ToString(),
+                        payment_type_name = paymentTypeName, // No need for .ToString() if paymentTypeName is already a string
                         customer_name = txtNama.Text,
                         customer_seat = int.Parse(txtSeat.Text),
                         customer_cash = fulusAmount,
-                        total = totalCartAmount,
-                        subtotal = totalCartAmount, // Or use subtotal from cart
-                        created_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                        updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                        deleted_at = "null",
-                        is_refund = 0,
-                        refund_reason = "null",
                         customer_change = change,
-                        delivery_type = "null",
-                        delivery_note = "null",
+                        total = totalCartAmount,
+                        subtotal = totalCartAmount, // You can replace this with actual subtotal if available
+                        created_at = receiptMaker,
+                        updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                        deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
+                        is_refund = 0,
+                        refund_reason = (string)null, // Null if no refund reason
+                        delivery_type = (string)null, // Null value for delivery_type
+                        delivery_note = (string)null, // Null value for delivery_note
                         discount_id = 0,
-                        discount_code = "null",
-                        discounts_value = "null",
-                        discounts_is_percent = "null",
-                        invoice_due_date = "14 Feb 2025, 3:24",
-                        member_name = "null",
-                        member_phone_number = "null",
-                        cart_details = cartDetails
+                        discount_code = (string)null, // Null if no discount code
+                        discounts_value = (string)null, // Null if no discount value
+                        discounts_is_percent = (string)null, // Null if no discount percent
+                        member_name = (string)null, // Null if no member name
+                        member_phone_number = (string)null, // Null if no member phone number
+                        is_refund_all = 0,
+                        refund_reason_all = (string)null,
+                        refund_payment_id_all = 0,
+                        refund_created_at_all = (string)null,
+                        cart_details = cartDetails,
+                        refund_details = new JArray(), // Empty array for refund_details
+                        canceled_items = new JArray() // Empty array for canceled_items
                     };
 
                     // Save transaction data to transaction.data
@@ -427,7 +448,7 @@ namespace KASIR.OfflineMode
                     // Serialize and save back to transaction.data
                     var newTransactionData = new JObject { { "data", transactionDataArray } };
                     File.WriteAllText(transactionDataPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
-                    convertData(fulus, change, paymentTypeName);
+                    convertData(fulus, change, paymentTypeName, receipt_numberfix, invoiceDue);
                     //HandleSuccessfulTransaction(response, fulus);
                 }
             }
@@ -439,7 +460,7 @@ namespace KASIR.OfflineMode
             }
         }
 
-        private async Task convertData(string fulus, int change, string paymentTypeName)
+        private async Task convertData(string fulus, int change, string paymentTypeName, string receipt_numberfix, string invoiceDue)
         {
             try
             {
@@ -455,7 +476,6 @@ namespace KASIR.OfflineMode
                 string cartDataJson = File.ReadAllText(cartDataPath);
                 // Deserialize cart data
                 var cartData = JsonConvert.DeserializeObject<CartDataCache>(cartDataJson);
-                string receiptReformat = ConvertDateTimeFormat(transactionId);
 
                 // Membaca file JSON
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
@@ -473,7 +493,8 @@ namespace KASIR.OfflineMode
                         outlet_phone_number = dataOutlet.data.phone_number,
                         outlet_footer = dataOutlet.data.footer,
                         transaction_id = int.Parse(transactionId),
-                        receipt_number = $"AT-{txtNama.Text}-{txtSeat.Text}-" + receiptReformat,
+                        receipt_number = receipt_numberfix,
+                        invoice_due_date = invoiceDue,
                         customer_name = txtNama.Text,
                         customer_seat = int.Parse(txtSeat.Text),
                         payment_type = paymentTypeName.ToString(),
@@ -492,7 +513,6 @@ namespace KASIR.OfflineMode
                         kitchenBarCanceledItems = new List<KitchenAndBarCanceledItems>(),
                         customer_cash = int.Parse(fulus),
                         customer_change = change,
-                        invoice_due_date = "14 Feb 2025, 3:24",
                         member_name = null,
                         member_phone_number = null
                     }
@@ -521,6 +541,7 @@ namespace KASIR.OfflineMode
                         price = item.price, // Mengonversi string ke int
                         total_price = item.price * item.qty, // Total price dihitung dari price * qty
                         subtotal = item.price * item.qty, // Total price dihitung dari price * qty
+                        subtotal_price = item.price * item.qty, // Total price dihitung dari price * qty
                         qty = item.qty,
                         note_item = string.IsNullOrEmpty(item.note_item) ? "" : item.note_item,
                         is_ordered = item.is_ordered
@@ -560,6 +581,13 @@ namespace KASIR.OfflineMode
                 // Serialisasi ke JSON
                 string response = JsonConvert.SerializeObject(strukCustomerTransaction);
                 HandleSuccessfulTransaction(response, fulus);
+
+                DialogResult = DialogResult.OK;
+
+                Offline_masterPos offline_MasterPos = new Offline_masterPos();
+                offline_MasterPos.DeleteCartFile();
+
+                Close();
             }
             catch (Exception ex)
             {
@@ -611,12 +639,6 @@ namespace KASIR.OfflineMode
                         throw new InvalidOperationException("printerModel is null");
                     }
                 }
-                DialogResult = DialogResult.OK;
-
-                Offline_masterPos offline_MasterPos = new Offline_masterPos();
-                offline_MasterPos.DeleteCartFile();
-
-                Close();
             }
             catch (Exception ex)
             {

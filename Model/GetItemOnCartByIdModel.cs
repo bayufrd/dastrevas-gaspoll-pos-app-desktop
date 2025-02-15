@@ -28,6 +28,7 @@ namespace KASIR.Model
         public int price { get; set; }
         public int total_price { get; set; }
         public int subtotal { get; set; }
+        public int subtotal_price { get; set; }
         public int qty { get; set; }
         public string note_item { get; set; }
 

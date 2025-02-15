@@ -89,6 +89,7 @@ namespace KASIR.OfflineMode
                     // Prepare DataTable to display the data
                     DataTable dataTable = new DataTable();
                     dataTable.Columns.Add("Transaction ID", typeof(string));
+                    dataTable.Columns.Add("NumberQueue", typeof(int));
                     dataTable.Columns.Add("Receipt Number", typeof(string));
                     dataTable.Columns.Add("Customer Name", typeof(string));
                     dataTable.Columns.Add("Customer Seat", typeof(string));
@@ -96,8 +97,11 @@ namespace KASIR.OfflineMode
                     dataTable.Columns.Add("Payment Type", typeof(string));
                     dataTable.Columns.Add("Transaction Time", typeof(string));
 
+                    // Reverse the transactionDetails array to load from bottom to top
+                    var reversedTransactionDetails = transactionDetails.Reverse().ToList();
+
                     // Loop through each transaction to fill the DataTable
-                    foreach (var transaction in transactionDetails)
+                    foreach (var transaction in reversedTransactionDetails)
                     {
                         numberQueue -= 1; // Decrease number for the next entry
 
@@ -113,7 +117,7 @@ namespace KASIR.OfflineMode
                         {
                             string formattedDate = transactionTime.ToString("dd MMM yyyy, HH:mm");
                             dataTable.Rows.Add(
-                                transaction["transaction_id"]?.ToString(),
+                                transaction["transaction_id"]?.ToString(), numberQueue,
                                 numberQueue + ". " +transaction["receipt_number"]?.ToString(),
                                 customerName,
                                 customerSeat,
@@ -126,7 +130,7 @@ namespace KASIR.OfflineMode
                         {
                             // If parsing fails, show original date
                             dataTable.Rows.Add(
-                                transaction["transaction_id"]?.ToString(),
+                                transaction["transaction_id"]?.ToString(), numberQueue,
                                 numberQueue + ". " +transaction["receipt_number"]?.ToString(),
                                 customerName,
                                 customerSeat,
@@ -139,8 +143,11 @@ namespace KASIR.OfflineMode
 
                     // Bind the data to DataGridView
                     dataGridView1.DataSource = dataTable;
+                    originalDataTable = dataTable.Copy();
+
                     // Optional: Hide other columns as needed
                     dataGridView1.Columns["Transaction ID"].Visible = false;
+                    dataGridView1.Columns["NumberQueue"].Visible = false;
                 }
                 else
                 {
@@ -183,30 +190,14 @@ namespace KASIR.OfflineMode
             if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
             {
                 DataGridViewRow selectedRow = dataGridView1.Rows[e.RowIndex];
-                int id = Convert.ToInt32(selectedRow.Cells["ID"].Value);
+                string id = selectedRow.Cells["Transaction ID"].Value.ToString();
                 int urutanRiwayat = Convert.ToInt32(selectedRow.Cells["NumberQueue"].Value); // Access the NumberQueue here
 
                 LoadPin(id, urutanRiwayat);
-                //  OpenRefundForm(id.ToString());
-                /* using (refund refund = new refund(id.ToString()))
-                 {
-                     refund.Owner = background;
-
-                     background.Show();
-
-                     DialogResult dialogResult = refund.ShowDialog();
-
-                     background.Dispose();
-
-                     if (dialogResult == DialogResult.Yes && refund.ReloadDataInBaseForm)
-                     {
-                         ReloadData();
-                     }
-                 }*/
             }
         }
 
-        private void LoadPin(int id, int urutanRiwayat)
+        private void LoadPin(string id, int urutanRiwayat)
         {
             Form background = new Form
             {
@@ -218,8 +209,8 @@ namespace KASIR.OfflineMode
                 TopMost = true,
                 Location = this.Location,
                 ShowInTaskbar = false,
-            };/*
-            using (inputPin pinForm = new inputPin(id, urutanRiwayat))
+            };
+            using (Offline_inputPin pinForm = new Offline_inputPin(id, urutanRiwayat))
             {
                 pinForm.Owner = background;
 
@@ -230,7 +221,7 @@ namespace KASIR.OfflineMode
                 background.Dispose();
 
 
-            }*/
+            }
         }
 
         private void ReloadData()

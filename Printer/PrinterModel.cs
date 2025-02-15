@@ -2934,10 +2934,14 @@ namespace KASIR.Printer
             {
                 await LoadPrinterSettings(); // Load printer settings
                 await LoadSettingsAsync();   // Load additional settings
+                
+                List<KeyValuePair<string, string>> printerSettingsCopy;
+                lock (printerSettings)
+                {
+                    printerSettingsCopy = printerSettings.ToList(); // Create a copy of the collection
+                }
 
-                var printerSettingsCopy = printerSettings.ToList(); // Create a copy of the collection
-
-                foreach (var printer in printerSettingsCopy /*printerSettings*/)
+                foreach (var printer in printerSettingsCopy)
                 {
                     var printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))

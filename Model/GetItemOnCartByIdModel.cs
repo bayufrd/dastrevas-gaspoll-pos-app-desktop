@@ -33,7 +33,6 @@ namespace KASIR.Model
         {
             get { return menu_detail_id.HasValue ? menu_detail_id.ToString() : ""; }
         }
-
     }
 
 

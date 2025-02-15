@@ -43,7 +43,7 @@ namespace KASIR.OfflineMode
         int items = 0;
         int customePrice = 0;
         int SelectedId, totalTransactions;
-        string namaMember, emailMember, hpMember;
+        string namaMember, emailMember, hpMember, transactionId;
 
         public Offline_payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat, string name, Offline_masterPos masterPosForm)
         {
@@ -223,13 +223,6 @@ namespace KASIR.OfflineMode
                     CacheDataApp form3 = new CacheDataApp("Sync");
                     this.Close();
                     form3.Show();
-                    /*IApiService apiService = new ApiService();
-                    string response = await apiService.GetPaymentType("/payment-type");
-                    PaymentTypeModel payment = JsonConvert.DeserializeObject<PaymentTypeModel>(response);
-                    List<PaymentType> data = payment.data;
-                    cmbPayform.DataSource = data;
-                    cmbPayform.DisplayMember = "name";
-                    cmbPayform.ValueMember = "id";*/
                 }
             }
             catch (TaskCanceledException ex)
@@ -242,14 +235,9 @@ namespace KASIR.OfflineMode
             }
             finally
             {
-                await WaitForSecondsAsync(1);
                 btnSimpan.Enabled = true;
             }
 
-        }
-        public static async Task WaitForSecondsAsync(int seconds)
-        {
-            await Task.Delay(TimeSpan.FromSeconds(seconds));
         }
         private void CmbPayform_DrawItem(object sender, DrawItemEventArgs e)
         {
@@ -375,7 +363,7 @@ namespace KASIR.OfflineMode
                     // Get the first cart_detail_id to set as transaction_id
                     var cartDetails = cartData["cart_details"] as JArray;
                     string firstCartDetailId = cartDetails?.FirstOrDefault()?["cart_detail_id"].ToString();
-                    string transactionId = firstCartDetailId ?? "0";
+                    transactionId = firstCartDetailId ?? "0";
                     string receiptReformat = ConvertDateTimeFormat(transactionId);
                     // Prepare transaction data
                     var transactionData = new
@@ -394,7 +382,8 @@ namespace KASIR.OfflineMode
                         updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                         is_refund = 0,
                         refund_reason = "null",
-                        cart_details = cartDetails
+                        cart_details = cartDetails,
+                        customer_change = change
                     };
 
                     // Save transaction data to transaction.data
@@ -414,7 +403,7 @@ namespace KASIR.OfflineMode
                     // Serialize and save back to transaction.data
                     var newTransactionData = new JObject { { "data", transactionDataArray } };
                     File.WriteAllText(transactionDataPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
-                    convertData(fulus);
+                    convertData(fulus, change);
                     //HandleSuccessfulTransaction(response, fulus);
                 }
             }
@@ -426,7 +415,7 @@ namespace KASIR.OfflineMode
             }
         }
 
-        private async Task convertData(string fulus)
+        private async Task convertData(string fulus, int change)
         {
             try
             {
@@ -441,8 +430,14 @@ namespace KASIR.OfflineMode
 
                 string cartDataJson = File.ReadAllText(cartDataPath);
                 // Deserialize cart data
-                var cartData = JsonConvert.DeserializeObject<CartData>(cartDataJson);
+                var cartData = JsonConvert.DeserializeObject<CartDataCache>(cartDataJson);
+                string receiptReformat = ConvertDateTimeFormat(transactionId);
 
+                // Membaca file JSON
+                string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
+
+                // Deserialize JSON ke object CartDataCache
+                var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
                 // Konversi ke format GetStrukCustomerTransaction
                 var strukCustomerTransaction = new GetStrukCustomerTransaction
                 {
@@ -450,18 +445,18 @@ namespace KASIR.OfflineMode
                     message = "Transaksi Sukses!",
                     data = new DataStrukCustomerTransaction
                     {
-                        outlet_name = "Development Testing",
-                        outlet_address = "Ngalik kosnya bayu",
-                        outlet_phone_number = "123456789",
-                        outlet_footer = "TERIMAKASIH ATAS KUNJUNGANNYA",
-                        transaction_id = 350248,
-                        receipt_number = "AT-bayarr-3-20250214-032429",
-                        customer_name = "bayarr",
-                        customer_seat = 3,
-                        payment_type = "EDC Debit BCA",
+                        outlet_name = dataOutlet.data.name,
+                        outlet_address = dataOutlet.data.address,
+                        outlet_phone_number = dataOutlet.data.phone_number,
+                        outlet_footer = dataOutlet.data.footer,
+                        transaction_id = int.Parse(transactionId),
+                        receipt_number = $"AT-{txtNama.Text}-{txtSeat.Text}-" + receiptReformat,
+                        customer_name = txtNama.Text,
+                        customer_seat = int.Parse(txtSeat.Text),
+                        payment_type = cmbPayform.SelectedText.ToString(),
                         delivery_type = null,
                         delivery_note = null,
-                        cart_id = 350310,
+                        cart_id = 0,
                         subtotal = (int)cartData.subtotal,
                         total = (int)cartData.total,
                         discount_id = 0,
@@ -472,8 +467,8 @@ namespace KASIR.OfflineMode
                         canceled_items = new List<CanceledItemStrukCustomerTransaction>(),
                         kitchenBarCartDetails = new List<KitchenAndBarCartDetails>(),
                         kitchenBarCanceledItems = new List<KitchenAndBarCanceledItems>(),
-                        customer_cash = 500000,
-                        customer_change = 369000,
+                        customer_cash = int.Parse(fulus),
+                        customer_change = change,
                         invoice_due_date = "14 Feb 2025, 3:24",
                         member_name = null,
                         member_phone_number = null
@@ -481,16 +476,18 @@ namespace KASIR.OfflineMode
                 };
 
                 // Mengisi cart_details
+                // Mengisi cart_details dan kitchenBarCartDetails
                 foreach (var item in cartData.cart_details)
                 {
+                    // Membuat objek CartDetailStrukCustomerTransaction
                     var cartDetail = new CartDetailStrukCustomerTransaction
                     {
-                        cart_detail_id = 1,//int.Parse(item.cart_detail_id), // Mengonversi string ke int
+                        cart_detail_id = int.Parse(item.cart_detail_id), // Mengonversi string ke int
                         menu_id = item.menu_id,
                         menu_name = item.menu_name,
                         menu_type = item.menu_type,
-                        menu_detail_id = 1,//item.menu_detail_id,
-                        varian = null, // Tidak ada data varian
+                        menu_detail_id = item.menu_detail_id,
+                        varian = item.menu_detail_name, // Tidak ada data varian
                         serving_type_id = item.serving_type_id,
                         serving_type_name = item.serving_type_name,
                         discount_id = null, // Tidak ada data discount
@@ -505,9 +502,36 @@ namespace KASIR.OfflineMode
                         is_ordered = item.is_ordered
                     };
 
-                    strukCustomerTransaction.data.cart_details.Add(cartDetail);/*
-                strukCustomerTransaction.data.kitchenBarCartDetails.Add(cartDetail); // Menambahkan ke KitchenBarCartDetails juga*/
+                    // Menambahkan ke cart_details
+                    strukCustomerTransaction.data.cart_details.Add(cartDetail);
+
+                    // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
+                    var kitchenAndBarCartDetail = new KitchenAndBarCartDetails
+                    {
+                        cart_detail_id = cartDetail.cart_detail_id,
+                        menu_id = cartDetail.menu_id,
+                        menu_name = cartDetail.menu_name,
+                        menu_type = cartDetail.menu_type,
+                        menu_detail_id = cartDetail.menu_detail_id,
+                        varian = cartDetail.varian,
+                        serving_type_id = cartDetail.serving_type_id,
+                        serving_type_name = cartDetail.serving_type_name,
+                        discount_id = cartDetail.discount_id,
+                        discount_code = cartDetail.discount_code,
+                        discounts_value = cartDetail.discounts_value,
+                        discounted_price = cartDetail.discounted_price,
+                        discounts_is_percent = cartDetail.discounts_is_percent,
+                        price = cartDetail.price,
+                        total_price = cartDetail.total_price,
+                        qty = cartDetail.qty,
+                        note_item = cartDetail.note_item,
+                        is_ordered = cartDetail.is_ordered
+                    };
+
+                    // Menambahkan ke kitchenBarCartDetails
+                    strukCustomerTransaction.data.kitchenBarCartDetails.Add(kitchenAndBarCartDetail);
                 }
+
 
                 // Serialisasi ke JSON
                 string response = JsonConvert.SerializeObject(strukCustomerTransaction);

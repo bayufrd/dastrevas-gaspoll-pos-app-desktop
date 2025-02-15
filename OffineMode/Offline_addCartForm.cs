@@ -116,33 +116,9 @@ namespace KASIR.OfflineMode
                 CacheDataApp form3 = new CacheDataApp("Sync");
                 this.Close();
                 form3.Show();
-                /*IApiService apiService = new ApiService();
-                string response = await apiService.GetMenuDetailByID("/menu-detail", idmenu);
-                GetMenuDetailCartModel menuModel = JsonConvert.DeserializeObject<GetMenuDetailCartModel>(response);
-                // Save the menu data to a local file
-                File.WriteAllText(folder + "\\LoadDataVarian_" + idmenu + "_Outlet_" + baseOutlet + ".data", JsonConvert.SerializeObject(menuModel));
-                DataMenuDetail data = menuModel.data;
-
-                var options = data.menu_details.Where(x => x.menu_detail_id != 0).ToList();
-                options.Insert(0, new MenuDetailDataCart { index = -1, varian = "Normal" });
-                cmbVarian.DataSource = options;
-                cmbVarian.DisplayMember = "varian";
-                cmbVarian.ValueMember = "menu_detail_id";
-                cmbVarian.Font = new Font(comboBox1.Font.FontFamily, 12); // Set font size to 14
-
-                // Set the item height to increase spacing
-                cmbVarian.ItemHeight = 30; // Set item height to 30
-
-                // Optionally, set the ComboBox drop-down width to accommodate larger text
-                cmbVarian.DropDownWidth = 200; // Adjust width as necessary
-                menuDetailDataCarts = data.menu_details;
-                datas = menuModel.data;
-
-                LoadDataDiscount();*/
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -202,20 +178,6 @@ namespace KASIR.OfflineMode
                 CacheDataApp form3 = new CacheDataApp("Sync");
                 this.Close();
                 form3.Show();
-                /* IApiService apiService = new ApiService();
-                 string response = await apiService.GetMenuByID("/menu", idmenu);
-                 GetMenuByIdModel menuModel = JsonConvert.DeserializeObject<GetMenuByIdModel>(response);
-                 // Save the menu data to a local file
-                 File.WriteAllText(folder + "\\LoadDataServingType_" + idmenu + "_Outlet_" + baseOutlet + ".data", JsonConvert.SerializeObject(menuModel));
-                 DataMenu data = menuModel.data;
-                 var options = data.serving_types;
-                 cmbVarian.SelectedItem = 1;
-                 comboBox1.DataSource = options;
-                 comboBox1.DisplayMember = "name";
-                 comboBox1.ValueMember = "id";
-                 servingType = data.serving_types;
-                 btnSimpan.Enabled = true;
-                 lblNameCart.Text = namelabel;*/
 
             }
             catch (TaskCanceledException ex)
@@ -230,53 +192,64 @@ namespace KASIR.OfflineMode
             }
 
         }
-        public static async Task WaitForSecondsAsync(int seconds)
+        private async Task<string> returnPriceByServingTypeAsync(string serving_type_id, string varian)
         {
-            await Task.Delay(TimeSpan.FromSeconds(seconds));
-        }
-        private async Task<string> returnPriceByServingTypeAsync(string id, string varian)
-        {
-            IApiService apiService = new ApiService();
-            string response = await apiService.GetMenuDetailByID("/menu-detail", "" + idmenu + "?menu_detail_id=" + varian);
+            // Membaca data dari file cache
+            string cachedData = File.ReadAllText(folder + "\\LoadDataServingType_" + idmenu + "_Outlet_" + baseOutlet + ".data");
 
-            if (string.IsNullOrWhiteSpace(response))
-            {
-                throw new InvalidOperationException("API response is empty or null.");
-            }
+            // Deserialize data dari cache
+            GetMenuByIdModel menuModel = JsonConvert.DeserializeObject<GetMenuByIdModel>(cachedData);
 
-            GetMenuDetailCartModel menuModel = JsonConvert.DeserializeObject<GetMenuDetailCartModel>(response);
-
+            // Validasi data
             if (menuModel == null || menuModel.data == null)
             {
-                throw new InvalidOperationException("Deserialization failed: menuModel or data is null.");
+                throw new InvalidOperationException("Menu data is invalid.");
             }
 
-            DataMenuDetail data = menuModel.data;
-            List<MenuDetailDataCart> menuDetailDataList = data.menu_details;
+            DataMenu data = menuModel.data;
+            List<MenuDetailS> menuDetailDataList = data.menu_details;
 
-            if (menuDetailDataList == null || !menuDetailDataList.Any())
+            // Jika varian tidak dipilih (selectedVarian == -1)
+            if (string.IsNullOrEmpty(varian) || varian == "0")
             {
-                throw new InvalidOperationException("Menu details are null or empty.");
-            }
+                // Cari harga berdasarkan serving_type_id di menu_prices
+                var menuPrice = data.menu_prices
+                    .FirstOrDefault(price => price.serving_type_id == int.Parse(serving_type_id));
 
-            List<ServingTypes> servingTypes = menuDetailDataList[0].serving_types;
-
-            if (servingTypes == null || !servingTypes.Any())
-            {
-                throw new InvalidOperationException("Serving types are null or empty.");
-            }
-
-            var servingType = servingTypes.FirstOrDefault(serving => serving.id == int.Parse(id));
-            
-            if (servingType != null)
-            {
-                return servingType.price.ToString();
+                if (menuPrice != null)
+                {
+                    return menuPrice.price.ToString(); // Return harga dari menu utama
+                }
             }
             else
             {
-                return "0";
+                // Jika varian dipilih, varian adalah menu_detail_id
+                int varianId = int.Parse(varian);
+
+                if (varianId != -1)
+                {
+                    // Cari menu_detail yang memiliki menu_detail_id yang sesuai dengan varian
+                    var menuDetail = menuDetailDataList
+                        .FirstOrDefault(detail => detail.menu_detail_id == varianId); // Mencocokkan menu_detail_id
+
+                    if (menuDetail != null)
+                    {
+                        // Cari harga berdasarkan serving_type_id dari menu_prices dalam menu_detail
+                        var menuPrice = menuDetail.menu_prices
+                            .FirstOrDefault(price => price.serving_type_id == int.Parse(serving_type_id)); // Mencocokkan serving_type_id
+
+                        if (menuPrice != null)
+                        {
+                            return menuPrice.price.ToString(); // Return harga berdasarkan menu_detail_id
+                        }
+                    }
+                }
             }
+
+            // Jika tidak ditemukan harga untuk serving_type_id yang diminta
+            return "0"; // Kembalikan "0" jika tidak ditemukan
         }
+
 
         private async Task<bool> ValidateInputsAsync()
         {
@@ -327,7 +300,7 @@ namespace KASIR.OfflineMode
                 lblNameCart.Text = "Membuat Data...";
 
                 // Path for LoadServingType data
-                string servingTypeFilePath = "DT-Cache/addCartForm/LoadDataServingType_" + datas.id +"_Outlet_" + baseOutlet + ".data";
+                string servingTypeFilePath = "DT-Cache/addCartForm/LoadDataServingType_" + datas.id + "_Outlet_" + baseOutlet + ".data";
 
                 // Read the LoadServingType.data file if it exists
                 string servingTypeJson = File.Exists(servingTypeFilePath) ? File.ReadAllText(servingTypeFilePath) : "{}";
@@ -345,11 +318,11 @@ namespace KASIR.OfflineMode
                 // Get the serving type name based on the serving_type_id
                 var selectedServingType = servingTypes.FirstOrDefault(type => (int)type["id"] == serving_type);
                 string servingTypeName = selectedServingType?["name"]?.ToString();
-
+                int total_item = int.Parse(pricefix) * quantity;
                 // Prepare the new item for cart_details
                 var newItem = new JObject
                 {
-                    { "cart_detail_id", DateTime.Now.ToString("yyyyMMddHHmmss") },  // Unique ID based on timestamp
+                    { "cart_detail_id", DateTime.Now.ToString("HHmmss") },  // Unique ID based on timestamp
                     { "menu_id", datas.id },
                     { "menu_name", menuData["name"] },  // Menu name from the loaded data
                     { "menu_type", menuData["menu_type"] },  // Menu type from the loaded data
@@ -360,7 +333,15 @@ namespace KASIR.OfflineMode
                     { "serving_type_name", servingTypeName },  // Serving type name
                     { "price", pricefix },
                     { "qty", quantity },
-                    { "note_item", notes }
+                    { "note_item", notes },
+                    { "created_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
+                    { "update_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
+                    { "discount_id", null },
+                    { "discount_code", null },
+                    { "discounts_value", null },
+                    { "discounted_price", 0 },
+                    { "discounts_is_percent", null },
+                    { "total_price", total_item }
                 };
 
                 // Set file path for cart data cache

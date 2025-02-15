@@ -135,7 +135,7 @@ namespace KASIR.Model
     }
 
 
-    public class CartData
+    public class CartDataCache
     {
         public List<CartDetail> cart_details { get; set; }
         public decimal subtotal { get; set; }
@@ -157,5 +157,22 @@ namespace KASIR.Model
         public int qty { get; set; }
         public string note_item { get; set; }
     }
+
+    public class Data
+    {
+        public int id { get; set; }
+        public string name { get; set; }
+        public string address { get; set; }
+        public int pin { get; set; }
+        public string phone_number { get; set; }
+        public int is_kitchen_bar_merged { get; set; }
+        public string footer { get; set; }
+    }
+
+    public class CartDataOutlet
+    {
+        public Data data { get; set; }
+    }
+
 
 }

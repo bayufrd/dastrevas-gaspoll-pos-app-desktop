@@ -20,6 +20,7 @@ using Serilog.Events;
 using Serilog.Core;
 using Serilog.Sinks.File;
 using System.Windows.Forms.Design;
+using KASIR.Komponen;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_updateCartForm : Form
@@ -45,7 +46,7 @@ namespace KASIR.OfflineMode
         public Offline_updateCartForm(string id, string cartdetailid)
         {
             InitializeComponent();
-            lblNameCart.Text = "Downloading Data...";
+            lblNameCart.Text = "Loading Data...";
             btnHapus.Enabled = false;
             btnSimpan.Enabled = false;
             btnTambah.Enabled = false;
@@ -55,10 +56,11 @@ namespace KASIR.OfflineMode
             flowLayoutPanel1.WrapContents = false;
             flowLayoutPanel1.AutoScroll = false;
             cartdetail = cartdetailid;
-
             txtKuantitas.Text = "0";
 
             idmenu = id;
+
+
             foreach (var button in radioButtonsList)
             {
                 button.Click += RadioButton_Click;
@@ -95,20 +97,10 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    IApiService apiService = new ApiService();
-                    string response = await apiService.GetMenuDetailByID("/menu-detail", idmenu);
-                    GetMenuDetailCartModel menuModel = JsonConvert.DeserializeObject<GetMenuDetailCartModel>(response);
-                    DataMenuDetail data = menuModel.data;
-
-                    var options = data.menu_details.Where(x => x.menu_detail_id != 0).ToList();
-                    options.Insert(0, new MenuDetailDataCart { index = -1, varian = "Normal" });
-                    //cmbVarian.SelectedIndex = menuModel.data.id;
-                    cmbVarian.DataSource = options;
-                    cmbVarian.DisplayMember = "varian";
-                    cmbVarian.ValueMember = "menu_detail_id";
-                    menuDetailDataCarts = data.menu_details;
-
-                    datas = menuModel.data;
+                    MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                    CacheDataApp form3 = new CacheDataApp("Sync");
+                    this.Close();
+                    form3.Show();
                 }
 
                 LoadItemOnCart();
@@ -128,20 +120,55 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                IApiService apiService = new ApiService();
-                string response = await apiService.GetItemOnCart("cart/" + cartdetail + "?outlet_id=" + baseOutlet);
-                GetItemOnCartByIdModel itemModel = JsonConvert.DeserializeObject<GetItemOnCartByIdModel>(response);
+                string ConfigCart = "DT-Cache\\Transaction\\Cart.data";
+                string json = File.ReadAllText(ConfigCart);
+                // Deserialisasi JSON ke CartData
+                CartDataCache cartData = JsonConvert.DeserializeObject<CartDataCache>(json);
 
-                if (itemModel == null || itemModel.data == null)
+                // Fungsi untuk mendapatkan item berdasarkan cart_detail_id
+                DataItemOnCart GetItemByCartDetailId(string cartDetailId)
                 {
-                    MessageBox.Show("Data tidak ditemukan atau response kosong (Masalah jaringan.");
-                    return;
+                    var item = cartData.cart_details
+                        .FirstOrDefault(c => c.cart_detail_id == cartDetailId);
+
+                    if (item != null)
+                    {
+                        // Mapped data ke DataItemOnCart
+                        return new DataItemOnCart
+                        {
+                            cart_detail_id = int.Parse(item.cart_detail_id),
+                            menu_id = item.menu_id,
+                            menu_name = item.menu_name,
+                            menu_type = item.menu_type,
+                            menu_detail_id = item.menu_detail_id,
+                            is_ordered = item.is_ordered.ToString(),
+                            serving_type_id = item.serving_type_id,
+                            serving_type_name = item.serving_type_name,
+                            price = int.Parse(item.price),
+                            qty = item.qty,
+                            note_item = item.note_item
+                        };
+                    }
+
+                    return null; // Tidak ditemukan
                 }
 
-                DataItemOnCart data = itemModel.data;
-                LoadDataDiscount(data.discount_id);
+                // Contoh penggunaan: Ambil item dengan cart_detail_id "081322"
+                string cartDetailIdToFind = cartdetail;
+                DataItemOnCart data = GetItemByCartDetailId(cartDetailIdToFind);
 
-                is_ordered = data.is_ordered?.ToString() ?? "";
+                if (data != null)
+                {
+                    Console.WriteLine($"Menu Name: {data.menu_name}, Price: {data.price}, Quantity: {data.qty}");
+                }
+                else
+                {
+                    Console.WriteLine("Item not found.");
+                }
+
+                //LoadDataDiscount(data.discount_id);
+
+                is_ordered = data.is_ordered;
 
                 List<DataDiscountCart> dataDiscounts = dataDiscount;
 
@@ -226,30 +253,10 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    IApiService apiService = new ApiService();
-                    string response = await apiService.GetMenuByID("/menu", idmenu);
-                    GetMenuByIdModel menuModel = JsonConvert.DeserializeObject<GetMenuByIdModel>(response);
-                    DataMenu data = menuModel.data;
-                    var options = data.serving_types;
-
-                    //options.Insert(0, new ServingType { id = -1, name = "Pilih Tipe Serving" });
-                    //default
-
-                    comboBox1.DataSource = options;
-                    comboBox1.DisplayMember = "name";
-                    comboBox1.ValueMember = "id";
-                    if (!string.IsNullOrEmpty(searchTextserving))
-                    {
-                        for (int kimak = 0; kimak < comboBox1.Items.Count; kimak++)
-                        {
-                            comboBox1.SelectedIndex = kimak;
-                            if (comboBox1.Text.ToString() == searchTextserving)
-                            {
-                                comboBox1.SelectedIndex = kimak;
-                                break;
-                            }
-                        }
-                    }
+                    MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                    CacheDataApp form3 = new CacheDataApp("Sync");
+                    this.Close();
+                    form3.Show();
                 }
 
 
@@ -267,7 +274,6 @@ namespace KASIR.OfflineMode
             }
             finally
             {
-                await WaitForSecondsAsync(1);
                 btnHapus.Enabled = true;
                 btnSimpan.Enabled = true;
                 btnTambah.Enabled = true;
@@ -276,11 +282,6 @@ namespace KASIR.OfflineMode
             }
 
         }
-        public static async Task WaitForSecondsAsync(int seconds)
-        {
-            await Task.Delay(TimeSpan.FromSeconds(seconds));
-        }
-
         private async Task<string> returnPriceByServingTypeAsync(string id, string varian)
         {
             IApiService apiService = new ApiService();

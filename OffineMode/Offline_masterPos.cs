@@ -11,6 +11,7 @@ using System.Net.NetworkInformation;
 using System.Timers;
 using System.Runtime.Serialization.Formatters.Binary;
 using Newtonsoft.Json.Linq;
+using KASIR.Komponen;
 
 
 namespace KASIR.OfflineMode
@@ -556,7 +557,10 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    IApiService apiService = new ApiService();
+                    MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                    CacheDataApp form3 = new CacheDataApp("Sync");
+                    form3.Show();
+                    /*IApiService apiService = new ApiService();
                     string response = await apiService.GetDiscount($"/discount?outlet_id={baseOutlet}&is_discount_cart=", "1");
                     DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(response);
                     File.WriteAllText("DT-Cache" + "\\LoadDiscountPerCart_" + "Outlet_" + baseOutlet + ".data", JsonConvert.SerializeObject(menuModel));
@@ -566,7 +570,7 @@ namespace KASIR.OfflineMode
                     options.Insert(0, new DataDiscountCart { id = -1, code = "Tidak ada Diskon" });
                     cmbDiskon.DataSource = options;
                     cmbDiskon.DisplayMember = "code";
-                    cmbDiskon.ValueMember = "id";
+                    cmbDiskon.ValueMember = "id";*/
                 }
                 string searchText = diskonID.ToString() ?? "";
                 if (searchText != "0")
@@ -749,12 +753,6 @@ namespace KASIR.OfflineMode
                     // Deserialize data file Cart.data
                     var cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
 
-                    // Pastikan cart_details ada di dalam file
-                    if (cartData["cart_details"] == null)
-                    {
-                        MessageBox.Show("Keranjang Kosong!");
-                        return;
-                    }
 
                     // Ambil daftar cart_details
                     var cartDetails = cartData["cart_details"] as JArray;
@@ -1828,8 +1826,8 @@ namespace KASIR.OfflineMode
                         diskonID = 0; //belum pakai disc
 
                         // Set customer information
-                        customer_name = cartData["customer_name"]?.ToString() ?? "Unknown";
-                        customer_seat = cartData["customer_seat"]?.ToString() ?? "Unknown";
+                        customer_name = cartData["customer_name"]?.ToString() ?? "Name: ??";
+                        customer_seat = cartData["customer_seat"]?.ToString() ?? "Seat: ??";
 
                         // Calculate subtotal and total
                         decimal subtotal = cartData["subtotal"] != null ? decimal.Parse(cartData["subtotal"].ToString()) : 0;
@@ -1875,8 +1873,8 @@ namespace KASIR.OfflineMode
 
                                 // Add rows for each cart item
                                 dataTable.Rows.Add(
-                                    menu["menu_id"]?.ToString(),
-                                    menu["cart_detail_id"]?.ToString(),
+                                    menu["menu_id"],
+                                    menu["cart_detail_id"],
                                     servingTypeName,
                                     $"{quantity}X {menuName} {menu["menu_detail_name"]}",
                                     string.Format("Rp. {0:n0},-", totalPrice),
@@ -2061,13 +2059,14 @@ namespace KASIR.OfflineMode
                 try
                 {
                     DataGridViewRow selectedRow = dataGridView1.Rows[e.RowIndex];
-                    int id = 0;
-                    int cartdetailid = 0;
+                    string id = "0";
+                    string cartdetailid = "0";
 
                     // Periksa nilai DBNull untuk MenuID
                     if (selectedRow.Cells["MenuID"].Value != DBNull.Value)
                     {
-                        id = Convert.ToInt32(selectedRow.Cells["MenuID"].Value);
+                        id = selectedRow.Cells["MenuID"].Value.ToString();
+                        //id = Convert.ToInt32(selectedRow.Cells["MenuID"].Value);
                     }
                     else
                     {
@@ -2078,7 +2077,7 @@ namespace KASIR.OfflineMode
                     // Periksa nilai DBNull untuk CartDetailID
                     if (selectedRow.Cells["CartDetailID"].Value != DBNull.Value)
                     {
-                        cartdetailid = Convert.ToInt32(selectedRow.Cells["CartDetailID"].Value);
+                        cartdetailid = selectedRow.Cells["CartDetailID"].Value.ToString();
                     }
                     else
                     {
@@ -2585,61 +2584,64 @@ namespace KASIR.OfflineMode
 
         private void buttonPayment_Click(object sender, EventArgs e)
         {
-            //var pengirim = new SignalSender();
-            if (string.IsNullOrEmpty(cartID)) // For strings
+            // Path for the cart data cache file
+            string filePath = "DT-Cache\\Transaction\\Cart.data";
+
+            // Cek apakah file Cart.data ada
+            if (File.Exists(filePath))
             {
-                MessageBox.Show("Keranjang masih kosong", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-            ////LoggerUtil.LogPrivateMethod(nameof(button1_Click));
-
-            Form background = new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
-            };
-
-            using (Offline_payForm Offline_payForm = new Offline_payForm(baseOutlet, cartID, totalCart, lblTotal1.Text.ToString(), customer_seat, customer_name, this))
-            {
-                SignalReloadPayform();
-
-                //pengirim.SendSignal("Payment");
-                Offline_payForm.Owner = background;
-
-                background.Show();
-
-                //DialogResult dialogResult = dataBill.ShowDialog();
-
-                //background.Dispose();
-                DialogResult result = Offline_payForm.ShowDialog();
-
-                // Handle the result if needed
-                if (result == DialogResult.OK)
+                Form background = new Form
                 {
-                    background.Dispose();
-                    ReloadCart();
-                    LoadCart();
-                    cartID = "";
-                    // Settings were successfully updated, perform any necessary actions
-                    SignalReloadPayformDone();
+                    StartPosition = FormStartPosition.Manual,
+                    FormBorderStyle = FormBorderStyle.None,
+                    Opacity = 0.7d,
+                    BackColor = Color.Black,
+                    WindowState = FormWindowState.Maximized,
+                    TopMost = true,
+                    Location = this.Location,
+                    ShowInTaskbar = false,
+                };
+
+                using (Offline_payForm Offline_payForm = new Offline_payForm(baseOutlet, cartID, totalCart, lblTotal1.Text.ToString(), customer_seat, customer_name, this))
+                {
+                    SignalReloadPayform();
+
                     //pengirim.SendSignal("Payment");
+                    Offline_payForm.Owner = background;
 
+                    background.Show();
+
+                    //DialogResult dialogResult = dataBill.ShowDialog();
+
+                    //background.Dispose();
+                    DialogResult result = Offline_payForm.ShowDialog();
+
+                    // Handle the result if needed
+                    if (result == DialogResult.OK)
+                    {
+                        background.Dispose();
+                        ReloadCart();
+                        LoadCart();
+                        //cartID = "";
+                        // Settings were successfully updated, perform any necessary actions
+                        SignalReloadPayformDone();
+                        //pengirim.SendSignal("Payment");
+
+                    }
+                    else
+                    {
+                        MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
+                        SignalReloadPayformDone();
+                        //pengirim.SendSignal("PaymentDone");
+                        background.Dispose();
+                        ReloadCart();
+                        LoadCart();
+                    }
                 }
-                else
-                {
-                    MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
-                    SignalReloadPayformDone();
-                    //pengirim.SendSignal("PaymentDone");
-                    background.Dispose();
-                    ReloadCart();
-                    LoadCart();
-                }
+            }
+            else
+            {
+                MessageBox.Show("Keranjang Kosong!");
             }
         }
     }

@@ -394,6 +394,7 @@
             // 
             cmbDiskon.BackColor = Color.White;
             cmbDiskon.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbDiskon.Enabled = false;
             cmbDiskon.FlatStyle = FlatStyle.Flat;
             cmbDiskon.FormattingEnabled = true;
             cmbDiskon.Location = new Point(3, 7);
@@ -462,7 +463,7 @@
             label4.TabIndex = 4;
             label4.Text = "VARIAN";
             // 
-            // updateCartForm
+            // Offline_updateCartForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -471,7 +472,7 @@
             Controls.Add(panel1);
             Controls.Add(flowLayoutPanel1);
             FormBorderStyle = FormBorderStyle.None;
-            Name = "updateCartForm";
+            Name = "Offline_updateCartForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "updateCart";
             TopMost = true;

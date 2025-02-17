@@ -28,6 +28,7 @@ using System.Net.NetworkInformation;
 using KASIR.Printer;
 using Newtonsoft.Json.Linq;
 using System.Transactions;
+using KASIR.Komponen;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_inputPin : Form
@@ -50,7 +51,7 @@ namespace KASIR.OfflineMode
         private List<RefundModel> refundItems = new List<RefundModel>();
         public bool ReloadDataInBaseForm { get; private set; }
 
-        int idid;
+        int idid, urutanRiwayat;
         int totalTransactions;
         string transactionId;
         public Offline_inputPin(string id, int urutanRiwayat)
@@ -66,8 +67,9 @@ namespace KASIR.OfflineMode
             PinPrinterBar = Properties.Settings.Default.PinPrinterBar;
             BaseOutletName = Properties.Settings.Default.BaseOutletName;
             InitializeComponent();
+            urutanRiwayat = urutanRiwayat;
 
-       
+
 
             LoadData(transactionId);
             dataGridView1.CellFormatting += DataGridView1_CellFormatting;
@@ -130,7 +132,7 @@ namespace KASIR.OfflineMode
                             Location = this.Location,
                             ShowInTaskbar = false,
                         };
-                        using (Offline_refund Offline_refund = new Offline_refund(idid.ToString()))
+                        using (Offline_refund Offline_refund = new Offline_refund(transactionId.ToString(), urutanRiwayat))
                         {
                             Offline_refund.Owner = background;
 
@@ -159,7 +161,6 @@ namespace KASIR.OfflineMode
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -226,20 +227,21 @@ namespace KASIR.OfflineMode
                         lblCustomerSeat.Text = customerSeat;
                         lblPaymentType.Text = "Payment Type: " + paymentType;
                         lblTotal.Text = "Total: " + string.Format("{0:n0}", total);
-                        decimal cash = filteredTransaction["total"] != null ? decimal.Parse(filteredTransaction["customer_cash"].ToString()) : 0;
-                        decimal kembalian = filteredTransaction["customer_change"] != null ? decimal.Parse(filteredTransaction["customer_change"].ToString()) : 0;
-                        decimal refund = filteredTransaction["customer_change"] != null ? decimal.Parse(filteredTransaction["customer_change"].ToString()) : 0;
+                        int cash = filteredTransaction["total"] != null ? int.Parse(filteredTransaction["customer_cash"].ToString()) : 0;
+                        int kembalian = filteredTransaction["customer_change"] != null ? int.Parse(filteredTransaction["customer_change"].ToString()) : 0;
+                        int refund = filteredTransaction["refund_total"] != null ? int.Parse(filteredTransaction["refund_total"].ToString()) : 0;
 
                         lblDiscountCode.Text = "Discount Code: " + "-";
                         lblDiscountValue.Text = "Discount Value: " + "-";
                         lblDiscountPrice.Text = "Discount Price: " + "-";
                         lblCustomerCash.Text = "Customer Cash: " + string.Format("{0:n0}", cash);
                         lblKembalian.Text = "Change: " + string.Format("{0:n0}", kembalian);
-                        lblTotalRefund.Text = "Refund: " + string.Format("{0:n0}", "0");
+                        lblTotalRefund.Text = "Refund: " + string.Format("{0:n0}", refund);
 
                         // Ambil data cart_details dan refund_details
                         var cartDetails = filteredTransaction["cart_details"] as JArray;
                         var refundDetails = filteredTransaction["refund_details"] as JArray;
+                        var cancelDetails = filteredTransaction["canceled_items"] as JArray;
 
                         DataTable dataTable = new DataTable();
                         dataTable.Columns.Add("MenuID", typeof(string));
@@ -247,38 +249,41 @@ namespace KASIR.OfflineMode
                         dataTable.Columns.Add("Jenis", typeof(string));
                         dataTable.Columns.Add("Menu", typeof(string));
                         dataTable.Columns.Add("Total Harga", typeof(string));
-                        dataTable.Columns.Add("Note", typeof(string));
 
-                        // Tambahkan separator untuk item yang terjual
-                        dataTable.Rows.Add(null, null, null, "Sold items: -", null, null);
-
-                        foreach (var item in cartDetails)
+                        if (cartDetails != null && cartDetails.Count > 0)
                         {
-                            dataTable.Rows.Add(
-                                item["menu_id"]?.ToString(),
-                                item["cart_detail_id"]?.ToObject<int>(),
-                                item["menu_type"]?.ToString(),
-                                $"{item["qty"]}X {item["menu_name"]}",
-                                string.Format("{0:n0}", item["total_price"]),
-                                item["note_item"]?.ToString()
-                            );
+                            // Tambahkan separator untuk item yang terjual
+                            dataTable.Rows.Add(null, null, null, "Sold items: ", null);
+
+                            foreach (var item in cartDetails)
+                            {
+                                dataTable.Rows.Add(
+                                    item["menu_id"]?.ToString(),
+                                    item["cart_detail_id"]?.ToObject<int>(),
+                                    item["menu_type"]?.ToString(),
+                                    $"{item["qty"]}x {item["menu_name"]} {item["menu_detail_name"]} {item["note_item"]?.ToString()}",
+                                    string.Format("{0:n0}", item["total_price"])
+                                );
+                            }
                         }
-
-                        /*// Tambahkan separator untuk item refund
-                        dataTable.Rows.Add(null, null, null, "Refund items: -", null, null);
-
-                        foreach (var refundItem in refundDetails)
+                        if (refundDetails != null && refundDetails.Count > 0)
                         {
-                            dataTable.Rows.Add(
-                                null,
-                                refundItem["cart_detail_id"]?.ToObject<int>(),
-                                null,
-                                $"{refundItem["qty_refund_item"]}X {refundItem["menu_name"]}",
-                                "(Refunded) " + string.Format("{0:n0}", refundItem["total_refund_price"]),
-                                refundItem["refund_reason_item"]?.ToString()
-                            );
-                        }*/
+                            // Tambahkan separator untuk item refund
+                            dataTable.Rows.Add(null, null, null, "Refund items: ", null);
 
+                            foreach (var refundItem in refundDetails)
+                            {
+                                dataTable.Rows.Add(
+                                    refundItem["menu_id"]?.ToString(),
+                                    refundItem["cart_detail_id"]?.ToObject<int>(),
+                                    refundItem["menu_type"]?.ToString(),
+                                    $"{refundItem["refund_qty"]}x {refundItem["menu_name"]} {refundItem["menu_detail_name"]} {refundItem["note_item"]?.ToString()}",
+                                    string.Format("{0:n0}", refundItem["refund_total"]) + " (Refunded)"
+                                );
+                                dataTable.Rows.Add(null, null, null, $"  Reason: {refundItem["refund_reason_item"]} ", null);
+
+                            }
+                        }
                         // Menampilkan data pada DataGridView
                         dataGridView1.DataSource = dataTable;
 
@@ -294,10 +299,6 @@ namespace KASIR.OfflineMode
                         if (dataGridView1.Columns.Contains("Jenis"))
                         {
                             dataGridView1.Columns["Jenis"].Visible = false;
-                        }
-                        if (dataGridView1.Columns.Contains("Note"))
-                        {
-                            dataGridView1.Columns["Note"].Visible = false;
                         }
                     }
                     else

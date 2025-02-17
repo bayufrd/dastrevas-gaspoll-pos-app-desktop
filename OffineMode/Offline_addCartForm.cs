@@ -338,7 +338,7 @@ namespace KASIR.OfflineMode
                     { "qty", quantity },
                     { "note_item", notes },
                     { "created_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
-                    { "update_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
+                    { "updated_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
                     { "discount_id", null },
                     { "discount_code", null },
                     { "discounts_value", null },

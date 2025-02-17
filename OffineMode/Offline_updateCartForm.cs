@@ -674,6 +674,7 @@ namespace KASIR.OfflineMode
                         itemToUpdate["menu_detail_name"] = VarianName;
                         itemToUpdate["varian"] = VarianName;
 
+                        itemToUpdate["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
                         if (selectedVarian == -1)
                         {

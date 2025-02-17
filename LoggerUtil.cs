@@ -19,7 +19,7 @@ namespace KASIR
             {
                 return;
             }
-
+            //MessageBox.Show(ex+message+properties);
             if (ex is System.Net.Sockets.SocketException socketEx)
             {
                 if (socketEx.ErrorCode == 10048 || socketEx.ErrorCode == 10060 || socketEx.ErrorCode == 10049)

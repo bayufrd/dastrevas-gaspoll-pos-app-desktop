@@ -210,7 +210,7 @@ namespace KASIR.OfflineMode
 
                 name = char.ToUpper(name[0]) + name.Substring(1);
 
-                txtNama.Text = name + " (DT-AutoFIll)";
+                txtNama.Text = name;
                 txtSeat.Text = "0";
             }
 
@@ -382,7 +382,7 @@ namespace KASIR.OfflineMode
                     string invoiceMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                     string formattedreceiptMaker;
                     DateTime invoiceDate;
-                    if (DateTime.TryParse(invoiceMaker, out invoiceDate))
+                    if (DateTime.TryParse(receiptMaker, out invoiceDate))
                     {
                         // Jika berhasil, format tanggal invoice sesuai kebutuhan
                         formattedreceiptMaker = invoiceDate.ToString("yyyyMMdd-HHmmss");
@@ -392,14 +392,14 @@ namespace KASIR.OfflineMode
                         // Jika parsing gagal, berikan nilai default atau tampilkan error
                         formattedreceiptMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                     }
-                    string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{receiptMaker}";
+                    string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{formattedreceiptMaker}";
                     string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                     // Prepare transaction data
                     var transactionData = new
                     {
                         transaction_id = int.Parse(transactionId),
                         receipt_number = receipt_numberfix,
-                        invoice_number = $"INV-{formattedreceiptMaker}{paymentTypedId}",  // Custom invoice number with formatted date
+                        invoice_number = $"INV-{invoiceMaker}{paymentTypedId}",  // Custom invoice number with formatted date
                         invoice_due_date = invoiceDue, // Adjust due date as needed
                         payment_type_id = paymentTypedId,
                         payment_type_name = paymentTypeName, // No need for .ToString() if paymentTypeName is already a string

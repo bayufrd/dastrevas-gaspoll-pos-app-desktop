@@ -219,6 +219,7 @@ namespace KASIR.OfflineMode
                 DialogResult dialogResult = pinForm.ShowDialog();
 
                 background.Dispose();
+                LoadData();
 
 
             }

@@ -33,8 +33,10 @@ namespace KASIR.OfflineMode
             panel1 = new Panel();
             lblDetailPayment = new Label();
             panel4 = new Panel();
+            label1 = new Label();
             cmbRefundType = new ComboBox();
             panel12 = new Panel();
+            label2 = new Label();
             cmbPayform = new ComboBox();
             panel13 = new Panel();
             panel3 = new Panel();
@@ -47,8 +49,6 @@ namespace KASIR.OfflineMode
             label3 = new Label();
             btnSimpan = new Button();
             btnKeluar = new Button();
-            label1 = new Label();
-            label2 = new Label();
             panel1.SuspendLayout();
             panel4.SuspendLayout();
             panel12.SuspendLayout();
@@ -94,6 +94,16 @@ namespace KASIR.OfflineMode
             panel4.Size = new Size(584, 38);
             panel4.TabIndex = 18;
             // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            label1.Location = new Point(3, 13);
+            label1.Name = "label1";
+            label1.Size = new Size(79, 15);
+            label1.TabIndex = 1;
+            label1.Text = "Type Refund :";
+            // 
             // cmbRefundType
             // 
             cmbRefundType.BackColor = Color.White;
@@ -116,6 +126,16 @@ namespace KASIR.OfflineMode
             panel12.Name = "panel12";
             panel12.Size = new Size(584, 38);
             panel12.TabIndex = 17;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            label2.Location = new Point(3, 13);
+            label2.Name = "label2";
+            label2.Size = new Size(101, 15);
+            label2.TabIndex = 2;
+            label2.Text = "Payment Refund :";
             // 
             // cmbPayform
             // 
@@ -266,27 +286,7 @@ namespace KASIR.OfflineMode
             btnKeluar.UseVisualStyleBackColor = false;
             btnKeluar.Click += btnKeluar_Click;
             // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            label1.Location = new Point(3, 13);
-            label1.Name = "label1";
-            label1.Size = new Size(79, 15);
-            label1.TabIndex = 1;
-            label1.Text = "Type Refund :";
-            // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            label2.Location = new Point(3, 13);
-            label2.Name = "label2";
-            label2.Size = new Size(101, 15);
-            label2.TabIndex = 2;
-            label2.Text = "Payment Refund :";
-            // 
-            // refund
+            // Offline_refund
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -294,7 +294,8 @@ namespace KASIR.OfflineMode
             ClientSize = new Size(600, 530);
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
-            Name = "refund";
+            MaximumSize = new Size(600, 530);
+            Name = "Offline_refund";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "refund";
             TopMost = true;

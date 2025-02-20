@@ -616,6 +616,9 @@
   <data name="iconButton2.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
   </data>
+  <data name="iconButton2.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Segoe UI, 8.5pt</value>
+  </data>
   <data name="iconButton2.ImageAlign" type="System.Drawing.ContentAlignment, System.Drawing">
     <value>MiddleLeft</value>
   </data>

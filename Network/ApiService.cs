@@ -343,5 +343,11 @@ namespace KASIR.Network
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return await response.Content.ReadAsStringAsync();
         }
+        public async Task<HttpResponseMessage> SyncTransaction(string jsonString, string url)
+        {
+            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
+            return response;
+        }
     }
 }

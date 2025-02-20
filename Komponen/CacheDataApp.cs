@@ -52,7 +52,29 @@ namespace KASIR.Komponen
                 await DeleteDataCache();
             }
         }
+        private void UpdateDetailLabel(string text)
+        {
+            if (lblDetail.InvokeRequired)
+            {
+                lblDetail.Invoke(new Action(() => lblDetail.Text = text));
+            }
+            else
+            {
+                lblDetail.Text = text;
+            }
+        }
 
+        private void UpdateProgressLabel(string text)
+        {
+            if (lblProgress.InvokeRequired)
+            {
+                lblProgress.Invoke(new Action(() => lblProgress.Text = text));
+            }
+            else
+            {
+                lblProgress.Text = text;
+            }
+        }
         private void EnsureDirectoriesExist()
         {
             if (!Directory.Exists("DT-Cache"))
@@ -65,29 +87,10 @@ namespace KASIR.Komponen
             }
         }
 
-        static string FindLinkFolderBeforeStartupPath(string startupPath, string linkFolderName)
-        {
-            string currentPath = Path.GetDirectoryName(startupPath);
-
-            while (currentPath != null)
-            {
-                string[] directories = Directory.GetDirectories(currentPath, linkFolderName, SearchOption.AllDirectories);
-
-                if (directories.Length > 0)
-                {
-                    return directories[0];
-                }
-
-                currentPath = Path.GetDirectoryName(currentPath);
-            }
-
-            return null;
-        }
-
         private async Task DeleteDataCache()
         {
-            lblDetail.Text = "Deleting Items dan Gambar";
-            lblProgress.Text = $"Loading Data...";
+            UpdateDetailLabel("Deleting Items dan Gambar");
+            UpdateProgressLabel($"Loading Data...");
             progressBar.Value = 0;
             if (Directory.Exists("DT-Cache")) { Directory.Delete("DT-Cache", true); }
 
@@ -105,7 +108,7 @@ namespace KASIR.Komponen
         {
             try
             {
-                lblDetail.Text = "Memuat Menu Items dan Gambar";
+                UpdateDetailLabel("Memuat Menu Items dan Gambar");
                 items = 0;
                 progressBar.Value = items;
 
@@ -155,8 +158,9 @@ namespace KASIR.Komponen
                 items++;
                 int x = 100 / menuModel.data.Count;
                 PictureBox pictureBox = new PictureBox();
-                lblProgress.Text = $"Mengunduh Data...[{items} / {menuModel.data.Count}]";
-                lblDetail.Text =  "Checking Image...";
+                UpdateProgressLabel($"Mengunduh Data...[{items} / {menuModel.data.Count}]");
+
+                UpdateDetailLabel("Checking Image...");
                 await LoadImageToPictureBox(pictureBox, menu);
                 progressBar.Value = x * items;
                 
@@ -169,7 +173,7 @@ namespace KASIR.Komponen
             {
                 items = 0;
                 progressBar.Value = items;
-                lblDetail.Text = "Memuat Serving Type Items";
+                UpdateDetailLabel("Memuat Serving Type Items");
 
                 EnsureDirectoriesExist();
 
@@ -184,11 +188,13 @@ namespace KASIR.Komponen
                     var cachedMenuModel = LoadCachedMenuByIdModel(cacheFilePath);
 
                     bool dataChanged = !AreMenuByIdModelsEqual(apiMenuModel, cachedMenuModel);
-                    lblProgress.Text = $"Membandingkan...";
+                    UpdateProgressLabel($"Membandingkan...");
+
 
                     if (dataChanged || cachedMenuModel == null)
                     {
-                        lblProgress.Text = $"Mendownload...";
+                        UpdateProgressLabel($"Mendownload...");
+
                         File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(apiMenuModel));
                     }
                     // Update progress bar after processing each item
@@ -213,7 +219,8 @@ namespace KASIR.Komponen
             try
             {
                 items = 0;
-                lblDetail.Text = "Memuat Data Varian Items dan Membandingkan";
+                UpdateDetailLabel("Memuat Data Varian Items dan Membandingkan");
+
 
                 EnsureDirectoriesExist();
 
@@ -228,11 +235,13 @@ namespace KASIR.Komponen
                     var cachedMenuModel = LoadCachedMenuDetailCartModel(cacheFilePath);
 
                     bool dataChanged = !AreMenuDetailCartModelsEqual(apiMenuModel, cachedMenuModel);
-                    lblProgress.Text = $"Membandingkan...";
+                    UpdateProgressLabel($"Membandingkan...");
+
 
                     if (dataChanged || cachedMenuModel == null)
                     {
-                        lblProgress.Text = $"Mendownload...";
+                        UpdateProgressLabel($"Mendownload...");
+
 
                         File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(apiMenuModel));
                         UpdateProgressBar(items, menuIds.Length);
@@ -256,10 +265,11 @@ namespace KASIR.Komponen
         {
             try
             {
-                lblDetail.Text = "Memuat Diskon Per Item";
+                UpdateDetailLabel("Memuat Diskon Per Item");
 
                 items = 0;
-                lblProgress.Text = $"Mengunduh Data...";
+                UpdateProgressLabel($"Mengunduh Data...");
+
                 progressBar.Value = items;
 
                 EnsureDirectoriesExist();
@@ -271,11 +281,11 @@ namespace KASIR.Komponen
                 var cachedDiscountModel = LoadCachedDiscountModel(cacheFilePath);
 
                 bool dataChanged = !AreDiscountCartModelsEqual(apiDiscountModel, cachedDiscountModel);
-                lblProgress.Text = $"Membandingkan...";
+                UpdateProgressLabel($"Membandingkan...");
 
                 if (dataChanged || cachedDiscountModel == null)
                 {
-                    lblProgress.Text = $"Mendownload...";
+                    UpdateProgressLabel("Mendowload...");
 
                     File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(apiDiscountModel));
                 }
@@ -298,10 +308,11 @@ namespace KASIR.Komponen
         {
             try
             {
-                lblDetail.Text = "Memuat Data Payform";
+                UpdateDetailLabel("Memuat Data Payform");
 
                 items = 0;
-                lblProgress.Text = $"Mengunduh Data...";
+                UpdateProgressLabel($"Mengunduh Data...");
+
                 progressBar.Value = items;
 
                 EnsureDirectoriesExist();
@@ -313,11 +324,11 @@ namespace KASIR.Komponen
                 var cachedPaymentModel = LoadCachedPaymentTypeModel(cacheFilePath);
 
                 bool dataChanged = !ArePaymentTypeModelsEqual(apiPaymentModel, cachedPaymentModel);
-                lblProgress.Text = $"Membandingkan...";
+                UpdateProgressLabel($"Membandingkan...");
 
                 if (dataChanged || cachedPaymentModel == null)
                 {
-                    lblProgress.Text = $"Mendownload...";
+                    UpdateProgressLabel($"Mendownload...");
 
                     File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(apiPaymentModel));
                 }
@@ -339,10 +350,12 @@ namespace KASIR.Komponen
         {
             try
             {
-                lblDetail.Text = "Memuat Data Diskon Keranjang";
+                UpdateDetailLabel("Memuat Data Diskon Keranjang");
 
                 items = 0;
                 lblProgress.Text = $"Mengunduh Data...";
+                UpdateProgressLabel($"Mendownload...");
+
                 progressBar.Value = items;
 
                 EnsureDirectoriesExist();
@@ -360,11 +373,12 @@ namespace KASIR.Komponen
                 DiscountCartModel cachedCartModel = LoadCachedDiscountModel(cacheFilePath);
 
                 bool dataChanged = !AreDiscountCartModelsEqual(apiCartModel, cachedCartModel);
-                lblProgress.Text = $"Membandingkan...";
+                UpdateProgressLabel($"Membandingkan...");
 
                 if (dataChanged || cachedCartModel == null)
                 {
-                    lblProgress.Text = $"Mendownload...";
+                    UpdateProgressLabel($"Mendownload...");
+
                     File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(apiCartModel));
                 }
 
@@ -437,15 +451,24 @@ namespace KASIR.Komponen
         {
             if (totalCount > 0)
             {
-                progressBar.Minimum = 0;
-                progressBar.Maximum = 100; // Ensure maximum is set to 100 for percentage-based progress
-
-                // Calculate the progress as a percentage (0 to 100)
+                // Hitung kemajuan sebagai persentase (0 hingga 100)
                 int progress = (int)((double)currentItem / totalCount * 100);
 
-                // Ensure the progress value is within valid range
-                progressBar.Value = Math.Max(progress, progressBar.Minimum); // Ensure it is not less than minimum
-                progressBar.Value = Math.Min(progressBar.Value, progressBar.Maximum); // Ensure it is not greater than maximum
+                // Pastikan nilai kemajuan berada dalam rentang yang valid
+                progress = Math.Max(progress, 0); // Pastikan tidak kurang dari 0
+                progress = Math.Min(progress, 100); // Pastikan tidak lebih dari 100
+
+                // Memperbarui ProgressBar di thread UI
+                if (progressBar.InvokeRequired)
+                {
+                    // Jika kita tidak berada di thread UI, panggil metode ini di thread UI
+                    progressBar.Invoke(new Action(() => UpdateProgressBar(currentItem, totalCount)));
+                }
+                else
+                {
+                    // Jika kita berada di thread UI, langsung perbarui ProgressBar
+                    progressBar.Value = progress;
+                }
             }
         }
         private bool AreMenuModelsEqual(GetMenuModel model1, GetMenuModel model2)
@@ -778,7 +801,7 @@ namespace KASIR.Komponen
         {
             try
             {
-                lblDetail.Text = "Load Menu Items dan Gambar";
+                UpdateDetailLabel("Load Menu Items dan Gambar");
                 items = 0;
                 progressBar.Value = items;
 
@@ -798,7 +821,8 @@ namespace KASIR.Komponen
                     int x = 100 / menuModel.data.Count;
                     
                     PictureBox pictureBox = new PictureBox();
-                    lblDetail.Text = $"Downloading Data...[{items} / {menuModel.data.Count}]";
+                    UpdateDetailLabel($"Downloading Data...[{items} / {menuModel.data.Count}]");
+
 
                     // Load gambar dari cache atau unduh jika tidak ada di cache
                     await LoadImageToPictureBox(pictureBox, menu);
@@ -826,7 +850,8 @@ namespace KASIR.Komponen
             {
                 items = 0;
                 progressBar.Value = items;
-                lblDetail.Text = "Load Serving Type Items";
+                UpdateDetailLabel("Load Serving Type Items");
+
 
                 if (!Directory.Exists("DT-Cache")) { Directory.CreateDirectory("DT-Cache"); }
                 if (!Directory.Exists(folderAddCartForm)) { Directory.CreateDirectory(folderAddCartForm); }
@@ -843,7 +868,8 @@ namespace KASIR.Komponen
                     // Save the menu data to a local file
                     File.WriteAllText(folderAddCartForm + "\\LoadDataServingType_" + menuId + "_Outlet_" + baseOutlet + ".data", JsonConvert.SerializeObject(menuModel));
                     int count = menuIds.Where(id => id != 0).Count();
-                    lblProgress.Text = $"Downloading Data...[{items} / {count}]";
+                    UpdateProgressLabel($"Downloading Data...[{items} / {count}]");
+
                     int x = 100 / count;
                     progressBar.Value = x * items;
                 }
@@ -866,7 +892,8 @@ namespace KASIR.Komponen
             try
             {
                 items = 0;
-                lblDetail.Text = "Load Data Varian Items";
+                UpdateDetailLabel("Load Data Varian Items");
+
 
                 if (!Directory.Exists("DT-Cache")) { Directory.CreateDirectory("DT-Cache"); }
                 if (!Directory.Exists(folderAddCartForm)) { Directory.CreateDirectory(folderAddCartForm); }
@@ -884,7 +911,7 @@ namespace KASIR.Komponen
                     File.WriteAllText(folderAddCartForm + "\\LoadDataVarian_" + idmenu + "_Outlet_" + baseOutlet + ".data", JsonConvert.SerializeObject(menuModel));
 
                     int count = menuIds.Where(id => id != 0).Count();
-                    lblProgress.Text = $"Downloading Data...[{items} / {count}]";
+                    UpdateProgressLabel($"Downloading Data...[{items} / {count}]");
                     int x = 100 / count;
                     progressBar.Value = x * items;
                 }
@@ -907,10 +934,12 @@ namespace KASIR.Komponen
         {
             try
             {
-                lblDetail.Text = "Load Discount PerItems";
+                UpdateDetailLabel("Load Discount PerItems");
+
 
                 items = 0;
-                lblProgress.Text = $"Downloading Data...";
+                UpdateProgressLabel($"Downloading Data...");
+
                 progressBar.Value = items;
                 if (!Directory.Exists("DT-Cache")) { Directory.CreateDirectory("DT-Cache"); }
                 if (!Directory.Exists(folderAddCartForm)) { Directory.CreateDirectory(folderAddCartForm); }
@@ -938,11 +967,12 @@ namespace KASIR.Komponen
         {
             try
             {
-                lblDetail.Text = "Load Data Payform";
+                UpdateDetailLabel("Load Data Payform");
 
 
                 items = 0;
-                lblProgress.Text = $"Downloading Data...";
+                UpdateProgressLabel($"Downloading Data...");
+
                 progressBar.Value = items;
 
                 if (!Directory.Exists("DT-Cache")) { Directory.CreateDirectory("DT-Cache"); }
@@ -970,10 +1000,12 @@ namespace KASIR.Komponen
         {
             try
             {
-                lblDetail.Text = "Load Data Discount Cart";
+                UpdateDetailLabel("Load Data Discount Cart");
+
 
                 items = 0;
-                lblProgress.Text = $"Downloading Data...";
+                UpdateProgressLabel($"Downloading Data...");
+
                 progressBar.Value = items;
 
                 if (!Directory.Exists("DT-Cache")) { Directory.CreateDirectory("DT-Cache"); }

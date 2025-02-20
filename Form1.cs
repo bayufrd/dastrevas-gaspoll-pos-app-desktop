@@ -20,6 +20,8 @@ using DrawingColor = System.Drawing.Color;
 using Color = System.Drawing.Color;
 using KASIR.OfflineMode;
 using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 
 namespace KASIR
@@ -83,6 +85,12 @@ namespace KASIR
             if (!Directory.Exists(directoryPath))
             {
                 Directory.CreateDirectory(directoryPath);
+            }
+            // Memeriksa apakah file ada
+            if (!File.Exists(Config))
+            {
+                // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
+                File.WriteAllText(Config, "OFF");
             }
             string allSettingsData = File.ReadAllText(Config); // Ambil status offline
 
@@ -179,7 +187,6 @@ namespace KASIR
             SignalPing.ForeColor = DrawingColor.White;
             lblPing.ForeColor = DrawingColor.White;
             SignalPing.IconColor = DrawingColor.White;
-
         }
 
         static string ReplaceColonWithDash(string mac)
@@ -248,7 +255,9 @@ namespace KASIR
                 //DuplicateTemp();
                 string TypeCacheEksekusi = "Sync";
 
-                CacheDataApp form3 = new CacheDataApp("Sync");
+                CacheDataApp CacheDataApp = new CacheDataApp(TypeCacheEksekusi);
+                CacheDataApp.LoadData(TypeCacheEksekusi);
+                //CacheDataApp.Show();
             }
             catch (Exception ex)
             {
@@ -318,7 +327,6 @@ namespace KASIR
                 await DualMonitorChecker();
                 await cekLastUpdaterApp();
                 await cekVersionAndData();
-                //await cekCacheData();
                 await checkCacheData();
                 await headerName();
 
@@ -398,36 +406,6 @@ namespace KASIR
             {
                 MessageBox.Show("Error" + ex.Message, "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
-        public static void DuplicateAndRenameToOutletLogo(string file2Path)
-        {
-            // Path untuk OutletLogo.bmp
-            string outletLogoPath = "icon\\OutletLogo.bmp";
-            string tempCopyPath = "icon\\TempCopy.bmp";
-
-            try
-            {
-                // Cek apakah file OutletLogo.bmp sudah ada
-                if (File.Exists(outletLogoPath))
-                {
-                    // Hapus file OutletLogo.bmp jika sudah ada
-                    File.Delete(outletLogoPath);
-                }
-
-                // Duplikasi file original (file2) ke file sementara (TempCopy.bmp)
-                File.Copy(file2Path, tempCopyPath);
-
-                // Rename TempCopy.bmp menjadi OutletLogo.bmp
-                File.Move(tempCopyPath, outletLogoPath);
-            }
-            catch (IOException ioEx)
-            {
-                LoggerUtil.LogError(ioEx, "Terjadi kesalahan IO: {ioEx.Message}", ioEx.Message);
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "Terjadi kesalahan:", ex.Message);
             }
         }
         private async Task DownloadUpdaterApp()
@@ -664,53 +642,10 @@ namespace KASIR
             MessageBox.Show("Terdapat Perubahan Item Menu!\nSilahkan Sinkronisasi ulang pada setting bawah kiri\nLalu jalankan tombol Sync!");
 
         }
-
-        static void YourFunctionToAddNewID()
+        static bool IsValidVersion(string version)
         {
-            // Fungsi Anda untuk menangani penambahan ID baru yang ditemukan di API
-            // Anda bisa menambahkan log, pembaruan, atau tindakan lain sesuai kebutuhan
-            string msg = "Ada Penambahan atau Perubahan Item Menu! \n\nSinkronasi Menu Sekarang?";
-            MessageBoxIcon icon = MessageBoxIcon.Information;
-            DialogResult result = MessageBox.Show(msg, "PEMBAHARUAN! - GASPOL | DTCoding", MessageBoxButtons.YesNo, icon);
-
-            if (result == DialogResult.Yes)
-            {
-                try
-                {
-                    string TypeCacheEksekusi = "Sync";
-                    CacheDataApp sinkronasi = new CacheDataApp(TypeCacheEksekusi);
-                    sinkronasi.Show();
-                }
-                catch (Exception ex)
-                {
-
-                }
-            }
-            else
-            {
-                // User clicked "No", so the program will not continue.
-                // Add your code here.
-            }
-        }
-
-
-        static string FindLinkFolderBeforeStartupPath(string startupPath, string linkFolderName)
-        {
-            string currentPath = Path.GetDirectoryName(startupPath);
-
-            while (currentPath != null)
-            {
-                string[] directories = Directory.GetDirectories(currentPath, linkFolderName, SearchOption.AllDirectories);
-
-                if (directories.Length > 0)
-                {
-                    return directories[0];
-                }
-
-                currentPath = Path.GetDirectoryName(currentPath);
-            }
-
-            return null;
+            // Memastikan hanya angka dan maksimal 5 digit
+            return Regex.IsMatch(version, @"^\d{1,5}$");
         }
         private async Task cekVersionAndData()
         {
@@ -726,26 +661,57 @@ namespace KASIR
                 newVersion = newVersion.Replace(".", "");
                 currentVersion = currentVersion.Replace(".", "");
 
+                // Validasi input
+                if (!IsValidVersion(currentVersion))
+                {
+                    currentVersion = "1080"; // Set default version jika tidak valid
+                }
+
+                bool shouldUpdate = false;
 
                 if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
                 {
-                    urlVersion = Properties.Settings.Default.BaseAddressVersion.ToString();
-                    newVersion = (new WebClient().DownloadString(urlVersion));
-                    currentVersion = Properties.Settings.Default.Version.ToString();
+                    // Ambil data focus outlet
+                    string originalUrl = Properties.Settings.Default.BaseAddressDev.ToString();
+                    var urlOutletFocus = RemoveApiPrefix(originalUrl);
+                    var focusOutletData = (new WebClient().DownloadString($"{urlOutletFocus}/update/outletUpdate.txt"));
 
-                    Util n = new Util();
-                    n.sendLogTelegramNetworkError("Open Updater");
-                    await headerOutletName("Opening Kasir Updater...");
+                    // Parsing data focus outlet
+                    var focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
+                                                       .Split(',')
+                                                       .Select(s => s.Trim()) // Menghapus spasi di sekitar
+                                                       .ToArray();
 
-                    OpenUpdaterExe();
+                    // Cek apakah baseOutlet ada dalam focusOutlets
+                    if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
+                    {
+                        shouldUpdate = true;
+                    }
+
+                    if (shouldUpdate)
+                    {
+                        Util n = new Util();
+                        n.sendLogTelegramNetworkError("Open Updater");
+                        await headerOutletName("Opening Kasir Updater...");
+
+                        OpenUpdaterExe();
+                    }
                 }
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
             }
-
+        }
+        private string RemoveApiPrefix(string url)
+        {
+            // Memeriksa apakah URL mengandung "api."
+            if (url.Contains("api."))
+            {
+                // Mengganti "api." dengan string kosong
+                return url.Replace("api.", "");
+            }
+            return url; // Kembalikan URL asli jika tidak ada "api."
         }
 
         private async void OpenUpdaterExe()
@@ -768,7 +734,6 @@ namespace KASIR
                 Thread.Sleep(3000);
 
                 System.Windows.Forms.Application.Exit();
-
             }
             else
             {
@@ -776,86 +741,34 @@ namespace KASIR
             }
         }
 
-        private async Task headerName()
+        public async Task headerName()
         {
             try
             {
-                // Tentukan path file
                 string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
+                string outletName;
 
-                // Cek apakah file ada
+                // Cek apakah file ada dan baca data dari file atau API
                 if (File.Exists(filePath))
                 {
-                    // Jika file ada, baca file tersebut
-                    string fileContent = File.ReadAllText(filePath);
-                    var outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
-
-                    // Ambil data dan tampilkan di label
-                    string outletName = outletData["data"]?["name"]?.ToString();
-
-                    // Jika UI tidak berada di thread utama, gunakan Invoke
-                    if (lblNamaOutlet.InvokeRequired)
-                    {
-                        lblNamaOutlet.Invoke(new MethodInvoker(delegate {
-                            lblNamaOutlet.Text = outletName;
-                        }));
-                    }
-                    else
-                    {
-                        lblNamaOutlet.Text = outletName;
-                    }
-
-                    baseOutletName = lblNamaOutlet.Text;
+                    outletName = GetOutletNameFromFile(filePath);
                 }
                 else
                 {
-                    // Jika file tidak ada, ambil data dari API
-                    IApiService apiService = new ApiService();
-                    string response = await apiService.CekShift("/outlet/" + baseOutlet);
-
-                    if (response != null)
+                    outletName = await GetOutletNameFromApi();
+                    if (outletName != null)
                     {
-                        // Deserialize data JSON dari API
-                        var apiResponse = JsonConvert.DeserializeObject<JObject>(response);
-                        var outletData = apiResponse["data"];
-
-                        // Ambil nama outlet dari data API
-                        string outletName = outletData?["name"]?.ToString();
-
-                        // Jika UI tidak berada di thread utama, gunakan Invoke
-                        if (lblNamaOutlet.InvokeRequired)
-                        {
-                            lblNamaOutlet.Invoke(new MethodInvoker(delegate {
-                                lblNamaOutlet.Text = outletName;
-                            }));
-                        }
-                        else
-                        {
-                            lblNamaOutlet.Text = outletName;
-                        }
-
-                        baseOutletName = lblNamaOutlet.Text;
-
-                        // Simpan data ke file
-                        File.WriteAllText(filePath, JsonConvert.SerializeObject(apiResponse));
+                        // Simpan data ke file jika berhasil mendapatkan nama outlet
+                        File.WriteAllText(filePath, JsonConvert.SerializeObject(new { data = new { name = outletName } }));
                     }
                     else
                     {
-                        // Jika response null, gunakan data default
-                        if (lblNamaOutlet.InvokeRequired)
-                        {
-                            lblNamaOutlet.Invoke(new MethodInvoker(delegate {
-                                lblNamaOutlet.Text = "Outlet Tidak Ditemukan";
-                            }));
-                        }
-                        else
-                        {
-                            lblNamaOutlet.Text = "Outlet Tidak Ditemukan";
-                        }
-
-                        baseOutletName = lblNamaOutlet.Text;
+                        outletName = "Outlet Tidak Ditemukan";
                     }
                 }
+
+                // Update label UI
+                UpdateOutletLabel(outletName);
             }
             catch (TaskCanceledException ex)
             {
@@ -867,6 +780,40 @@ namespace KASIR
             }
         }
 
+        public string GetOutletNameFromFile(string filePath)
+        {
+            string fileContent = File.ReadAllText(filePath);
+            var outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
+            return outletData["data"]?["name"]?.ToString();
+        }
+
+        public async Task<string> GetOutletNameFromApi()
+        {
+            IApiService apiService = new ApiService();
+            string response = await apiService.CekShift("/outlet/" + baseOutlet);
+            if (response != null)
+            {
+                var apiResponse = JsonConvert.DeserializeObject<JObject>(response);
+                File.WriteAllText($"DT-Cache\\DataOutlet{baseOutlet}.data", JsonConvert.SerializeObject(response));
+
+                return apiResponse["data"]?["name"]?.ToString();
+            }
+            return null;
+        }
+
+        public void UpdateOutletLabel(string outletName)
+        {
+            if (lblNamaOutlet.InvokeRequired)
+            {
+                lblNamaOutlet.Invoke(new MethodInvoker(() => lblNamaOutlet.Text = outletName));
+            }
+            else
+            {
+                lblNamaOutlet.Text = outletName;
+            }
+
+            baseOutletName = lblNamaOutlet.Text;
+        }
 
 
         private struct RGBColors
@@ -1468,6 +1415,8 @@ namespace KASIR
                 c.BringToFront();
                 c.Show();
                 lblTitleChildForm.Text = "Shift Report - Report Shift and Shift Transactions, Print Shift and Cash Out";
+
+                
                 Form background = new Form
                 {
                     StartPosition = FormStartPosition.Manual,

@@ -225,6 +225,7 @@
             textBoxAPI.Name = "textBoxAPI";
             textBoxAPI.Size = new Size(291, 23);
             textBoxAPI.TabIndex = 47;
+            textBoxAPI.TextChanged += textBoxAPI_TextChanged;
             // 
             // label2
             // 

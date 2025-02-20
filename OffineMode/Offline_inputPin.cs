@@ -134,8 +134,9 @@ namespace KASIR.OfflineMode
                         };
                         using (Offline_refund Offline_refund = new Offline_refund(transactionId.ToString(), urutanRiwayat))
                         {
-                            Offline_refund.Owner = background;
 
+                            Offline_refund.Owner = background;
+                            
                             background.Show();
 
                             DialogResult dialogResult = Offline_refund.ShowDialog();
@@ -253,23 +254,30 @@ namespace KASIR.OfflineMode
                         if (cartDetails != null && cartDetails.Count > 0)
                         {
                             // Tambahkan separator untuk item yang terjual
-                            dataTable.Rows.Add(null, null, null, "Sold items: ", null);
+                            //dataTable.Rows.Add(null, null, null, "Sold items: ", null);
+                            AddSeparatorRow(dataTable, "#Sold items: ", dataGridView1);
 
                             foreach (var item in cartDetails)
                             {
-                                dataTable.Rows.Add(
-                                    item["menu_id"]?.ToString(),
-                                    item["cart_detail_id"]?.ToObject<int>(),
-                                    item["menu_type"]?.ToString(),
-                                    $"{item["qty"]}x {item["menu_name"]} {item["menu_detail_name"]} {item["note_item"]?.ToString()}",
-                                    string.Format("{0:n0}", item["total_price"])
-                                );
+                                if (int.Parse(item["qty"].ToString()) != 0)
+                                {
+                                    dataTable.Rows.Add(
+                                        item["menu_id"]?.ToString(),
+                                        item["cart_detail_id"]?.ToObject<int>(),
+                                        item["menu_type"]?.ToString(),
+                                        $"{item["qty"]}x {item["menu_name"]} {item["menu_detail_name"]} {item["note_item"]?.ToString()}",
+                                        string.Format("{0:n0}", item["total_price"])
+                                    );
+                                    if(!string.IsNullOrEmpty(item["note_item"].ToString()))
+                                    dataTable.Rows.Add(null, null, null, $"  *Notes: {item["note_item"].ToString()} ", null);
+                                }
                             }
                         }
                         if (refundDetails != null && refundDetails.Count > 0)
                         {
                             // Tambahkan separator untuk item refund
-                            dataTable.Rows.Add(null, null, null, "Refund items: ", null);
+                            //dataTable.Rows.Add(null, null, null, "Refund items: ", null);
+                            AddSeparatorRow(dataTable, "#Refund items: ", dataGridView1);
 
                             foreach (var refundItem in refundDetails)
                             {
@@ -280,7 +288,7 @@ namespace KASIR.OfflineMode
                                     $"{refundItem["refund_qty"]}x {refundItem["menu_name"]} {refundItem["menu_detail_name"]} {refundItem["note_item"]?.ToString()}",
                                     string.Format("{0:n0}", refundItem["refund_total"]) + " (Refunded)"
                                 );
-                                dataTable.Rows.Add(null, null, null, $"  Reason: {refundItem["refund_reason_item"]} ", null);
+                                dataTable.Rows.Add(null, null, null, $"  *Reason: {refundItem["refund_reason_item"].ToString()} ", null);
 
                             }
                         }
@@ -317,6 +325,29 @@ namespace KASIR.OfflineMode
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             
+        }
+        private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
+        {
+            // Tambahkan separator row ke DataTable
+            dataTable.Rows.Add(null, null, null, groupKey + "\n", null); // Add a separator row
+
+            // Ambil indeks baris terakhir yang baru saja ditambahkan
+            int lastRowIndex = dataTable.Rows.Count - 1;
+
+            // Menambahkan row ke DataGridView
+            dataGridView.DataSource = dataTable;
+
+            // Mengatur gaya sel untuk kolom tertentu
+            int[] cellIndexesToStyle = { 1,2,3,4 }; // Indeks kolom yang ingin diatur
+            SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
+        }
+        private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)
+        {
+            foreach (int index in cellIndexes)
+            {
+                row.Cells[index].Style.BackColor = backgroundColor;
+                row.Cells[index].Style.Font = new Font(dataGridView1.Font, fontStyle);
+            }
         }
         private async void btnCetakStruk_Click(object sender, EventArgs e)
         {

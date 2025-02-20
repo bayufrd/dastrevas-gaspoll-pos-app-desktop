@@ -273,29 +273,6 @@ namespace KASIR.OfflineMode
                 }
             }
         }
-        private string ConvertDateTimeFormat(string input)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(input) || input.Length != 14)
-                {
-                    throw new ArgumentException("Input string must be 14 characters long.");
-                }
-
-                // Memecah string input menjadi dua bagian
-                string datePart = input.Substring(0, 8); // Ambil tanggal (YYYYMMDD)
-                string timePart = input.Substring(8); // Ambil waktu (HHMMSS)
-
-                // Format tanggal dan waktu sesuai dengan format yang diinginkan
-                string formattedString = $"{datePart}-{timePart}";
-
-                return formattedString;
-            }
-            catch (Exception ex)
-            {
-                return "DateTime_Invalid";
-            }
-        }
 
         private async void btnSimpan_Click(object sender, EventArgs e)
         {
@@ -378,7 +355,7 @@ namespace KASIR.OfflineMode
                     transactionId = firstCartDetailId;
                     string paymentTypeName = cmbPayform.Text.ToString();
                     int paymentTypedId = int.Parse(cmbPayform.SelectedValue.ToString());
-                    string receiptMaker = cartDetails?.FirstOrDefault()?["created_at"].ToString(); 
+                    string receiptMaker = cartDetails?.FirstOrDefault()?["created_at"].ToString();
                     string invoiceMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                     string formattedreceiptMaker;
                     DateTime invoiceDate;
@@ -394,11 +371,14 @@ namespace KASIR.OfflineMode
                     }
                     string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{formattedreceiptMaker}";
                     string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    string transaction_ref_time = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+                    string transaction_ref_sent = $"{baseOutlet}-{transaction_ref_time}-{txtNama.Text}"; //4-23112025-033045-yanto 
                     // Prepare transaction data
                     var transactionData = new
                     {
                         transaction_id = int.Parse(transactionId),
                         receipt_number = receipt_numberfix,
+                        transaction_ref = transaction_ref_sent,
                         invoice_number = $"INV-{invoiceMaker}{paymentTypedId}",  // Custom invoice number with formatted date
                         invoice_due_date = invoiceDue, // Adjust due date as needed
                         payment_type_id = paymentTypedId,
@@ -426,6 +406,10 @@ namespace KASIR.OfflineMode
                         refund_reason_all = (string)null,
                         refund_payment_id_all = 0,
                         refund_created_at_all = (string)null,
+                        total_refund = 0,
+                        refund_payment_name_all = (string)null,
+                        is_edited_sync = 0,
+                        is_sent_sync = 0,
                         cart_details = cartDetails,
                         refund_details = new JArray(), // Empty array for refund_details
                         canceled_items = new JArray() // Empty array for canceled_items

@@ -74,26 +74,26 @@ namespace KASIR.Komponen
         }
         private void Button2_Click(object sender, EventArgs e)
         {
-            
-                //PASSWORD CHECKER
-                if (string.IsNullOrEmpty(lblPassword.Text))
-                {
-                    lblStatus.Text = "Silahkan masukkan Password Konfirmasi.";
-                    lblStatus.ForeColor = Color.Red;
-                    return;
-                }
-                if(lblPassword.Text != "GMC1234")
-                {
-                    lblStatus.Text = "Password salah.";
-                    lblStatus.ForeColor = Color.Red;
-                    return;
-                }
-                if (status != 1)
-                {
-                    lblStatus.Text = "Masukkan logo yang valid dahulu.";
-                    lblStatus.ForeColor = Color.Red;
-                    return;
-                }
+
+            //PASSWORD CHECKER
+            if (string.IsNullOrEmpty(lblPassword.Text))
+            {
+                lblStatus.Text = "Silahkan masukkan Password Konfirmasi.";
+                lblStatus.ForeColor = Color.Red;
+                return;
+            }
+            if (lblPassword.Text != "GMC1234")
+            {
+                lblStatus.Text = "Password salah.";
+                lblStatus.ForeColor = Color.Red;
+                return;
+            }
+            if (status != 1)
+            {
+                lblStatus.Text = "Masukkan logo yang valid dahulu.";
+                lblStatus.ForeColor = Color.Red;
+                return;
+            }
             try
             {
                 lblStatus.Text = "Menyimpan...";
@@ -196,6 +196,11 @@ namespace KASIR.Komponen
                     status = 0;
                 }
             }
+        }
+
+        private void textBoxAPI_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

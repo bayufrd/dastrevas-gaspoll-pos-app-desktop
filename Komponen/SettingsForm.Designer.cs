@@ -422,7 +422,7 @@ namespace KASIR.Komponen
             sButtonOffline.AutoSize = true;
             sButtonOffline.BackColor = Color.White;
             sButtonOffline.FlatStyle = FlatStyle.Flat;
-            sButtonOffline.Location = new Point(28, 612);
+            sButtonOffline.Location = new Point(57, 620);
             sButtonOffline.MinimumSize = new Size(45, 22);
             sButtonOffline.Name = "sButtonOffline";
             sButtonOffline.OffBackColor = Color.Gray;
@@ -447,7 +447,7 @@ namespace KASIR.Komponen
             iconOfflineMode.IconColor = Color.FromArgb(31, 30, 68);
             iconOfflineMode.IconFont = IconFont.Auto;
             iconOfflineMode.IconSize = 30;
-            iconOfflineMode.Location = new Point(12, 563);
+            iconOfflineMode.Location = new Point(41, 571);
             iconOfflineMode.Name = "iconOfflineMode";
             iconOfflineMode.Size = new Size(68, 55);
             iconOfflineMode.TabIndex = 64;
@@ -468,7 +468,7 @@ namespace KASIR.Komponen
             iconButton1.IconColor = Color.FromArgb(31, 30, 68);
             iconButton1.IconFont = IconFont.Auto;
             iconButton1.IconSize = 30;
-            iconButton1.Location = new Point(343, 573);
+            iconButton1.Location = new Point(372, 581);
             iconButton1.Name = "iconButton1";
             iconButton1.Size = new Size(53, 55);
             iconButton1.TabIndex = 63;
@@ -856,7 +856,7 @@ namespace KASIR.Komponen
             ListMenu.IconColor = Color.FromArgb(31, 30, 68);
             ListMenu.IconFont = IconFont.Auto;
             ListMenu.IconSize = 30;
-            ListMenu.Location = new Point(109, 574);
+            ListMenu.Location = new Point(138, 582);
             ListMenu.Name = "ListMenu";
             ListMenu.Size = new Size(36, 36);
             ListMenu.TabIndex = 58;
@@ -868,7 +868,7 @@ namespace KASIR.Komponen
             sButtonListMenu.AutoSize = true;
             sButtonListMenu.BackColor = Color.White;
             sButtonListMenu.FlatStyle = FlatStyle.Flat;
-            sButtonListMenu.Location = new Point(105, 612);
+            sButtonListMenu.Location = new Point(134, 620);
             sButtonListMenu.MinimumSize = new Size(45, 22);
             sButtonListMenu.Name = "sButtonListMenu";
             sButtonListMenu.OffBackColor = Color.Gray;
@@ -892,7 +892,7 @@ namespace KASIR.Komponen
             CacheApp.IconColor = Color.FromArgb(31, 30, 68);
             CacheApp.IconFont = IconFont.Auto;
             CacheApp.IconSize = 30;
-            CacheApp.Location = new Point(156, 574);
+            CacheApp.Location = new Point(185, 582);
             CacheApp.Name = "CacheApp";
             CacheApp.Size = new Size(52, 54);
             CacheApp.TabIndex = 56;
@@ -933,7 +933,7 @@ namespace KASIR.Komponen
             Redownload.IconColor = Color.FromArgb(31, 30, 68);
             Redownload.IconFont = IconFont.Auto;
             Redownload.IconSize = 30;
-            Redownload.Location = new Point(214, 574);
+            Redownload.Location = new Point(243, 582);
             Redownload.Name = "Redownload";
             Redownload.Size = new Size(52, 54);
             Redownload.TabIndex = 54;
@@ -955,7 +955,7 @@ namespace KASIR.Komponen
             iconDual.IconColor = Color.FromArgb(31, 30, 68);
             iconDual.IconFont = IconFont.Auto;
             iconDual.IconSize = 30;
-            iconDual.Location = new Point(286, 574);
+            iconDual.Location = new Point(315, 582);
             iconDual.Name = "iconDual";
             iconDual.Size = new Size(36, 36);
             iconDual.TabIndex = 55;
@@ -1043,7 +1043,7 @@ namespace KASIR.Komponen
             radioDualMonitor.AutoSize = true;
             radioDualMonitor.BackColor = Color.White;
             radioDualMonitor.FlatStyle = FlatStyle.Flat;
-            radioDualMonitor.Location = new Point(282, 612);
+            radioDualMonitor.Location = new Point(311, 620);
             radioDualMonitor.MinimumSize = new Size(45, 22);
             radioDualMonitor.Name = "radioDualMonitor";
             radioDualMonitor.OffBackColor = Color.Gray;
@@ -1161,7 +1161,7 @@ namespace KASIR.Komponen
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(466, 637);
+            ClientSize = new Size(481, 637);
             ControlBox = false;
             Controls.Add(btnUpdate);
             Controls.Add(Button2);
@@ -1169,6 +1169,8 @@ namespace KASIR.Komponen
             Controls.Add(gradientPanel1);
             Controls.Add(panel1);
             Controls.Add(panel6);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximumSize = new Size(497, 676);
             Name = "SettingsForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "DT-Setting";

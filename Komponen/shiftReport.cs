@@ -1,32 +1,16 @@
 ﻿
-using FontAwesome.Sharp;
 using KASIR.komponen;
 using KASIR.Model;
 using KASIR.Network;
-using Microsoft.VisualBasic.ApplicationServices;
 using Newtonsoft.Json;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrayNotify;
-
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using KASIR.Printer;
+using Newtonsoft.Json.Linq;
+using System.Transactions;
+using System.Windows.Markup;
 namespace KASIR.Komponen
 {
     public partial class shiftReport : UserControl
@@ -39,9 +23,8 @@ namespace KASIR.Komponen
         private readonly string PinPrinterKasir;
         private readonly string BaseOutletName;
         int bedaCash = 0;
-        int shiftnumber;
+        int shiftnumber, NewDataChecker = 0;
         DateTime mulaishift, akhirshift;
-        Util util = new Util();
 
         public shiftReport()
         {
@@ -57,7 +40,200 @@ namespace KASIR.Komponen
             LoadData();
             lblShiftSekarang.Visible = false;
         }
-        private async void LoadData()
+        private async Task SyncDataTransactions()
+        {
+            try
+            {
+                string filePath = "DT-Cache\\Transaction\\transaction.data";
+                string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
+
+                // Mendapatkan direktori dari filePath
+                string directoryPath = Path.GetDirectoryName(filePath);
+                string newFileName = "";
+                string destinationPath = "";
+                // Memastikan direktori tujuan ada
+                if (!Directory.Exists(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                }
+
+                // Membaca konten file .data yang berisi JSON
+                if (!File.Exists(filePath))
+                {
+                    return;
+                }
+                if (!Directory.Exists(newSyncFileTransaction))
+                {
+                    Directory.CreateDirectory(newSyncFileTransaction);
+                }
+                // Membuat path tujuan untuk memindahkan file dan merubah nama
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+                string fileExtension = Path.GetExtension(filePath);
+
+                // Menambahkan timestamp atau informasi lainnya ke nama file
+                newFileName = $"{fileNameWithoutExtension}_DT-{baseOutlet}_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+
+                // Membuat path lengkap untuk file baru
+                destinationPath = Path.Combine(newSyncFileTransaction, newFileName);
+
+                // Memindahkan file dan mengganti nama
+                File.Copy(filePath, destinationPath);
+                //Simplysent
+                SimplifyAndSaveData(destinationPath);
+                // 1. Baca file JSON
+                string jsonData = File.ReadAllText(destinationPath);
+                JObject data = JObject.Parse(jsonData);
+
+                // 2. Dapatkan array "data"
+                JArray transactions = (JArray)data["data"];
+                if (transactions == null || transactions.Count == 0)
+                {
+                    // Menghapus file jika data kosong
+                    File.Delete(destinationPath);
+                    MessageBox.Show("tidak data baru syncron");
+                }
+                else
+                {
+                    // Menyiapkan API endpoint URL
+                    string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
+                    IApiService apiService = new ApiService();
+
+                    HttpResponseMessage response = await apiService.SyncTransaction(jsonData, apiUrl);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        MessageBox.Show(response.ToString());
+
+                        SyncSuccess(filePath);
+                        NewDataChecker = 1;
+                    }
+                    else
+                    {
+                        //GagalSync
+                        MessageBox.Show(response.ToString());
+                        string folderGagall = "DT-Cache\\Transaction\\FailedSyncTransaction";
+                        string folderCombine = Path.Combine(folderGagall, newFileName);
+
+                        if (!Directory.Exists(folderGagall))
+                        {
+                            Directory.CreateDirectory(folderGagall);
+                        }
+                        File.Copy(destinationPath, folderCombine);
+                        File.Delete(destinationPath);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                MessageBox.Show(ex.ToString());
+            }
+            
+        }
+        public static void SyncSuccess(string filePath)
+        {
+            try
+            {
+                // 1. Baca file JSON
+                string jsonData = File.ReadAllText(filePath);
+                JObject data = JObject.Parse(jsonData);
+
+                // 2. Dapatkan array "data"
+                JArray transactions = (JArray)data["data"];
+
+                // 3. Iterasi setiap transaksi dan hapus elemen yang tidak diperlukan
+                for (int i = transactions.Count - 1; i >= 0; i--) // Iterasi mundur untuk menghindari masalah saat menghapus
+                {
+                    JObject transaction = (JObject)transactions[i];
+
+                    if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 0)
+                    {
+                        transaction["is_sent_sync"] = 1;
+                    }
+                }
+                // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama
+                //MessageBox.Show(data.ToString());
+                File.WriteAllText(filePath, data.ToString());
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+        public static void SimplifyAndSaveData(string filePath)
+        {
+            try
+            {
+                // 1. Baca file JSON
+                string jsonData = File.ReadAllText(filePath);
+                JObject data = JObject.Parse(jsonData);
+
+                // 2. Dapatkan array "data"
+                JArray transactions = (JArray)data["data"];
+
+                // 3. Iterasi setiap transaksi dan hapus elemen yang tidak diperlukan
+                for (int i = transactions.Count - 1; i >= 0; i--) // Iterasi mundur untuk menghindari masalah saat menghapus
+                {
+                    JObject transaction = (JObject)transactions[i];
+
+                    // Hapus transaksi jika is_sent_sync = 1
+                    if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 1)
+                    {
+                        transactions.RemoveAt(i);
+                        continue; // Lewati sisa proses untuk transaksi ini
+                    }
+                    // Hapus field yang tidak dibutuhkan di level transaksi
+                    transaction.Remove("transaction_id");
+                    transaction.Remove("payment_type_name");
+                    transaction.Remove("deleted_at");
+                    transaction.Remove("is_refund");
+                    transaction.Remove("refund_reason");
+                    transaction.Remove("delivery_type");
+                    transaction.Remove("delivery_note");
+                    transaction.Remove("discount_id");
+                    transaction.Remove("discount_code");
+                    transaction.Remove("discounts_value");
+                    transaction.Remove("discounts_is_percent");
+                    transaction.Remove("member_name");
+                    transaction.Remove("member_phone_number");
+
+                    // Iterasi ke cart_details dan refund_details untuk menghapus field yang tidak dibutuhkan
+                    JArray cartDetails = (JArray)transaction["cart_details"];
+                    foreach (JObject cartItem in cartDetails)
+                    {
+                        cartItem.Remove("menu_name"); // Hapus serving_type_name dari cart detail
+                        cartItem.Remove("menu_type");  // Hapus menu_detail_name jika tidak diperlukan
+                        cartItem.Remove("menu_detail_name");            // Hapus varian jika tidak diperlukan
+                        cartItem.Remove("discount_code");         // Hapus note_item jika tidak diperlukan
+                        cartItem.Remove("varian");       // Hapus discount_id jika tidak diperlukan
+                        cartItem.Remove("is_ordered");     // Hapus discount_code jika tidak diperlukan
+                        cartItem.Remove("serving_type_name");  // Hapus discounts_value jika tidak diperlukan
+                        cartItem.Remove("discounts_value"); // Hapus discounted_price jika tidak diperlukan
+                        cartItem.Remove("discounts_is_percent"); // Hapus discounts_is_percent jika tidak diperlukan
+                        cartItem.Remove("subtotal"); // Hapus discounts_is_percent jika tidak diperlukan
+                    }
+
+                    // Hapus field yang tidak diperlukan di refund_details jika ada
+                    JArray refundDetails = (JArray)transaction["refund_details"];
+                    foreach (JObject refundItem in refundDetails)
+                    {
+                        refundItem.Remove("menu_id");
+                        refundItem.Remove("menu_name");
+                        refundItem.Remove("menu_detail_id");
+                        refundItem.Remove("menu_detail_name");
+                        refundItem.Remove("price");
+                    }
+                }
+                    // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama
+                    File.WriteAllText(filePath, data.ToString());
+                
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private async Task LoadData()
         {
             const int maxRetryAttempts = 3;
             int retryAttempts = 0;
@@ -67,14 +243,51 @@ namespace KASIR.Komponen
             {
                 try
                 {
-                    IApiService apiService = new ApiService();
+                    // Mengecek apakah sButtonOffline dalam status checked
+                    string Config = "setting\\OfflineMode.data";
+                    // Ensure the directory exists
+                    string directoryPath = Path.GetDirectoryName(Config);
+                    if (!Directory.Exists(directoryPath))
+                    {
+                        Directory.CreateDirectory(directoryPath);
+                    }
+                    // Memeriksa apakah file ada
+                    if (!File.Exists(Config))
+                    {
+                        // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
+                        File.WriteAllText(Config, "OFF");
+                    }
+                    string allSettingsData = File.ReadAllText(Config); // Ambil status offline
 
-                    string response = await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
+                    // Jika status offline ON, tampilkan Offline_masterPos
+                    if (!string.IsNullOrEmpty(allSettingsData) && allSettingsData == "ON")
+                    {
+                        await SyncDataTransactions();
+                    }
+
+                    string response = "";
+                    string shiftData = $"DT-Cache\\Transaction\\ShiftRepot{baseOutlet}.data";
+                 /*   GetShift cekShift = null;
+
+                    if (NewDataChecker != null && NewDataChecker != 0)
+                    {
+                        response = File.ReadAllText(shiftData);
+                        cekShift = JsonConvert.DeserializeObject<GetShift>(response);
+                    }
+                    else
+                    {*/
+                        IApiService apiService = new ApiService();
+                        response = await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
+                        GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
+                        File.WriteAllText(shiftData, JsonConvert.SerializeObject(cekShift));
+                    /*}*/
+
                     if (response != null)
                     {
                         try
                         {
-                            GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
+
+                            //GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
 
                             DataShift datas = cekShift.data;
                             List<ExpenditureStrukShift> expenditures = datas.expenditures;

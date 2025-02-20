@@ -10,6 +10,7 @@ using System.Configuration;
 using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 namespace KASIR
 {
     public class Util
@@ -35,28 +36,55 @@ namespace KASIR
             formToShow.ShowDialog();
             background.Dispose();
         }
+        public string GetOutletNameFromFile(string filePath)
+        {
+            string fileContent = File.ReadAllText(filePath);
+            var outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
+            return outletData["data"]?["name"]?.ToString();
+        }
+        public async Task<string> GetOutletNameFromApi()
+        {
+            IApiService apiService = new ApiService();
+            string response = await apiService.CekShift("/outlet/" + baseOutlet);
+            if (response != null)
+            {
+                var apiResponse = JsonConvert.DeserializeObject<JObject>(response);
+                File.WriteAllText($"DT-Cache\\DataOutlet{baseOutlet}.data", JsonConvert.SerializeObject(response));
+
+                return apiResponse["data"]?["name"]?.ToString();
+            }
+            return null;
+        }
 
         public async void sendLogTelegramBy(Exception ex, string message, params object[] properties)
         {
 
                 IApiService apiService = new ApiService();
 
-                string response = await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-                if (response != null)
+
+                string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
+                string outletName;
+
+                // Cek apakah file ada dan baca data dari file atau API
+                if (File.Exists(filePath))
                 {
-
-
-                    GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
-
-                    DataShift datas = cekShift.data;
-                    outletName = datas.outlet_name.ToString();
-
-
+                    outletName = GetOutletNameFromFile(filePath);
                 }
                 else
                 {
-                    outletName = Properties.Settings.Default.BaseOutletName.ToString();
+                    outletName = await GetOutletNameFromApi();
+                    if (outletName != null)
+                    {
+                        // Simpan data ke file jika berhasil mendapatkan nama outlet
+                        File.WriteAllText(filePath, JsonConvert.SerializeObject(new { data = new { name = outletName } }));
+                    }
+                    else
+                    {
+                        outletName = Properties.Settings.Default.BaseOutletName.ToString();
+                    }
                 }
+
+
                 string outletID = Properties.Settings.Default.BaseOutlet.ToString();
 
                 using (var client = new HttpClient())

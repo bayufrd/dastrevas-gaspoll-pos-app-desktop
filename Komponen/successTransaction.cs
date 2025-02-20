@@ -35,7 +35,7 @@ namespace KASIR.Komponen
         private DataTable originalDataTable;
         private readonly string baseOutlet;
         private inputPin pinForm;
-
+        int numberQueue = 0;
         public successTransaction()
         {
             baseOutlet = Properties.Settings.Default.BaseOutlet;
@@ -86,7 +86,7 @@ namespace KASIR.Komponen
                 List<Menu> menuList = menuModel.data.ToList();
 
                 // Begin Counting Transaction Queue
-                int numberQueue = menuList.Count + 1; // Start queue number
+                numberQueue += menuList.Count + 1; // Start queue number
 
                 // End Counting
                 DataTable dataTable = new DataTable();

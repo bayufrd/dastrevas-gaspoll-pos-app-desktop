@@ -186,7 +186,18 @@ namespace KASIR.Komponen
                 }
             }
 
-
+            initAwalOfflineTrial();
+        }
+        private async void initAwalOfflineTrial()
+        {
+            if (int.Parse(baseOutlet.ToString()) == 4 || int.Parse(baseOutlet.ToString()) == 7)
+            {
+                sButtonOffline.Enabled = true;
+            }
+            else
+            {
+                sButtonOffline.Enabled = false;
+            }
         }
         // Metode untuk memuat pengaturan printer dan checkbox
         private async Task LoadPrintersAndSettings()

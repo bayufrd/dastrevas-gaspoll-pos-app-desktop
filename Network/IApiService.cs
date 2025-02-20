@@ -48,6 +48,6 @@ namespace KASIR.Network
 
         Task<string> Restruk(string url);
         Task<string> SplitBill(string jsonString, string url);
-
+        Task<HttpResponseMessage> SyncTransaction(string jsonString, string url);
     }
 }

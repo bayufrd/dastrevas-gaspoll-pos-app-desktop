@@ -12,6 +12,8 @@ using System.Timers;
 using System.Runtime.Serialization.Formatters.Binary;
 using Newtonsoft.Json.Linq;
 using KASIR.Komponen;
+using System.IO;
+using KASIR.OffineMode;
 
 
 namespace KASIR.OfflineMode
@@ -66,6 +68,8 @@ namespace KASIR.OfflineMode
             apiService = new ApiService();
             panel8.Margin = new Padding(0, 0, 0, 0);       // No margin at the bottom
             dataGridView3.Margin = new Padding(0, 0, 0, 0);
+
+            refreshCacheTransaction();
             LoadCart();
 
             //LoadConfig();
@@ -92,6 +96,15 @@ namespace KASIR.OfflineMode
             // Mengaitkan event handler dengan form utama
             KeyPreview = true;
             KeyDown += YourForm_KeyDown;
+        }
+
+        private async void refreshCacheTransaction()
+        {
+            string sourceDirectory = "DT-Cache\\Transaction\\transaction.data"; // Ganti dengan path sumber
+            string destinationDirectory = "DT-Cache\\Transaction\\HistoryTransaction"; // Ganti dengan path tujuan
+            TimeSpan timeSpan = TimeSpan.FromHours(20); // 25 jam
+
+            transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, timeSpan);
         }
         private void YourForm_KeyDown(object sender, KeyEventArgs e)
         {

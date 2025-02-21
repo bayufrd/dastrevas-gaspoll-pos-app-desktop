@@ -14,6 +14,7 @@ using Newtonsoft.Json.Linq;
 using KASIR.Komponen;
 using System.IO;
 using KASIR.OffineMode;
+using SharpCompress.Common;
 
 
 namespace KASIR.OfflineMode
@@ -69,8 +70,6 @@ namespace KASIR.OfflineMode
             panel8.Margin = new Padding(0, 0, 0, 0);       // No margin at the bottom
             dataGridView3.Margin = new Padding(0, 0, 0, 0);
 
-            refreshCacheTransaction();
-            LoadCart();
 
             //LoadConfig();
             txtCariMenu.Enabled = false;
@@ -100,12 +99,63 @@ namespace KASIR.OfflineMode
 
         private async void refreshCacheTransaction()
         {
-            string sourceDirectory = "DT-Cache\\Transaction\\transaction.data"; // Ganti dengan path sumber
-            string destinationDirectory = "DT-Cache\\Transaction\\HistoryTransaction"; // Ganti dengan path tujuan
-            TimeSpan timeSpan = TimeSpan.FromHours(20); // 25 jam
+            string sourceDirectory = "DT-Cache\\Transaction\\transaction.data"; // Path to source
+            string destinationDirectory = "DT-Cache\\Transaction\\HistoryTransaction"; // Path to destination
+            TimeSpan timeSpan = TimeSpan.FromHours(20); // 20 hours time span
+            bool notSentSync = false; // Variable to check if there are unsynced items
 
-            transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, timeSpan);
+            try
+            {
+                // 1. Read JSON file
+                if (!File.Exists(sourceDirectory))
+                {
+                    return; // Exit if the file does not exist
+                }
+
+                string jsonData = File.ReadAllText(sourceDirectory);
+                JObject data = JObject.Parse(jsonData);
+
+                // 2. Get the "data" array
+                JArray transactions = (JArray)data["data"];
+                if (transactions == null || transactions.Count == 0)
+                {
+                    return; // Exit if there are no transactions
+                }
+
+                // 3. Iterate through transactions and check for unsynced ones
+                for (int i = transactions.Count - 1; i >= 0; i--) // Iterating backward to avoid issues when removing items
+                {
+                    JObject transaction = (JObject)transactions[i];
+
+                    // Check if the transaction has the "is_sent_sync" field and its value is 0
+                    if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 0)
+                    {
+                        notSentSync = true; // Mark that there's at least one unsynced item
+                    }
+                }
+
+                // If there are no unsynced items, proceed with moving the files
+                if (!notSentSync)
+                {
+                    try
+                    {
+                        // Move the files created after the specified time span
+                        transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, timeSpan);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("An error occurred while moving the files: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        LoggerUtil.LogError(ex, "Error moving transaction files: {ErrorMessage}", ex.Message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("An unexpected error occurred: " + ex.Message, "Unexpected Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LoggerUtil.LogError(ex, "Unexpected error: {ErrorMessage}", ex.Message);
+            }
         }
+
         private void YourForm_KeyDown(object sender, KeyEventArgs e)
         {
             // Periksa apakah Ctrl dan Space ditekan bersamaan
@@ -1808,6 +1858,8 @@ namespace KASIR.OfflineMode
         {
             try
             {
+                refreshCacheTransaction();
+
                 // Path for the cart data cache
                 string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
 

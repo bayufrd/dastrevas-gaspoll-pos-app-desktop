@@ -36,7 +36,7 @@ namespace KASIR.OffineMode
                         string fileExtension = Path.GetExtension(sourceDirectory);
 
                         // Menambahkan timestamp atau informasi lainnya ke nama file
-                        string newFileName = $"Success_{fileNameWithoutExtension}_DT-{baseOutlet}_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+                        string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
 
                         // Tentukan path baru untuk file
                         string destinationPath = Path.Combine(destinationDirectory, newFileName);

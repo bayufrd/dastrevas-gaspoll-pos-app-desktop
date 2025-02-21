@@ -212,14 +212,14 @@ namespace KASIR.OfflineMode
 
                         Label nameLabel = new Label
                         {
-                            Text = items["qty"].ToString() + "X " + items["menu_name"],
+                            Text = items["qty"].ToString() + "x " + items["menu_name"],
                             Width = (int)(totalWidth * 0.7),
                             TextAlign = ContentAlignment.MiddleLeft,
                         };
 
                         Label variantLabel = new Label
                         {
-                            Text = "Variant: " + items["varian"]?.ToString() ?? "No variant",
+                            Text = "Variant: " + items["varian"]?.ToString() ?? "Normal",
                             Width = (int)(totalWidth * 0.7),
                             TextAlign = ContentAlignment.MiddleLeft,
                             Top = 30,
@@ -235,7 +235,7 @@ namespace KASIR.OfflineMode
 
                         Label quantityLabel = new Label
                         {
-                            Text = items["qty"].ToString(),
+                            Text = "0",//items["qty"].ToString(),
                             TextAlign = ContentAlignment.MiddleCenter,
                         };
 
@@ -263,33 +263,11 @@ namespace KASIR.OfflineMode
                         minusButtonLabel.MouseClick += (sender, e) =>
                         {
                             int currentQuantity = int.Parse(quantityLabel.Text);
-                            if (currentQuantity > 0)
-                            {
-                                currentQuantity -= 1; // Decrease quantity
-                                quantityLabel.Text = currentQuantity.ToString();
-
-                                // Update qty in the model
-                                var refundItem = refundItems.FirstOrDefault(r => r.CartDetailId == int.Parse(items["cart_detail_id"].ToString()));
-                                if (refundItem != null)
-                                {
-                                    refundItem.Qty += 1; // Update refund qty
-                                    refundItem.QtyRemaining -= 1; // Decrease remaining refundable qty
-                              
-
-                                }
-
-                            }
-                        };
-
-                        // Plus button action (increasing quantity)
-                        plusButtonLabel.MouseClick += (sender, e) =>
-                        {
-                            int currentQuantity = int.Parse(quantityLabel.Text);
                             int maxQuantity = int.Parse(items["qty"].ToString()); // Max quantity available
 
-                            if (currentQuantity < maxQuantity)
+                            if (currentQuantity > 0)
                             {
-                                currentQuantity += 1; // Increase quantity
+                                currentQuantity -= 1; // Increase quantity
                                 quantityLabel.Text = currentQuantity.ToString();
 
                                 // Update refund qty if necessary
@@ -300,6 +278,30 @@ namespace KASIR.OfflineMode
                                     refundItem.QtyRemaining += 1; // Increase remaining refundable qty
                                 }
                             }
+                        };
+
+                        // Plus button action (increasing quantity)
+                        plusButtonLabel.MouseClick += (sender, e) =>
+                        {
+                            int maxQuantity = int.Parse(items["qty"].ToString()); // Max quantity available
+                            int currentQuantity = int.Parse(quantityLabel.Text);
+                            if (currentQuantity < maxQuantity)
+                            {
+                                currentQuantity += 1; // Decrease quantity
+                                quantityLabel.Text = currentQuantity.ToString();
+
+                                // Update qty in the model
+                                var refundItem = refundItems.FirstOrDefault(r => r.CartDetailId == int.Parse(items["cart_detail_id"].ToString()));
+                                if (refundItem != null)
+                                {
+                                    refundItem.Qty += 1; // Update refund qty
+                                    refundItem.QtyRemaining -= 1; // Decrease remaining refundable qty
+
+
+                                }
+
+                            }
+                         
                         };
 
                         // Update the UI with the item panel

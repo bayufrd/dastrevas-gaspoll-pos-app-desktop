@@ -42,7 +42,6 @@ namespace KASIR.OfflineMode
             InitializeComponent();
             apiService = new ApiService();
 
-            LoadData();
             dataGridView1.CellFormatting += DataGridView1_CellFormatting;
         }
 
@@ -66,7 +65,7 @@ namespace KASIR.OfflineMode
             // Refresh data in successTransaction form
             LoadData();
         }
-        private void LoadData()
+        public async Task LoadData()
         {
             try
             {

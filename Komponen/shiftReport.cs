@@ -37,7 +37,7 @@ namespace KASIR.Komponen
             apiService = new ApiService();
             btnCetakStruk.Enabled = true;
             lblNotifikasi.Visible = false;
-            LoadData();
+            //LoadData();
             lblShiftSekarang.Visible = false;
         }
         private async Task SyncDataTransactions()
@@ -90,7 +90,7 @@ namespace KASIR.Komponen
                 {
                     // Menghapus file jika data kosong
                     File.Delete(destinationPath);
-                    MessageBox.Show("tidak data baru syncron");
+                    //MessageBox.Show("tidak data baru syncron");
                 }
                 else
                 {
@@ -101,7 +101,7 @@ namespace KASIR.Komponen
                     HttpResponseMessage response = await apiService.SyncTransaction(jsonData, apiUrl);
                     if (response.IsSuccessStatusCode)
                     {
-                        MessageBox.Show(response.ToString());
+                        //MessageBox.Show(response.ToString());
 
                         SyncSuccess(filePath);
                         NewDataChecker = 1;
@@ -232,9 +232,46 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
-        private async Task LoadData()
+        private async Task<string> GetShiftData(string configOfflineMode)
         {
+            if (NewDataChecker == 0 && configOfflineMode == "ON")
+            {
+                // Directly fetch from API
+                IApiService apiService = new ApiService();
+                return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
+            }
+            else if (NewDataChecker == 1 && configOfflineMode == "ON")
+            {
+                // Try to read from the local file
+                string shiftData = $"DT-Cache\\Transaction\\ShiftRepot{baseOutlet}.data";
+                if (File.Exists(shiftData))
+                {
+                    return File.ReadAllText(shiftData);
+                }
+                else
+                {
+                    // If file is not found, fallback to API
+                    IApiService apiService = new ApiService();
+                    return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
+                }
+            }
+            else
+            {
+                // Default: use API if NewDataChecker is neither 0 nor 1
+                IApiService apiService = new ApiService();
+                return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
+            }
+        }
+        private static bool isSyncing = false;  // Static flag to track sync status
+        public async Task LoadData()
+        {
+            if (isSyncing)
+            {
+                // If syncing is already in progress, don't do anything
+                MessageBox.Show("Data sedang di koad. Tolong tunggu sebentar!");
+                return;
+            }
+
             const int maxRetryAttempts = 3;
             int retryAttempts = 0;
             bool success = false;
@@ -265,30 +302,12 @@ namespace KASIR.Komponen
                         await SyncDataTransactions();
                     }
 
-                    string response = "";
-                    string shiftData = $"DT-Cache\\Transaction\\ShiftRepot{baseOutlet}.data";
-                 /*   GetShift cekShift = null;
-
-                    if (NewDataChecker != null && NewDataChecker != 0)
-                    {
-                        response = File.ReadAllText(shiftData);
-                        cekShift = JsonConvert.DeserializeObject<GetShift>(response);
-                    }
-                    else
-                    {*/
-                        IApiService apiService = new ApiService();
-                        response = await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-                        GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
-                        File.WriteAllText(shiftData, JsonConvert.SerializeObject(cekShift));
-                    /*}*/
-
+                    string response = await GetShiftData(allSettingsData);
                     if (response != null)
                     {
                         try
                         {
-
-                            //GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
-
+                            GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
                             DataShift datas = cekShift.data;
                             List<ExpenditureStrukShift> expenditures = datas.expenditures;
                             List<CartDetailsSuccessStrukShift> cartDetailsSuccess = datas.cart_details_success;

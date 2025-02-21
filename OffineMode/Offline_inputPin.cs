@@ -255,12 +255,16 @@ namespace KASIR.OfflineMode
                         {
                             // Tambahkan separator untuk item yang terjual
                             //dataTable.Rows.Add(null, null, null, "Sold items: ", null);
-                            AddSeparatorRow(dataTable, "#Sold items: ", dataGridView1);
+                            bool hasItems = false; // Variabel untuk memeriksa apakah ada item dengan qty > 0
+
+                            AddSeparatorRow(dataTable, "  #Sold items: ", dataGridView1);
 
                             foreach (var item in cartDetails)
                             {
                                 if (int.Parse(item["qty"].ToString()) != 0)
                                 {
+                                    hasItems = true; // Set menjadi true jika ada item dengan qty > 0
+
                                     dataTable.Rows.Add(
                                         item["menu_id"]?.ToString(),
                                         item["cart_detail_id"]?.ToObject<int>(),
@@ -272,12 +276,19 @@ namespace KASIR.OfflineMode
                                     dataTable.Rows.Add(null, null, null, $"  *Notes: {item["note_item"].ToString()} ", null);
                                 }
                             }
+                            // Setelah loop, periksa apakah ada item dengan qty > 0
+                            btnSimpan.Enabled = hasItems; // Aktifkan atau nonaktifkan tombol Simpan
+                            if (btnSimpan.Enabled != true)
+                            {
+                                btnSimpan.Text = "No Item to refund!";
+                                btnSimpan.BackColor = Color.Gainsboro;
+                            }
                         }
                         if (refundDetails != null && refundDetails.Count > 0)
                         {
                             // Tambahkan separator untuk item refund
                             //dataTable.Rows.Add(null, null, null, "Refund items: ", null);
-                            AddSeparatorRow(dataTable, "#Refund items: ", dataGridView1);
+                            AddSeparatorRow(dataTable, "  #Refund items: ", dataGridView1);
 
                             foreach (var refundItem in refundDetails)
                             {
@@ -292,8 +303,8 @@ namespace KASIR.OfflineMode
 
                             }
                         }
-                        // Menampilkan data pada DataGridView
-                        dataGridView1.DataSource = dataTable;
+                            // Menampilkan data pada DataGridView
+                            dataGridView1.DataSource = dataTable;
 
                         // Menyembunyikan kolom yang tidak diperlukan
                         if (dataGridView1.Columns.Contains("MenuID"))

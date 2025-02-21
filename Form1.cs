@@ -906,10 +906,11 @@ namespace KASIR
             lblTitleChildForm.Text = "Menu";
         }
 
-        private void button6_Click(object sender, EventArgs e)
+        private async void button6_Click(object sender, EventArgs e)
         {
             Color randomColor = PickRandomColor();  // Pick a random color for button
             ActivateButton(sender, randomColor);    // Activate the button
+            
             try
             {
                 // Read the OfflineMode status
@@ -919,6 +920,10 @@ namespace KASIR
                 // Check if OfflineMode is ON
                 if (allSettingsData == "ON")
                 {
+
+                    btnShiftLaporan.Enabled = false;
+                    iconButton1.Enabled = false;
+                    iconButton2.Enabled = false;
                     // If OfflineMode is ON, load the Offline_masterPos form
                     Offline_masterPos offlineMasterPos = new Offline_masterPos();
                     offlineMasterPos.TopLevel = false;
@@ -937,7 +942,11 @@ namespace KASIR
                     panel1.Controls.Add(offlineMasterPos);
                     offlineMasterPos.BringToFront();
                     offlineMasterPos.Show();
+                    await offlineMasterPos.LoadCart();
 
+                    btnShiftLaporan.Enabled = true;
+                    iconButton1.Enabled = true;
+                    iconButton2.Enabled = true;
                     lblTitleChildForm.Text = "Menu - Offline Mode Transaksi"; // Update label for Offline Mode
                 }
                 else
@@ -1025,7 +1034,9 @@ namespace KASIR
                 MessageBox.Show(ex.Message);
             }
         }
-        private void button1_Click(object sender, EventArgs e)
+
+        //button shiftreport / shift report end shift
+        private async void button1_Click(object sender, EventArgs e)
         {
             Color randomColor = PickRandomColor();
             ActivateButton(sender, randomColor);
@@ -1039,6 +1050,10 @@ namespace KASIR
                 // Check if OfflineMode is ON
                 if (allSettingsData == "ON")
                 {
+
+                    btnShiftLaporan.Enabled = false;
+                    iconButton1.Enabled = false;
+                    iconButton2.Enabled = false;
                     // If OfflineMode is ON, load the Offline_masterPos form
                     Offline_successTransaction c = new Offline_successTransaction();
                     if (c == null)
@@ -1052,6 +1067,11 @@ namespace KASIR
                     panel1.Controls.Add(c);
                     c.BringToFront();
                     c.Show();
+                    await c.LoadData();
+
+                    btnShiftLaporan.Enabled = true;
+                    iconButton1.Enabled = true;
+                    iconButton2.Enabled = true;
                     lblTitleChildForm.Text = "Transactions - History Transactions";
                 }
                 else
@@ -1270,49 +1290,6 @@ namespace KASIR
             }
         }
 
-        private async Task<double> TestInternetSpeed()
-        {
-            string[] urls = new string[]
-            {
-        "http://speedtest.tele2.net/10MB.zip",
-        "http://ipv4.download.thinkbroadband.com/10MB.zip",
-        "http://speed.cloudflare.com/__down?bytes=10000000"
-            };
-
-            HttpClient client = new HttpClient();
-            byte[] data = null;
-            Stopwatch stopwatch = new Stopwatch();
-
-            foreach (var url in urls)
-            {
-                try
-                {
-                    stopwatch.Start();
-                    data = await client.GetByteArrayAsync(url);
-                    stopwatch.Stop();
-                    break; // Keluar dari loop jika berhasil mengunduh
-                }
-                catch (Exception ex)
-                {
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
-                    stopwatch.Reset();
-                }
-            }
-
-            if (data == null)
-            {
-                throw new Exception("Failed to download file from all URLs.");
-            }
-
-            double timeTakenInSeconds = stopwatch.Elapsed.TotalSeconds;
-            double fileSizeInBits = data.Length * 8;
-            double speedInBps = fileSizeInBits / timeTakenInSeconds;
-            double speedInMbps = speedInBps / (1024 * 1024);
-
-            return speedInMbps;
-        }
-
         private async Task<int> TestPing(string host)
         {
             Ping pingSender = new Ping();
@@ -1335,22 +1312,6 @@ namespace KASIR
             SignalPing.ForeColor = color;
             SignalPing.Text = text;
             SignalPing.IconColor = color;
-        }
-
-        private void UpdateSpeedColor(double speed)
-        {
-            if (speed > 50) // Jika speed di atas 50 Mbps, warna hijau
-            {
-                UpdatePingLabel(Color.Green, $"{speed:0.00} Mbps - Good");
-            }
-            else if (speed >= 10 && speed <= 50) // Jika speed antara 10 dan 50 Mbps, warna kuning
-            {
-                UpdatePingLabel(Color.Yellow, $"{speed:0.00} Mbps - Moderate");
-            }
-            else // Jika speed di bawah 10 Mbps, warna merah
-            {
-                UpdatePingLabel(Color.Red, $"{speed:0.00} Mbps - Poor");
-            }
         }
 
         private void UpdatePingColor(int ping)
@@ -1393,7 +1354,7 @@ namespace KASIR
             }
         }
 
-        private void btnShiftLaporan_Click(object sender, EventArgs e)
+        private async void btnShiftLaporan_Click(object sender, EventArgs e)
         {
 
             //====by
@@ -1408,12 +1369,19 @@ namespace KASIR
                     MessageBox.Show("Terjadi kesalahan cek koneksi anda", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
+                btnShiftLaporan.Enabled = false;
+                iconButton1.Enabled = false;
+                iconButton2.Enabled = false;
                 //panel3.Height = btn1.Height;
                 //panel3.Top = btn1.Top;
                 c.Dock = DockStyle.Fill;
                 panel1.Controls.Add(c);
                 c.BringToFront();
                 c.Show();
+                await c.LoadData();
+                btnShiftLaporan.Enabled = true;
+                iconButton1.Enabled = true;
+                iconButton2.Enabled = true;
                 lblTitleChildForm.Text = "Shift Report - Report Shift and Shift Transactions, Print Shift and Cash Out";
 
                 

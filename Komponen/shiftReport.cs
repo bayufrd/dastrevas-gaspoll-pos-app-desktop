@@ -40,7 +40,7 @@ namespace KASIR.Komponen
             //LoadData();
             lblShiftSekarang.Visible = false;
         }
-        private async Task SyncDataTransactions()
+        public async Task SyncDataTransactions()
         {
             try
             {
@@ -332,9 +332,6 @@ namespace KASIR.Komponen
 
                             AddSeparatorRow(dataTable, "Start Date : " + formattedDateTime, dataGridView1);
                             // Panggil metode untuk menambahkan separator row
-                            //AddSeparatorRow(dataTable, "End Date : " + datas.end_date.ToString(), dataGridView1);
-                            //dataTable.Rows.Add(null, "Start Date :", datas.start_date);
-                            //dataTable.Rows.Add(null, "End Date :", datas.end_date);
                             string mulai = datas.start_date.ToString();
                             string akhir = datas.end_date.ToString();
                             convertDateTime(mulai, akhir);
@@ -343,12 +340,9 @@ namespace KASIR.Komponen
                             lblShiftSekarang.Text += " | Shift: " + shiftnumber;
                             AddSeparatorRow(dataTable, "SHIFT NUMBER : " + shiftnumber.ToString(), dataGridView1);
 
-
-                            //dataTable.Rows.Add(null, "---------------------", null); // Add a separator 
                             AddSeparatorRow(dataTable, " ", dataGridView1);
 
                             AddSeparatorRow(dataTable, "ORDER DETAILS", dataGridView1);
-                            //dataTable.Rows.Add(null, "---------------------", null); // Add a separator 
                             AddSeparatorRow(dataTable, "SOLD ITEMS", dataGridView1);
 
                             var sortedcartDetailSuccess = cartDetailsSuccess.OrderBy(x =>

@@ -22,6 +22,8 @@ using KASIR.OfflineMode;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using System.Linq;
+using KASIR.Printer;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 
 
 namespace KASIR
@@ -113,6 +115,7 @@ namespace KASIR
                 panel1.Controls.Add(offlineMasterPos);
                 offlineMasterPos.BringToFront();
                 offlineMasterPos.Show();
+                await offlineMasterPos.LoadCart();
             }
             else
             {
@@ -132,6 +135,8 @@ namespace KASIR
                 panel1.Controls.Add(m);
                 m.BringToFront();
                 m.Show();
+                await m.LoadCart();
+
             }
         }
         public async void UpdateContent()
@@ -1208,56 +1213,42 @@ namespace KASIR
 
         private async void timer1_Tick(object sender, EventArgs e)
         {
-            await CheckConnection();
-        }
-
-        private async Task CheckConnection()
-        {
-            NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
-            NetworkInterface firstInterface = interfaces.FirstOrDefault(i => i.OperationalStatus == OperationalStatus.Up);
-
-            if (firstInterface == null)
-            {
-                UpdatePingLabel(Color.Red, "Tidak ada akses \nInternet");
+            
+             // Read the OfflineMode status
+                string config = "setting\\OfflineMode.data";
+            string allSettingsData = File.ReadAllText(config);  // Get the current OfflineMode setting
+            // Check if OfflineMode is ON
+            if (allSettingsData != "ON")
+            {// Run the print method in a background task
                 return;
             }
-            string server = "62.72.59.78"; // Ubah ke server Anda jika diperlukan, misalnya "yourserver.com"
+            lblPing.ForeColor = Color.LightGreen;
+            lblPing.Text = "Sync...";
+            SignalPing.ForeColor = Color.LightGreen;
+            SignalPing.Text = "Sync...";
+            SignalPing.IconColor = Color.LightGreen;
+            await sendDataSyncPerHours(allSettingsData);
+            lblPing.ForeColor = Color.White;
+            lblPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
+            SignalPing.ForeColor = Color.White;
+            SignalPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
+            SignalPing.IconColor = Color.White;
+        }
 
-            using (Ping ping = new Ping())
-            {
-                try
+        private async Task sendDataSyncPerHours(string allSettingsData)
+        {
+            // Check if OfflineMode is ON
+            if (allSettingsData == "ON")
+            {// Run the print method in a background task
+                await Task.Run(() =>
                 {
-                    PingReply reply = await ping.SendPingAsync(server, 1000);
-
-                    if (reply.Status == IPStatus.Success)
-                    {
-                        if (reply.RoundtripTime <= 50)
-                        {
-                            UpdatePingLabel(Color.Lime, $"{reply.RoundtripTime} ms");
-                        }
-                        else if (reply.RoundtripTime <= 100)
-                        {
-                            UpdatePingLabel(Color.Yellow, $"{reply.RoundtripTime} ms");
-                        }
-                        else
-                        {
-                            UpdatePingLabel(Color.Red, $"{reply.RoundtripTime} ms");
-                        }
-                    }
-                    else
-                    {
-                        UpdatePingLabel(Color.Red, "Ping Gagal :(");
-                    }
-                }
-                catch (PingException ex)
-                {
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
-                    // Log error here if needed
-                    UpdatePingLabel(Color.Red, "Tidak ada akses \nInternet");
-                }
+                    
+                    shiftReport c = new shiftReport();
+                    c.SyncDataTransactions();
+                });
             }
         }
+
         private async void btnTestSpeed_Click(object sender, EventArgs e)
         {
             SignalPing.Text = "Testing...";

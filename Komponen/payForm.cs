@@ -175,18 +175,29 @@ namespace KASIR.komponen
                 string response = await apiService.Get("/transaction?outlet_id=" + baseOutlet + "&is_success=true");
 
                 GetMenuModel menuModel = JsonConvert.DeserializeObject<GetMenuModel>(response);
-                List<KASIR.Model.Menu> menuList = menuModel.data.ToList();
-                totalTransactions = menuList.Count + 1;
+
+                // Check if menuModel.data is null or empty, and set totalTransactions to 0
+                if (menuModel?.data == null || !menuModel.data.Any())
+                {
+                    totalTransactions = 0;
+                }
+                else
+                {
+                    List<KASIR.Model.Menu> menuList = menuModel.data.ToList();
+                    totalTransactions = menuList.Count + 1;
+                }
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                totalTransactions = 0; // Set totalTransactions to 0 in case of timeout or error
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                totalTransactions = 0; // Set totalTransactions to 0 in case of other errors
             }
+
         }
 
         private void generateRandomFill()

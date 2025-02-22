@@ -55,10 +55,17 @@ namespace KASIR.Komponen
             PinPrinterKitchen = Properties.Settings.Default.PinPrinterKitchen;
             PinPrinterBar = Properties.Settings.Default.PinPrinterBar;
             BaseOutletName = Properties.Settings.Default.BaseOutletName;
-            LoadCart();
+            Openform();
         }
 
-
+        private async void Openform()
+        {
+            btnSimpan.Enabled = false;
+            btnKeluar.Enabled = false;
+            await LoadCart();
+            btnSimpan.Enabled = true;
+            btnKeluar.Enabled = true;
+        }
 
 
         private void btnKeluar_Click(object sender, EventArgs e)
@@ -67,7 +74,7 @@ namespace KASIR.Komponen
 
             this.Close();
         }
-        public async void LoadCart()
+        public async Task LoadCart()
         {
             int retryCount = 0;
             bool isSuccess = false;
@@ -76,6 +83,12 @@ namespace KASIR.Komponen
             {
                 try
                 {
+                    if (dataGridView1 == null)
+                    {
+                        // Log or handle the error here
+                        return;
+                    }
+
                     // Ensure baseOutlet is not null or empty
                     if (string.IsNullOrEmpty(baseOutlet))
                     {
@@ -97,7 +110,11 @@ namespace KASIR.Komponen
                             if (dataModel != null && dataModel.data != null && dataModel.data.cart_details != null)
                             {
                                 List<DetailCart> cartList = dataModel.data.cart_details;
-
+                                if (cartList == null || !cartList.Any())
+                                {
+                                    MessageBox.Show("Cart details are empty.");
+                                    return;
+                                }
                                 // Initialize the DataTable for the DataGridView
                                 DataTable dataTable = new DataTable();
                                 dataTable.Columns.Add("MenuID", typeof(string));

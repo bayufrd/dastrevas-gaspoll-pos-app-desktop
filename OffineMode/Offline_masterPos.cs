@@ -28,6 +28,7 @@ namespace KASIR.OfflineMode
         string cartID;
         string customer_name;
         string customer_seat;
+        int selectedServingTypeallItems;
         private readonly string baseOutlet;
         private readonly string baseUrl;
         private BindingSource bindingSource = new BindingSource();
@@ -413,7 +414,7 @@ namespace KASIR.OfflineMode
                 ShowInTaskbar = false,
             };
 
-            using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(menu.id.ToString(), menu.name.ToString()))
+            using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(menu.id.ToString(), menu.name.ToString(), selectedServingTypeallItems))
             {
                 Offline_addCartForm.Owner = background;
                 background.Show();
@@ -424,6 +425,7 @@ namespace KASIR.OfflineMode
                 {
                     background.Dispose();
                     LoadCart();
+                    selectedServingTypeallItems = Offline_addCartForm.selectedServingTypeall;
                 }
                 else
                 {
@@ -854,13 +856,11 @@ namespace KASIR.OfflineMode
                         {
                             background.Dispose();
                             ReloadCart();
-                            LoadCart();
                         }
                         else
                         {
                             MessageBox.Show("Gagal hapus keranjang, Silahkan coba lagi");
                             ReloadCart();
-                            LoadCart();
                             background.Dispose();
                         }
                     }
@@ -1021,7 +1021,7 @@ namespace KASIR.OfflineMode
                 ShowInTaskbar = false,
             };
 
-            using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(id.ToString(), nama.ToString()))
+            using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(id.ToString(), nama.ToString(), selectedServingTypeallItems))
             {
                 Offline_addCartForm.Owner = background;
 
@@ -1035,6 +1035,8 @@ namespace KASIR.OfflineMode
                     background.Dispose();
                     LoadCart();
                     // Settings were successfully updated, perform any necessary actions
+                    selectedServingTypeallItems = Offline_addCartForm.selectedServingTypeall;
+
                 }
                 else
                 {
@@ -1159,7 +1161,7 @@ namespace KASIR.OfflineMode
                             };
 
                             // Create the addCartForm on the UI thread
-                            using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(menu.id.ToString(), menu.name.ToString()))
+                            using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(menu.id.ToString(), menu.name.ToString(), selectedServingTypeallItems))
                             {
                                 Offline_addCartForm.Owner = background;
 
@@ -1172,6 +1174,7 @@ namespace KASIR.OfflineMode
                                     // Dispose of the background form now that the addCartForm form has been closed
                                     background.Dispose();
                                     LoadCart();
+                                    selectedServingTypeallItems = Offline_addCartForm.selectedServingTypeall;
                                 }
                                 else
                                 {
@@ -1372,7 +1375,7 @@ namespace KASIR.OfflineMode
                         };
 
                         // Create the addCartForm on the UI thread
-                        using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(menu.id.ToString(), menu.name.ToString()))
+                        using (Offline_addCartForm Offline_addCartForm = new Offline_addCartForm(menu.id.ToString(), menu.name.ToString(), selectedServingTypeallItems))
                         {
                             Offline_addCartForm.Owner = background;
 
@@ -1385,6 +1388,7 @@ namespace KASIR.OfflineMode
                                 // Dispose of the background form now that the addCartForm form has been closed
                                 background.Dispose();
                                 LoadCart();
+                                selectedServingTypeallItems = Offline_addCartForm.selectedServingTypeall;
                             }
                             else
                             {
@@ -1853,8 +1857,15 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
         public async Task LoadCart()
+        {
+            buttonDelete.Enabled = false;
+            buttonPayment.Enabled = false;
+            await LoadCartData();
+            buttonDelete.Enabled = true;
+            buttonPayment.Enabled = true;
+        }
+        public async Task LoadCartData()
         {
             try
             {

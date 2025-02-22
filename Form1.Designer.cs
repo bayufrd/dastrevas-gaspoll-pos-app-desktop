@@ -45,7 +45,7 @@ namespace KASIR
             lblNamaOutlet = new Label();
             iconCurrentChildForm = new IconPictureBox();
             lblTitleChildForm = new Label();
-            timer1 = new System.Windows.Forms.Timer(components);
+            SyncTimer = new System.Windows.Forms.Timer(components);
             gradientPanel2 = new GradientPanel();
             SignalPing = new IconButton();
             lblPing = new Label();
@@ -192,10 +192,11 @@ namespace KASIR
             lblTitleChildForm.ForeColor = Color.Gainsboro;
             lblTitleChildForm.Name = "lblTitleChildForm";
             // 
-            // timer1
+            // SyncTimer
             // 
-            timer1.Interval = 5000;
-            timer1.Tick += timer1_Tick;
+            SyncTimer.Enabled = true;
+            SyncTimer.Interval = 360000;
+            SyncTimer.Tick += timer1_Tick;
             // 
             // gradientPanel2
             // 
@@ -349,7 +350,7 @@ namespace KASIR
         private IconButton btnExit;
         private IconButton btnMax;
         private IconButton btnMin;
-        private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.Timer SyncTimer;
         private GradientPanel gradientPanel1;
         private Label lblNamaOutlet;
         private GradientPanel gradientPanel2;

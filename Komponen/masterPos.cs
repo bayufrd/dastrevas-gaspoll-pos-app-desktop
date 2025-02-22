@@ -2009,8 +2009,21 @@ namespace KASIR.komponen
             await LoadDataDiscount();
             autoFillDiskon();
         }
-
         public async Task LoadCart()
+        {
+            iconButton1.Enabled = false;
+            iconButtonHps.Enabled = false;
+            iconButtonGet.Enabled = false;
+            iconButton2.Enabled = false;
+            button7.Enabled = false;
+            await LoadCartData(); 
+            iconButton1.Enabled = true;
+            iconButtonHps.Enabled = true;
+            iconButtonGet.Enabled = true;
+            iconButton2.Enabled = true;
+            button7.Enabled = true;
+        }
+        public async Task LoadCartData()
         {
 
             try

@@ -38,6 +38,7 @@ namespace KASIR.OfflineMode
         string idmenu;
         private DataMenuDetail datas;
         public string btnServingType;
+        public int selectedServingTypeall {  get; set; }
         public bool ReloadDataInBaseForm { get; private set; }
         private readonly string baseOutlet;
         List<MenuDetailDataCart> menuDetailDataCarts;
@@ -45,9 +46,10 @@ namespace KASIR.OfflineMode
         List<ServingType> servingType;
         private readonly ILogger _log = LoggerService.Instance._log;
         string namelabel;
+        int servingtypeall;
         string folder = "DT-Cache\\addCartForm";
         int lblprice, lblsubtotal, lbltotal;
-        public Offline_addCartForm(string id, string name)
+        public Offline_addCartForm(string id, string name, int selectedServingTypeall)
         {
             baseOutlet = Properties.Settings.Default.BaseOutlet;
             InitializeComponent();
@@ -57,6 +59,7 @@ namespace KASIR.OfflineMode
             flowLayoutPanel1.WrapContents = false;
             txtKuantitas.Text = "1";
             idmenu = id;
+            servingtypeall = selectedServingTypeall;
             foreach (var button in radioButtonsList)
             {
                 button.Click += RadioButton_Click;
@@ -164,6 +167,10 @@ namespace KASIR.OfflineMode
                     servingType = data.serving_types;
                     btnSimpan.Enabled = true;
                     lblNameCart.Text = namelabel;
+                    if (servingtypeall!= null)
+                    {
+                        SetComboBoxSelectionByName(data.serving_types, comboBox1, servingtypeall);
+                    }
                     return;
                 }
                 catch (Exception ex)
@@ -192,6 +199,18 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
 
+        } // Helper method to set ComboBox selection by name (search by name/text)
+        private void SetComboBoxSelectionByName(List<ServingType> serving_types, ComboBox comboBox, int servingTypeName)
+        {
+            for (int i = 0; i < comboBox.Items.Count; i++)
+            {
+                var item = (ServingType)comboBox.Items[i];  // Assumed ServingType is the type of items in comboBox1
+                if (item.id == servingTypeName) // Compare by name
+                {
+                    comboBox.SelectedIndex = i;
+                    break;
+                }
+            }
         }
         private async Task<string> returnPriceByServingTypeAsync(string serving_type_id, string varian)
         {
@@ -463,6 +482,7 @@ namespace KASIR.OfflineMode
                 await SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
 
                 DialogResult = DialogResult.OK;
+                selectedServingTypeall = int.Parse(comboBox1.SelectedValue?.ToString());
                 Close();
             }
             catch (Exception ex)

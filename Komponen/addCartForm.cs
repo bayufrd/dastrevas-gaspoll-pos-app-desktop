@@ -77,37 +77,6 @@ namespace KASIR.komponen
         }
 
 
-        private bool IsComboBoxEmpty()
-        {
-            //return comboBox1.Items.Count == 0;
-            // Assuming comboBox1 is the name of your ComboBox
-            if (cmbVarian.Items.Count > 2)
-            {
-                object itemAtIndex1 = cmbVarian.Items[2];
-
-                if (itemAtIndex1 == null || string.IsNullOrEmpty(itemAtIndex1.ToString()))
-                {
-                    // Index 1 is empty
-                    return true;
-                }
-            }
-
-            // Index 1 is not empty or ComboBox doesn't have enough items
-            return false;
-        }
-        private void CheckDropdownItems()
-        {
-            // Assuming comboBox1 is the name of your ComboBox
-            foreach (var item in cmbVarian.Items)
-            {
-                // Your logic to check each item
-                if (cmbVarian.Items == null)
-                {
-                    cmbVarian.Enabled = true;
-                }
-            }
-        }
-
         private async void LoadDataVarianAsync()
         {
             if (!Directory.Exists(folder)) { Directory.CreateDirectory(folder); }
@@ -299,32 +268,6 @@ namespace KASIR.komponen
             }
         }
 
-        private async Task<string> Ex_returnPriceByServingTypeAsync(string id, string varian)
-        {
-            IApiService apiService = new ApiService();
-            string response = await apiService.GetMenuDetailByID("/menu-detail", "" + idmenu + "?menu_detail_id=" + varian);
-            GetMenuDetailCartModel menuModel = JsonConvert.DeserializeObject<GetMenuDetailCartModel>(response);
-            DataMenuDetail data = menuModel.data;
-            List<MenuDetailDataCart> menuDetailDataList = data.menu_details;
-            List<ServingTypes> servingTypes = menuDetailDataList[0].serving_types;
-            var servingType = servingTypes.FirstOrDefault(serving => serving.id == int.Parse(id));
-            if (servingType != null)
-            {
-                return servingType.price.ToString();
-            }
-            else
-            {
-                return "0";
-            }
-        }
-
-
-        private string returnMenuDetailIdByIndex(string id, List<MenuDetailDataCart> dataDetail)
-        {
-            string result = "0";
-            result = dataDetail[int.Parse(id)].menu_detail_id.ToString();
-            return result;
-        }
         private async Task<bool> ValidateInputsAsync()
         {
             if (comboBox1.Text == "Pilih Tipe Serving")
@@ -393,26 +336,6 @@ namespace KASIR.komponen
                 string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
                 IApiService apiService = new ApiService();
                 HttpResponseMessage response = await apiService.CreateCart(jsonString, "/cart");
-
-                /*if (response != null)
-                {
-                    if (response.IsSuccessStatusCode)
-                    {
-                        DialogResult = DialogResult.OK;
-                        Close();
-                    }
-                    else
-                    {
-                        MessageBox.Show("Menu gagal ditambahkan silahkan coba ulang", "Gaspol");
-                        DialogResult = DialogResult.Cancel;
-                        Close();
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Gagal tambah data silahkan coba ulang" + response.ToString(), "Gaspol");
-                    DialogResult = DialogResult.Cancel;
-                }*/
                 masterPos m = new masterPos();
                 m.ReloadCart();
             }
@@ -480,55 +403,6 @@ namespace KASIR.komponen
             finally
             {
                 btnSimpan.Enabled = true;
-            }
-        }
-
-        private async void Ex_btnSimpan_ClickAsync(object sender, EventArgs e)
-        {
-            ////LoggerUtil.LogPrivateMethod(nameof(btnSimpan_ClickAsync));
-            btnSimpan.Enabled = false;
-
-            try
-            {
-                if (!await ValidateInputsAsync())
-                {
-                    return;
-                    btnSimpan.Enabled = true;
-                }
-
-                int selectedVarian = int.Parse(cmbVarian.SelectedValue.ToString());
-                int selectedDiskon = int.Parse(cmbDiskon.SelectedValue.ToString());
-                int diskon = 0;
-
-                int serving_type = int.Parse(comboBox1.SelectedValue.ToString());
-                var quantity = int.Parse(txtKuantitas.Text.ToString());
-                var notes = txtNotes.Text.ToString();
-                int? menuDetailIdValue = null;
-                string pricefix = "0";
-
-                if (selectedVarian == null || selectedVarian == -1)
-                {
-                    pricefix = await returnPriceByServingTypeAsync(serving_type.ToString(), "0");
-                }
-                else
-                {
-                    pricefix = await returnPriceByServingTypeAsync(serving_type.ToString(), "" + selectedVarian);
-                }
-
-                if (selectedDiskon != -1)
-                {
-                    diskon = selectedDiskon;
-                    if (!await ValidateDiscountAsync(diskon, int.Parse(pricefix), quantity))
-                        return;
-                }
-
-                await SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
-            }
-            catch (Exception ex)
-            {
-                btnSimpan.Enabled = true;
-                MessageBox.Show("Gagal tambah data silahkan coba ulang" + ex.Message, "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
 

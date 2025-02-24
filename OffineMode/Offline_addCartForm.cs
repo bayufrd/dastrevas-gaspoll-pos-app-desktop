@@ -389,6 +389,14 @@ namespace KASIR.OfflineMode
                 cartData["subtotal"] = int.Parse(total.ToString());
                 cartData["total"] = int.Parse(total.ToString());
 
+                if (string.IsNullOrEmpty(cartData["transaction_ref"]?.ToString()))
+                {
+                    string randomName = "";
+
+                    generateRandomFill(ref randomName);
+                    string transaction_ref_time = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+                    cartData["transaction_ref"] = $"{baseOutlet}-{transaction_ref_time}-{randomName}";
+                }
                 // Serialize the updated cart data back to JSON
                 string updatedJsonString = JsonConvert.SerializeObject(cartData, Formatting.Indented);
 
@@ -411,7 +419,23 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+        private void generateRandomFill(ref string randomName)  // 'ref' allows modification of the value
+        {
+            Random random = new Random();
 
+            string[] consonants = { "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z" };
+            string[] vowels = { "a", "e", "i", "o", "u" };
+
+            randomName = "";  // Initialize the randomName
+
+            int nameLength = random.Next(3, 10);
+            for (int i = 0; i < nameLength; i++)
+            {
+                randomName += i % 2 == 0 ? consonants[random.Next(consonants.Length)] : vowels[random.Next(vowels.Length)];
+            }
+
+            randomName = char.ToUpper(randomName[0]) + randomName.Substring(1);  // Capitalize the first letter
+        }
         private async Task SaveToCache(string jsonString)
         {
             try

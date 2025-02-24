@@ -86,16 +86,15 @@ namespace KASIR.Komponen
                 //Simplysent
                 SimplifyAndSaveData(destinationPath);
                 // 1. Baca file JSON
-                string jsonData = File.ReadAllText(filePath);
+                string jsonData = File.ReadAllText(destinationPath);
                 JObject data = JObject.Parse(jsonData);
 
                 // 2. Dapatkan array "data"
                 JArray transactions = (JArray)data["data"];
-                if (transactions == null || transactions.Count == 0)
+                if (transactions == null || !transactions.Any()/*transactions.Count == 0*/)
                 {
                     // Menghapus file jika data kosong
                     File.Delete(destinationPath);
-                    MessageBox.Show("tidak data baru syncron");
                 }
                 else
                 {
@@ -122,7 +121,7 @@ namespace KASIR.Komponen
                     HttpResponseMessage response = await apiService.SyncTransaction(jsonData, apiUrl);
                     if (response.IsSuccessStatusCode)
                     {
-                        MessageBox.Show(response.ToString());
+                        //MessageBox.Show(response.ToString());
                         if (!Directory.Exists(newSyncFileTransaction))
                         {
                             Directory.CreateDirectory(newSyncFileTransaction);
@@ -334,7 +333,7 @@ namespace KASIR.Komponen
         }
         private async Task<string> GetShiftData(string configOfflineMode)
         {
-         /*   if (NewDataChecker == 0 && configOfflineMode == "ON")
+            if (NewDataChecker == 0 && configOfflineMode == "ON")
             {
                 // Directly fetch from API
                 IApiService apiService = new ApiService();
@@ -356,11 +355,11 @@ namespace KASIR.Komponen
                 }
             }
             else
-            {*/
+            {
                 // Default: use API if NewDataChecker is neither 0 nor 1
                 IApiService apiService = new ApiService();
                 return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-            /*}*/
+        }
         }
         private static bool isSyncing = false;  // Static flag to track sync status
         public async Task LoadData()
@@ -406,6 +405,7 @@ namespace KASIR.Komponen
                     }
 
                     string response = await GetShiftData(allSettingsData);
+                    File.WriteAllText($"DT-Cache\\Transaction\\ShiftRepot{baseOutlet}.data", JsonConvert.SerializeObject(response, Formatting.Indented));
                     if (response != null)
                     {
                         try

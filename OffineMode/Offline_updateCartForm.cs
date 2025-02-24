@@ -642,7 +642,8 @@ namespace KASIR.OfflineMode
                     if (itemToUpdate != null)
                     {
                         int selectedVarian = int.TryParse(cmbVarian.SelectedValue?.ToString(), out var varianResult) ? varianResult : -1;
-                        string VarianName = cmbVarian.Text.ToString() ?? "Normal";
+                        string VarianName = cmbVarian.Text.ToString();
+                        if(VarianName == "Normal") VarianName = (string)null;
                         int serving_type = int.Parse(comboBox1.SelectedValue.ToString());
                         int quantity = int.Parse(txtKuantitas.Text.ToString());
                         string notes = txtNotes.Text.ToString();

@@ -210,134 +210,202 @@ namespace KASIR.OffineMode
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex >= 0 && (e.ColumnIndex == dataGridView1.Columns["Minus"].Index || e.ColumnIndex == dataGridView1.Columns["Plus"].Index))
+            try
             {
-                var cartDetailId = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["CartDetailID"].Value);
-                var qtyToSplitCell = dataGridView1.Rows[e.RowIndex].Cells["Hasil"]; // Access the QtyToSplit column
-                var jumlahCell = dataGridView1.Rows[e.RowIndex].Cells["Jumlah"]; // Access the Jumlah column
 
-                if (!originalQuantities.ContainsKey(cartDetailId))
+
+                if (e.RowIndex >= 0 && (e.ColumnIndex == dataGridView1.Columns["Minus"].Index || e.ColumnIndex == dataGridView1.Columns["Plus"].Index))
                 {
-                    originalQuantities[cartDetailId] = 1;
-                }
+                    var cartDetailId = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["CartDetailID"].Value);
+                    var qtyToSplitCell = dataGridView1.Rows[e.RowIndex].Cells["Hasil"]; // Access the QtyToSplit column
+                    var jumlahCell = dataGridView1.Rows[e.RowIndex].Cells["Jumlah"]; // Access the Jumlah column
 
-                int originalQuantity = originalQuantities[cartDetailId];
-
-                // Get the maximum quantity allowed from the Jumlah column
-                int maxQuantity = int.Parse(jumlahCell.Value.ToString().Replace("x", ""));
-
-                int currentQuantity;
-                if (int.TryParse(qtyToSplitCell.Value?.ToString(), out currentQuantity))
-                {
-                    if (e.ColumnIndex == dataGridView1.Columns["Minus"].Index)
+                    if (!originalQuantities.ContainsKey(cartDetailId))
                     {
-                        if (currentQuantity > 0)
+                        originalQuantities[cartDetailId] = 1;
+                    }
+
+                    int originalQuantity = originalQuantities[cartDetailId];
+
+                    // Get the maximum quantity allowed from the Jumlah column
+                    int maxQuantity = int.Parse(jumlahCell.Value.ToString().Replace("x", ""));
+
+                    int currentQuantity;
+                    if (int.TryParse(qtyToSplitCell.Value?.ToString(), out currentQuantity))
+                    {
+                        if (e.ColumnIndex == dataGridView1.Columns["Minus"].Index)
                         {
-                            currentQuantity--;
+                            if (currentQuantity > 0)
+                            {
+                                currentQuantity--;
+                            }
+                            else
+                            {
+                                //MessageBox.Show("Kuantitas telah mencapai batas minimum");
+                                return;
+                            }
+                        }
+                        else if (e.ColumnIndex == dataGridView1.Columns["Plus"].Index)
+                        {
+                            if (currentQuantity < maxQuantity)
+                            {
+                                currentQuantity++;
+                            }
+                            else
+                            {
+                                MessageBox.Show("Kuantitas telah mencapai batas maksimal");
+                                return;
+                            }
+                        }
+
+                        qtyToSplitCell.Value = currentQuantity.ToString();
+
+                        // Update or add the item to the cartDetails list
+                        var existingItem = cartDetails.FirstOrDefault(item => int.Parse(item.cart_detail_id) == cartDetailId);
+                        if (existingItem != null)
+                        {
+                            existingItem.qty_to_split = currentQuantity.ToString();
                         }
                         else
                         {
-                            //MessageBox.Show("Kuantitas telah mencapai batas minimum");
-                            return;
+                            cartDetails.Add(new RequestCartModel
+                            {
+                                cart_detail_id = cartDetailId.ToString(),
+                                qty_to_split = currentQuantity.ToString(),
+                                originQty = maxQuantity.ToString(),
+                            });
                         }
-                    }
-                    else if (e.ColumnIndex == dataGridView1.Columns["Plus"].Index)
-                    {
-                        if (currentQuantity < maxQuantity)
-                        {
-                            currentQuantity++;
-                        }
-                        else
-                        {
-                            MessageBox.Show("Kuantitas telah mencapai batas maksimal");
-                            return;
-                        }
-                    }
-
-                    qtyToSplitCell.Value = currentQuantity.ToString();
-
-                    // Update or add the item to the cartDetails list
-                    var existingItem = cartDetails.FirstOrDefault(item => int.Parse(item.cart_detail_id) == cartDetailId);
-                    if (existingItem != null)
-                    {
-                        existingItem.qty_to_split = currentQuantity.ToString();
                     }
                     else
                     {
-                        cartDetails.Add(new RequestCartModel
-                        {
-                            cart_detail_id = cartDetailId.ToString(),
-                            qty_to_split = currentQuantity.ToString()
-                        });
+                        MessageBox.Show("Kuantitas Invalid");
                     }
                 }
-                else
-                {
-                    MessageBox.Show("Kuantitas Invalid");
-                }
+            }
+
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
 
 
         private async void btnSimpanSplit_ClickAsync(object sender, EventArgs e)
         {
-            string source = "DT-Cache\\Transaction\\Cart.data";
-            string main_split_cart = "DT-Cache\\Transaction\\Cart_main_split.data";
-            string new_cart = "DT-Cache\\Transaction\\Cart.data"; // File baru untuk item yang telah dipecah
-
-            // Salin file Cart.data ke Cart_main_split.data sebagai backup
-            File.Copy(source, main_split_cart);
-            File.Delete(source); // Menghapus file lama jika tidak diperlukan
-
-            if (cartDetails.Count == 0)
+            try
             {
-                MessageBox.Show("Kuantitas item yang ingin di split masih nol", "Split Bill", MessageBoxButtons.OK);
-                return;
-            }
+                string source = "DT-Cache\\Transaction\\Cart.data";
+                string main_split_cart = "DT-Cache\\Transaction\\Cart_main_split.data";
+                string new_cart = "DT-Cache\\Transaction\\Cart.data"; // File baru untuk item yang telah dipecah
 
-            // Deserialisasi data dari file Cart_main_split
-            string cartJson = File.ReadAllText(main_split_cart);
-            var cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
-
-            // Membuat list untuk cart details yang telah dipecah
-            List<JObject> splitItems = new List<JObject>();
-
-            // Proses item yang dipecah (split) dan simpan ke file cart baru (Cart.data)
-            foreach (var cartItem in cartData["cart_details"])
-            {
-                int cartDetailId = cartItem["cart_detail_id"].ToObject<int>();
-                var splitItem = cartDetails.FirstOrDefault(item => item.cart_detail_id == cartDetailId.ToString());
-
-                if (splitItem != null) // Jika item ada dalam cartDetails yang dipecah
+                if (cartDetails.Count == 0)
                 {
-                    // Ambil kuantitas baru yang dipecah
-                    int newQty = int.Parse(splitItem.qty_to_split);
-
-                    // Update nilai pada cartItem
-                    cartItem["qty"] = newQty;
-                    cartItem["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                    cartItem["total_price"] = newQty * cartItem["price"].ToObject<int>();
-
-                    // Simpan item yang dipecah ke list baru
-                    splitItems.Add(cartItem as JObject);
+                    MessageBox.Show("Kuantitas item yang ingin di split masih nol", "Split Bill", MessageBoxButtons.OK);
+                    return;
                 }
+
+                // Membaca data dari file Cart.data (yang lama)
+                string cartJson = File.ReadAllText(source);
+                var cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
+
+                // List untuk menampung item yang telah dipecah
+                List<JObject> splitItems = new List<JObject>();
+                // List untuk menampung item sisa
+                List<JObject> remainingItems = new List<JObject>();
+
+                foreach (var cartItem in cartData["cart_details"])
+                {
+                    int cartDetailId = cartItem["cart_detail_id"].ToObject<int>();
+                    var splitItem = cartDetails.FirstOrDefault(item => item.cart_detail_id == cartDetailId.ToString());
+
+                    if (splitItem != null) // Jika item ada dalam cartDetails yang dipecah
+                    {
+                        // Ambil kuantitas baru yang dipecah
+                        int newQty = int.Parse(splitItem.qty_to_split);
+                        int originalQty = int.Parse(cartItem["qty"].ToString());
+
+                        // Update nilai pada cartItem untuk item yang dipecah
+                        cartItem["qty"] = newQty;
+                        cartItem["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        cartItem["total_price"] = newQty * cartItem["price"].ToObject<int>();
+
+                        // Simpan item yang dipecah ke list baru (cart.data)
+                        splitItems.Add(cartItem as JObject);
+
+                        // Jika masih ada sisa kuantitas, simpan ke list sisa (cart_main_split)
+                        int remainingQty = originalQty - newQty;
+                        if (remainingQty > 0)
+                        {
+                            // Buat item sisa
+                            var remainingItem = cartItem.DeepClone() as JObject;
+                            remainingItem["qty"] = remainingQty;
+                            remainingItem["total_price"] = remainingQty * cartItem["price"].ToObject<int>();
+                            remainingItems.Add(remainingItem);
+                        }
+                    }
+                    else
+                    {
+                        // Jika item tidak dipecah, simpan ke list sisa
+                        remainingItems.Add(cartItem as JObject);
+                    }
+                }
+
+                // Menyimpan data yang telah dipecah ke file Cart.data
+                var splitCartData = new JObject
+                {
+                    ["cart_details"] = new JArray(splitItems),
+                    ["subtotal"] = splitItems.Sum(item => item["total_price"].ToObject<int>()),
+                    ["total"] = splitItems.Sum(item => item["total_price"].ToObject<int>()),
+                    ["transaction_ref_split"] = cartData["transaction_ref"].ToString(),
+                    ["transaction_ref"] = $"{baseOutlet}-{DateTime.Now.ToString("yyyyMMdd-HHmmss")}-{GenerateRandomName()}",
+                    ["is_splitted"] = 1
+                };
+
+                // Simpan file baru Cart.data
+                File.WriteAllText(new_cart, JsonConvert.SerializeObject(splitCartData, Formatting.Indented));
+
+                // Menyimpan data sisa ke Cart_main_split.data
+                var remainingCartData = new JObject
+                {
+                    ["cart_details"] = new JArray(remainingItems),
+                    ["subtotal"] = remainingItems.Sum(item => item["total_price"].ToObject<int>()),
+                    ["total"] = remainingItems.Sum(item => item["total_price"].ToObject<int>()),
+                    ["transaction_ref"] = cartData["transaction_ref"].ToString(),
+                    ["is_splitted"] = 0 // Menandakan bahwa ini adalah cart dengan sisa
+                };
+
+                // Simpan file Cart_main_split
+                File.WriteAllText(main_split_cart, JsonConvert.SerializeObject(remainingCartData, Formatting.Indented));
+
+                // Log dan konfirmasi
+                this.Close(); // Tutup form
+            }
+            catch (Exception ex)
+            {
+                // Tangani error
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                MessageBox.Show("Terjadi kesalahan saat memproses split item.", "Error", MessageBoxButtons.OK);
+            }
+        }
+
+
+        private string GenerateRandomName()
+        {
+            Random random = new Random();
+            string[] consonants = { "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z" };
+            string[] vowels = { "a", "e", "i", "o", "u" };
+
+            string randomName = "";  // Initialize the randomName
+            int nameLength = random.Next(3, 10);
+
+            for (int i = 0; i < nameLength; i++)
+            {
+                randomName += i % 2 == 0 ? consonants[random.Next(consonants.Length)] : vowels[random.Next(vowels.Length)];
             }
 
-            // Buat file Cart.data baru dengan item yang dipecah saja
-            var splitCartData = new JObject
-            {
-                ["cart_details"] = new JArray(splitItems),
-                ["subtotal"] = splitItems.Sum(item => item["total_price"].ToObject<int>()),
-                ["total"] = splitItems.Sum(item => item["total_price"].ToObject<int>())
-            };
-
-            // Simpan data item yang dipecah ke Cart.data baru
-            File.WriteAllText(new_cart, JsonConvert.SerializeObject(splitCartData, Formatting.Indented));
-
-            // Simpan kembali perubahan ke file Cart_main_split
-            File.WriteAllText(main_split_cart, JsonConvert.SerializeObject(cartData, Formatting.Indented));
-            
+            return char.ToUpper(randomName[0]) + randomName.Substring(1);  // Capitalize the first letter
         }
+
 
     }
 }

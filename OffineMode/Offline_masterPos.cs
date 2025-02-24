@@ -1933,6 +1933,7 @@ namespace KASIR.OfflineMode
                     // Initialize default values in case no data is available
                     if (cartData["cart_details"] == null || cartData["cart_details"].Count() == 0)
                     {
+                        File.Delete(cacheFilePath);
                         lblDetailKeranjang.Text = "Keranjang: Kosong";
                         lblDiskon1.Text = "Rp. 0";
                         lblSubTotal1.Text = "Rp. 0,-";
@@ -1944,7 +1945,14 @@ namespace KASIR.OfflineMode
                     {
                         // Retrieve cart details
                         var cartDetails = cartData["cart_details"] as JArray;
-
+                        if (!string.IsNullOrEmpty(cartData["is_splitted"]?.ToString()) && cartData["is_splitted"]?.ToString() == "1")
+                        {
+                            ButtonSplit.Enabled = false;
+                        }
+                        else
+                        {
+                            ButtonSplit.Enabled = true;
+                        }
                         // Set the first cart_detail_id as cart_id
                         var cartDetail = cartDetails.FirstOrDefault();
                         cartID = cartDetail?["cart_detail_id"].ToString() ?? "null"; // Get first cart_detail_id for cart_id
@@ -2042,13 +2050,26 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    // If file does not exist, set defaults
-                    lblDetailKeranjang.Text = "Keranjang: Kosong";
-                    lblDiskon1.Text = "Rp. 0";
-                    lblSubTotal1.Text = "Rp. 0,-";
-                    lblTotal1.Text = "Rp. 0,-";
-                    buttonPayment.Text = "Bayar ";
-                    subTotalPrice = 0;
+                    string cacheFilePathSplit = "DT-Cache\\Transaction\\Cart_main_split.data";
+                    if (File.Exists(cacheFilePathSplit))
+                    {
+                        // Ganti nama file
+                        File.Move(cacheFilePathSplit, cacheFilePath);
+                        LoadCartData();
+                        return;
+                    }
+                    else
+                    {
+                        // If file does not exist, set defaults
+                        lblDetailKeranjang.Text = "Keranjang: Kosong";
+                        lblDiskon1.Text = "Rp. 0";
+                        lblSubTotal1.Text = "Rp. 0,-";
+                        lblTotal1.Text = "Rp. 0,-";
+                        buttonPayment.Text = "Bayar ";
+                        subTotalPrice = 0;
+                        ButtonSplit.Enabled = true;
+
+                    }
                 }
 
                 await SignalReload(); // Ensure the UI is updated
@@ -2624,8 +2645,9 @@ namespace KASIR.OfflineMode
 
         private void ButtonSplit_Click(object sender, EventArgs e)
         {
-            if (dataGridView1 == null) 
+            if (dataGridView1.DataSource == null) 
             {
+
                 return;
             }
             Form background = new Form
@@ -2645,20 +2667,8 @@ namespace KASIR.OfflineMode
 
                 background.Show();
                 DialogResult result = splitBill.ShowDialog();
-
-                // Handle the result if needed
-                if (result == DialogResult.OK)
-                {
-                    background.Dispose();
-                    ReloadCart();
-                    // Settings were successfully updated, perform any necessary actions
-                }
-                else
-                {
-                    MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
-                    background.Dispose();
-                    ReloadCart();
-                }
+                background.Dispose();
+                ReloadCart();
             }
         }
 

@@ -190,7 +190,6 @@ namespace KASIR.OfflineMode
             }
         }
 
-
         private void generateRandomFill()
         {
             Random random = new Random();
@@ -371,14 +370,19 @@ namespace KASIR.OfflineMode
                     }
                     string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{formattedreceiptMaker}";
                     string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                    string transaction_ref_time = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-                    string transaction_ref_sent = $"{baseOutlet}-{transaction_ref_time}-{txtNama.Text}"; //4-23112025-033045-yanto 
+                    string transaction_ref_sent = cartData["transaction_ref"].ToString();
+                    string transaction_ref_splitted = (string)null;
+                    if (!string.IsNullOrEmpty(cartData["transaction_ref_split"]?.ToString()))
+                    {
+                        transaction_ref_splitted = cartData["transaction_ref_split"]?.ToString();
+                    }
                     // Prepare transaction data
                     var transactionData = new
                     {
                         transaction_id = int.Parse(transactionId),
                         receipt_number = receipt_numberfix,
                         transaction_ref = transaction_ref_sent,
+                        transaction_ref_split = transaction_ref_splitted,
                         invoice_number = $"INV-{invoiceMaker}{paymentTypedId}",  // Custom invoice number with formatted date
                         invoice_due_date = invoiceDue, // Adjust due date as needed
                         payment_type_id = paymentTypedId,

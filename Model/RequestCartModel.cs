@@ -11,5 +11,7 @@ namespace KASIR.Model
     {
         public string cart_detail_id { get; set; }
         public string qty_to_split { get; set; }
+        public string originQty { get; set; }
+
     }
 }

@@ -11,6 +11,8 @@ using KASIR.Printer;
 using Newtonsoft.Json.Linq;
 using System.Transactions;
 using System.Windows.Markup;
+using System.Data.Common;
+using KASIR.OffineMode;
 namespace KASIR.Komponen
 {
     public partial class shiftReport : UserControl
@@ -40,23 +42,32 @@ namespace KASIR.Komponen
             //LoadData();
             lblShiftSekarang.Visible = false;
         }
+
+
         public async Task SyncDataTransactions()
         {
             try
             {
                 string filePath = "DT-Cache\\Transaction\\transaction.data";
+                //string filePath = "DT-Cache\\Transaction\\transactionSyncing.data";
                 string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
+                //File.Copy(filetransactionOri, filePath);
 
                 // Mendapatkan direktori dari filePath
                 string directoryPath = Path.GetDirectoryName(filePath);
                 string newFileName = "";
-                string destinationPath = "";
+                newFileName = $"{baseOutlet}_SyncSuccess_{DateTime.Now:yyyyMMdd}.data";
                 // Memastikan direktori tujuan ada
                 if (!Directory.Exists(directoryPath))
                 {
                     Directory.CreateDirectory(directoryPath);
                 }
 
+                /* // Membaca konten file .data yang berisi JSON
+                 if (!File.Exists(filetransactionOri))
+                 {
+                     return;
+                 }*/
                 // Membaca konten file .data yang berisi JSON
                 if (!File.Exists(filePath))
                 {
@@ -66,22 +77,16 @@ namespace KASIR.Komponen
                 {
                     Directory.CreateDirectory(newSyncFileTransaction);
                 }
-                // Membuat path tujuan untuk memindahkan file dan merubah nama
-                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
-                string fileExtension = Path.GetExtension(filePath);
-
-                // Menambahkan timestamp atau informasi lainnya ke nama file
-                newFileName = $"{fileNameWithoutExtension}_DT-{baseOutlet}_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
-
                 // Membuat path lengkap untuk file baru
-                destinationPath = Path.Combine(newSyncFileTransaction, newFileName);
+                string destinationPath = "DT-Cache\\Transaction\\transactionSyncing.data";
 
-                // Memindahkan file dan mengganti nama
-                File.Copy(filePath, destinationPath);
+                // Memindahkan file dan mengganti nama, paksa overwrite jika sudah ada file dengan nama yang sama
+                File.Copy(filePath, destinationPath, true);  // true untuk overwrite file yang sudah ada
+
                 //Simplysent
                 SimplifyAndSaveData(destinationPath);
                 // 1. Baca file JSON
-                string jsonData = File.ReadAllText(destinationPath);
+                string jsonData = File.ReadAllText(filePath);
                 JObject data = JObject.Parse(jsonData);
 
                 // 2. Dapatkan array "data"
@@ -90,18 +95,59 @@ namespace KASIR.Komponen
                 {
                     // Menghapus file jika data kosong
                     File.Delete(destinationPath);
-                    //MessageBox.Show("tidak data baru syncron");
+                    MessageBox.Show("tidak data baru syncron");
                 }
                 else
                 {
-                    // Menyiapkan API endpoint URL
-                    string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
+                    /*
+                                        foreach (JToken transaction in transactions) // Use JToken instead of JObject
+                                        {
+                                            if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 0)
+                                            {
+                                                JObject newData1 = new JObject();
+
+                                                newData1["data"] = transaction; // Wrap simplified transactions in "data"
+                                                                                // Lakukan pengiriman transaksi ke API dan handle response
+                                                string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
+                                                IApiService apiService = new ApiService();
+                                                HttpResponseMessage response = await apiService.SyncTransaction(newData1.ToString(), apiUrl);
+                                            }
+                                            //MessageBox.Show(newData1.ToString());
+                                        }
+                                        SyncSuccess(filePath);
+                    */
                     IApiService apiService = new ApiService();
+                    string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
 
                     HttpResponseMessage response = await apiService.SyncTransaction(jsonData, apiUrl);
                     if (response.IsSuccessStatusCode)
                     {
-                        //MessageBox.Show(response.ToString());
+                        MessageBox.Show(response.ToString());
+                        if (!Directory.Exists(newSyncFileTransaction))
+                        {
+                            Directory.CreateDirectory(newSyncFileTransaction);
+                        }
+                        string folderCombine = Path.Combine(newSyncFileTransaction, newFileName);
+                        // Cek apakah file sudah ada, jika ada, baca file dan tambahkan transaksi baru
+                        if (File.Exists(folderCombine))
+                        {
+                            string existingData = File.ReadAllText(destinationPath);
+                            JObject existingDataJson = JObject.Parse(existingData);
+                            JArray existingTransactions = (JArray)existingDataJson["data"];
+
+                            // Menambahkan transaksi baru ke dalam data yang ada
+                            existingTransactions.Add(transactions);
+                            existingDataJson["data"] = existingTransactions;
+
+                            // Simpan kembali file yang sudah diperbarui
+                            File.WriteAllText(folderCombine, existingDataJson.ToString());
+                        }
+                        else
+                        {
+                            File.Copy(destinationPath, folderCombine, true);  // true untuk overwrite file yang sudah ada
+                        }
+                        // Mengirimkan pemberitahuan kepada form utama bahwa sinkronisasi berhasil
+                        SyncCompleted?.Invoke(); // Memicu event untuk memberi tahu form utama bahwa sinkronisasi berhasil
 
                         SyncSuccess(filePath);
                         NewDataChecker = 1;
@@ -111,14 +157,31 @@ namespace KASIR.Komponen
                         //GagalSync
                         MessageBox.Show(response.ToString());
                         string folderGagall = "DT-Cache\\Transaction\\FailedSyncTransaction";
+                        newFileName = $"{baseOutlet}_SyncFailed_{DateTime.Now:yyyyMMdd}.data";
+
                         string folderCombine = Path.Combine(folderGagall, newFileName);
 
                         if (!Directory.Exists(folderGagall))
                         {
                             Directory.CreateDirectory(folderGagall);
                         }
-                        File.Copy(destinationPath, folderCombine);
-                        File.Delete(destinationPath);
+                        if (File.Exists(folderCombine))
+                        {
+                            string existingData = File.ReadAllText(destinationPath);
+                            JObject existingDataJson = JObject.Parse(existingData);
+                            JArray existingTransactions = (JArray)existingDataJson["data"];
+
+                            // Menambahkan transaksi baru ke dalam data yang ada
+                            existingTransactions.Add(transactions);
+                            existingDataJson["data"] = existingTransactions;
+
+                            // Simpan kembali file yang sudah diperbarui
+                            File.WriteAllText(folderCombine, existingDataJson.ToString());
+                        }
+                        else
+                        {
+                            File.Copy(destinationPath, folderCombine);
+                        }
                     }
                 }
             }
@@ -127,9 +190,9 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 MessageBox.Show(ex.ToString());
             }
-            
+
         }
-        public static void SyncSuccess(string filePath)
+        public static async Task Ex_SyncSuccess(string filePath)
         {
             try
             {
@@ -159,6 +222,43 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+        public static readonly object FileLock = new object();
+        public event Action SyncCompleted;  // Event untuk memberi tahu form utama bahwa sinkronisasi berhasil
+
+        public static void SyncSuccess(string filePath)
+        {
+            try
+            {
+                lock (FileLock) // Pastikan hanya satu thread yang menulis ke file
+                {
+                    // Baca file JSON
+                    string jsonData = File.ReadAllText(filePath);
+                    JObject data = JObject.Parse(jsonData);
+
+                    // Dapatkan array "data"
+                    JArray transactions = (JArray)data["data"];
+
+                    // Iterasi setiap transaksi dan hanya perbarui yang statusnya is_sent_sync = 0
+                    foreach (JObject transaction in transactions)
+                    {
+                        if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 0)
+                        {
+                            // Update status menjadi 1 jika transaksi berhasil
+                            transaction["is_sent_sync"] = 1;
+
+                            // Simpan perubahan hanya untuk transaksi yang berhasil disinkronkan
+                        }
+                    }
+                    File.WriteAllText(filePath, data.ToString());
+
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred during SyncSuccess: {ErrorMessage}", ex.Message);
+            }
+        }
+
         public static void SimplifyAndSaveData(string filePath)
         {
             try
@@ -223,9 +323,9 @@ namespace KASIR.Komponen
                         refundItem.Remove("price");
                     }
                 }
-                    // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama
-                    File.WriteAllText(filePath, data.ToString());
-                
+                // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama
+                File.WriteAllText(filePath, data.ToString());
+
             }
             catch (Exception ex)
             {
@@ -234,7 +334,7 @@ namespace KASIR.Komponen
         }
         private async Task<string> GetShiftData(string configOfflineMode)
         {
-            if (NewDataChecker == 0 && configOfflineMode == "ON")
+         /*   if (NewDataChecker == 0 && configOfflineMode == "ON")
             {
                 // Directly fetch from API
                 IApiService apiService = new ApiService();
@@ -256,11 +356,11 @@ namespace KASIR.Komponen
                 }
             }
             else
-            {
+            {*/
                 // Default: use API if NewDataChecker is neither 0 nor 1
                 IApiService apiService = new ApiService();
                 return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-            }
+            /*}*/
         }
         private static bool isSyncing = false;  // Static flag to track sync status
         public async Task LoadData()
@@ -280,6 +380,7 @@ namespace KASIR.Komponen
             {
                 try
                 {
+                    NewDataChecker = 0;
                     // Mengecek apakah sButtonOffline dalam status checked
                     string Config = "setting\\OfflineMode.data";
                     // Ensure the directory exists
@@ -300,6 +401,8 @@ namespace KASIR.Komponen
                     if (!string.IsNullOrEmpty(allSettingsData) && allSettingsData == "ON")
                     {
                         await SyncDataTransactions();
+                        /*TransactionSync c = new TransactionSync();
+                        c.SyncIndividualTransactions();*/
                     }
 
                     string response = await GetShiftData(allSettingsData);

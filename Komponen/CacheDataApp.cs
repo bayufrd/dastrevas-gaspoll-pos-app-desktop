@@ -39,7 +39,7 @@ namespace KASIR.Komponen
             LoadData(choice);
         }
 
-        public async void LoadData(string TypeCacheEksekusi)
+        public async Task LoadData(string TypeCacheEksekusi)
         {
             if (TypeCacheEksekusi == "Sync")
             {
@@ -92,17 +92,41 @@ namespace KASIR.Komponen
             UpdateDetailLabel("Deleting Items dan Gambar");
             UpdateProgressLabel($"Loading Data...");
             progressBar.Value = 0;
-            if (Directory.Exists("DT-Cache")) { Directory.Delete("DT-Cache", true); }
 
+            string cacheDirectory = "DT-Cache";
+            string transactionDirectory = Path.Combine(cacheDirectory, "Transaction");
+
+            if (Directory.Exists(cacheDirectory))
+            {
+                // Get all directories and files within DT-Cache except the Transaction folder
+                var directories = Directory.GetDirectories(cacheDirectory)
+                                           .Where(d => !d.Equals(transactionDirectory, StringComparison.OrdinalIgnoreCase));
+                var files = Directory.GetFiles(cacheDirectory);
+
+                // Delete all files and directories except the Transaction folder
+                foreach (var directory in directories)
+                {
+                    Directory.Delete(directory, true);
+                }
+
+                foreach (var file in files)
+                {
+                    File.Delete(file);
+                }
+            }
 
             string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
             string projectDirectory = Directory.GetParent(appDirectory)?.Parent?.FullName;
             string localImagePath = Path.Combine(projectDirectory, "ImageCache");
-            if (Directory.Exists($"{localImagePath}")) { Directory.Delete($"{localImagePath}", true); }
+            if (Directory.Exists(localImagePath))
+            {
+                Directory.Delete(localImagePath, true);
+            }
 
             progressBar.Value = 100;
             await LoadCacheMenuItems();
         }
+
 
         private async Task CompareAndWriteCacheMenuItems()
         {
@@ -334,6 +358,8 @@ namespace KASIR.Komponen
                 }
 
                 progressBar.Value = 100;
+                await CompareAndWriteOutletData();
+
                 await CompareAndWriteDiscountPerCart();
             }
             catch (TaskCanceledException ex)
@@ -345,6 +371,61 @@ namespace KASIR.Komponen
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
+        }
+        private async Task CompareAndWriteOutletData()
+        {
+            try
+            {
+                // Fetch outlet data from API
+                string outletApiResponse = await apiService.CekShift("/outlet/" + baseOutlet);
+                var apiOutletModel = JsonConvert.DeserializeObject<CartDataOutlet>(outletApiResponse);
+
+                // Define cache file path for outlet data
+                string outletCacheFilePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
+
+                // Load cached outlet data
+                var cachedOutletModel = LoadCachedOutletData(outletCacheFilePath);
+
+                // Compare data
+                bool dataChanged = !AreOutletModelsEqual(apiOutletModel.data, cachedOutletModel?.data);
+
+                if (dataChanged || cachedOutletModel == null)
+                {
+                    UpdateProgressLabel($"Mendownload Outlet Data...");
+                    // Write updated outlet data to the cache file
+                    File.WriteAllText(outletCacheFilePath, JsonConvert.SerializeObject(apiOutletModel));
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred while comparing and writing outlet data: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private bool AreOutletModelsEqual(Data model1, Data model2)
+        {
+            if (model1 == null || model2 == null)
+            {
+                return false;
+            }
+
+            return model1.id == model2.id
+                && model1.name == model2.name
+                && model1.address == model2.address
+                && model1.pin == model2.pin
+                && model1.phone_number == model2.phone_number
+                && model1.is_kitchen_bar_merged == model2.is_kitchen_bar_merged
+                && model1.footer == model2.footer;
+        }
+
+        private CartDataOutlet LoadCachedOutletData(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                string cachedData = File.ReadAllText(filePath);
+                return JsonConvert.DeserializeObject<CartDataOutlet>(cachedData);
+            }
+            return null;
         }
         private async Task CompareAndWriteDiscountPerCart()
         {

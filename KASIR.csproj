@@ -16,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="OffineMode\Offline_splitBill.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="OffineMode\Offline_refund.cs">
       <SubType>Form</SubType>
     </Compile>

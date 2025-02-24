@@ -195,7 +195,7 @@ namespace KASIR
             // SyncTimer
             // 
             SyncTimer.Enabled = true;
-            SyncTimer.Interval = 360000;
+            SyncTimer.Interval = 1800000;
             SyncTimer.Tick += timer1_Tick;
             // 
             // gradientPanel2

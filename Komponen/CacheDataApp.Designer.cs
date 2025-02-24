@@ -120,7 +120,6 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(307, 83);
-            ControlBox = false;
             Controls.Add(gradientPanel2);
             MaximumSize = new Size(323, 122);
             Name = "CacheDataApp";

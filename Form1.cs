@@ -24,6 +24,7 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using KASIR.Printer;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
+using KASIR.OffineMode;
 
 
 namespace KASIR
@@ -49,7 +50,6 @@ namespace KASIR
         public Form1()
         {
             InitializeComponent();
-
             //this.Height = 768;
             //this.Width = 1024;
             this.Load += btnMaximize_Click;
@@ -59,23 +59,12 @@ namespace KASIR
             this.MaximizedBounds = Screen.FromHandle(this.Handle).WorkingArea;
             leftBorderBtn = new Panel();
             leftBorderBtn.Size = new Size(7, 60);
-            headerOutletName("");
             panel2.Controls.Add(leftBorderBtn);
-            ConfigOfflineMode();
-            /*masterPos m = new masterPos();
-            m.TopLevel = false;
-            m.Dock = DockStyle.Fill;
-            panel1.Controls.Add(m);
-            m.BringToFront();
-            m.Show();*/
             this.Height += 100;
             button2.Visible = true;
             lblDetail.Visible = false;
             progressBar.Visible = false;
             StarterApp();
-            //checkCacheData();
-            initPingTest();
-            //headerName();
 
         }
         private async void ConfigOfflineMode()
@@ -258,10 +247,7 @@ namespace KASIR
                     await File.WriteAllTextAsync("setting\\RunningText.data", data);
                 }
                 //DuplicateTemp();
-                string TypeCacheEksekusi = "Sync";
-
-                CacheDataApp CacheDataApp = new CacheDataApp(TypeCacheEksekusi);
-                CacheDataApp.LoadData(TypeCacheEksekusi);
+                
                 //CacheDataApp.Show();
             }
             catch (Exception ex)
@@ -327,15 +313,50 @@ namespace KASIR
         }
         private async void StarterApp()
         {
+            headerOutletName("");
+            ConfigOfflineMode();
+
             await Task.Run(async () =>
             {
                 await DualMonitorChecker();
                 await cekLastUpdaterApp();
                 await cekVersionAndData();
                 await checkCacheData();
-                await headerName();
 
             });
+            initPingTest();
+
+            // Mengecek apakah sButtonOffline dalam status checked
+            string Config = "setting\\OfflineMode.data";
+            // Ensure the directory exists
+            string directoryPath = Path.GetDirectoryName(Config);
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+            // Memeriksa apakah file ada
+            if (!File.Exists(Config))
+            {
+                // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
+                File.WriteAllText(Config, "OFF");
+            }
+            string allSettingsData = File.ReadAllText(Config); // Ambil status offline
+
+            // Jika status offline ON, tampilkan Offline_masterPos
+            if (allSettingsData == "ON")
+            {
+                Offline_masterPos cache = new Offline_masterPos();
+                //await refreshCacheTransaction();
+                isSyncing = true;
+                cache.refreshCacheTransaction();
+                isSyncing = false;
+            }
+            string TypeCacheEksekusi = "Sync";
+
+            CacheDataApp CacheDataApp = new CacheDataApp(TypeCacheEksekusi);
+            CacheDataApp.Show();
+            //await CacheDataApp.LoadData(TypeCacheEksekusi);
+            await headerName();
         }
         private async Task DualMonitorChecker()
         {
@@ -1210,45 +1231,109 @@ namespace KASIR
                 background.Dispose();
             }
         }
+        private static bool isSyncing = false;  // Flag to check if sync is in progress
 
         private async void timer1_Tick(object sender, EventArgs e)
         {
-            
-             // Read the OfflineMode status
-                string config = "setting\\OfflineMode.data";
+            // Read the OfflineMode status
+            string config = "setting\\OfflineMode.data";
             string allSettingsData = File.ReadAllText(config);  // Get the current OfflineMode setting
+
             // Check if OfflineMode is ON
             if (allSettingsData != "ON")
-            {// Run the print method in a background task
+            {
                 return;
             }
-            lblPing.ForeColor = Color.LightGreen;
-            lblPing.Text = "Sync...";
-            SignalPing.ForeColor = Color.LightGreen;
-            SignalPing.Text = "Sync...";
-            SignalPing.IconColor = Color.LightGreen;
-            await sendDataSyncPerHours(allSettingsData);
-            lblPing.ForeColor = Color.White;
-            lblPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
-            SignalPing.ForeColor = Color.White;
-            SignalPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
-            SignalPing.IconColor = Color.White;
+
+            if (isSyncing) // Check if sync is already in progress
+            {
+                return; // If sync is already running, exit
+            }
+
+            try
+            {
+                isSyncing = true;  // Set the flag to indicate sync is in progress
+
+                lblPing.ForeColor = Color.LightGreen;
+                lblPing.Text = "Sync...";
+                SignalPing.ForeColor = Color.LightGreen;
+                SignalPing.Text = "Sync...";
+                SignalPing.IconColor = Color.LightGreen;
+
+                await sendDataSyncPerHours(allSettingsData);
+
+                lblPing.ForeColor = Color.White;
+                lblPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
+                SignalPing.ForeColor = Color.White;
+                SignalPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
+                SignalPing.IconColor = Color.White;
+            }
+            finally
+            {
+                isSyncing = false;  // Reset the flag when sync is finished
+            }
         }
 
         private async Task sendDataSyncPerHours(string allSettingsData)
         {
             // Check if OfflineMode is ON
             if (allSettingsData == "ON")
-            {// Run the print method in a background task
-                await Task.Run(() =>
-                {
-                    
+            {
+                Offline_masterPos m = new Offline_masterPos();
+
+                m.refreshCacheTransaction();
+                    // If you want to sync individual transactions:
+                    /*TransactionSync c = new TransactionSync();
+                    c.SyncIndividualTransactions();*/
+                    // Or if you want to sync all data:
                     shiftReport c = new shiftReport();
+                    //c.SyncCompleted += SyncCompletedHandler;
                     c.SyncDataTransactions();
-                });
             }
         }
+        private void SyncCompletedHandler()
+        {
+            string filePath = "DT-Cache\\Transaction\\transaction.data";
 
+            // Memperbarui file yang telah disinkronkan atau memperbarui status UI
+            SyncSuccess(filePath);
+
+            // Misalnya, memanggil fungsi untuk memperbarui status is_sent_sync di form utama
+        }
+        public static readonly object FileLock = new object();
+        public static void SyncSuccess(string filePath)
+        {
+            try
+            {
+                lock (FileLock) // Pastikan hanya satu thread yang menulis ke file
+                {
+                    // Baca file JSON
+                    string jsonData = File.ReadAllText(filePath);
+                    JObject data = JObject.Parse(jsonData);
+
+                    // Dapatkan array "data"
+                    JArray transactions = (JArray)data["data"];
+
+                    // Iterasi setiap transaksi dan hanya perbarui yang statusnya is_sent_sync = 0
+                    foreach (JObject transaction in transactions)
+                    {
+                        if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 0)
+                        {
+                            // Update status menjadi 1 jika transaksi berhasil
+                            transaction["is_sent_sync"] = 1;
+
+                            // Simpan perubahan hanya untuk transaksi yang berhasil disinkronkan
+                        }
+                    }
+                    File.WriteAllText(filePath, data.ToString());
+
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred during SyncSuccess: {ErrorMessage}", ex.Message);
+            }
+        }
         private async void btnTestSpeed_Click(object sender, EventArgs e)
         {
             SignalPing.Text = "Testing...";
@@ -1352,6 +1437,7 @@ namespace KASIR
             ActivateButton(sender, RGBColors.color4);
             try
             {
+                isSyncing = true;
                 shiftReport c = new shiftReport();
 
                 // Misalkan 'obj' adalah objek yang mungkin null
@@ -1396,6 +1482,10 @@ namespace KASIR
 
                 MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 // Log error jika diperlukan
+            }
+            finally
+            {
+                isSyncing = false;
             }
 
         }

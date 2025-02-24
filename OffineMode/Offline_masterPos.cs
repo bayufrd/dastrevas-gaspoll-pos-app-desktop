@@ -15,6 +15,7 @@ using KASIR.Komponen;
 using System.IO;
 using KASIR.OffineMode;
 using SharpCompress.Common;
+using System.Globalization;
 
 
 namespace KASIR.OfflineMode
@@ -98,7 +99,7 @@ namespace KASIR.OfflineMode
             KeyDown += YourForm_KeyDown;
         }
 
-        private async void refreshCacheTransaction()
+        public async Task refreshCacheTransaction()
         {
             string sourceDirectory = "DT-Cache\\Transaction\\transaction.data"; // Path to source
             string destinationDirectory = "DT-Cache\\Transaction\\HistoryTransaction"; // Path to destination
@@ -112,7 +113,6 @@ namespace KASIR.OfflineMode
                 {
                     return; // Exit if the file does not exist
                 }
-
                 string jsonData = File.ReadAllText(sourceDirectory);
                 JObject data = JObject.Parse(jsonData);
 
@@ -123,36 +123,86 @@ namespace KASIR.OfflineMode
                     return; // Exit if there are no transactions
                 }
 
-                // 3. Iterate through transactions and check for unsynced ones
-                for (int i = transactions.Count - 1; i >= 0; i--) // Iterating backward to avoid issues when removing items
-                {
-                    JObject transaction = (JObject)transactions[i];
+                // 3. Parse the "updated_at" of the first transaction
+                JObject firstTransaction = (JObject)transactions[0];
+                DateTime? firstTransactionDate = null;
 
-                    // Check if the transaction has the "is_sent_sync" field and its value is 0
-                    if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 0)
+                // 4. Check if the "updated_at" exists and parse it
+                if (firstTransaction["invoice_due_date"] != null)
+                {
+                    DateTime parsedDate;
+                    // Only parse the date part, ignoring the time
+                    if (DateTime.TryParseExact(
+                        firstTransaction["invoice_due_date"].ToString(),
+                        "yyyy-MM-dd HH:mm:ss",
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out parsedDate))
                     {
-                        notSentSync = true; // Mark that there's at least one unsynced item
+                        // Store only the date part of the first transaction's updated_at
+                        firstTransactionDate = parsedDate.Date;
+                    }
+                    else
+                    {
+                        // Handle invalid date format
+                        LoggerUtil.LogError(new Exception("Invalid date format"), "Invalid invoice_due_date format for first transaction.");
+                        return;
                     }
                 }
-
-                // If there are no unsynced items, proceed with moving the files
-                if (!notSentSync)
+                // 5. Compare the first transaction's date with today's date
+                if (firstTransactionDate.HasValue && firstTransactionDate.Value != DateTime.Now.Date)
                 {
                     try
                     {
+
+                        MessageBox.Show(firstTransactionDate.Value.ToString());
+                        MessageBox.Show(DateTime.Now.Date.ToString());
                         // Move the files created after the specified time span
-                        transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, timeSpan);
+                        transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, TimeSpan.FromHours(20));
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show("An error occurred while moving the files: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         LoggerUtil.LogError(ex, "Error moving transaction files: {ErrorMessage}", ex.Message);
                     }
                 }
+                /* string jsonData = File.ReadAllText(sourceDirectory);
+                 JObject data = JObject.Parse(jsonData);
+
+                 // 2. Get the "data" array
+                 JArray transactions = (JArray)data["data"];
+                 if (transactions == null || transactions.Count == 0)
+                 {
+                     return; // Exit if there are no transactions
+                 }
+
+                 // 3. Iterate through transactions and check for unsynced ones
+                 for (int i = transactions.Count - 1; i >= 0; i--) // Iterating backward to avoid issues when removing items
+                 {
+                     JObject transaction = (JObject)transactions[i];
+
+                     // Check if the transaction has the "is_sent_sync" field and its value is 0
+                     if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 0)
+                     {
+                         notSentSync = true; // Mark that there's at least one unsynced item
+                     }
+                 }
+
+                 // If there are no unsynced items, proceed with moving the files
+                 if (!notSentSync)
+                 {
+                     try
+                     {
+                         // Move the files created after the specified time span
+                         transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, timeSpan);
+                     }
+                     catch (Exception ex)
+                     {
+                         LoggerUtil.LogError(ex, "Error moving transaction files: {ErrorMessage}", ex.Message);
+                     }
+                 }*/
             }
             catch (Exception ex)
             {
-                MessageBox.Show("An unexpected error occurred: " + ex.Message, "Unexpected Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "Unexpected error: {ErrorMessage}", ex.Message);
             }
         }
@@ -1869,7 +1919,7 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                refreshCacheTransaction();
+                //await refreshCacheTransaction();
 
                 // Path for the cart data cache
                 string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
@@ -2574,51 +2624,42 @@ namespace KASIR.OfflineMode
 
         private void ButtonSplit_Click(object sender, EventArgs e)
         {
-            /*
-                        if (string.IsNullOrEmpty(cartID))
-                        {
-                            MessageBox.Show("Keranjang masih kosong ");
-                            return;
-                        }
-                        Form background = new Form
-                        {
-                            StartPosition = FormStartPosition.Manual,
-                            FormBorderStyle = FormBorderStyle.None,
-                            Opacity = 0.7d,
-                            BackColor = Color.Black,
-                            WindowState = FormWindowState.Maximized,
-                            TopMost = true,
-                            Location = this.Location,
-                            ShowInTaskbar = false,
-                        };
-                        ////LoggerUtil.LogPrivateMethod(nameof(button7_Click));
-                        using (splitBill splitBill = new splitBill(cartID))
-                        {
-                            splitBill.Owner = background;
+            if (dataGridView1 == null) 
+            {
+                return;
+            }
+            Form background = new Form
+            {
+                StartPosition = FormStartPosition.Manual,
+                FormBorderStyle = FormBorderStyle.None,
+                Opacity = 0.7d,
+                BackColor = Color.Black,
+                WindowState = FormWindowState.Maximized,
+                TopMost = true,
+                Location = this.Location,
+                ShowInTaskbar = false,
+            };
+            using (Offline_splitBill splitBill = new Offline_splitBill(cartID))
+            {
+                splitBill.Owner = background;
 
-                            background.Show();
+                background.Show();
+                DialogResult result = splitBill.ShowDialog();
 
-                            //DialogResult dialogResult = dataBill.ShowDialog();
-
-                            //background.Dispose();
-                            DialogResult result = splitBill.ShowDialog();
-
-                            // Handle the result if needed
-                            if (result == DialogResult.OK)
-                            {
-                                background.Dispose();
-                                ReloadCart();
-                                LoadCart();
-                                // Settings were successfully updated, perform any necessary actions
-                            }
-                            else
-                            {
-                                MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
-                                background.Dispose();
-                                ReloadCart();
-                                LoadCart();
-                            }
-                        }*/
+                // Handle the result if needed
+                if (result == DialogResult.OK)
+                {
+                    background.Dispose();
+                    ReloadCart();
+                    // Settings were successfully updated, perform any necessary actions
+                }
+                else
+                {
+                    MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
+                    background.Dispose();
+                    ReloadCart();
+                }
+            }
         }
 
         private void iconButton4_Click_1(object sender, EventArgs e)

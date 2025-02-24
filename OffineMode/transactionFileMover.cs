@@ -26,25 +26,37 @@ namespace KASIR.OffineMode
                     return;
                 }
 
-                    // Dapatkan informasi file
-                    FileInfo fileInfo = new FileInfo(sourceDirectory);
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourceDirectory);
+                string fileExtension = Path.GetExtension(sourceDirectory);
 
-                    // Cek apakah file dibuat lebih dari 25 jam yang lalu
-                    if (DateTime.Now - fileInfo.CreationTime > timeSpan)
-                    {
-                        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourceDirectory);
-                        string fileExtension = Path.GetExtension(sourceDirectory);
+                // Menambahkan timestamp atau informasi lainnya ke nama file
+                string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
 
-                        // Menambahkan timestamp atau informasi lainnya ke nama file
-                        string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+                // Tentukan path baru untuk file
+                string destinationPath = Path.Combine(destinationDirectory, newFileName);
 
-                        // Tentukan path baru untuk file
-                        string destinationPath = Path.Combine(destinationDirectory, newFileName);
+                // Pindahkan file ke direktori tujuan
+                File.Move(sourceDirectory, destinationPath);
 
-                        // Pindahkan file ke direktori tujuan
-                        File.Move(sourceDirectory, destinationPath);
-                    }
-                
+                /*  // Dapatkan informasi file
+                  FileInfo fileInfo = new FileInfo(sourceDirectory);
+
+                  // Cek apakah file dibuat lebih dari 25 jam yang lalu
+                  if (DateTime.Now - fileInfo.CreationTime > timeSpan)
+                  {
+                      string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourceDirectory);
+                      string fileExtension = Path.GetExtension(sourceDirectory);
+
+                      // Menambahkan timestamp atau informasi lainnya ke nama file
+                      string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+
+                      // Tentukan path baru untuk file
+                      string destinationPath = Path.Combine(destinationDirectory, newFileName);
+
+                      // Pindahkan file ke direktori tujuan
+                      File.Move(sourceDirectory, destinationPath);
+                  }
+              */
             }
             catch (Exception ex)
             {

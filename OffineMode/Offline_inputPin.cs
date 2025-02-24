@@ -103,7 +103,6 @@ namespace KASIR.OfflineMode
 
         private async void btnKonfirmasi_Click(object sender, EventArgs e)
         {
-            ////LoggerUtil.LogPrivateMethod(nameof(btnKonfirmasi_Click));
 
             try
             {

@@ -912,6 +912,8 @@ namespace KASIR.Printer
                 // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                 void DrawCenterText(string text, Font font)
                 {
+                    if (text == null) text = string.Empty;
+                    if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
                     string[] words = text.Split(' ');
                     StringBuilder currentLine = new StringBuilder();
                     foreach (string word in words)
@@ -940,6 +942,11 @@ namespace KASIR.Printer
                 // Fungsi untuk menggambar teks rata kiri
                 void DrawLeftText(string text, Font font)
                 {
+                    if (text == null)
+                    {
+                        //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                        return;
+                    }
                     e.Graphics.DrawString(text, font, Brushes.Black, leftMargin, yPos);
                     yPos += font.GetHeight(e.Graphics);
                 }
@@ -1616,6 +1623,8 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                             void DrawCenterText(string text, Font font)
                             {
+                                if (text == null) text = string.Empty;
+                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -1644,6 +1653,11 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
                             void DrawLeftText(string text, Font font)
                             {
+                                if (text == null)
+                                {
+                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                    return;
+                                }
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -2205,6 +2219,8 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                             void DrawCenterText(string text, Font font)
                             {
+                                if (text == null) text = string.Empty;
+                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -2233,6 +2249,11 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
                             void DrawLeftText(string text, Font font)
                             {
+                                if (text == null)
+                                {
+                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                    return;
+                                }
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -2687,6 +2708,8 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                             void DrawCenterText(string text, Font font)
                             {
+                                if (text == null) text = string.Empty;
+                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -2715,6 +2738,11 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
                             void DrawLeftText(string text, Font font)
                             {
+                                if (text == null)
+                                {
+                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                    return;
+                                }
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -3364,6 +3392,11 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                             void DrawCenterText(string text, Font font)
                             {
+                                if (text == null)
+                                {
+                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                    return;
+                                }
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -3392,6 +3425,11 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
                             void DrawLeftText(string text, Font font)
                             {
+                                if (text == null)
+                                {
+                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                    return;
+                                }
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -3978,6 +4016,11 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                             void DrawCenterText(string text, Font font)
                             {
+                                if (text == null)
+                                {
+                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                    return;
+                                }
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -4006,6 +4049,11 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
                             void DrawLeftText(string text, Font font)
                             {
+                                if (text == null)
+                                {
+                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                    return;
+                                }
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -4598,6 +4646,11 @@ namespace KASIR.Printer
                                 // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
                                 void DrawLeftText(string text, Font font)
                                 {
+                                    if (text == null)
+                                    {
+                                        //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                        return;
+                                    }
                                     if (text == null) text = string.Empty;
                                     if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawLeftText method.");
 
@@ -4800,6 +4853,11 @@ namespace KASIR.Printer
                                 // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
                                 void DrawLeftText(string text, Font font)
                                 {
+                                    if (text == null)
+                                    {
+                                        //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                        return;
+                                    }
                                     if (text == null) text = string.Empty;
                                     if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawLeftText method.");
 
@@ -5580,6 +5638,8 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                             void DrawCenterText(string text, Font font)
                             {
+                                if (text == null) text = string.Empty;
+                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -5608,6 +5668,11 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
                             void DrawLeftText(string text, Font font)
                             {
+                                if (text == null)
+                                {
+                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                    return;
+                                }
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -5841,6 +5906,8 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                             void DrawCenterText(string text, Font font)
                             {
+                                if (text == null) text = string.Empty;
+                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -5869,6 +5936,11 @@ namespace KASIR.Printer
                             // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
                             void DrawLeftText(string text, Font font)
                             {
+                                if (text == null)
+                                {
+                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                    return;
+                                }
                                 string[] words = text.Split(' ');
                                 StringBuilder currentLine = new StringBuilder();
                                 foreach (string word in words)
@@ -6004,6 +6076,8 @@ namespace KASIR.Printer
                                 // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                                 void DrawCenterText(string text, Font font)
                                 {
+                                    if (text == null) text = string.Empty;
+                                    if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
                                     string[] words = text.Split(' ');
                                     StringBuilder currentLine = new StringBuilder();
                                     foreach (string word in words)
@@ -6032,6 +6106,11 @@ namespace KASIR.Printer
                                 // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
                                 void DrawLeftText(string text, Font font)
                                 {
+                                    if (text == null)
+                                    {
+                                        //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                        return;
+                                    }
                                     string[] words = text.Split(' ');
                                     StringBuilder currentLine = new StringBuilder();
                                     foreach (string word in words)
@@ -6199,6 +6278,8 @@ namespace KASIR.Printer
                                 // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                                 void DrawCenterText(string text, Font font)
                                 {
+                                    if (text == null) text = string.Empty;
+                                    if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
                                     string[] words = text.Split(' ');
                                     StringBuilder currentLine = new StringBuilder();
                                     foreach (string word in words)
@@ -6227,6 +6308,11 @@ namespace KASIR.Printer
                                 // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
                                 void DrawLeftText(string text, Font font)
                                 {
+                                    if (text == null)
+                                    {
+                                        //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                        return;
+                                    }
                                     string[] words = text.Split(' ');
                                     StringBuilder currentLine = new StringBuilder();
                                     foreach (string word in words)

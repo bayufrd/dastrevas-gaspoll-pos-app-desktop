@@ -154,9 +154,6 @@ namespace KASIR.OfflineMode
                 {
                     try
                     {
-
-                        MessageBox.Show(firstTransactionDate.Value.ToString());
-                        MessageBox.Show(DateTime.Now.Date.ToString());
                         // Move the files created after the specified time span
                         transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, TimeSpan.FromHours(20));
                     }
@@ -165,41 +162,6 @@ namespace KASIR.OfflineMode
                         LoggerUtil.LogError(ex, "Error moving transaction files: {ErrorMessage}", ex.Message);
                     }
                 }
-                /* string jsonData = File.ReadAllText(sourceDirectory);
-                 JObject data = JObject.Parse(jsonData);
-
-                 // 2. Get the "data" array
-                 JArray transactions = (JArray)data["data"];
-                 if (transactions == null || transactions.Count == 0)
-                 {
-                     return; // Exit if there are no transactions
-                 }
-
-                 // 3. Iterate through transactions and check for unsynced ones
-                 for (int i = transactions.Count - 1; i >= 0; i--) // Iterating backward to avoid issues when removing items
-                 {
-                     JObject transaction = (JObject)transactions[i];
-
-                     // Check if the transaction has the "is_sent_sync" field and its value is 0
-                     if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 0)
-                     {
-                         notSentSync = true; // Mark that there's at least one unsynced item
-                     }
-                 }
-
-                 // If there are no unsynced items, proceed with moving the files
-                 if (!notSentSync)
-                 {
-                     try
-                     {
-                         // Move the files created after the specified time span
-                         transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, timeSpan);
-                     }
-                     catch (Exception ex)
-                     {
-                         LoggerUtil.LogError(ex, "Error moving transaction files: {ErrorMessage}", ex.Message);
-                     }
-                 }*/
             }
             catch (Exception ex)
             {
@@ -675,17 +637,6 @@ namespace KASIR.OfflineMode
                     MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
                     CacheDataApp form3 = new CacheDataApp("Sync");
                     form3.Show();
-                    /*IApiService apiService = new ApiService();
-                    string response = await apiService.GetDiscount($"/discount?outlet_id={baseOutlet}&is_discount_cart=", "1");
-                    DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(response);
-                    File.WriteAllText("DT-Cache" + "\\LoadDiscountPerCart_" + "Outlet_" + baseOutlet + ".data", JsonConvert.SerializeObject(menuModel));
-                    List<DataDiscountCart> data = menuModel.data;
-                    var options = data;
-                    dataDiscountListCart = data;
-                    options.Insert(0, new DataDiscountCart { id = -1, code = "Tidak ada Diskon" });
-                    cmbDiskon.DataSource = options;
-                    cmbDiskon.DisplayMember = "code";
-                    cmbDiskon.ValueMember = "id";*/
                 }
                 string searchText = diskonID.ToString() ?? "";
                 if (searchText != "0")
@@ -883,7 +834,6 @@ namespace KASIR.OfflineMode
                         return;
                     }
 
-
                     using (var background = new Form
                     {
                         StartPosition = FormStartPosition.Manual,
@@ -918,7 +868,7 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    MessageBox.Show("Keranjang kosong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Keranjang kosong.", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 }
 
@@ -962,11 +912,6 @@ namespace KASIR.OfflineMode
 
         public async Task LoadDataListby()
         {
-            if (!NetworkInterface.GetIsNetworkAvailable())
-            {
-                MessageBox.Show("No network connection available. Please check your internet connection and try again.", "Network Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
             try
             {
                 //dataGridView3.Enabled = false;
@@ -1919,8 +1864,6 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                //await refreshCacheTransaction();
-
                 // Path for the cart data cache
                 string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
 
@@ -1958,10 +1901,19 @@ namespace KASIR.OfflineMode
                         cartID = cartDetail?["cart_detail_id"].ToString() ?? "null"; // Get first cart_detail_id for cart_id
                         totalCart = cartData["total"]?.ToString() ?? "0";
                         diskonID = 0; //belum pakai disc
-
+                        customer_name = (string)null;
+                        customer_seat = (string)null;
                         // Set customer information
-                        customer_name = cartData["customer_name"]?.ToString() ?? "Name: ??";
-                        customer_seat = cartData["customer_seat"]?.ToString() ?? "Seat: ??";
+                        customer_name = cartData["customer_name"]?.ToString() ?? (string)null;
+                        customer_seat = cartData["customer_seat"]?.ToString() ?? (string)null;
+                        if (!string.IsNullOrEmpty(customer_name) && !string.IsNullOrEmpty(customer_seat))
+                        {
+                            lblDetailKeranjang.Text = $"Keranjang: Nama : {customer_name} Seat : {customer_seat}";
+                        }
+                        else
+                        {
+                            lblDetailKeranjang.Text = $"Keranjang: Nama : ?? Seat : ??";
+                        }
 
                         // Calculate subtotal and total
                         decimal subtotal = cartData["subtotal"] != null ? decimal.Parse(cartData["subtotal"].ToString()) : 0;
@@ -1969,14 +1921,11 @@ namespace KASIR.OfflineMode
 
                         decimal total = cartData["total"] != null ? decimal.Parse(cartData["total"].ToString()) : 0;
                         int totalInt = (int)total;  // Explicitly cast decimal to int
-
-
                         lblDiskon1.Text = string.Format("Rp. {0:n0},-", total - subtotal);
                         subTotalPrice = subtotalint;
                         lblSubTotal1.Text = string.Format("Rp. {0:n0},-", subtotal);
                         lblTotal1.Text = string.Format("Rp. {0:n0},-", total);
                         buttonPayment.Text = string.Format("Bayar Rp. {0:n0},-", total);
-                        lblDetailKeranjang.Text = $"Keranjang: {customer_name} - {customer_seat}";
 
                         // Prepare data for the DataGrid
                         DataTable dataTable = new DataTable();
@@ -2004,13 +1953,22 @@ namespace KASIR.OfflineMode
                                 decimal price = menu["price"] != null ? decimal.Parse(menu["price"].ToString()) : 0;
                                 string noteItem = menu["note_item"]?.ToString() ?? "";
                                 decimal totalPrice = price * quantity;
+                                string ordered = "";
+                                if(int.Parse(menu["is_ordered"].ToString()) == 1)
+                                {
+                                    ordered = " (Ordered)";
+                                }
 
+                                if (quantity == 0)
+                                {
+                                    continue;
+                                }
                                 // Add rows for each cart item
                                 dataTable.Rows.Add(
                                     menu["menu_id"],
                                     menu["cart_detail_id"],
                                     servingTypeName,
-                                    $"{quantity}X {menuName} {menu["menu_detail_name"]}",
+                                    $"{quantity}X {menuName} {menu["menu_detail_name"]} {ordered}",
                                     string.Format("Rp. {0:n0},-", totalPrice),
                                     noteItem
                                 );
@@ -2268,14 +2226,11 @@ namespace KASIR.OfflineMode
                             {
                                 background.Dispose();
                                 ReloadCart();
-                                LoadCart();
                             }
                             else
                             {
-                                MessageBox.Show("Gagal update item, Silahkan coba lagi");
                                 background.Dispose();
                                 ReloadCart();
-                                LoadCart();
                             }
                         }
                     });
@@ -2293,10 +2248,11 @@ namespace KASIR.OfflineMode
 
         private void SimpanBill_Click(object sender, EventArgs e)
         {
-            /*int rowCount = dataGridView1.RowCount;
+            int rowCount = dataGridView1.RowCount;
             if (rowCount == 0)
             {
-                MessageBox.Show("Keranjang masih kosong!", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Keranjang masih kosong!", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
                 return;
             }
             Form background = new Form
@@ -2311,7 +2267,6 @@ namespace KASIR.OfflineMode
                 ShowInTaskbar = false,
             };
 
-            ////LoggerUtil.LogPrivateMethod(nameof(button2_Click));
             if (isSplitted != 0)
             {
                 MessageBox.Show("Keranjang ini telah di Split! tidak bisa diSimpan.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -2319,7 +2274,7 @@ namespace KASIR.OfflineMode
             }
             else
             {
-                using (saveBill saveBill = new saveBill(cartID, customer_name, customer_seat))
+                using (Offline_saveBill saveBill = new Offline_saveBill(cartID, customer_name, customer_seat))
                 {
                     saveBill.Owner = background;
 
@@ -2335,18 +2290,15 @@ namespace KASIR.OfflineMode
                     {
                         background.Dispose();
                         ReloadCart();
-                        LoadCart();
-                        // Settings were successfully updated, perform any necessary actions
                     }
                     else
                     {
                         MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
                         background.Dispose();
                         ReloadCart();
-                        LoadCart();
                     }
                 }
-            }*/
+            }
         }
         private async void btnGet_Click(object sender, EventArgs e)
         {
@@ -2465,43 +2417,45 @@ namespace KASIR.OfflineMode
         }
 
 
-        private void listBill_Click(object sender, EventArgs e)
+        private async void listBill_Click(object sender, EventArgs e)
         {
-        }
-
-        private void FilterMenuItems(string selectedMenuType)
-        {
-            ////LoggerUtil.LogPrivateMethod(nameof(FilterMenuItems));
-
-
-            // Create a copy of the original data source
-            var clonedDataGridViewControls = new List<Control>(dataGridView3.Controls.OfType<Control>());
-
-            // Filter the cloned data source based on the selected menu type
-            var filteredDataGridViewControls = clonedDataGridViewControls.OfType<Panel>().Where(panel =>
+            try
             {
-                if (panel.Controls.OfType<Label>().Any())
+                if(dataGridView1.Rows.Count > 0)
                 {
-                    var typeLabel = panel.Controls.OfType<Label>().FirstOrDefault(label => label.Name == "typeLabel");
-                    if (typeLabel != null)
-                    {
-                        // Check if the selected menu type matches the typeLabel's text
-                        string itemName = typeLabel.Text.ToLower();
-                        return string.IsNullOrEmpty(selectedMenuType) || itemName.Contains(selectedMenuType.ToLower());
-                    }
+                    MessageBox.Show("Keranjang belum kosong. tidak dapat membuka keranjang lagi", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    return;
                 }
-                return false;
-            }).ToList();
+                Form background = new Form
+                {
+                    StartPosition = FormStartPosition.Manual,
+                    FormBorderStyle = FormBorderStyle.None,
+                    Opacity = 0.7d,
+                    BackColor = Color.Black,
+                    WindowState = FormWindowState.Maximized,
+                    TopMost = true,
+                    Location = this.Location,
+                    ShowInTaskbar = false,
+                };
 
-            // Clear the original data source
-            dataGridView3.Controls.Clear();
+                using (Offline_listBill Offline_listBill = new Offline_listBill())
+                {
+                    Offline_listBill.Owner = background;
+                    background.Show();
+                    await Offline_listBill.LoadData();
+                    DialogResult result = Offline_listBill.ShowDialog();
 
-            // Add the filtered items to the original data source
-            foreach (var panelControl in filteredDataGridViewControls)
-            {
-                dataGridView3.Controls.Add(panelControl);
+                    background.Dispose();
+                    ReloadCart();
+
+                }
             }
-
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
         }
 
         private async void cmbFilter_SelectedIndexChanged(object sender, EventArgs e)
@@ -2645,10 +2599,11 @@ namespace KASIR.OfflineMode
 
         private void ButtonSplit_Click(object sender, EventArgs e)
         {
-            if (dataGridView1.DataSource == null) 
+            if (dataGridView1.DataSource == null || dataGridView1.Rows.Count == 0) 
             {
-
+                MessageBox.Show("Keranjang masih kosong!", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
+
             }
             Form background = new Form
             {
@@ -2778,7 +2733,8 @@ namespace KASIR.OfflineMode
             }
             else
             {
-                MessageBox.Show("Keranjang Kosong!");
+                MessageBox.Show("Keranjang masih kosong!", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
             }
         }
     }

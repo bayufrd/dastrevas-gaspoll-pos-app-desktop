@@ -60,8 +60,17 @@ namespace KASIR.Komponen
             }
             else
             {
-                lblStatus.Text = "Gambar default tidak ditemukan.";
+                defaultImagePath = "icon\\DT-Logo.bmp";
+                lblStatus.Text = "Gambar outlet tidak ditemukan. diubah ke Default";
                 lblStatus.ForeColor = Color.Red;
+                // Membuka file gambar menggunakan FileStream untuk memastikan file dapat diakses
+                using (FileStream fs = new FileStream(defaultImagePath, FileMode.Open, FileAccess.Read))
+                {
+                    picThumbnail.Image = new Bitmap(fs);  // Menampilkan gambar di PictureBox
+                    status = 1;
+                    lblStatus.Text = "Gambar sukses terload";
+                    lblStatus.ForeColor = Color.Green;
+                }
             }
         }
 
@@ -74,6 +83,7 @@ namespace KASIR.Komponen
         }
         private void Button2_Click(object sender, EventArgs e)
         {
+            lblStatus.ForeColor = Color.LightGreen;
 
             //PASSWORD CHECKER
             if (string.IsNullOrEmpty(lblPassword.Text))
@@ -99,52 +109,94 @@ namespace KASIR.Komponen
                 lblStatus.Text = "Menyimpan...";
                 //MAIN APP
                 var kasirConfigPath = "KASIR.dll.config";
-                var doc = new XmlDocument();
-                doc.Load(kasirConfigPath);
+                if (File.Exists(kasirConfigPath))  // Check if the file exists
+                {
+                    var doc = new XmlDocument();
+                    doc.Load(kasirConfigPath);
 
-                var newID = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseOutlet']/value");
-                newID.InnerText = textBoxID.Text.ToString();
+                    // Check and update BaseOutlet
+                    var newID = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseOutlet']/value");
+                    if (newID != null)
+                    {
+                        newID.InnerText = textBoxID.Text.ToString();
+                    }
 
-                var newBaseAddress = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseAddress']/value");
-                newBaseAddress.InnerText = textBoxBaseAddress.Text.ToString();
+                    // Check and update BaseAddress
+                    var newBaseAddress = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseAddress']/value");
+                    if (newBaseAddress != null)
+                    {
+                        newBaseAddress.InnerText = textBoxBaseAddress.Text.ToString();
+                    }
 
-                var newAPI = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseAddressDev']/value");
-                newAPI.InnerText = textBoxAPI.Text.ToString();
+                    // Check and update BaseAddressDev
+                    var newAPI = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseAddressDev']/value");
+                    if (newAPI != null)
+                    {
+                        newAPI.InnerText = textBoxAPI.Text.ToString();
+                    }
 
-                var newAPI2 = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseAddressProd']/value");
-                newAPI2.InnerText = textBoxAPI.Text.ToString();
+                    // Check and update BaseAddressProd
+                    var newAPI2 = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseAddressProd']/value");
+                    if (newAPI2 != null)
+                    {
+                        newAPI2.InnerText = textBoxAPI.Text.ToString();
+                    }
 
-                var newVersion = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseAddressVersion']/value");
-                newVersion.InnerText = textBoxVersion.Text.ToString();
+                    // Check and update BaseAddressVersion
+                    var newVersion = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='BaseAddressVersion']/value");
+                    if (newVersion != null)
+                    {
+                        newVersion.InnerText = textBoxVersion.Text.ToString();
+                    }
 
-                doc.Save(kasirConfigPath);
+                    doc.Save(kasirConfigPath);
+                }
 
-                //UPDATE APP
+                // UPDATE APP
                 kasirConfigPath = "update\\update.dll.config";
-                var doc1 = new XmlDocument();
-                doc1.Load(kasirConfigPath);
+                if (File.Exists(kasirConfigPath))  // Check if the file exists
+                {
+                    var doc1 = new XmlDocument();
+                    doc1.Load(kasirConfigPath);
 
-                var newVersion1 = doc1.SelectSingleNode("//applicationSettings/update.Properties.Settings/setting[@name='BaseAddressVersion']/value");
-                newVersion1.InnerText = textBoxVersion.Text.ToString();
+                    // Check and update BaseAddressVersion in update config
+                    var newVersion1 = doc1.SelectSingleNode("//applicationSettings/update.Properties.Settings/setting[@name='BaseAddressVersion']/value");
+                    if (newVersion1 != null)
+                    {
+                        newVersion1.InnerText = textBoxVersion.Text.ToString();
+                    }
 
-                doc1.Save(kasirConfigPath);
+                    doc1.Save(kasirConfigPath);
+                }
 
-                //DUAL MONITOR APP
+                // DUAL MONITOR APP
                 kasirConfigPath = "KASIRDualMonitor\\KASIR Dual Monitor.dll.config";
-                var doc2 = new XmlDocument();
-                doc2.Load(kasirConfigPath);
+                if (File.Exists(kasirConfigPath))  // Check if the file exists
+                {
+                    var doc2 = new XmlDocument();
+                    doc2.Load(kasirConfigPath);
 
-                var newID2 = doc2.SelectSingleNode("//applicationSettings/KASIR_Dual_Monitor.Properties.Settings/setting[@name='BaseOutlet']/value");
-                newID2.InnerText = textBoxID.Text.ToString();
+                    // Check and update BaseOutlet for Dual Monitor
+                    var newID2 = doc2.SelectSingleNode("//applicationSettings/KASIR_Dual_Monitor.Properties.Settings/setting[@name='BaseOutlet']/value");
+                    if (newID2 != null)
+                    {
+                        newID2.InnerText = textBoxID.Text.ToString();
+                    }
 
-                var newBaseAddress2 = doc2.SelectSingleNode("//applicationSettings/KASIR_Dual_Monitor.Properties.Settings/setting[@name='BaseAddress']/value");
-                newBaseAddress2.InnerText = textBoxBaseAddress.Text.ToString();
+                    // Check and update BaseAddress for Dual Monitor
+                    var newBaseAddress2 = doc2.SelectSingleNode("//applicationSettings/KASIR_Dual_Monitor.Properties.Settings/setting[@name='BaseAddress']/value");
+                    if (newBaseAddress2 != null)
+                    {
+                        newBaseAddress2.InnerText = textBoxBaseAddress.Text.ToString();
+                    }
 
-                doc2.Save(kasirConfigPath);
+                    doc2.Save(kasirConfigPath);
+                }
 
                 MessageBox.Show("Berhasil Di Ubah, aplikasi akan dijalankan ulang");
                 Application.Restart();
                 Environment.Exit(0);
+
 
             }
             catch (Exception ex)

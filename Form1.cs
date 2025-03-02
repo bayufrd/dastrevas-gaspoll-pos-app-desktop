@@ -65,7 +65,6 @@ namespace KASIR
             lblDetail.Visible = false;
             progressBar.Visible = false;
             StarterApp();
-
         }
         private async void ConfigOfflineMode()
         {
@@ -351,10 +350,14 @@ namespace KASIR
                 cache.refreshCacheTransaction();
                 isSyncing = false;
             }
-            string TypeCacheEksekusi = "Sync";
 
-            CacheDataApp CacheDataApp = new CacheDataApp(TypeCacheEksekusi);
-            CacheDataApp.Show();
+            if (NetworkInterface.GetIsNetworkAvailable())
+            {
+                string TypeCacheEksekusi = "Sync";
+
+                CacheDataApp CacheDataApp = new CacheDataApp(TypeCacheEksekusi);
+                CacheDataApp.Show();
+            }
             //await CacheDataApp.LoadData(TypeCacheEksekusi);
             await headerName();
         }
@@ -399,6 +402,10 @@ namespace KASIR
         {
             try
             {
+                if (!NetworkInterface.GetIsNetworkAvailable())
+                {
+                    return;
+                }
                 await headerOutletName("Check Last Update..");
                 findingdownloadpath();
                 string startupPath = AppDomain.CurrentDomain.BaseDirectory;
@@ -679,6 +686,10 @@ namespace KASIR
             {
                 await headerOutletName("Checking Kasir Version...");
 
+                if (!NetworkInterface.GetIsNetworkAvailable())
+                {
+                    return;
+                }
                 var urlVersion = Properties.Settings.Default.BaseAddressVersion.ToString();
                 var newVersion = (new WebClient().DownloadString(urlVersion));
                 string currentVersion = Properties.Settings.Default.Version.ToString();

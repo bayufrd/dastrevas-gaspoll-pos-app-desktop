@@ -24,6 +24,8 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Core;
 using Serilog.Sinks.File;
+using Newtonsoft.Json.Linq;
+using System.Windows.Markup;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_deletePerItemForm : Form
@@ -31,27 +33,11 @@ namespace KASIR.OfflineMode
         //private successTransaction SuccessTransaction { get; set; }
         private List<CartDetailTransaction> item = new List<CartDetailTransaction>();
         private List<RefundModel> refundItems = new List<RefundModel>();
-        private readonly string MacAddressKasir;
-        private readonly string PinPrinterKasir;
-        private readonly string BaseOutletName;
-        private readonly ILogger _log = LoggerService.Instance._log;
-        public bool ReloadDataInBaseForm { get; private set; }
-        //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
-        private readonly string baseOutlet;
-        GetTransactionDetail dataTransaction;
         string cart_detail;
         public Offline_deletePerItemForm(string cartDetail)
         {
             cart_detail = cartDetail;
-
-            PinPrinterKasir = Properties.Settings.Default.PinPrinterKasir;
-            MacAddressKasir = Properties.Settings.Default.MacAddressKasir;
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
-            BaseOutletName = Properties.Settings.Default.BaseOutletName;
-
             InitializeComponent();
-
-
         }
 
 
@@ -85,8 +71,6 @@ namespace KASIR.OfflineMode
 
         private async void button2_Click(object sender, EventArgs e)
         {
-            ////LoggerUtil.LogPrivateMethod(nameof(button2_Click));
-
             if (txtReason.Text == null || txtReason.Text.ToString() == "")
             {
                 MessageBox.Show("Masukkan alasan hapus item", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -100,43 +84,77 @@ namespace KASIR.OfflineMode
 
             try
             {
-                /*
-                var json = new
-                {
-                    outlet_id = baseOutlet,
-                    cancel_reason = txtReason.Text.ToString(),
-                    pin = textPin.Text
-                };
-                string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
-                */
-                IApiService apiService = new ApiService();
-                HttpResponseMessage response = await apiService.DeleteCart("/cart/" + cart_detail + "?outlet_id=" + baseOutlet + "&cancel_reason=" + txtReason.Text.ToString() + "&pin=" + textPin.Text.ToString());
-                if (response != null)
-                {
-                    if (response.IsSuccessStatusCode)
-                    {
+                string configCart = "DT-Cache\\Transaction\\Cart.data";
 
-                        if (Application.OpenForms["masterPos"] is masterPos masterPosForm)
+                if (File.Exists(configCart))
+                {
+                    // Read the cart file content as a string
+                    string json = File.ReadAllText(configCart);
+
+                    // Parse the JSON string into a JObject (dynamic)
+                    JObject cartData = JObject.Parse(json);
+
+                    // Find and remove the item with the matching cart_detail_id
+                    JArray cartDetails = (JArray)cartData["cart_details"];
+                    var itemToRemove = cartDetails.FirstOrDefault(item => item["cart_detail_id"].ToString() == cart_detail);
+
+                    if (itemToRemove != null)
+                    {
+                        
+                        itemToRemove["edited_reason"] = txtReason.Text.ToString() ?? "";
+
+                        // Process the refund details
+                        var refundDetails = cartData["canceled_items"] as JArray;
+
+                        // Add the refund item to the refund details array
+                        refundDetails.Add(new JObject
                         {
-                            // Call a method in the MasterPos form to refresh the cart
-                            masterPosForm.ReloadCart();
-                            masterPosForm.ReloadData2();
-                            // You'll need to define this method in MasterPos
-                        }
-                        // ReloadDataInBaseForm = true;
-                        DialogResult = DialogResult.OK;
-                        Close();
+                            ["cart_detail_id"] = itemToRemove["cart_detail_id"],
+                            ["menu_id"] = itemToRemove["menu_id"],
+                            ["menu_name"] = itemToRemove["menu_name"],
+                            ["menu_type"] = itemToRemove["menu_type"],
+                            ["menu_detail_id"] = itemToRemove["menu_detail_id"],
+                            ["menu_detail_name"] = itemToRemove["menu_detail_name"],
+                            ["varian"] = itemToRemove["varian"],
+                            ["is_ordered"] = 1,
+                            ["serving_type_id"] = itemToRemove["serving_type_id"],
+                            ["serving_type_name"] = itemToRemove["serving_type_name"],
+                            ["price"] = itemToRemove["price"],
+                            ["qty"] = itemToRemove["qty"],
+                            ["note_item"] = itemToRemove["note_item"],
+                            ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                            ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                            ["discount_id"] = null,
+                            ["discount_code"] = null,
+                            ["discounts_value"] = null,
+                            ["discounted_price"] = 0,
+                            ["discounts_is_percent"] = null,
+                            ["cancel_reason"] = txtReason.Text.ToString(),
+                            ["subtotal_price"] = itemToRemove["subtotal_price"],
+                            ["total_price"] = itemToRemove["total_price"]
+                        });
 
-                    }
-                    else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                    {
-                        MessageBox.Show("PIN salah. Silakan coba lagi.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
+                        itemToRemove["deleted_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        itemToRemove["qty"] = 0;
+                        // Recalculate subtotal and total
+                        int subtotal = 0;
+                        foreach (var item in cartDetails)
+                        {
+                            subtotal += (int)item["total_price"];
+                        }
+
+                        // Update the cart totals
+                        cartData["subtotal"] = subtotal;
+                        cartData["subtotal_price"] = subtotal;
+                        cartData["total"] = subtotal;
+                        cartData["is_sent_sync"] = 0;
+
+                        // Save the updated cart data back to the file
+                        File.WriteAllText(configCart, cartData.ToString(Formatting.Indented));
                     }
                     else
                     {
-                        DialogResult = DialogResult.Cancel;
-                        MessageBox.Show("Hapus item gagal: " + response.StatusCode, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Console.WriteLine("Item not found in the cart.");
                     }
                 }
             }
@@ -152,14 +170,13 @@ namespace KASIR.OfflineMode
                 }
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
-
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal hapus data " + ex.Message);
+                MessageBox.Show($"Gagal hapus data {ex.ToString()}" + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
-
         }
+
 
         private void txtJumlahCicil_TextChanged(object sender, EventArgs e)
         {

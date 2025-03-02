@@ -29,54 +29,28 @@ namespace KASIR.OfflineMode
 {
     public partial class Offline_updatePerItemForm : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
-        //private successTransaction SuccessTransaction { get; set; }
-        private List<CartDetailTransaction> item = new List<CartDetailTransaction>();
-        private List<RefundModel> refundItems = new List<RefundModel>();
-        private readonly string MacAddressKasir;
-        private readonly string PinPrinterKasir;
-        private readonly string BaseOutletName;
-        public bool ReloadDataInBaseForm { get; private set; }
-        //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
-        GetTransactionDetail dataTransaction;
-        string cart_detail;
-        Dictionary<string, object> jsondict;
-        public Offline_updatePerItemForm(Dictionary<string, object> json, string cartDetail)
+        public Offline_updatePerItemForm()
         {
-            cart_detail = cartDetail;
-            jsondict = json;
-            PinPrinterKasir = Properties.Settings.Default.PinPrinterKasir;
-            MacAddressKasir = Properties.Settings.Default.MacAddressKasir;
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
-            BaseOutletName = Properties.Settings.Default.BaseOutletName;
-
+            baseOutlet = Properties.Settings.Default.BaseOutlet.ToString();
             InitializeComponent();
-
-
         }
 
 
         private void btnKeluar_Click(object sender, EventArgs e)
         {
-            DialogResult = DialogResult.OK;
+            DialogResult = DialogResult.Cancel;
 
             this.Close();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            DialogResult = DialogResult.OK;
 
             // KeluarButtonPrintReportShiftClicked = true;
+            DialogResult = DialogResult.Cancel;
             this.Close();
         }
-        private void AddItem(string name, string amount)
-        {
-
-
-        }
-
         private void panel4_Paint(object sender, PaintEventArgs e)
         {
 
@@ -89,34 +63,27 @@ namespace KASIR.OfflineMode
 
         private async void button2_Click(object sender, EventArgs e)
         {
-            //LoggerUtil.LogPrivateMethod(nameof(button2_Click));
 
-            if (txtReason.Text == null || txtReason.Text.ToString() == "")
-            {
-                MessageBox.Show("Masukkan alasan Update item", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
             try
             {
-                jsondict["cancel_reason"] = txtReason.Text.ToString();
-                jsondict["pin"] = textPin.Text;
-                string jsonString = JsonConvert.SerializeObject(jsondict, Formatting.Indented);
-                IApiService apiService = new ApiService();
-                HttpResponseMessage response = await apiService.UpdateCart(jsonString, "/cart/" + cart_detail);
-                if (response != null)
+                if (textPin.Text.ToString() == "" || textPin.Text == null)
                 {
-                    DialogResult = DialogResult.OK;
+                    MessageBox.Show("Masukan pin terlebih dahulu", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
+                // Deserialize JSON ke object CartDataCache
+                var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
 
-                    if (response.IsSuccessStatusCode)
-                    {
-
+                if (textPin.Text.ToString() == dataOutlet.data.pin.ToString())
+                {
+                        cancelReason = txtReason.Text;
+                        DialogResult = DialogResult.OK;
                         Close();
-                    }
                 }
                 else
                 {
-                    DialogResult = DialogResult.Cancel;
-                    Close();
+                    MessageBox.Show("Password salah", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 }
             }
@@ -124,9 +91,11 @@ namespace KASIR.OfflineMode
             {
                 MessageBox.Show("Gagal ubah data " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                DialogResult = DialogResult.Cancel;
             }
 
         }
+        public string cancelReason {  get; set; }
 
         private void txtJumlahCicil_TextChanged(object sender, EventArgs e)
         {

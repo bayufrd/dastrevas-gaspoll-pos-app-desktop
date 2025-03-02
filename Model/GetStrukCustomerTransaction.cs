@@ -62,7 +62,10 @@ namespace KASIR.Model
         public string? varian { get; set; }
         public int serving_type_id { get; set; }
         public string serving_type_name { get; set; }
+        public int? subtotal { get; set; }
+        public int? subtotal_price { get; set; }
         public int? discount_id { get; set; }
+        public int? is_ordered { get; set; }
         public string? discount_code { get; set; }
         public object discounts_value { get; set; }
         public int? discounted_price { get; set; }
@@ -72,6 +75,7 @@ namespace KASIR.Model
         public int qty { get; set; }
         public object note_item { get; set; }
         public string? cancel_reason { get; set; }
+        public int? is_printed { get; set; }
     }
 
     public class KitchenAndBarCanceledItems
@@ -94,6 +98,8 @@ namespace KASIR.Model
         public int qty { get; set; }
         public object note_item { get; set; }
         public string? cancel_reason { get; set; }
+        public int? is_ordered { get; set; }
+        public int? is_printed { get; set; }
     }
 
 
@@ -107,7 +113,7 @@ namespace KASIR.Model
         public string receipt_number { get; set; }
         public string customer_name { get; set; }
         public int customer_seat { get; set; }
-        public string payment_type { get; set; }
+        public string? payment_type { get; set; }
         public string delivery_type { get; set; }
         public string delivery_note { get; set; }
         public int cart_id { get; set; }
@@ -121,9 +127,9 @@ namespace KASIR.Model
         public List<CanceledItemStrukCustomerTransaction> canceled_items { get; set; }
         public List<KitchenAndBarCartDetails> kitchenBarCartDetails { get; set; }
         public List<KitchenAndBarCanceledItems> kitchenBarCanceledItems { get; set; }
-        public int customer_cash { get; set; }
-        public int customer_change { get; set; }
-        public string invoice_due_date { get; set; }
+        public int? customer_cash { get; set; }
+        public int? customer_change { get; set; }
+        public string? invoice_due_date { get; set; }
         //membership
         public string member_name { get; set; }
         public string member_phone_number { get; set; }
@@ -190,6 +196,7 @@ namespace KASIR.Model
         public string? discounted_price { get; set; }
         public int menu_price { get; set; }
         public string? note_item { get; set; }
+        public int? is_printed { get; set; }
     }
 
     public class CanceledItem
@@ -212,6 +219,8 @@ namespace KASIR.Model
         public int total_price { get; set; }
         public int qty { get; set; }
         public string note_item { get; set; }
+        public int? is_ordered { get; set; }
+        public int? is_printed { get; set; }
     }
 
     public class CartDetail
@@ -239,6 +248,7 @@ namespace KASIR.Model
         public int subtotal { get; set; }
         public int subtotal_price { get; set; }
         public string varian { get; set; }
+        public int? is_printed { get; set; }
     }
     public class TransactionCache
     {

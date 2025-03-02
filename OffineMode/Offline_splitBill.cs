@@ -1,28 +1,9 @@
 ﻿
-using FontAwesome.Sharp;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
-using KASIR.Model;
-using KASIR.Network;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Windows.Forms.Design;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Button;
-using KASIR.komponen;
-using Serilog;
-using Newtonsoft.Json.Linq;
-using System.Net.WebSockets;
-using Polly.Caching;
 
+using KASIR.Model;
+using Newtonsoft.Json;
+using System.Data;
+using Newtonsoft.Json.Linq;
 namespace KASIR.OffineMode
 {
     public partial class Offline_splitBill : Form

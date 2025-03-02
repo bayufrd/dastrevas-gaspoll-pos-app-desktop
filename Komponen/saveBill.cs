@@ -28,7 +28,6 @@ namespace KASIR.komponen
         private readonly ILogger _log = LoggerService.Instance._log;
         public event EventHandler MasterPos;
         string cart_id;
-        int row;
         private readonly string baseOutlet;
         private readonly string MacAddressKasir;
         private readonly string MacAddressKitchen;

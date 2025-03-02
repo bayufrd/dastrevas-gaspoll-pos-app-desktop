@@ -176,7 +176,6 @@ namespace KASIR.OfflineMode
 
                     // Hitung jumlah transaksi berdasarkan transaction_id
                     totalTransactions = transactionDetails.Count + 1;
-
                 }
                 else
                 {
@@ -208,8 +207,7 @@ namespace KASIR.OfflineMode
                 }
 
                 name = char.ToUpper(name[0]) + name.Substring(1);
-
-                txtNama.Text = name;
+                txtNama.Text = name + " (DT)";
                 txtSeat.Text = "0";
             }
 
@@ -375,6 +373,16 @@ namespace KASIR.OfflineMode
                     if (!string.IsNullOrEmpty(cartData["transaction_ref_split"]?.ToString()))
                     {
                         transaction_ref_splitted = cartData["transaction_ref_split"]?.ToString();
+                    
+                    }
+                    int edited_sync = 0;
+                    int sent_sync = 0;
+                    int savebill = 0;
+                    if (!string.IsNullOrEmpty(cartData["is_savebill"]?.ToString()) && int.Parse(cartData["is_savebill"]?.ToString()) == 1)
+                    {
+                        edited_sync = 1;
+                        sent_sync = 0;
+                        savebill = 1;
                     }
                     // Prepare transaction data
                     var transactionData = new
@@ -412,8 +420,9 @@ namespace KASIR.OfflineMode
                         refund_created_at_all = (string)null,
                         total_refund = 0,
                         refund_payment_name_all = (string)null,
-                        is_edited_sync = 0,
-                        is_sent_sync = 0,
+                        is_edited_sync = edited_sync,
+                        is_sent_sync = sent_sync,
+                        is_savebill = savebill,
                         cart_details = cartDetails,
                         refund_details = new JArray(), // Empty array for refund_details
                         canceled_items = new JArray() // Empty array for canceled_items
@@ -510,59 +519,61 @@ namespace KASIR.OfflineMode
                 // Mengisi cart_details dan kitchenBarCartDetails
                 foreach (var item in cartData.cart_details)
                 {
-                    // Membuat objek CartDetailStrukCustomerTransaction
-                    var cartDetail = new CartDetailStrukCustomerTransaction
+                    if (item.is_ordered == 0)
                     {
-                        cart_detail_id = int.Parse(item.cart_detail_id), // Mengonversi string ke int
-                        menu_id = item.menu_id,
-                        menu_name = item.menu_name,
-                        menu_type = item.menu_type,
-                        menu_detail_id = item.menu_detail_id,
-                        varian = item.menu_detail_name, // Tidak ada data varian
-                        serving_type_id = item.serving_type_id,
-                        serving_type_name = item.serving_type_name,
-                        discount_id = null, // Tidak ada data discount
-                        discount_code = null,
-                        discounts_value = null,
-                        discounted_price = 0,
-                        discounts_is_percent = null,
-                        price = item.price, // Mengonversi string ke int
-                        total_price = item.price * item.qty, // Total price dihitung dari price * qty
-                        subtotal = item.price * item.qty, // Total price dihitung dari price * qty
-                        subtotal_price = item.price * item.qty, // Total price dihitung dari price * qty
-                        qty = item.qty,
-                        note_item = string.IsNullOrEmpty(item.note_item) ? "" : item.note_item,
-                        is_ordered = item.is_ordered
-                    };
+                        // Membuat objek CartDetailStrukCustomerTransaction
+                        var cartDetail = new CartDetailStrukCustomerTransaction
+                        {
+                            cart_detail_id = int.Parse(item.cart_detail_id), // Mengonversi string ke int
+                            menu_id = item.menu_id,
+                            menu_name = item.menu_name,
+                            menu_type = item.menu_type,
+                            menu_detail_id = item.menu_detail_id,
+                            varian = item.menu_detail_name, // Tidak ada data varian
+                            serving_type_id = item.serving_type_id,
+                            serving_type_name = item.serving_type_name,
+                            discount_id = null, // Tidak ada data discount
+                            discount_code = null,
+                            discounts_value = null,
+                            discounted_price = 0,
+                            discounts_is_percent = null,
+                            price = item.price, // Mengonversi string ke int
+                            total_price = item.price * item.qty, // Total price dihitung dari price * qty
+                            subtotal = item.price * item.qty, // Total price dihitung dari price * qty
+                            subtotal_price = item.price * item.qty, // Total price dihitung dari price * qty
+                            qty = item.qty,
+                            note_item = string.IsNullOrEmpty(item.note_item) ? "" : item.note_item,
+                            is_ordered = item.is_ordered
+                        };
 
-                    // Menambahkan ke cart_details
-                    strukCustomerTransaction.data.cart_details.Add(cartDetail);
+                        // Menambahkan ke cart_details
+                        strukCustomerTransaction.data.cart_details.Add(cartDetail);
+                        // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
+                        var kitchenAndBarCartDetail = new KitchenAndBarCartDetails
+                        {
+                            cart_detail_id = cartDetail.cart_detail_id,
+                            menu_id = cartDetail.menu_id,
+                            menu_name = cartDetail.menu_name,
+                            menu_type = cartDetail.menu_type,
+                            menu_detail_id = cartDetail.menu_detail_id,
+                            varian = cartDetail.varian,
+                            serving_type_id = cartDetail.serving_type_id,
+                            serving_type_name = cartDetail.serving_type_name,
+                            discount_id = cartDetail.discount_id,
+                            discount_code = cartDetail.discount_code,
+                            discounts_value = cartDetail.discounts_value,
+                            discounted_price = cartDetail.discounted_price,
+                            discounts_is_percent = cartDetail.discounts_is_percent,
+                            price = cartDetail.price,
+                            total_price = cartDetail.total_price,
+                            qty = cartDetail.qty,
+                            note_item = cartDetail.note_item,
+                            is_ordered = cartDetail.is_ordered
+                        };
 
-                    // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
-                    var kitchenAndBarCartDetail = new KitchenAndBarCartDetails
-                    {
-                        cart_detail_id = cartDetail.cart_detail_id,
-                        menu_id = cartDetail.menu_id,
-                        menu_name = cartDetail.menu_name,
-                        menu_type = cartDetail.menu_type,
-                        menu_detail_id = cartDetail.menu_detail_id,
-                        varian = cartDetail.varian,
-                        serving_type_id = cartDetail.serving_type_id,
-                        serving_type_name = cartDetail.serving_type_name,
-                        discount_id = cartDetail.discount_id,
-                        discount_code = cartDetail.discount_code,
-                        discounts_value = cartDetail.discounts_value,
-                        discounted_price = cartDetail.discounted_price,
-                        discounts_is_percent = cartDetail.discounts_is_percent,
-                        price = cartDetail.price,
-                        total_price = cartDetail.total_price,
-                        qty = cartDetail.qty,
-                        note_item = cartDetail.note_item,
-                        is_ordered = cartDetail.is_ordered
-                    };
-
-                    // Menambahkan ke kitchenBarCartDetails
-                    strukCustomerTransaction.data.kitchenBarCartDetails.Add(kitchenAndBarCartDetail);
+                        // Menambahkan ke kitchenBarCartDetails
+                        strukCustomerTransaction.data.kitchenBarCartDetails.Add(kitchenAndBarCartDetail);
+                    }
                 }
 
 

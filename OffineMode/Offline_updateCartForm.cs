@@ -44,6 +44,9 @@ namespace KASIR.OfflineMode
         int kuantitas = 900000;
         string folder = "DT-Cache\\addCartForm";
         public bool ReloadDataInBaseForm { get; private set; }
+        int is_saveBillCart = 0;
+        string updateReason;
+
         public Offline_updateCartForm(string id, string cartdetailid)
         {
             InitializeComponent();
@@ -206,14 +209,15 @@ namespace KASIR.OfflineMode
                     Console.WriteLine($"Menu Name: {data.menu_name}, Price: {data.price}, Quantity: {data.qty}");
                     // Set labels and fields based on the data retrieved
                     is_ordered = data.is_ordered;
-                    lblTipe.Text = $"Tipe Penjualan : {data.serving_type_name ?? "Dine In"}";
+                    lblTipe.Text = $"Tipe Penjualan : {data.serving_type_name ?? ""}";
                     txtKuantitas.Text = data.qty.ToString();
                     txtNotes.Text = data.note_item ?? string.Empty;
                     lblVarian.Text = $"Varian : {data.menu_detail_name ?? "Normal"}";
                     lblVarian.Enabled = true;
                     lblTipe.Enabled = true;
                     searchTextserving = data.serving_type_name ?? string.Empty;
-                    lblnamaitem = data.menu_name ?? "Tidak tersedia";
+                    lblnamaitem = data.menu_name ?? "";
+                    is_saveBillCart = int.Parse(data.is_ordered.ToString());
 
                     LoadDataServingType(searchTextserving);
                     // Ensure that menu_detail_id is converted to a non-nullable int (default to 0 if null)
@@ -415,7 +419,6 @@ namespace KASIR.OfflineMode
 
         private async void btnHapus_Click(object sender, EventArgs e)
         {
-            //LoggerUtil.LogPrivateMethod(nameof(btnHapus_Click));
 
             if (is_ordered == "1")
             {
@@ -430,7 +433,6 @@ namespace KASIR.OfflineMode
                     Location = this.Location,
                     ShowInTaskbar = false,
                 };
-                lblNameCart.Text = "Mengirim Data...";
 
                 using (Offline_deletePerItemForm Offline_deletePerItemForm = new Offline_deletePerItemForm(cartdetail))
                 {
@@ -438,9 +440,6 @@ namespace KASIR.OfflineMode
 
                     background.Show();
 
-                    //DialogResult dialogResult = dataBill.ShowDialog();
-
-                    //background.Dispose();
                     DialogResult result = Offline_deletePerItemForm.ShowDialog();
 
                     // Handle the result if needed
@@ -478,7 +477,6 @@ namespace KASIR.OfflineMode
                         // Find and remove the item with the matching cart_detail_id
                         JArray cartDetails = (JArray)cartData["cart_details"];
                         var itemToRemove = cartDetails.FirstOrDefault(item => item["cart_detail_id"].ToString() == cartdetail);
-
                         if (itemToRemove != null)
                         {
                             // Remove the item from the array
@@ -488,13 +486,14 @@ namespace KASIR.OfflineMode
                             decimal subtotal = 0;
                             foreach (var item in cartDetails)
                             {
-                                subtotal += (decimal)item["total_price"];
+                                subtotal += (int)item["total_price"];
                             }
 
                             // Update the cart totals
                             cartData["subtotal"] = int.Parse(subtotal.ToString());
                             cartData["subtotal_price"] = int.Parse(subtotal.ToString());
                             cartData["total"] = int.Parse(subtotal.ToString());
+                            cartData["is_sent_sync"] = 0;
 
                             // Save the updated cart data back to the file
                             File.WriteAllText(configCart, cartData.ToString(Formatting.Indented));
@@ -539,8 +538,10 @@ namespace KASIR.OfflineMode
 
         private void btnTambah_Click_1(object sender, EventArgs e)
         {
-            //LoggerUtil.LogPrivateMethod(nameof(btnTambah_Click_1));
-
+            if (is_ordered == "1")
+            {
+                return;
+            }
             if (int.TryParse(txtKuantitas.Text, out int numericValue))
             {
                 numericValue++;
@@ -550,14 +551,13 @@ namespace KASIR.OfflineMode
 
         private void btnKurang_Click_1(object sender, EventArgs e)
         {
-            //LoggerUtil.LogPrivateMethod(nameof(btnKurang_Click_1));
             if (is_ordered == "1")
             {
-                if (cmbDiskon.SelectedIndex != 0)
+              /*  if (cmbDiskon.SelectedIndex != 0)
                 {
                     cmbDiskon.SelectedIndex = 0;
                     MessageBox.Show("Jika melakukan perubahan kuantitas, Diskon akan direset.", "Peringatan!");
-                }
+                }*/
             }
             if (int.TryParse(txtKuantitas.Text, out int numericValue))
             {
@@ -576,32 +576,47 @@ namespace KASIR.OfflineMode
 
         private async void btnSimpan_Click(object sender, EventArgs e)
         {
-            //LoggerUtil.LogPrivateMethod(nameof(btnSimpan_Click));
-            //cekKeranjangDiskon();
 
             try
             {
-                
-                
-               /* if (selectedDiskon == -1)
+                if (is_ordered == "1")
                 {
-                    diskon = 0;
-                }
-                else
-                {
-                    diskon = selectedDiskon;
-                    if (diskon != -1)
+                    Form background = new Form
                     {
-                        int diskonMinimum = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.min_purchase ?? -1;
-                        if (diskonMinimum > (int.Parse(pricefix) * quantity))
+                        StartPosition = FormStartPosition.Manual,
+                        FormBorderStyle = FormBorderStyle.None,
+                        Opacity = 0.7d,
+                        BackColor = Color.Black,
+                        WindowState = FormWindowState.Maximized,
+                        TopMost = true,
+                        Location = this.Location,
+                        ShowInTaskbar = false,
+                    };
+
+                    using (Offline_updatePerItemForm Offline_updatePerItemForm = new Offline_updatePerItemForm())
+                    {
+                        Offline_updatePerItemForm.Owner = background;
+
+                        background.Show();
+                        DialogResult result = Offline_updatePerItemForm.ShowDialog();
+
+                        // Handle the result if needed
+                        if (result == DialogResult.OK)
                         {
-                            int resultDiskon = diskonMinimum - (int.Parse(pricefix) * quantity);
-                            MessageBox.Show("Minimum diskon kurang Rp " + resultDiskon + " lagi", "Gaspol");
+                            background.Dispose();
+                            updateReason = Offline_updatePerItemForm.cancelReason.ToString();
+                        }
+                        else
+                        {
+                            DialogResult = DialogResult.Cancel;
+                            background.Dispose();
+                            Close();
                             return;
                         }
                     }
-                }*/
-                await UpdateCartItemLocally(cartdetail);
+                }
+                
+                await UpdateCartItemLocally(cartdetail, updateReason);
 
 
                 DialogResult = DialogResult.OK;
@@ -621,7 +636,7 @@ namespace KASIR.OfflineMode
             }
 
         }
-        private async Task UpdateCartItemLocally(string cartDetailId)
+        private async Task UpdateCartItemLocally(string cartDetailId, string updateReason)
         {
             try
             {
@@ -694,6 +709,7 @@ namespace KASIR.OfflineMode
                         itemToUpdate["subtotal"] = discountedPrice;
                         itemToUpdate["subtotal_price"] = discountedPrice;
                         itemToUpdate["total_price"] = discountedPrice;
+                        itemToUpdate["edited_reason"] = updateReason ?? "";
 
                         /*// Optionally, apply discount based on selectedDiskon (if necessary)
                         if (selectedDiskon != -1)
@@ -715,6 +731,7 @@ namespace KASIR.OfflineMode
                         cartData["subtotal"] = subtotal;
                         cartData["subtotal_price"] = subtotal;
                         cartData["total"] = subtotal;
+                        cartData["is_sent_sync"] = 0;
 
                         // Save the updated cart data back to the file
                         File.WriteAllText(configCart, cartData.ToString(Formatting.Indented));

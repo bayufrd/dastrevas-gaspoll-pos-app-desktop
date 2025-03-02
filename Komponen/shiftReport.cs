@@ -63,11 +63,6 @@ namespace KASIR.Komponen
                     Directory.CreateDirectory(directoryPath);
                 }
 
-                /* // Membaca konten file .data yang berisi JSON
-                 if (!File.Exists(filetransactionOri))
-                 {
-                     return;
-                 }*/
                 // Membaca konten file .data yang berisi JSON
                 if (!File.Exists(filePath))
                 {
@@ -85,6 +80,7 @@ namespace KASIR.Komponen
 
                 //Simplysent
                 SimplifyAndSaveData(destinationPath);
+
                 // 1. Baca file JSON
                 string jsonData = File.ReadAllText(destinationPath);
                 JObject data = JObject.Parse(jsonData);
@@ -98,25 +94,9 @@ namespace KASIR.Komponen
                 }
                 else
                 {
-                    /*
-                                        foreach (JToken transaction in transactions) // Use JToken instead of JObject
-                                        {
-                                            if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 0)
-                                            {
-                                                JObject newData1 = new JObject();
-
-                                                newData1["data"] = transaction; // Wrap simplified transactions in "data"
-                                                                                // Lakukan pengiriman transaksi ke API dan handle response
-                                                string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
-                                                IApiService apiService = new ApiService();
-                                                HttpResponseMessage response = await apiService.SyncTransaction(newData1.ToString(), apiUrl);
-                                            }
-                                            //MessageBox.Show(newData1.ToString());
-                                        }
-                                        SyncSuccess(filePath);
-                    */
                     IApiService apiService = new ApiService();
-                    string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
+                    //string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet; //Origin
+                    string apiUrl = "/sync-transactions-outlet-testing?outlet_id=" + baseOutlet; // testing
 
                     HttpResponseMessage response = await apiService.SyncTransaction(jsonData, apiUrl);
                     if (response.IsSuccessStatusCode)
@@ -150,6 +130,40 @@ namespace KASIR.Komponen
 
                         SyncSuccess(filePath);
                         NewDataChecker = 1;
+                        string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
+                        string saveBillDataPathClone = "DT-Cache\\Transaction\\saveBillSync.data";
+
+                        // 1. Baca file JSON
+                        if (!File.Exists(saveBillDataPath))
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            File.Copy(saveBillDataPath, saveBillDataPathClone, true);  // true untuk overwrite file yang sudah ada
+
+                            SimplifyAndSaveData(saveBillDataPath);
+
+                            string jsonSavwDataSync = File.ReadAllText(saveBillDataPath);
+                            JObject dataSave = JObject.Parse(jsonSavwDataSync);
+
+                            // 2. Dapatkan array "data"
+                            JArray transactionsSaveBill = (JArray)dataSave["data"];
+                            if (transactions == null || !transactions.Any()/*transactions.Count == 0*/)
+                            {
+                                // Menghapus file jika data kosong
+                                return;
+                            }
+                            HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonData, apiUrl);
+                            if (savebillSync.IsSuccessStatusCode)
+                            {
+                                SyncSuccess(saveBillDataPath);
+                            }
+                            else
+                            {
+                                MessageBox.Show(savebillSync.ToString());
+                            }
+                        }
                     }
                     else
                     {

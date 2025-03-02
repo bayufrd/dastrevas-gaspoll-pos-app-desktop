@@ -185,8 +185,8 @@ namespace KASIR.OfflineMode
         }
         private async void LoadData(string transactionId)
         {
-            
-                try
+
+            try
             {
                 // Path untuk file transaction.data
                 string transactionDataPath = "DT-Cache\\Transaction\\transaction.data";
@@ -229,7 +229,7 @@ namespace KASIR.OfflineMode
                         lblTotal.Text = "Total: " + string.Format("{0:n0}", total);
                         int cash = filteredTransaction["total"] != null ? int.Parse(filteredTransaction["customer_cash"].ToString()) : 0;
                         int kembalian = filteredTransaction["customer_change"] != null ? int.Parse(filteredTransaction["customer_change"].ToString()) : 0;
-                        int refund = filteredTransaction["refund_total"] != null ? int.Parse(filteredTransaction["refund_total"].ToString()) : 0;
+                        int refund = filteredTransaction["total_refund"] != null ? int.Parse(filteredTransaction["total_refund"].ToString()) : 0;
 
                         lblDiscountCode.Text = "Discount Code: " + "-";
                         lblDiscountValue.Text = "Discount Value: " + "-";
@@ -271,8 +271,8 @@ namespace KASIR.OfflineMode
                                         $"{item["qty"]}x {item["menu_name"]} {item["menu_detail_name"]} {item["note_item"]?.ToString()}",
                                         string.Format("{0:n0}", item["total_price"])
                                     );
-                                    if(!string.IsNullOrEmpty(item["note_item"].ToString()))
-                                    dataTable.Rows.Add(null, null, null, $"  *Notes: {item["note_item"].ToString()} ", null);
+                                    if (!string.IsNullOrEmpty(item["note_item"].ToString()))
+                                        dataTable.Rows.Add(null, null, null, $"  *Notes: {item["note_item"].ToString()} ", null);
                                 }
                             }
                             // Setelah loop, periksa apakah ada item dengan qty > 0
@@ -302,8 +302,8 @@ namespace KASIR.OfflineMode
 
                             }
                         }
-                            // Menampilkan data pada DataGridView
-                            dataGridView1.DataSource = dataTable;
+                        // Menampilkan data pada DataGridView
+                        dataGridView1.DataSource = dataTable;
 
                         // Menyembunyikan kolom yang tidak diperlukan
                         if (dataGridView1.Columns.Contains("MenuID"))
@@ -329,11 +329,11 @@ namespace KASIR.OfflineMode
                     MessageBox.Show("Transaction data file not found.");
                 }
             }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Gagal load Cart " + ex.Message);
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal load Cart " + ex.Message);
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
             
         }
         private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)

@@ -219,8 +219,6 @@ namespace KASIR.OfflineMode
 
                 background.Dispose();
                 LoadData();
-
-
             }
         }
 

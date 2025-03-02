@@ -158,7 +158,6 @@ namespace KASIR.OfflineMode
             // 
             // listBill1
             // 
-            listBill1.Enabled = false;
             listBill1.FlatAppearance.BorderSize = 0;
             listBill1.FlatStyle = FlatStyle.Flat;
             listBill1.ForeColor = Color.FromArgb(31, 30, 68);
@@ -171,7 +170,7 @@ namespace KASIR.OfflineMode
             listBill1.Name = "listBill1";
             listBill1.Size = new Size(201, 47);
             listBill1.TabIndex = 18;
-            listBill1.Text = "List Bill (Disable)";
+            listBill1.Text = "List Bill";
             listBill1.TextImageRelation = TextImageRelation.ImageBeforeText;
             listBill1.UseVisualStyleBackColor = true;
             listBill1.Click += listBill_Click;
@@ -473,7 +472,6 @@ namespace KASIR.OfflineMode
             // ButtonSimpan
             // 
             ButtonSimpan.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            ButtonSimpan.Enabled = false;
             ButtonSimpan.FlatAppearance.BorderSize = 0;
             ButtonSimpan.FlatStyle = FlatStyle.Flat;
             ButtonSimpan.ForeColor = Color.FromArgb(31, 30, 68);
@@ -486,7 +484,7 @@ namespace KASIR.OfflineMode
             ButtonSimpan.Name = "ButtonSimpan";
             ButtonSimpan.Size = new Size(160, 35);
             ButtonSimpan.TabIndex = 20;
-            ButtonSimpan.Text = "Simpan Bill (Disable)";
+            ButtonSimpan.Text = "Simpan Bill";
             ButtonSimpan.TextImageRelation = TextImageRelation.ImageBeforeText;
             ButtonSimpan.UseVisualStyleBackColor = true;
             ButtonSimpan.Click += SimpanBill_Click;

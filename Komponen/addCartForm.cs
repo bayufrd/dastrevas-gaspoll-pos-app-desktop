@@ -224,7 +224,65 @@ namespace KASIR.komponen
         {
             await Task.Delay(TimeSpan.FromSeconds(seconds));
         }
-        private async Task<string> returnPriceByServingTypeAsync(string id, string varian)
+        private async Task<string> returnPriceByServingTypeAsync(string serving_type_id, string varian)
+        {
+            // Membaca data dari file cache
+            string cachedData = File.ReadAllText(folder + "\\LoadDataServingType_" + idmenu + "_Outlet_" + baseOutlet + ".data");
+
+            // Deserialize data dari cache
+            GetMenuByIdModel menuModel = JsonConvert.DeserializeObject<GetMenuByIdModel>(cachedData);
+
+            // Validasi data
+            if (menuModel == null || menuModel.data == null)
+            {
+                throw new InvalidOperationException("Menu data is invalid.");
+            }
+
+            DataMenu data = menuModel.data;
+            List<MenuDetailS> menuDetailDataList = data.menu_details;
+
+            // Jika varian tidak dipilih (selectedVarian == -1)
+            if (string.IsNullOrEmpty(varian) || varian == "0")
+            {
+                // Cari harga berdasarkan serving_type_id di menu_prices
+                var menuPrice = data.menu_prices
+                    .FirstOrDefault(price => price.serving_type_id == int.Parse(serving_type_id));
+
+                if (menuPrice != null)
+                {
+                    return menuPrice.price.ToString(); // Return harga dari menu utama
+                }
+            }
+            else
+            {
+                // Jika varian dipilih, varian adalah menu_detail_id
+                int varianId = int.Parse(varian);
+
+                if (varianId != -1)
+                {
+                    // Cari menu_detail yang memiliki menu_detail_id yang sesuai dengan varian
+                    var menuDetail = menuDetailDataList
+                        .FirstOrDefault(detail => detail.menu_detail_id == varianId); // Mencocokkan menu_detail_id
+
+                    if (menuDetail != null)
+                    {
+                        // Cari harga berdasarkan serving_type_id dari menu_prices dalam menu_detail
+                        var menuPrice = menuDetail.menu_prices
+                            .FirstOrDefault(price => price.serving_type_id == int.Parse(serving_type_id)); // Mencocokkan serving_type_id
+
+                        if (menuPrice != null)
+                        {
+                            return menuPrice.price.ToString(); // Return harga berdasarkan menu_detail_id
+                        }
+                    }
+                }
+            }
+
+            // Jika tidak ditemukan harga untuk serving_type_id yang diminta
+            return "0"; // Kembalikan "0" jika tidak ditemukan
+        }
+
+        private async Task<string> Ex_returnPriceByServingTypeAsync(string id, string varian)
         {
             IApiService apiService = new ApiService();
             string response = await apiService.GetMenuDetailByID("/menu-detail", "" + idmenu + "?menu_detail_id=" + varian);

@@ -17,26 +17,6 @@ using System.Net;
 using System.Windows.Shapes;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using FontAwesome.Sharp;
-using InTheHand.Net;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using KASIR.Model;
-using KASIR.Network;
-using Newtonsoft.Json;
-using Serilog;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 using Serilog;
 using Serilog.Events;
 using Serilog.Core;
@@ -147,44 +127,6 @@ namespace KASIR.Komponen
 
             //
             cekUpdate();
-
-            foreach (SettingsProperty property in Properties.Settings.Default.Properties)
-            {
-                string settingName = property.Name;
-                object settingValue = Properties.Settings.Default[settingName];
-
-                // Display or use the setting name and value
-                //Console.WriteLine($"Setting Name: {settingName}, Value: {settingValue}");
-                if (settingName == "MacAddressKitchen")
-                {
-                    macKitchen = settingValue.ToString();
-                }
-                if (settingName == "MacAddressKasir")
-                {
-                    macKasir = settingValue.ToString();
-                }
-                if (settingName == "MacAddressBar")
-                {
-                    macBar = settingValue.ToString();
-                }
-                if (settingName == "PinPrinterKitchen")
-                {
-                    pinKitchen = settingValue.ToString();
-                }
-                if (settingName == "PinPrinterKasir")
-                {
-                    pinKasir = settingValue.ToString();
-                }
-                if (settingName == "PinPrinterBar")
-                {
-                    pinBar = settingValue.ToString();
-                }
-                if (settingName == "FooterStruk")
-                {
-                    //txtFooter.Text = settingValue.ToString();
-                    //struk = txtFooter.Text.ToString();
-                }
-            }
 
             initAwalOfflineTrial();
         }

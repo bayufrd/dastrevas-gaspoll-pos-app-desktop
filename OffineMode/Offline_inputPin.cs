@@ -29,6 +29,7 @@ using KASIR.Printer;
 using Newtonsoft.Json.Linq;
 using System.Transactions;
 using KASIR.Komponen;
+using System.Windows.Forms.VisualStyles;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_inputPin : Form
@@ -227,13 +228,19 @@ namespace KASIR.OfflineMode
                         lblCustomerSeat.Text = customerSeat;
                         lblPaymentType.Text = "Payment Type: " + paymentType;
                         lblTotal.Text = "Total: " + string.Format("{0:n0}", total);
-                        int cash = filteredTransaction["total"] != null ? int.Parse(filteredTransaction["customer_cash"].ToString()) : 0;
+                        int cash = filteredTransaction["customer_cash"] != null ? int.Parse(filteredTransaction["customer_cash"].ToString()) : 0;
                         int kembalian = filteredTransaction["customer_change"] != null ? int.Parse(filteredTransaction["customer_change"].ToString()) : 0;
                         int refund = filteredTransaction["total_refund"] != null ? int.Parse(filteredTransaction["total_refund"].ToString()) : 0;
-
-                        lblDiscountCode.Text = "Discount Code: " + "-";
-                        lblDiscountValue.Text = "Discount Value: " + "-";
-                        lblDiscountPrice.Text = "Discount Price: " + "-";
+                        string? discountPrice = filteredTransaction["discounts_value"]?.ToString();
+                        int? discountPriced = 0;
+                        if (discountPrice != "0")
+                        {
+                            discountPriced = int.Parse(filteredTransaction["subtotal"].ToString()) - int.Parse(filteredTransaction["total"].ToString());
+                        }
+                        discountPrice = discountPriced.ToString();
+                        lblDiscountCode.Text = "Discount Code: " + filteredTransaction["discount_code"].ToString() != null ? filteredTransaction["discount_code"].ToString() : "-";
+                        lblDiscountValue.Text = "Discount Value: " + filteredTransaction["discounts_value"]?.ToString() != "0" ? filteredTransaction["discounts_value"]?.ToString() : "-";
+                        lblDiscountPrice.Text = "Discount Price: " + string.Format("{0:n0}", int.Parse(discountPrice.ToString()));
                         lblCustomerCash.Text = "Customer Cash: " + string.Format("{0:n0}", cash);
                         lblKembalian.Text = "Change: " + string.Format("{0:n0}", kembalian);
                         lblTotalRefund.Text = "Refund: " + string.Format("{0:n0}", refund);
@@ -331,7 +338,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal load Cart " + ex.Message);
+                MessageBox.Show("Gagal load Cart " + ex.ToString());
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             

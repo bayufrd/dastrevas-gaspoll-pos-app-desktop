@@ -352,6 +352,7 @@ namespace KASIR.OfflineMode
                     transactionId = firstCartDetailId;
                     string paymentTypeName = cmbPayform.Text.ToString();
                     int paymentTypedId = int.Parse(cmbPayform.SelectedValue.ToString());
+                    int subtotalCart = int.Parse(cartData["subtotal"].ToString());
                     string receiptMaker = cartDetails?.FirstOrDefault()?["created_at"].ToString();
                     string invoiceMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                     string formattedreceiptMaker;
@@ -384,6 +385,10 @@ namespace KASIR.OfflineMode
                         sent_sync = 0;
                         savebill = 1;
                     }
+                    int discount_idConv = cartData["discount_id"]?.ToString() != null ? int.Parse(cartData["discount_id"]?.ToString()) : 0;
+                    string? discount_codeConv = cartData["discount_code"]?.ToString() != null ? cartData["discount_code"]?.ToString() : (string)null;
+                    string? discounts_valueConv = cartData["discounts_value"]?.ToString() != null ? cartData["discounts_value"]?.ToString() : (string)null; // Null if no discount value
+                    string? discounts_is_percentConv = cartData["discounts_is_percent"]?.ToString() != null ? cartData["discounts_is_percent"]?.ToString() : (string)null;
                     // Prepare transaction data
                     var transactionData = new
                     {
@@ -400,7 +405,7 @@ namespace KASIR.OfflineMode
                         customer_cash = fulusAmount,
                         customer_change = change,
                         total = totalCartAmount,
-                        subtotal = totalCartAmount, // You can replace this with actual subtotal if available
+                        subtotal = subtotalCart, // You can replace this with actual subtotal if available
                         created_at = receiptMaker,
                         updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                         deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
@@ -408,10 +413,10 @@ namespace KASIR.OfflineMode
                         refund_reason = (string)null, // Null if no refund reason
                         delivery_type = (string)null, // Null value for delivery_type
                         delivery_note = (string)null, // Null value for delivery_note
-                        discount_id = 0,
-                        discount_code = (string)null, // Null if no discount code
-                        discounts_value = (string)null, // Null if no discount value
-                        discounts_is_percent = (string)null, // Null if no discount percent
+                        discount_id = discount_idConv,
+                        discount_code = discount_codeConv,
+                        discounts_value = discounts_valueConv,
+                        discounts_is_percent = discounts_is_percentConv,
                         member_name = (string)null, // Null if no member name
                         member_phone_number = (string)null, // Null if no member phone number
                         is_refund_all = 0,
@@ -445,7 +450,7 @@ namespace KASIR.OfflineMode
                     // Serialize and save back to transaction.data
                     var newTransactionData = new JObject { { "data", transactionDataArray } };
                     File.WriteAllText(transactionDataPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
-                    convertData(fulus, change, paymentTypeName, receipt_numberfix, invoiceDue);
+                    convertData(fulus, change, paymentTypeName, receipt_numberfix, invoiceDue, discount_idConv, discount_codeConv, discounts_valueConv, discounts_is_percentConv);
                     //HandleSuccessfulTransaction(response, fulus);
                 }
             }
@@ -457,7 +462,7 @@ namespace KASIR.OfflineMode
             }
         }
 
-        private async Task convertData(string fulus, int change, string paymentTypeName, string receipt_numberfix, string invoiceDue)
+        private async Task convertData(string fulus, int change, string paymentTypeName, string receipt_numberfix, string invoiceDue, int discount_idConv, string discount_codeConv, string discounts_valueConv, string discounts_is_percentConv)
         {
             try
             {
@@ -478,8 +483,20 @@ namespace KASIR.OfflineMode
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
                 // Deserialize JSON ke object CartDataCache
                 var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
-                // Konversi ke format GetStrukCustomerTransaction
-                var strukCustomerTransaction = new GetStrukCustomerTransaction
+                /* if(discounts_valueConv.ToString() == null){
+                     discounts_valueConv = "0";
+                 }*/
+                int discounts_valueConvIntm;
+                if(discounts_valueConv == null)
+                {
+                    discounts_valueConvIntm = 0;
+                }
+                else
+                {
+                    discounts_valueConvIntm = int.Parse(discounts_valueConv);
+                }
+                 // Konversi ke format GetStrukCustomerTransaction
+                 var strukCustomerTransaction = new GetStrukCustomerTransaction
                 {
                     code = 201,
                     message = "Transaksi Sukses!",
@@ -500,10 +517,10 @@ namespace KASIR.OfflineMode
                         cart_id = 0,
                         subtotal = (int)cartData.subtotal,
                         total = (int)cartData.total,
-                        discount_id = 0,
-                        discount_code = null,
-                        discounts_value = null,
-                        discounts_is_percent = null,
+                        discount_id = discount_idConv,
+                        discount_code = discount_codeConv,
+                        discounts_value = discounts_valueConvIntm,
+                        discounts_is_percent = discounts_is_percentConv,
                         cart_details = new List<CartDetailStrukCustomerTransaction>(),
                         canceled_items = new List<CanceledItemStrukCustomerTransaction>(),
                         kitchenBarCartDetails = new List<KitchenAndBarCartDetails>(),
@@ -515,12 +532,9 @@ namespace KASIR.OfflineMode
                     }
                 };
 
-                // Mengisi cart_details
                 // Mengisi cart_details dan kitchenBarCartDetails
                 foreach (var item in cartData.cart_details)
                 {
-                    if (item.is_ordered == 0)
-                    {
                         // Membuat objek CartDetailStrukCustomerTransaction
                         var cartDetail = new CartDetailStrukCustomerTransaction
                         {
@@ -532,11 +546,11 @@ namespace KASIR.OfflineMode
                             varian = item.menu_detail_name, // Tidak ada data varian
                             serving_type_id = item.serving_type_id,
                             serving_type_name = item.serving_type_name,
-                            discount_id = null, // Tidak ada data discount
-                            discount_code = null,
-                            discounts_value = null,
-                            discounted_price = 0,
-                            discounts_is_percent = null,
+                            discount_id = int.Parse(item.cart_detail_id.ToString()), // Tidak ada data discount
+                            discount_code = item.serving_type_name,
+                            discounts_value = int.Parse(item.discounts_value.ToString()),
+                            discounted_price = int.Parse(item.discounted_price.ToString()),
+                            discounts_is_percent = int.Parse(item.discounts_is_percent.ToString()),
                             price = item.price, // Mengonversi string ke int
                             total_price = item.price * item.qty, // Total price dihitung dari price * qty
                             subtotal = item.price * item.qty, // Total price dihitung dari price * qty
@@ -548,7 +562,10 @@ namespace KASIR.OfflineMode
 
                         // Menambahkan ke cart_details
                         strukCustomerTransaction.data.cart_details.Add(cartDetail);
-                        // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
+                    // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
+
+                    if (item.is_ordered == 0)
+                    {
                         var kitchenAndBarCartDetail = new KitchenAndBarCartDetails
                         {
                             cart_detail_id = cartDetail.cart_detail_id,

@@ -338,8 +338,57 @@ namespace KASIR.OfflineMode
                 // Get the serving type name based on the serving_type_id
                 var selectedServingType = servingTypes.FirstOrDefault(type => (int)type["id"] == serving_type);
                 string servingTypeName = selectedServingType?["name"]?.ToString();
-                int total_item = int.Parse(pricefix) * quantity;
+                int subtotal_item = int.Parse(pricefix) * quantity;
                 int price_item = int.Parse(pricefix);
+                int total_item_withDiscount = subtotal_item;
+                int discountPercent = 0;
+                int discountValue = 0;
+                string? discountCode = (string)null;
+                int discountId = 0;
+                int discountedPrice = 0;
+                if(diskon == -1)
+                {
+                    discountId = diskon;
+                }
+                if (diskon != -1)
+                {
+                    discountPercent = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.is_percent ?? 0;
+                    discountValue = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.value ?? 0;
+                    int discountMax = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.max_discount ?? int.MaxValue;
+
+                    int tempTotal = 0;
+
+
+                    if (discountPercent != 0)
+                    {
+                        tempTotal = subtotal_item * discountValue/100;
+                        if(tempTotal > discountMax)
+                        {
+                            discountedPrice = discountMax;
+                        }
+                        else
+                        {
+                            discountedPrice = subtotal_item - tempTotal;
+                        }
+                        total_item_withDiscount = subtotal_item - discountedPrice;
+                        discountedPrice = discountedPrice / quantity;
+                    }
+                    else
+                    {
+                        tempTotal = subtotal_item - discountValue;
+                        if (tempTotal > discountMax)
+                        {
+                            discountedPrice = discountMax;
+                        }
+                        else
+                        {
+                            discountedPrice = subtotal_item - tempTotal;
+                        }
+                        total_item_withDiscount = subtotal_item - discountedPrice;
+                        discountedPrice = discountedPrice / quantity;
+                    }
+                }
+
                 // Prepare the new item for cart_details
                 var newItem = new JObject
                 {
@@ -358,13 +407,13 @@ namespace KASIR.OfflineMode
                     { "note_item", notes },
                     { "created_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
                     { "updated_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
-                    { "discount_id", null },
-                    { "discount_code", null },
-                    { "discounts_value", null },
-                    { "discounted_price", 0 },
-                    { "discounts_is_percent", null },
-                    { "subtotal_price", int.Parse(total_item.ToString()) },
-                    { "total_price", int.Parse(total_item.ToString()) }
+                    { "discount_id", discountId},
+                    { "discount_code", discountCode },
+                    { "discounts_value", discountValue },
+                    { "discounted_price", discountedPrice },
+                    { "discounts_is_percent", discountPercent },
+                    { "subtotal_price", int.Parse(subtotal_item.ToString()) },
+                    { "total_price", total_item_withDiscount }
                 };
 
                 // Set file path for cart data cache
@@ -385,8 +434,10 @@ namespace KASIR.OfflineMode
                 cartDetailsArray.Add(newItem);
 
                 // Update the subtotal and total based on cart details
-                var total = cartDetailsArray.Sum(item => (decimal)item["price"] * (int)item["qty"]);
-                cartData["subtotal"] = int.Parse(total.ToString());
+                var subtotal = cartDetailsArray.Sum(item => (int)item["price"] * (int)item["qty"]);
+                var total = cartDetailsArray.Sum(item => (int)item["total_price"]);
+
+                cartData["subtotal"] = int.Parse(subtotal.ToString());
                 cartData["total"] = int.Parse(total.ToString());
 
                 if (string.IsNullOrEmpty(cartData["transaction_ref"]?.ToString()))
@@ -404,8 +455,6 @@ namespace KASIR.OfflineMode
                 await SaveToCache(updatedJsonString);
 
                 // Optionally, send the updated data to the server
-                /*IApiService apiService = new ApiService();
-                HttpResponseMessage response = await apiService.CreateCart(updatedJsonString, "/cart");*/
 
             }
             catch (TaskCanceledException ex)

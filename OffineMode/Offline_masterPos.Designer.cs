@@ -193,6 +193,7 @@ namespace KASIR.OfflineMode
             panel6.Name = "panel6";
             panel6.Size = new Size(401, 135);
             panel6.TabIndex = 15;
+            panel6.Paint += panel6_Paint;
             // 
             // label6
             // 
@@ -209,7 +210,6 @@ namespace KASIR.OfflineMode
             // iconButtonGet
             // 
             iconButtonGet.BackColor = Color.White;
-            iconButtonGet.Enabled = false;
             iconButtonGet.FlatAppearance.BorderSize = 0;
             iconButtonGet.FlatStyle = FlatStyle.Flat;
             iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
@@ -272,14 +272,12 @@ namespace KASIR.OfflineMode
             // cmbDiskon
             // 
             cmbDiskon.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbDiskon.Enabled = false;
             cmbDiskon.FlatStyle = FlatStyle.Flat;
             cmbDiskon.FormattingEnabled = true;
             cmbDiskon.Location = new Point(8, 9);
             cmbDiskon.Name = "cmbDiskon";
             cmbDiskon.Size = new Size(149, 23);
             cmbDiskon.TabIndex = 1;
-            cmbDiskon.SelectedIndexChanged += cmbDiskon_SelectedIndexChanged;
             // 
             // lblTotal1
             // 

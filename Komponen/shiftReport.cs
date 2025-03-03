@@ -205,36 +205,7 @@ namespace KASIR.Komponen
             }
 
         }
-        public static async Task Ex_SyncSuccess(string filePath)
-        {
-            try
-            {
-                // 1. Baca file JSON
-                string jsonData = File.ReadAllText(filePath);
-                JObject data = JObject.Parse(jsonData);
-
-                // 2. Dapatkan array "data"
-                JArray transactions = (JArray)data["data"];
-
-                // 3. Iterasi setiap transaksi dan hapus elemen yang tidak diperlukan
-                for (int i = transactions.Count - 1; i >= 0; i--) // Iterasi mundur untuk menghindari masalah saat menghapus
-                {
-                    JObject transaction = (JObject)transactions[i];
-
-                    if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 0)
-                    {
-                        transaction["is_sent_sync"] = 1;
-                    }
-                }
-                // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama
-                //MessageBox.Show(data.ToString());
-                File.WriteAllText(filePath, data.ToString());
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
+  
         public static readonly object FileLock = new object();
         public event Action SyncCompleted;  // Event untuk memberi tahu form utama bahwa sinkronisasi berhasil
 
@@ -297,7 +268,7 @@ namespace KASIR.Komponen
                     // Hapus field yang tidak dibutuhkan di level transaksi
                     transaction.Remove("transaction_id");
                     transaction.Remove("payment_type_name");
-                    transaction.Remove("deleted_at");
+                    /*transaction.Remove("deleted_at");
                     transaction.Remove("is_refund");
                     transaction.Remove("refund_reason");
                     transaction.Remove("delivery_type");
@@ -307,7 +278,7 @@ namespace KASIR.Komponen
                     transaction.Remove("discounts_value");
                     transaction.Remove("discounts_is_percent");
                     transaction.Remove("member_name");
-                    transaction.Remove("member_phone_number");
+                    transaction.Remove("member_phone_number");*/
 
                     // Iterasi ke cart_details dan refund_details untuk menghapus field yang tidak dibutuhkan
                     JArray cartDetails = (JArray)transaction["cart_details"];
@@ -316,24 +287,24 @@ namespace KASIR.Komponen
                         cartItem.Remove("menu_name"); // Hapus serving_type_name dari cart detail
                         cartItem.Remove("menu_type");  // Hapus menu_detail_name jika tidak diperlukan
                         cartItem.Remove("menu_detail_name");            // Hapus varian jika tidak diperlukan
-                        cartItem.Remove("discount_code");         // Hapus note_item jika tidak diperlukan
+                        /*cartItem.Remove("discount_code");         // Hapus note_item jika tidak diperlukan
                         cartItem.Remove("varian");       // Hapus discount_id jika tidak diperlukan
                         cartItem.Remove("is_ordered");     // Hapus discount_code jika tidak diperlukan
                         cartItem.Remove("serving_type_name");  // Hapus discounts_value jika tidak diperlukan
                         cartItem.Remove("discounts_value"); // Hapus discounted_price jika tidak diperlukan
                         cartItem.Remove("discounts_is_percent"); // Hapus discounts_is_percent jika tidak diperlukan
-                        cartItem.Remove("subtotal"); // Hapus discounts_is_percent jika tidak diperlukan
+                        cartItem.Remove("subtotal");*/ // Hapus discounts_is_percent jika tidak diperlukan
                     }
 
                     // Hapus field yang tidak diperlukan di refund_details jika ada
                     JArray refundDetails = (JArray)transaction["refund_details"];
                     foreach (JObject refundItem in refundDetails)
-                    {
+                    {/*
                         refundItem.Remove("menu_id");
                         refundItem.Remove("menu_name");
                         refundItem.Remove("menu_detail_id");
                         refundItem.Remove("menu_detail_name");
-                        refundItem.Remove("price");
+                        refundItem.Remove("price");*/
                     }
                 }
                 // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama

@@ -44,7 +44,7 @@ namespace KASIR.OfflineMode
         int kuantitas = 900000;
         string folder = "DT-Cache\\addCartForm";
         public bool ReloadDataInBaseForm { get; private set; }
-        int is_saveBillCart = 0;
+        int is_saveBillCart = 0, maxQtyOrdered;
         string updateReason;
 
         public Offline_updateCartForm(string id, string cartdetailid)
@@ -75,11 +75,10 @@ namespace KASIR.OfflineMode
             cmbVarian.DrawItem += CmbVarian_DrawItem;
             cmbVarian.ItemHeight = 25; // Set the desired item height
             LoadDataVarianAsync();
-            //LoadDataDiscount();
             /*int newHeight = Screen.PrimaryScreen.WorkingArea.Height - 100;
             Height = newHeight;*/
         }
-        private async void LoadDataDiscount()
+    /*    private async void LoadDataDiscount()
         {
             if (!Directory.Exists(folder)) { Directory.CreateDirectory(folder); }
 
@@ -105,26 +104,16 @@ namespace KASIR.OfflineMode
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
-            try
+            else
             {
                 MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
                 CacheDataApp form3 = new CacheDataApp("Sync");
+                DialogResult = DialogResult.Cancel;
                 this.Close();
                 form3.Show();
             }
-            catch (TaskCanceledException ex)
-            {
-                //MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-            catch (Exception ex)
-            {
 
-                MessageBox.Show("Gagal tampil data diskon " + ex.Message, "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-
-        }
+        }*/
         private async void LoadDataVarianAsync()
         {
             try
@@ -149,9 +138,11 @@ namespace KASIR.OfflineMode
                 {
                     MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
                     CacheDataApp form3 = new CacheDataApp("Sync");
+                    DialogResult = DialogResult.Cancel;
                     this.Close();
                     form3.Show();
                 }
+                LoadDataDiscount();
 
                 LoadItemOnCart();
             }
@@ -189,6 +180,7 @@ namespace KASIR.OfflineMode
                             varian = item.menu_detail_name,
                             menu_detail_name = item.menu_detail_name,
                             is_ordered = item.is_ordered.ToString(),
+                            discount_code = item.discount_code?.ToString(),
                             serving_type_id = item.serving_type_id,
                             serving_type_name = item.serving_type_name.ToString(),
                             price = item.price,
@@ -215,15 +207,29 @@ namespace KASIR.OfflineMode
                     lblVarian.Text = $"Varian : {data.menu_detail_name ?? "Normal"}";
                     lblVarian.Enabled = true;
                     lblTipe.Enabled = true;
+                    lblDiscount.Text = $"Discount : {data.discount_code ?? ""}";
                     searchTextserving = data.serving_type_name ?? string.Empty;
                     lblnamaitem = data.menu_name ?? "";
                     is_saveBillCart = int.Parse(data.is_ordered.ToString());
-
+                    maxQtyOrdered = int.Parse(data.qty.ToString());
                     LoadDataServingType(searchTextserving);
                     // Ensure that menu_detail_id is converted to a non-nullable int (default to 0 if null)
                     //LoadDataVariants(data.menu_detail_id ?? 0);
                     SetComboBoxSelectionByNameVarian(data.menu_detail_name);  // Search by variant name
-
+                    string discount_id = data.discount_id.ToString();
+                    if (discount_id != null && discount_id != "0")
+                    {
+                        string discountcode = data.discount_code ?? string.Empty;
+                        for (int i = 0; i < cmbDiskon.Items.Count; i++)
+                        {
+                            var item = (DataDiscountCart)cmbDiskon.Items[i];  // Assumed ServingType is the type of items in comboBox1
+                            if (item.code.Equals(discountcode, StringComparison.OrdinalIgnoreCase)) // Compare by name
+                            {
+                                cmbDiskon.SelectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -269,6 +275,7 @@ namespace KASIR.OfflineMode
                 {
                     MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
                     CacheDataApp form3 = new CacheDataApp("Sync");
+                    DialogResult = DialogResult.Cancel;
                     this.Close();
                     form3.Show();
                 }
@@ -538,6 +545,12 @@ namespace KASIR.OfflineMode
 
         private void btnTambah_Click_1(object sender, EventArgs e)
         {
+            if (is_ordered == "1" && int.Parse(txtKuantitas.Text.ToString()) < maxQtyOrdered)
+            {
+                int numericValueOrdered = int.Parse(txtKuantitas.Text.ToString());
+                numericValueOrdered++;
+                txtKuantitas.Text = numericValueOrdered.ToString();
+            }
             if (is_ordered == "1")
             {
                 return;
@@ -705,34 +718,76 @@ namespace KASIR.OfflineMode
                         // Recalculate price (price * quantity)
                         //pricefix = itemToUpdate["price"].ToString();
                         itemToUpdate["price"] = int.Parse(pricefix);
-                        int discountedPrice = int.Parse(pricefix) * quantity;
-                        itemToUpdate["subtotal"] = discountedPrice;
-                        itemToUpdate["subtotal_price"] = discountedPrice;
-                        itemToUpdate["total_price"] = discountedPrice;
-                        itemToUpdate["edited_reason"] = updateReason ?? "";
+                        int subtotal_item = int.Parse(pricefix) * quantity;
+                        itemToUpdate["subtotal"] = subtotal_item;
+                        itemToUpdate["subtotal_price"] = subtotal_item;
 
-                        /*// Optionally, apply discount based on selectedDiskon (if necessary)
-                        if (selectedDiskon != -1)
+                        int total_item_withDiscount = subtotal_item;
+                        int discountPercent = 0;
+                        int discountValue = 0;
+                        string? discountCode = (string)null;
+                        int discountId = 0;
+                        int discountedPrice = 0;
+                        diskon = int.Parse(cmbDiskon.SelectedValue.ToString());
+                        if (diskon == -1)
                         {
-                            // Apply discount logic here
-                            int diskonValue = GetDiskonValue(selectedDiskon); // Assuming GetDiskonValue() is your logic to get the discount
-                            discountedPrice -= diskonValue;
-                            itemToUpdate["total_price"] = discountedPrice;
-                        }*/
-
-                        // Recalculate subtotal and total
-                        int subtotal = 0;
-                        foreach (var item in cartDetails)
-                        {
-                            subtotal += (int)item["total_price"];
+                            discountId = diskon;
                         }
+                        if (diskon != -1)
+                        {
+                            discountPercent = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.is_percent ?? 0;
+                            discountValue = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.value ?? 0;
 
+                            int discountMax = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.max_discount ?? int.MaxValue;
+                            diskon = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.id ?? 0;
+                            int tempTotal = 0;
+                            discountCode = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.code.ToString() ?? string.Empty;
+
+                            if (discountPercent != 0)
+                            {
+                                tempTotal = subtotal_item * discountValue / 100;
+                                if (tempTotal > discountMax)
+                                {
+                                    discountedPrice = discountMax;
+                                }
+                                else
+                                {
+                                    discountedPrice = subtotal_item - tempTotal;
+                                }
+                                total_item_withDiscount = subtotal_item - discountedPrice;
+                                discountedPrice = discountedPrice / quantity;
+                            }
+                            else
+                            {
+                                tempTotal = subtotal_item - discountValue;
+                                if (tempTotal > discountMax)
+                                {
+                                    discountedPrice = discountMax;
+                                }
+                                else
+                                {
+                                    discountedPrice = subtotal_item - tempTotal;
+                                }
+                                total_item_withDiscount = subtotal_item - discountedPrice;
+                                discountedPrice = discountedPrice / quantity;
+                            }
+                        }
+                        itemToUpdate["total_price"] = total_item_withDiscount;
+                        itemToUpdate["edited_reason"] = updateReason ?? "";
+                        itemToUpdate["discount_id"] = diskon;
+                        itemToUpdate["discount_code"] = discountCode.ToString();
+                        itemToUpdate["discounts_value"] = discountValue;
+                        itemToUpdate["discounts_is_percent"] = discountPercent;
+                        itemToUpdate["discounted_price"] = discountedPrice;
+                        var cartDetailsArray = (JArray)cartData["cart_details"];
+                        // Update the subtotal and total based on cart details
+                        var subtotal = cartDetailsArray.Sum(item => (int)item["price"] * (int)item["qty"]);
+                        var total = cartDetailsArray.Sum(item => (int)item["total_price"]);
                         // Update the cart totals
                         cartData["subtotal"] = subtotal;
                         cartData["subtotal_price"] = subtotal;
-                        cartData["total"] = subtotal;
+                        cartData["total"] = total;
                         cartData["is_sent_sync"] = 0;
-
                         // Save the updated cart data back to the file
                         File.WriteAllText(configCart, cartData.ToString(Formatting.Indented));
 
@@ -752,7 +807,7 @@ namespace KASIR.OfflineMode
                 MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        private async void LoadDataDiscount(int? discount_id)
+        private async void LoadDataDiscount()
         {
             try
             {
@@ -770,96 +825,8 @@ namespace KASIR.OfflineMode
                     cmbDiskon.DisplayMember = "code";
                     cmbDiskon.ValueMember = "id";
 
-
-
-                    if (discount_id != null)
-                    {
-                        DataDiscountCart selectedData = data.FirstOrDefault(item => item.id == discount_id);
-                        /*   DataDiscountCart dataDiscountCart = dataDiscount.Where(x => x.id == data.discount_id).First();
-                           lblDiscount.Text = "Diskon : " + dataDiscountCart.code.ToString();*/
-                        //default varian
-
-
-                        if (selectedData != null)
-                        {
-                            lblDiscount.Text = "Diskon : " + selectedData.code.ToString();
-                            string searchText = selectedData.code?.ToString() ?? "";
-                            if (searchText != "")
-                            {
-                                for (int kimak = 0; kimak <= cmbDiskon.Items.Count; kimak++)
-                                {
-                                    cmbDiskon.SelectedIndex = kimak;
-                                    if (cmbDiskon.Text.ToString() == searchText)
-                                    {
-                                        cmbDiskon.SelectedIndex = kimak;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            lblDiscount.Text = "Diskon : ";
-                        }
-
-                    }
+                    
                 }
-                else
-                {
-                    IApiService apiService = new ApiService();
-                    string response = await apiService.GetDiscount($"/discount?outlet_id={baseOutlet}&is_discount_cart=", "0");
-                    DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(response);
-                    List<DataDiscountCart> data = menuModel.data;
-                    dataDiscount = data;
-                    dataDiskonList = data;
-                    var options = data;
-                    options.Insert(0, new DataDiscountCart { id = -1, code = "Tidak ada Diskon" });
-                    cmbDiskon.DataSource = options;
-                    cmbDiskon.DisplayMember = "code";
-                    cmbDiskon.ValueMember = "id";
-
-
-
-                    if (discount_id != null)
-                    {
-                        DataDiscountCart selectedData = data.FirstOrDefault(item => item.id == discount_id);
-                        /*   DataDiscountCart dataDiscountCart = dataDiscount.Where(x => x.id == data.discount_id).First();
-                           lblDiscount.Text = "Diskon : " + dataDiscountCart.code.ToString();*/
-                        //default varian
-
-
-                        if (selectedData != null)
-                        {
-                            lblDiscount.Text = "Diskon : " + selectedData.code.ToString();
-                            string searchText = selectedData.code?.ToString() ?? "";
-                            if (searchText != "")
-                            {
-                                for (int kimak = 0; kimak <= cmbDiskon.Items.Count; kimak++)
-                                {
-                                    cmbDiskon.SelectedIndex = kimak;
-                                    if (cmbDiskon.Text.ToString() == searchText)
-                                    {
-                                        cmbDiskon.SelectedIndex = kimak;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            lblDiscount.Text = "Diskon : ";
-                        }
-
-                    }
-                }
-
-
-
-            }
-            catch (TaskCanceledException ex)
-            {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {

@@ -24,6 +24,7 @@ namespace KASIR.Model
         public string varian { get; set; }
         public int serving_type_id { get; set; }
         public string serving_type_name { get; set; }
+        public string? discount_code { get; set; }
         public int serving_type_percent { get; set; }
         public int price { get; set; }
         public int total_price { get; set; }

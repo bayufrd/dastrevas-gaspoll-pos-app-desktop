@@ -69,8 +69,8 @@ namespace KASIR.OfflineMode
             cartID = cart_id;
             totalCart = total_cart;
             txtJumlahPembayaran.Text = ttl2;
-            /*txtSeat.Text = seat;
-            txtNama.Text = name;*/
+            txtSeat.Text = seat;
+            txtNama.Text = name;
             generateRandomFill();
             string cleanedTtl1 = Regex.Replace(ttl1, "[^0-9]", "");
             loadFooterStruct();

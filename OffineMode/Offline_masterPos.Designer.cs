@@ -272,6 +272,7 @@ namespace KASIR.OfflineMode
             // cmbDiskon
             // 
             cmbDiskon.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbDiskon.Enabled = false;
             cmbDiskon.FlatStyle = FlatStyle.Flat;
             cmbDiskon.FormattingEnabled = true;
             cmbDiskon.Location = new Point(8, 9);

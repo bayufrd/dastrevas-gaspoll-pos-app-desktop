@@ -77,10 +77,10 @@ namespace KASIR
                 Directory.CreateDirectory(directoryPath);
             }
             // Memeriksa apakah file ada
-            if (!File.Exists(Config))
+            if (!File.Exists(Config) && baseOutlet != "1")
             {
                 // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
-                File.WriteAllText(Config, "OFF");
+                File.WriteAllText(Config, "ON");
             }
             string allSettingsData = File.ReadAllText(Config); // Ambil status offline
 
@@ -800,12 +800,12 @@ namespace KASIR
                     }
                     else
                     {
-                        outletName = "Outlet Tidak Ditemukan";
+                        outletName = " (Hybrid)";
                     }
                 }
 
                 // Update label UI
-                UpdateOutletLabel(outletName);
+                UpdateOutletLabel(outletName + " (Hybrid)");
             }
             catch (TaskCanceledException ex)
             {

@@ -355,6 +355,8 @@ namespace KASIR.OfflineMode
                     discountPercent = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.is_percent ?? 0;
                     discountValue = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.value ?? 0;
                     int discountMax = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.max_discount ?? int.MaxValue;
+                    discountCode = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.code ?? (string)null;
+                    discountId = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.id ?? 0;
 
                     int tempTotal = 0;
 

@@ -409,9 +409,9 @@
             label5.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label5.Location = new Point(4, 6);
             label5.Name = "label5";
-            label5.Size = new Size(109, 15);
+            label5.Size = new Size(52, 15);
             label5.TabIndex = 4;
-            label5.Text = "DISKON (Disabled)";
+            label5.Text = "DISKON";
             // 
             // panel8
             // 

@@ -198,6 +198,7 @@ namespace KASIR.OfflineMode
             // 
             cmbDiskon.BackColor = Color.White;
             cmbDiskon.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbDiskon.Enabled = false;
             cmbDiskon.FlatStyle = FlatStyle.Flat;
             cmbDiskon.FormattingEnabled = true;
             cmbDiskon.Location = new Point(3, 3);

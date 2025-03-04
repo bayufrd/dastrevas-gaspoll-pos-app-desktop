@@ -2092,22 +2092,31 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
-
-        private void DataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
         {
-            if (e.RowIndex >= 0) // Memastikan kita hanya memformat sel data
-            {
-                if (e.RowIndex % 2 == 0) // Baris genap
-                {
-                    e.CellStyle.BackColor = Color.White; // Warna untuk baris genap
-                }
-                else // Baris ganjil
-                {
-                    e.CellStyle.BackColor = Color.WhiteSmoke; // Warna untuk baris ganjil
-                }
-            }
+            // Add separator row to DataTable
+            dataTable.Rows.Add(null, null, null, groupKey + "s\n", null, null); // Add a separator row with groupKey in column 4
+
+            // Get the last row index just added
+            int lastRowIndex = dataTable.Rows.Count - 1;
+
+            // Add the row to DataGridView
+            dataGridView.DataSource = dataTable;
+
+            // Apply styles to specific columns for the separator row
+            int[] cellIndexesToStyle = { 3, 4 }; // Columns 4 and 5 for styling
+            SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
+
+            // Simulate hiding the row by setting its height to 0
+            dataGridView.Rows[lastRowIndex].Height = 0;
+
+            // Optionally, you can adjust column visibility only for specific cells if needed
+            // For example: Hide columns 1, 2, 3, 6 only for this row
+            // This is handled by applying the height to the row, not changing cell visibility.
         }
+
+
+/*
         private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
         {
             // Tambahkan separator row ke DataTable
@@ -2122,7 +2131,7 @@ namespace KASIR.OfflineMode
             // Mengatur gaya sel untuk kolom tertentu
             int[] cellIndexesToStyle = { 3, 4, 5 }; // Indeks kolom yang ingin diatur
             SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
-        }
+        }*/
         private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)
         {
             foreach (int index in cellIndexes)
@@ -2131,50 +2140,6 @@ namespace KASIR.OfflineMode
                 row.Cells[index].Style.Font = new Font(dataGridView1.Font, fontStyle);
             }
         }
-        private void autoFillDiskon()
-        {
-            // Read cart.data to extract cart details and transaction id
-            string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
-            if (!File.Exists(cartDataPath))
-            {
-                return;
-            }
-
-            string cartDataJson = File.ReadAllText(cartDataPath);
-            // Deserialize cart data
-            var cartData = JsonConvert.DeserializeObject<CartDataCache>(cartDataJson);
-            // Mengambil ID diskon yang dipilih
-            int selectedDiskon = diskonID;
-            string searchText = cartData.discount_id.ToString() ?? "";
-            if (searchText != "0" && searchText != "-1")
-            {
-                for (int kimak = 0; kimak < cmbDiskon.Items.Count; kimak++)
-                {
-                    cmbDiskon.SelectedIndex = kimak;
-                    if (cmbDiskon.Text.ToString() == searchText)
-                    {
-                        cmbDiskon.SelectedIndex = kimak;
-                        break;
-                    }
-                }
-            }
-            /*// Memeriksa apakah ada diskon yang diterapkan
-            if (selectedDiskon != 0)
-            {
-                iconButtonGet.Text = "Hapus Disc";
-                iconButtonGet.IconChar = IconChar.TrashRestoreAlt;
-                iconButtonGet.ForeColor = Color.DarkRed;
-                iconButtonGet.IconColor = Color.DarkRed;
-            }
-            else
-            {
-                iconButtonGet.Text = "Gunakan Disc";
-                iconButtonGet.IconChar = IconChar.Tag;
-                iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
-                iconButtonGet.IconColor = Color.FromArgb(31, 30, 68);
-            }*/
-        }
-
 
 
         private void DataGridView1_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
@@ -2295,11 +2260,6 @@ namespace KASIR.OfflineMode
 
                             // Handle the result if needed
                             if (result == DialogResult.OK)
-                            {
-                                background.Dispose();
-                                ReloadCart();
-                            }
-                            else
                             {
                                 background.Dispose();
                                 ReloadCart();
@@ -2433,7 +2393,7 @@ namespace KASIR.OfflineMode
                 int discountValue = 0;
                 int discountedPrice = 0;
                 int discountMax = 0;
-
+                string discountCode = (string)null;
                 if (selectedDiskon != 0) // Jika diskon yang dipilih bukan 0, proses diskon
                 {
                     // Mendapatkan informasi diskon berdasarkan id diskon yang dipilih
@@ -2444,6 +2404,7 @@ namespace KASIR.OfflineMode
                         discountPercent = discount.is_percent;
                         discountValue = discount.value;
                         discountMax = discount.max_discount ?? int.MaxValue;
+                        discountCode = discount.code ?? "";
 
                         int tempTotal = 0;
 
@@ -2482,7 +2443,7 @@ namespace KASIR.OfflineMode
 
                 // Memperbarui data cart dengan nilai diskon yang dipilih
                 cartData["discount_id"] = selectedDiskon; // Gunakan selectedDiskon yang sudah diganti
-                cartData["discount_code"] = cmbDiskon.SelectedText.ToString();
+                cartData["discount_code"] = discountCode;
                 cartData["discounts_value"] = discountValue;
                 cartData["discounts_is_percent"] = discountPercent;
                 cartData["discounted_price"] = discountedPrice;
@@ -2490,7 +2451,6 @@ namespace KASIR.OfflineMode
 
                 // Menyimpan kembali data cart yang telah diperbarui ke file cache
                 File.WriteAllText(cartDataPath, cartData.ToString());
-
                 // Refresh UI dengan data terbaru
                 LoadCart();
             }

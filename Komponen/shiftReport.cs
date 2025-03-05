@@ -48,14 +48,17 @@ namespace KASIR.Komponen
         {
             try
             {
+
                 string filePath = "DT-Cache\\Transaction\\transaction.data";
                 //string filePath = "DT-Cache\\Transaction\\transactionSyncing.data";
                 string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
                 //File.Copy(filetransactionOri, filePath);
+                IApiService apiService = new ApiService();
 
                 // Mendapatkan direktori dari filePath
                 string directoryPath = Path.GetDirectoryName(filePath);
                 string newFileName = "";
+                string apiUrl = "/sync-transactions-outlet-testing?outlet_id=" + baseOutlet; // testing
                 newFileName = $"{baseOutlet}_SyncSuccess_{DateTime.Now:yyyyMMdd}.data";
                 // Memastikan direktori tujuan ada
                 if (!Directory.Exists(directoryPath))
@@ -94,9 +97,7 @@ namespace KASIR.Komponen
                 }
                 else
                 {
-                    IApiService apiService = new ApiService();
                     //string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet; //Origin
-                    string apiUrl = "/sync-transactions-outlet-testing?outlet_id=" + baseOutlet; // testing
 
                     HttpResponseMessage response = await apiService.SyncTransaction(jsonData, apiUrl);
                     if (response.IsSuccessStatusCode)
@@ -130,40 +131,7 @@ namespace KASIR.Komponen
 
                         SyncSuccess(filePath);
                         NewDataChecker = 1;
-                        string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
-                        string saveBillDataPathClone = "DT-Cache\\Transaction\\saveBillSync.data";
-
-                        // 1. Baca file JSON
-                        if (!File.Exists(saveBillDataPath))
-                        {
-                            return;
-                        }
-                        else
-                        {
-                            File.Copy(saveBillDataPath, saveBillDataPathClone, true);  // true untuk overwrite file yang sudah ada
-
-                            SimplifyAndSaveData(saveBillDataPath);
-
-                            string jsonSavwDataSync = File.ReadAllText(saveBillDataPath);
-                            JObject dataSave = JObject.Parse(jsonSavwDataSync);
-
-                            // 2. Dapatkan array "data"
-                            JArray transactionsSaveBill = (JArray)dataSave["data"];
-                            if (transactions == null || !transactions.Any()/*transactions.Count == 0*/)
-                            {
-                                // Menghapus file jika data kosong
-                                return;
-                            }
-                            HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonData, apiUrl);
-                            if (savebillSync.IsSuccessStatusCode)
-                            {
-                                SyncSuccess(saveBillDataPath);
-                            }
-                            else
-                            {
-                                MessageBox.Show(savebillSync.ToString());
-                            }
-                        }
+                       
                     }
                     else
                     {
@@ -195,6 +163,39 @@ namespace KASIR.Komponen
                         {
                             File.Copy(destinationPath, folderCombine);
                         }
+                    }
+                }
+                string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
+                string saveBillDataPathClone = "DT-Cache\\Transaction\\saveBillSync.data";
+
+                // 1. Baca file JSON
+                if (!File.Exists(saveBillDataPath))
+                {
+                    return;
+                }
+                else
+                {
+                    File.Copy(saveBillDataPath, saveBillDataPathClone, true);  // true untuk overwrite file yang sudah ada
+
+                    SimplifyAndSaveData(saveBillDataPathClone);
+
+                    string jsonSavwDataSync = File.ReadAllText(saveBillDataPathClone);
+                    JObject dataSave = JObject.Parse(jsonSavwDataSync);
+
+                    // 2. Dapatkan array "data"
+                    JArray transactionsSaveBill = (JArray)dataSave["data"];
+                    if (transactions == null || !transactions.Any()/*transactions.Count == 0*/)
+                    {
+                        File.Delete(saveBillDataPathClone);
+                    }
+                    HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonSavwDataSync, apiUrl);
+                    if (savebillSync.IsSuccessStatusCode)
+                    {
+                        SyncSuccess(saveBillDataPath);
+                    }
+                    else
+                    {
+                        MessageBox.Show(savebillSync.ToString());
                     }
                 }
             }
@@ -306,6 +307,7 @@ namespace KASIR.Komponen
                         refundItem.Remove("menu_detail_name");
                         refundItem.Remove("price");*/
                     }
+
                 }
                 // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama
                 File.WriteAllText(filePath, data.ToString());
@@ -390,7 +392,7 @@ namespace KASIR.Komponen
                     }
 
                     string response = await GetShiftData(allSettingsData);
-                    File.WriteAllText($"DT-Cache\\Transaction\\ShiftRepot{baseOutlet}.data", JsonConvert.SerializeObject(response, Formatting.Indented));
+                    //File.WriteAllText($"DT-Cache\\Transaction\\ShiftRepot{baseOutlet}.data", JsonConvert.SerializeObject(response, Formatting.Indented));
                     if (response != null)
                     {
                         try

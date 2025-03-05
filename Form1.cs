@@ -77,11 +77,13 @@ namespace KASIR
                 Directory.CreateDirectory(directoryPath);
             }
             // Memeriksa apakah file ada
-            if (!File.Exists(Config) && baseOutlet != "1")
+            if (!File.Exists(Config))
             {
                 // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
                 File.WriteAllText(Config, "ON");
             }
+            File.WriteAllText(Config, "ON"); //paksa sahulu untuk inisiasi ramadhan sambel colek
+
             string allSettingsData = File.ReadAllText(Config); // Ambil status offline
 
             // Jika status offline ON, tampilkan Offline_masterPos
@@ -1290,13 +1292,9 @@ namespace KASIR
             // Check if OfflineMode is ON
             if (allSettingsData == "ON")
             {
-                Offline_masterPos m = new Offline_masterPos();
+                /*    Offline_masterPos m = new Offline_masterPos();
 
-                m.refreshCacheTransaction();
-                    // If you want to sync individual transactions:
-                    /*TransactionSync c = new TransactionSync();
-                    c.SyncIndividualTransactions();*/
-                    // Or if you want to sync all data:
+                    m.refreshCacheTransaction();*/
                     shiftReport c = new shiftReport();
                     //c.SyncCompleted += SyncCompletedHandler;
                     c.SyncDataTransactions();
@@ -1448,6 +1446,12 @@ namespace KASIR
             ActivateButton(sender, RGBColors.color4);
             try
             {
+                if (isSyncing)
+                {
+                    // If syncing is already in progress, don't do anything
+                    MessageBox.Show("Data sedang di load. Tolong tunggu sebentar!");
+                    return;
+                }
                 isSyncing = true;
                 shiftReport c = new shiftReport();
 

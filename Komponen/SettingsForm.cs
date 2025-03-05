@@ -132,7 +132,7 @@ namespace KASIR.Komponen
         }
         private async void initAwalOfflineTrial()
         {
-            if (int.Parse(baseOutlet.ToString()) == 4 || int.Parse(baseOutlet.ToString()) == 7)
+            if (int.Parse(baseOutlet.ToString()) != 1)
             {
                 sButtonOffline.Enabled = true;
             }

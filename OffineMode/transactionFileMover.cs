@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using System;
 using System.IO;
 using SharpCompress.Common;
+using Newtonsoft.Json.Linq;
+using System.Transactions;
 
 namespace KASIR.OffineMode
 {
@@ -30,13 +32,36 @@ namespace KASIR.OffineMode
                 string fileExtension = Path.GetExtension(sourceDirectory);
 
                 // Menambahkan timestamp atau informasi lainnya ke nama file
-                string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+                string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{DateTime.Now:yyyyMMdd}{fileExtension}";
 
                 // Tentukan path baru untuk file
                 string destinationPath = Path.Combine(destinationDirectory, newFileName);
 
-                // Pindahkan file ke direktori tujuan
-                File.Move(sourceDirectory, destinationPath);
+                if (File.Exists(destinationPath))
+                {
+                    // 1. Baca file JSON
+                    string jsonData = File.ReadAllText(sourceDirectory);
+                    JObject data = JObject.Parse(jsonData);
+
+                    // 2. Dapatkan array "data"
+                    JArray transactions = (JArray)data["data"];
+                    string existingData = File.ReadAllText(sourceDirectory);
+                    JObject existingDataJson = JObject.Parse(existingData);
+                    JArray existingTransactions = (JArray)existingDataJson["data"];
+
+                    // Menambahkan transaksi baru ke dalam data yang ada
+                    existingTransactions.Add(transactions);
+                    existingDataJson["data"] = existingTransactions;
+
+                    // Simpan kembali file yang sudah diperbarui
+                    File.WriteAllText(destinationPath, existingDataJson.ToString());
+                    File.Delete(sourceDirectory);
+                }
+                else
+                {
+                    // Pindahkan file ke direktori tujuan
+                    File.Move(sourceDirectory, destinationPath);
+                }
 
                 /*  // Dapatkan informasi file
                   FileInfo fileInfo = new FileInfo(sourceDirectory);

@@ -122,8 +122,8 @@ namespace KASIR.OfflineMode
                             ["price"] = itemToRemove["price"],
                             ["qty"] = itemToRemove["qty"],
                             ["note_item"] = itemToRemove["note_item"],
-                            ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                            ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                            ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                            ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                             ["discount_id"] = null,
                             ["discount_code"] = null,
                             ["discounts_value"] = null,
@@ -134,7 +134,7 @@ namespace KASIR.OfflineMode
                             ["total_price"] = itemToRemove["total_price"]
                         });
 
-                        itemToRemove["deleted_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        itemToRemove["deleted_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                         itemToRemove["qty"] = 0;
                         // Recalculate subtotal and total
                         int subtotal = 0;

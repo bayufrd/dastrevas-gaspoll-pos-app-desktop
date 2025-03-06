@@ -368,7 +368,7 @@ namespace KASIR.OfflineMode
                         formattedreceiptMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                     }
                     string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{formattedreceiptMaker}";
-                    string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                     string transaction_ref_sent = cartData["transaction_ref"].ToString();
                     string transaction_ref_splitted = (string)null;
                     if (!string.IsNullOrEmpty(cartData["transaction_ref_split"]?.ToString()))
@@ -397,7 +397,7 @@ namespace KASIR.OfflineMode
                         transaction_ref = transaction_ref_sent,
                         transaction_ref_split = transaction_ref_splitted,
                         invoice_number = $"INV-{invoiceMaker}{paymentTypedId}",  // Custom invoice number with formatted date
-                        invoice_due_date = invoiceDue, // Adjust due date as needed
+                        invoice_due_date = invoiceDue.ToString(), // Adjust due date as needed
                         payment_type_id = paymentTypedId,
                         payment_type_name = paymentTypeName, // No need for .ToString() if paymentTypeName is already a string
                         customer_name = txtNama.Text,
@@ -407,7 +407,7 @@ namespace KASIR.OfflineMode
                         total = totalCartAmount,
                         subtotal = subtotalCart, // You can replace this with actual subtotal if available
                         created_at = receiptMaker,
-                        updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                        updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss",CultureInfo.InvariantCulture),
                         deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
                         is_refund = 0,
                         refund_reason = (string)null, // Null if no refund reason

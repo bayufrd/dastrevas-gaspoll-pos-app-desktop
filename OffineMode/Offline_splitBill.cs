@@ -4,6 +4,7 @@ using KASIR.Model;
 using Newtonsoft.Json;
 using System.Data;
 using Newtonsoft.Json.Linq;
+using System.Globalization;
 namespace KASIR.OffineMode
 {
     public partial class Offline_splitBill : Form
@@ -307,7 +308,7 @@ namespace KASIR.OffineMode
 
                         // Update nilai pada cartItem untuk item yang dipecah
                         cartItem["qty"] = newQty;
-                        cartItem["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        cartItem["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                         cartItem["total_price"] = newQty * cartItem["price"].ToObject<int>();
 
                         // Simpan item yang dipecah ke list baru (cart.data)

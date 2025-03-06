@@ -16,6 +16,7 @@ using System.IO;
 using KASIR.OffineMode;
 using SharpCompress.Common;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 
 namespace KASIR.OfflineMode
@@ -130,10 +131,15 @@ namespace KASIR.OfflineMode
                 // 4. Check if the "updated_at" exists and parse it
                 if (firstTransaction["invoice_due_date"] != null)
                 {
+                    // Mengambil nilai dari invoice_due_date dan mengganti titik dengan titik koma
+                    string invoiceDueDate = firstTransaction["invoice_due_date"].ToString();
+
+                    // Menggunakan Regex untuk mengganti semua titik (.) dengan titik koma (;)
+                    string updatedInvoiceDueDate = Regex.Replace(invoiceDueDate, @"\.", ":");
                     DateTime parsedDate;
                     // Only parse the date part, ignoring the time
                     if (DateTime.TryParseExact(
-                        firstTransaction["invoice_due_date"].ToString(),
+                        updatedInvoiceDueDate,//firstTransaction["invoice_due_date"].ToString(),
                         "yyyy-MM-dd HH:mm:ss",
                         CultureInfo.InvariantCulture,
                         DateTimeStyles.None,
@@ -154,6 +160,10 @@ namespace KASIR.OfflineMode
                 {
                     try
                     {
+
+                        shiftReport c = new shiftReport();
+                        //c.SyncCompleted += SyncCompletedHandler;
+                        await c.SyncDataTransactions();
                         // Move the files created after the specified time span
                         transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, TimeSpan.FromHours(20));
                     }

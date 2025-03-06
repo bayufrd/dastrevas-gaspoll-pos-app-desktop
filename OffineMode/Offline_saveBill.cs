@@ -13,6 +13,7 @@ using Newtonsoft.Json.Linq;
 using System.Transactions;
 using SharpCompress.Common;
 using KASIR.OfflineMode;
+using System.Globalization;
 namespace KASIR.OffineMode
 {
     public partial class Offline_saveBill : Form
@@ -179,7 +180,7 @@ namespace KASIR.OffineMode
                     formattedreceiptMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                 }
                 string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{formattedreceiptMaker}";
-                string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                 string transaction_ref_sent = cartData["transaction_ref"].ToString();
                 string transaction_ref_splitted = (string)null;
 
@@ -205,7 +206,7 @@ namespace KASIR.OffineMode
                     total = totalCartAmount,
                     subtotal = totalCartAmount, // You can replace this with actual subtotal if available
                     created_at = receiptMaker,
-                    updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                     deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
                     is_refund = 0,
                     refund_reason = (string)null, // Null if no refund reason

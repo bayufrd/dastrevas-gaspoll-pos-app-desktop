@@ -82,7 +82,15 @@ namespace KASIR
                 // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
                 File.WriteAllText(Config, "ON");
             }
-            File.WriteAllText(Config, "ON"); //paksa sahulu untuk inisiasi ramadhan sambel colek
+            if (File.Exists(Config) && baseOutlet != "1")
+            {
+                File.WriteAllText(Config, "ON"); //paksa sahulu untuk inisiasi ramadhan sambel colek
+            }
+            else
+            {
+                File.WriteAllText(Config, "OFF"); //paksa sahulu untuk inisiasi ramadhan sambel colek
+            }
+
 
             string allSettingsData = File.ReadAllText(Config); // Ambil status offline
 
@@ -1287,7 +1295,7 @@ namespace KASIR
             }
         }
 
-        private async Task sendDataSyncPerHours(string allSettingsData)
+        public async Task sendDataSyncPerHours(string allSettingsData)
         {
             // Check if OfflineMode is ON
             if (allSettingsData == "ON")
@@ -1350,14 +1358,6 @@ namespace KASIR
 
             try
             {
-                //string baseAddress = Properties.Settings.Default.BaseAddressDev.ToString();
-                // 1. Uji kecepatan internet
-                //double speed = await TestInternetSpeed();
-                //SignalPing.Text = $"{speed:0.00} Mbps";
-                //UpdateSpeedColor(speed); // Perbarui warna berdasarkan hasil kecepatan
-
-                // 2. Tunggu 5 detik, lalu lakukan ping
-                //await Task.Delay(5000);
 
                 int ping = await TestPing("8.8.8.8"); // Ping ke Google DNS
                 UpdatePingColor(ping); // Perbarui warna berdasarkan nilai ping

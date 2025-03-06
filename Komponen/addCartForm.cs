@@ -277,7 +277,6 @@ namespace KASIR.komponen
                     }
                 }
             }
-
             // Jika tidak ditemukan harga untuk serving_type_id yang diminta
             return "0"; // Kembalikan "0" jika tidak ditemukan
         }

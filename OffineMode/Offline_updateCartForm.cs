@@ -22,6 +22,7 @@ using Serilog.Sinks.File;
 using System.Windows.Forms.Design;
 using KASIR.Komponen;
 using Newtonsoft.Json.Linq;
+using System.Globalization;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_updateCartForm : Form
@@ -703,7 +704,7 @@ namespace KASIR.OfflineMode
                         itemToUpdate["menu_detail_name"] = VarianName;
                         itemToUpdate["varian"] = VarianName;
 
-                        itemToUpdate["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        itemToUpdate["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
 
                         if (selectedVarian == -1)
                         {

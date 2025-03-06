@@ -27,6 +27,7 @@ using KASIR.Printer;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 using Newtonsoft.Json.Linq;
 using KASIR.Komponen;
+using System.Globalization;
 
 
 namespace KASIR.OfflineMode
@@ -390,7 +391,7 @@ namespace KASIR.OfflineMode
                         discountedPrice = discountedPrice / quantity;
                     }
                 }
-
+                string created_atTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                 // Prepare the new item for cart_details
                 var newItem = new JObject
                 {
@@ -407,8 +408,8 @@ namespace KASIR.OfflineMode
                     { "price", price_item },
                     { "qty", quantity },
                     { "note_item", notes },
-                    { "created_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
-                    { "updated_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
+                    { "created_at", created_atTime  },
+                    { "updated_at", created_atTime },
                     { "discount_id", discountId},
                     { "discount_code", discountCode },
                     { "discounts_value", discountValue },

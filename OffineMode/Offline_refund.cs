@@ -28,6 +28,7 @@ using System.Transactions;
 using Newtonsoft.Json.Linq;
 using System.Windows.Markup;
 using System.Diagnostics;
+using System.Globalization;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_refund : Form
@@ -440,7 +441,7 @@ namespace KASIR.OfflineMode
                         filteredTransaction["refund_reason_all"] = txtNotes.Text.ToString(); // Menggunakan Trim untuk menghilangkan spasi
                         filteredTransaction["refund_payment_name_all"] = refund_payment_name_all;
                         filteredTransaction["refund_payment_id_all"] = refund_payment_id_all;
-                        filteredTransaction["refund_created_at_all"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        filteredTransaction["refund_created_at_all"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                        
                     }
                     else
@@ -468,8 +469,8 @@ namespace KASIR.OfflineMode
                                     ["refund_total"] = int.Parse(refundtot.ToString()),
                                     ["refund_reason_item"] = txtNotes.Text.ToString(),
                                     ["refund_payment_type_id_item"] = refundpaymenttype,
-                                    ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").ToString(),
-                                    ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").ToString()
+                                    ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture).ToString(),
+                                    ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture).ToString()
                                 });
                                 string priceString = cartItem["price"]?.ToString();
                                 if (string.IsNullOrEmpty(priceString))
@@ -504,7 +505,7 @@ namespace KASIR.OfflineMode
                                     cartItem["qty"] = 0;
 
                                     // Update subtotal and total price after partial refund
-                                    cartItem["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").ToString();
+                                    cartItem["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture).ToString();
                                     cartItem["subtotal"] = 0;
                                     cartItem["subtotal_price"] = 0;
                                     cartItem["total_price"] = 0;
@@ -517,7 +518,7 @@ namespace KASIR.OfflineMode
 
                                     // Update subtotal and total price after partial refund
                                     int newSubtotal = newQuantity * int.Parse(cartItem["price"].ToString());
-                                    cartItem["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").ToString();
+                                    cartItem["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture).ToString();
                                     cartItem["subtotal"] = newSubtotal;
                                     cartItem["subtotal_price"] = newSubtotal;
                                     cartItem["total_price"] = newSubtotal;
@@ -534,7 +535,7 @@ namespace KASIR.OfflineMode
                         filteredTransaction["is_edited_sync"] = 1;
                         filteredTransaction["is_sent_sync"] = 0;
                     }
-                    filteredTransaction["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    filteredTransaction["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
 
                     // Pastikan filteredTransaction bertipe JObject
                     JObject transactionObject = filteredTransaction as JObject;
@@ -659,8 +660,8 @@ namespace KASIR.OfflineMode
                     ["refund_reason_item"] = refundReason, // Alasan refund
                     ["refund_payment_type_id_item"] = refundPaymentType, // Tipe pembayaran
                     ["note_item"] = cartItem["note_item"], // Tipe pembayaran
-                    ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                    ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                    ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
                 });
                 cartItem["qty"] = 0;
                 cartItem["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");

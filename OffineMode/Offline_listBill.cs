@@ -72,6 +72,11 @@ namespace KASIR.OffineMode
             {
                 string transactionDataPath = "DT-Cache\\Transaction\\saveBill.data";
                 // Membaca isi file transaction.data
+                if (!File.Exists(transactionDataPath))
+                {
+                    return;
+                    this.Close();
+                }
                 string transactionJson = File.ReadAllText(transactionDataPath);
                 var transactionData = JsonConvert.DeserializeObject<JObject>(transactionJson);
 

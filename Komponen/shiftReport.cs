@@ -269,17 +269,6 @@ namespace KASIR.Komponen
                     // Hapus field yang tidak dibutuhkan di level transaksi
                     transaction.Remove("transaction_id");
                     transaction.Remove("payment_type_name");
-                    /*transaction.Remove("deleted_at");
-                    transaction.Remove("is_refund");
-                    transaction.Remove("refund_reason");
-                    transaction.Remove("delivery_type");
-                    transaction.Remove("delivery_note");
-                    transaction.Remove("discount_id");
-                    transaction.Remove("discount_code");
-                    transaction.Remove("discounts_value");
-                    transaction.Remove("discounts_is_percent");
-                    transaction.Remove("member_name");
-                    transaction.Remove("member_phone_number");*/
 
                     // Iterasi ke cart_details dan refund_details untuk menghapus field yang tidak dibutuhkan
                     JArray cartDetails = (JArray)transaction["cart_details"];
@@ -287,26 +276,9 @@ namespace KASIR.Komponen
                     {
                         cartItem.Remove("menu_name"); // Hapus serving_type_name dari cart detail
                         cartItem.Remove("menu_type");  // Hapus menu_detail_name jika tidak diperlukan
-                        cartItem.Remove("menu_detail_name");            // Hapus varian jika tidak diperlukan
-                        /*cartItem.Remove("discount_code");         // Hapus note_item jika tidak diperlukan
-                        cartItem.Remove("varian");       // Hapus discount_id jika tidak diperlukan
-                        cartItem.Remove("is_ordered");     // Hapus discount_code jika tidak diperlukan
-                        cartItem.Remove("serving_type_name");  // Hapus discounts_value jika tidak diperlukan
-                        cartItem.Remove("discounts_value"); // Hapus discounted_price jika tidak diperlukan
-                        cartItem.Remove("discounts_is_percent"); // Hapus discounts_is_percent jika tidak diperlukan
-                        cartItem.Remove("subtotal");*/ // Hapus discounts_is_percent jika tidak diperlukan
+                        cartItem.Remove("menu_detail_name");            // Hapus varian jika tidak diperluka
                     }
 
-                    // Hapus field yang tidak diperlukan di refund_details jika ada
-                    JArray refundDetails = (JArray)transaction["refund_details"];
-                    foreach (JObject refundItem in refundDetails)
-                    {/*
-                        refundItem.Remove("menu_id");
-                        refundItem.Remove("menu_name");
-                        refundItem.Remove("menu_detail_id");
-                        refundItem.Remove("menu_detail_name");
-                        refundItem.Remove("price");*/
-                    }
 
                 }
                 // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama

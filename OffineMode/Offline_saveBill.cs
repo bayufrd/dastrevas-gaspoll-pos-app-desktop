@@ -47,19 +47,19 @@ namespace KASIR.OffineMode
             string[] consonants = { "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z" };
             string[] vowels = { "a", "e", "i", "o", "u" };
 
-            string name = "";
+            string newname = "";
 
             int nameLength = random.Next(3, 10);
-            if (txtNama.Text == "" | txtNama.Text == null)
+            if (name == "" || seat == null)
             {
                 for (int i = 0; i < nameLength; i++)
                 {
-                    name += i % 2 == 0 ? consonants[random.Next(consonants.Length)] : vowels[random.Next(vowels.Length)];
+                    newname += i % 2 == 0 ? consonants[random.Next(consonants.Length)] : vowels[random.Next(vowels.Length)];
                 }
 
-                name = char.ToUpper(name[0]) + name.Substring(1);
+                newname = char.ToUpper(newname[0]) + newname.Substring(1);
 
-                txtNama.Text = name + " (DT)";
+                txtNama.Text = newname + " (DT)";
                 txtSeat.Text = "0";
             }
             else

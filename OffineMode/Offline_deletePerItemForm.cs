@@ -151,6 +151,10 @@ namespace KASIR.OfflineMode
 
                         // Save the updated cart data back to the file
                         File.WriteAllText(configCart, cartData.ToString(Formatting.Indented));
+                        DialogResult = DialogResult.OK;
+
+                        this.Close();
+
                     }
                     else
                     {

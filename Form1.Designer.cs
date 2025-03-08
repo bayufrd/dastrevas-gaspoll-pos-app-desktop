@@ -47,6 +47,7 @@ namespace KASIR
             lblTitleChildForm = new Label();
             SyncTimer = new System.Windows.Forms.Timer(components);
             gradientPanel2 = new GradientPanel();
+            btnContact = new IconButton();
             SignalPing = new IconButton();
             lblPing = new Label();
             btnShiftLaporan = new IconButton();
@@ -56,7 +57,6 @@ namespace KASIR
             button2 = new PictureBox();
             Setting = new IconButton();
             panel2 = new Panel();
-            btnContact = new IconButton();
             panel1.SuspendLayout();
             panelTitleBar.SuspendLayout();
             gradientPanel1.SuspendLayout();
@@ -215,6 +215,20 @@ namespace KASIR
             gradientPanel2.Name = "gradientPanel2";
             gradientPanel2.TopColor = Color.Black;
             // 
+            // btnContact
+            // 
+            btnContact.BackColor = Color.Transparent;
+            btnContact.FlatAppearance.BorderSize = 0;
+            resources.ApplyResources(btnContact, "btnContact");
+            btnContact.ForeColor = Color.Gainsboro;
+            btnContact.IconChar = IconChar.HandHoldingHeart;
+            btnContact.IconColor = Color.Gainsboro;
+            btnContact.IconFont = IconFont.Auto;
+            btnContact.IconSize = 25;
+            btnContact.Name = "btnContact";
+            btnContact.UseVisualStyleBackColor = false;
+            btnContact.Click += btnContact_Click;
+            // 
             // SignalPing
             // 
             resources.ApplyResources(SignalPing, "SignalPing");
@@ -311,20 +325,6 @@ namespace KASIR
             resources.ApplyResources(panel2, "panel2");
             panel2.Name = "panel2";
             panel2.Paint += panel2_Paint;
-            // 
-            // btnContact
-            // 
-            btnContact.BackColor = Color.Transparent;
-            btnContact.FlatAppearance.BorderSize = 0;
-            resources.ApplyResources(btnContact, "btnContact");
-            btnContact.ForeColor = Color.Gainsboro;
-            btnContact.IconChar = IconChar.HandHoldingHeart;
-            btnContact.IconColor = Color.Gainsboro;
-            btnContact.IconFont = IconFont.Auto;
-            btnContact.IconSize = 25;
-            btnContact.Name = "btnContact";
-            btnContact.UseVisualStyleBackColor = false;
-            btnContact.Click += btnContact_Click;
             // 
             // Form1
             // 

@@ -33,27 +33,16 @@ namespace KASIR
             IApiService apiService = new ApiService();
             try
             {
-
-
-                string response = await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-                if (response != null)
+                outletName = "unknown";
+                // Membaca file JSON
+                string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
+                // Deserialize JSON ke object CartDataCache
+                if (File.Exists(cacheOutlet))
                 {
-                    /* if (response.IsSuccessStatusCode)
-                     {
-     */
-
-
-                    GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
-
-                    DataShift datas = cekShift.data;
-                    outletName = datas.outlet_name.ToString();
-
-
+                    var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
+                    outletName = dataOutlet.data.name;
                 }
-                else
-                {
-                    outletName = Properties.Settings.Default.BaseOutletName.ToString();
-                }
+                
                 string outletID = Properties.Settings.Default.BaseOutlet.ToString();
 
                 string customText = outletID + "_" + outletName + "_";

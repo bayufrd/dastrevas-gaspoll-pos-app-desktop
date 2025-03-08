@@ -25,6 +25,7 @@ using System.Linq;
 using KASIR.Printer;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 using KASIR.OffineMode;
+using System.Globalization;
 
 
 namespace KASIR
@@ -690,6 +691,32 @@ namespace KASIR
             // Memastikan hanya angka dan maksimal 5 digit
             return Regex.IsMatch(version, @"^\d{1,5}$");
         }
+        private async Task ConfirmUpdate(string newVersion, string currentVersion)
+        {
+            try
+            {
+                string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
+                // Deserialize JSON ke object CartDataCache
+                var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
+
+                var json = new
+                {
+                    outlet_name = dataOutlet.data.name,
+                    version = currentVersion,
+                    new_version = newVersion,
+                    last_updated = DateTime.Now.ToString("yyyy-MM-dd HH=mm=ss", CultureInfo.InvariantCulture)
+                };
+                // Mengubah objek menjadi string JSON
+                string jsonString = JsonConvert.SerializeObject(json, Newtonsoft.Json.Formatting.Indented); // Tidak ada indentasi
+                IApiService apiService = new ApiService();
+
+                HttpResponseMessage response = await apiService.notifikasiPengeluaran(jsonString, $"/update-confirm?outlet_id={baseOutlet}");
+            }
+            catch (Exception ex) 
+            { 
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
         private async Task cekVersionAndData()
         {
             try
@@ -704,6 +731,8 @@ namespace KASIR
                 var newVersion = (new WebClient().DownloadString(urlVersion));
                 string currentVersion = Properties.Settings.Default.Version.ToString();
                 await headerOutletName($"Current Version is {currentVersion}, New is {newVersion}");
+
+                await ConfirmUpdate(newVersion.ToString(), currentVersion);
 
                 newVersion = newVersion.Replace(".", "");
                 currentVersion = currentVersion.Replace(".", "");

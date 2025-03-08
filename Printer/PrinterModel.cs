@@ -18,6 +18,7 @@ using System.Text.RegularExpressions;
 using System.Net.Sockets;
 using System.Printing;
 using System.Net;
+using SharpCompress.Compressors.Xz;
 
 namespace KASIR.Printer
 {
@@ -32,6 +33,9 @@ namespace KASIR.Printer
         // Member variable to store the Kategori value
         private string _kategori;
 
+        //init size logo struk
+        int logoSize = 250; //default 250 PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
+        int logoCredit = 75; //default 75 PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit);
         public PrinterModel()
         {
 
@@ -318,7 +322,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n";
                             strukText += "Powered by Dastrevas\n";
                             strukText += "--------------------------------\n\n\n\n\n";
-                            PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
+                            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
@@ -376,7 +380,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n";
                             strukText += "Powered by Dastrevas\n";
                             strukText += "--------------------------------\n\n\n\n\n";
-                            PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
+                            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
@@ -434,7 +438,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n";
                             strukText += "Powered by Dastrevas\n";
                             strukText += "--------------------------------\n\n\n\n\n";
-                            PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
+                            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
@@ -492,7 +496,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n";
                             strukText += "Powered by Dastrevas\n";
                             strukText += "--------------------------------\n\n\n\n\n";
-                            PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
+                            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
@@ -692,7 +696,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n";
                             strukText += "Powered by Dastrevas\n";
                             strukText += "--------------------------------\n\n\n\n\n";
-                            PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
+                            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
@@ -748,7 +752,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n";
                             strukText += "Powered by Dastrevas\n";
                             strukText += "--------------------------------\n\n\n\n\n";
-                            PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
+                            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
@@ -804,7 +808,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n";
                             strukText += "Powered by Dastrevas\n";
                             strukText += "--------------------------------\n\n\n\n\n";
-                            PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
+                            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
@@ -860,7 +864,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n";
                             strukText += "Powered by Dastrevas\n";
                             strukText += "--------------------------------\n\n\n\n\n";
-                            PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
+                            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
@@ -2642,9 +2646,9 @@ namespace KASIR.Printer
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
             stream.Write(buffer1, 0, buffer1.Length);
-            PrintLogo(stream, "icon\\OutletLogo.bmp", 250); // Smaller logo size
+            PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
             stream.Write(buffer, 0, buffer.Length);
-            PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
+            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
             stream.Write(NewLine, 0, NewLine.Length);
 
             stream.Flush();
@@ -3237,9 +3241,9 @@ namespace KASIR.Printer
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
             stream.Write(buffer1, 0, buffer1.Length);
-            PrintLogo(stream, "icon\\OutletLogo.bmp", 250); // Smaller logo size
+            PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
             stream.Write(buffer, 0, buffer.Length);
-            PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
+            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
             strukText = "\n\n\n\n\n";
             buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
             stream.Write(buffer, 0, buffer.Length);
@@ -5324,7 +5328,7 @@ namespace KASIR.Printer
             strukText += CenterText("Receipt No.: " + datas.data?.receipt_number);
             //strukText += "--------------------------------\n";
             strukText += CenterText(datas.data?.invoice_due_date);
-            strukText += "Name: " + datas.data?.customer_name + "\n";
+            strukText += "\nName: " + datas.data?.customer_name + "\n";
 
             if (cartDetails.Count != 0)
             {
@@ -5388,9 +5392,9 @@ namespace KASIR.Printer
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
             stream.Write(buffer1, 0, buffer1.Length);
-            PrintLogo(stream, "icon\\OutletLogo.bmp", 250); // Smaller logo size
+            PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
             stream.Write(buffer, 0, buffer.Length);
-            PrintLogo(stream, "icon\\DT-Logo.bmp", 75); // Smaller logo size
+            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
             //strukText = "\n\n\n\n\n";
             stream.Write(NewLine, 0, NewLine.Length);
             strukText = "--------------------------------";

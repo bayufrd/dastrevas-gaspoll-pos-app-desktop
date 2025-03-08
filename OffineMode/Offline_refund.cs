@@ -453,6 +453,35 @@ namespace KASIR.OfflineMode
                         {
                             var cartItem = cartDetails.FirstOrDefault(item => item["cart_detail_id"]?.ToString() == refundItem.CartDetailId.ToString());
 
+                            int discounted_peritemPrice = 0; 
+                            int discountedPrice = 0;
+                            int subtotal_item = int.Parse(cartItem["subtotal_price"].ToString());
+                            int quantity = int.Parse(cartItem["qty"].ToString());
+                            int discountPercent = int.Parse(cartItem["discounts_value"].ToString());
+                            int discountValue = int.Parse(cartItem["discounts_is_percent"].ToString());
+                            string discountedcode = cartItem["discounts_is_percent"]?.ToString();
+                            //jika ada diskon
+                            if (cartItem["discount_id"].ToString() != "0")
+                            {
+                               
+                                int tempTotal;
+
+                                if (discountPercent != 0) // Jika diskon berupa persentase
+                                    {
+                                        // Menghitung nilai diskon berdasarkan persentase
+                                        tempTotal = subtotal_item * discountValue / 100;
+                                        
+                                        discountedPrice = tempTotal; // Potongan diskon sesuai persen
+                                        discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
+                                    }
+                                    else // Jika diskon berupa nilai tetap
+                                    {
+                                        // Mengurangi subtotal dengan diskon nilai tetap
+                                        tempTotal = subtotal_item - discountValue;
+                                        discountedPrice = subtotal_item - tempTotal;
+                                        discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
+                                    }
+                            }
                             if (cartItem != null && refundItem.Qty > 0)
                             {
                                 int refundtot = int.Parse(refundItem.Qty.ToString()) * int.Parse(cartItem["price"].ToString());
@@ -487,14 +516,14 @@ namespace KASIR.OfflineMode
                                     refund_reason_item = txtNotes.Text.ToString(),
                                     payment_type_name = refund_payment_name_all.ToString(),
                                     qty_refund_item = refundItem.Qty,
-                                    total_refund_price = refundItem.Qty * price,  // Hitung total refund
+                                    total_refund_price = discounted_peritemPrice != 0 ? (price - discounted_peritemPrice) * refundItem.Qty : refundItem.Qty * price,  // Hitung total refund
                                     menu_name = refundItem.menu_name.ToString(),  // Set default jika null
                                     varian = refundItem.menu_detail_name.ToString(),
                                     serving_type_name = refundItem.serving_type_name.ToString(),  // Set default jika null
-                                    discount_code = (string)null,
-                                    discounts_value = 0,
-                                    discounted_price = 0,
-                                    discounts_is_percent = (string)null,
+                                    discount_code = discountedcode,
+                                    discounts_value = discountValue,
+                                    discounted_price = discounted_peritemPrice != 0 ? discounted_peritemPrice * refundItem.Qty : 0,
+                                    discounts_is_percent = discountPercent.ToString(),
                                     menu_price = refundItem.price,
                                     note_item = txtNotes.Text
                                 });
@@ -518,10 +547,11 @@ namespace KASIR.OfflineMode
 
                                     // Update subtotal and total price after partial refund
                                     int newSubtotal = newQuantity * int.Parse(cartItem["price"].ToString());
+                                    int newtotal = newQuantity * int.Parse(cartItem["total_price"].ToString());
                                     cartItem["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture).ToString();
                                     cartItem["subtotal"] = newSubtotal;
                                     cartItem["subtotal_price"] = newSubtotal;
-                                    cartItem["total_price"] = newSubtotal;
+                                    cartItem["total_price"] = newtotal;
                                     //cartItem["refund_total"] = newSubtotal;
 
                                     /*tempTotalRefund = TotalRefunded;
@@ -614,14 +644,12 @@ namespace KASIR.OfflineMode
             int updatedTotal = 0;
             int totalRefund = 0;
             int cartTotal = 0;
+            int cartsubTotal = 0;
 
             // Menghitung total refund berdasarkan refundDetails
             foreach (var refundItem in refundDetails)
             {
-                int refundQty = int.Parse(refundItem["refund_qty"]?.ToString() ?? "0");
-                int refundPrice = int.Parse(refundItem["price"]?.ToString() ?? "0");
-                totalRefund += refundQty * refundPrice; // Total refund per item
-
+                totalRefund += int.Parse(refundItem["refund_total"]?.ToString() ?? "0");
             }
 
             // Update subtotal dan total berdasarkan cartDetails dan refundDetails
@@ -629,8 +657,8 @@ namespace KASIR.OfflineMode
             {
                 int cartQty = int.Parse(cartItem["qty"]?.ToString() ?? "0");
                 int cartPrice = int.Parse(cartItem["price"]?.ToString() ?? "0");
-                cartTotal += cartQty * cartPrice; // Total harga untuk item di cart
-
+                cartsubTotal += cartQty * cartPrice; // Total harga untuk item di cart
+                cartTotal += int.Parse(cartItem["total_price"]?.ToString() ?? "0");
             }
 
             // Update nilai refund_total pada filteredTransaction (jika ada)
@@ -639,7 +667,7 @@ namespace KASIR.OfflineMode
             filteredTransaction["total_refund"] = Math.Max(totalRefund, 0); // Pastikan refund_total tidak kurang dari 0
             TotalRefunded = Math.Max(totalRefund, 0); // Pastikan TotalRefunded tidak kurang dari 0
 
-            filteredTransaction["subtotal"] = Math.Max(cartTotal, 0); // Pastikan subtotal tidak kurang dari 0
+            filteredTransaction["subtotal"] = Math.Max(cartsubTotal, 0); // Pastikan subtotal tidak kurang dari 0
             filteredTransaction["total"] = Math.Max(cartTotal, 0); // Pastikan total tidak kurang dari 0
         }
 

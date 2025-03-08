@@ -134,7 +134,7 @@ namespace KASIR.Komponen
                     else
                     {
                         //GagalSync
-                        MessageBox.Show(response.ToString());
+                        MessageBox.Show("Gagal mengirim data Transactions.");
                         string folderGagall = "DT-Cache\\Transaction\\FailedSyncTransaction";
                         newFileName = $"{baseOutlet}_SyncFailed_{DateTime.Now:yyyyMMdd}.data";
 
@@ -161,6 +161,7 @@ namespace KASIR.Komponen
                         {
                             File.Copy(destinationPath, folderCombine);
                         }
+                        throw new Exception("Gagal mengirim data Transactions." + response.ToString());
                     }
                 }
                 string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
@@ -193,7 +194,9 @@ namespace KASIR.Komponen
                     }
                     else
                     {
-                        MessageBox.Show(savebillSync.ToString());
+                        MessageBox.Show("Gagal mengirim data SaveBill.");
+                        throw new Exception("Gagal mengirim data SaveBill." + savebillSync.ToString());
+
                     }
                 }
             }
@@ -276,8 +279,6 @@ namespace KASIR.Komponen
                         cartItem.Remove("menu_type");  // Hapus menu_detail_name jika tidak diperlukan
                         cartItem.Remove("menu_detail_name");            // Hapus varian jika tidak diperluka
                     }
-
-
                 }
                 // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama
                 File.WriteAllText(filePath, data.ToString());

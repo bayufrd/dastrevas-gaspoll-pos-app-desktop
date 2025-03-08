@@ -45,7 +45,7 @@ namespace KASIR.OfflineMode
         int kuantitas = 900000;
         string folder = "DT-Cache\\addCartForm";
         public bool ReloadDataInBaseForm { get; private set; }
-        int is_saveBillCart = 0, maxQtyOrdered;
+        int is_saveBillCart = 0, maxQtyOrdered, QtyCancelled = 0;
         string updateReason;
 
         public Offline_updateCartForm(string id, string cartdetailid)
@@ -550,6 +550,8 @@ namespace KASIR.OfflineMode
             {
                 int numericValueOrdered = int.Parse(txtKuantitas.Text.ToString());
                 numericValueOrdered++;
+                QtyCancelled--;
+
                 txtKuantitas.Text = numericValueOrdered.ToString();
             }
             if (is_ordered == "1")
@@ -567,11 +569,7 @@ namespace KASIR.OfflineMode
         {
             if (is_ordered == "1")
             {
-                /*  if (cmbDiskon.SelectedIndex != 0)
-                  {
-                      cmbDiskon.SelectedIndex = 0;
-                      MessageBox.Show("Jika melakukan perubahan kuantitas, Diskon akan direset.", "Peringatan!");
-                  }*/
+                QtyCancelled++;
             }
             if (int.TryParse(txtKuantitas.Text, out int numericValue))
             {
@@ -733,22 +731,11 @@ namespace KASIR.OfflineMode
                         diskon = int.Parse(cmbDiskon.SelectedValue.ToString());
                         if (diskon == -1)
                         {
+                            diskon = 0;
                             discountId = diskon;
                         }
                         if (diskon != -1)
                         {
-                            /*if (await cekPeritemDiskon() != 0)
-                            {
-                                MessageBox.Show("masok");
-                                json = File.ReadAllText(configCart);
-
-                                // Parse the JSON string into a JObject (dynamic)
-                                cartData = JObject.Parse(json);
-
-                                // Find the item with the matching cart_detail_id
-                                cartDetails = (JArray)cartData["cart_details"];
-                                itemToUpdate = cartDetails.FirstOrDefault(item => item["cart_detail_id"].ToString() == cartDetailId);
-                            }*/
                             discountPercent = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.is_percent ?? 0;
                             discountValue = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.value ?? 0;
 
@@ -798,7 +785,7 @@ namespace KASIR.OfflineMode
                         itemToUpdate["total_price"] = total_item_withDiscount;
                         itemToUpdate["edited_reason"] = updateReason ?? "";
                         itemToUpdate["discount_id"] = diskon;
-                        itemToUpdate["discount_code"] = discountCode.ToString();
+                        itemToUpdate["discount_code"] = discountCode?.ToString();
                         itemToUpdate["discounts_value"] = discountValue;
                         itemToUpdate["discounts_is_percent"] = discountPercent;
                         itemToUpdate["discounted_price"] = discountedPrice;
@@ -812,9 +799,47 @@ namespace KASIR.OfflineMode
                         cartData["subtotal_price"] = subtotal;
                         cartData["total"] = total;
                         cartData["is_sent_sync"] = 0;
+
+
+                        if (itemToUpdate["is_ordered"].ToString() == "1" && QtyCancelled > 0)
+                        {
+                            int subtotal_priceCanceled = int.Parse(itemToUpdate["price"]?.ToString()) * QtyCancelled;
+                            int total_priceCanceled = int.Parse(itemToUpdate["discounted_item_price"]?.ToString()) * QtyCancelled - subtotal_priceCanceled;
+
+                            var newItem = new JObject
+                            {
+                                { "cart_detail_id", cartDetailId },  // Unique ID based on timestamp
+                                { "menu_id", int.Parse(itemToUpdate["menu_id"].ToString()) },
+                                { "menu_name", itemToUpdate["menu_name"].ToString() },  // Menu name from the loaded data
+                                { "menu_type", itemToUpdate["menu_type"].ToString() },  // Menu type from the loaded data
+                                { "menu_detail_id", int.TryParse(itemToUpdate["menu_detail_id"]?.ToString(), out int menu_detail_id) ? menu_detail_id : 0 },
+                                { "menu_detail_name", itemToUpdate["menu_detail_name"]?.ToString() ?? null },  // Varian name
+                                { "varian", itemToUpdate["menu_detail_name"]?.ToString() },  // Varian name
+                                { "is_ordered", 1 },
+                                { "serving_type_id", int.Parse(itemToUpdate["menu_detail_id"]?.ToString()) },
+                                { "serving_type_name", itemToUpdate["menu_detail_id"]?.ToString() },  // Serving type name
+                                { "price", int.Parse(itemToUpdate["menu_detail_id"]?.ToString()) },
+                                { "qty", int.Parse(itemToUpdate["menu_detail_id"]?.ToString()) },
+                                { "note_item", itemToUpdate["note_item"]?.ToString() },
+                                { "created_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)  },
+                                { "updated_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) },
+                                { "discount_id", int.TryParse(itemToUpdate["discount_id"]?.ToString(), out int discount_id) ? discount_id : 0},
+                                { "discount_code", itemToUpdate["discount_code"]?.ToString() ?? null },
+                                { "discounts_value", int.Parse(itemToUpdate["discounts_value"]?.ToString()) },
+                                { "discounted_price", int.Parse(itemToUpdate["discounted_price"]?.ToString()) },
+                                { "discounted_item_price", int.Parse(itemToUpdate["discounted_item_price"]?.ToString()) },
+                                { "discounts_is_percent", int.Parse(itemToUpdate["discounts_is_percent"]?.ToString()) },
+                                { "subtotal_price", subtotal_priceCanceled },
+                                { "total_price", total_priceCanceled }
+                            };
+                            // Add the new item to the cart_details array
+                            var canceled_itemsArray = (JArray)cartData["canceled_items"];
+                            canceled_itemsArray.Add(newItem);
+                        }
+
+
                         // Save the updated cart data back to the file
                         File.WriteAllText(configCart, cartData.ToString(Formatting.Indented));
-
                     }
                     else
                     {

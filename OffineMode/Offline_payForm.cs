@@ -386,9 +386,13 @@ namespace KASIR.OfflineMode
                         savebill = 1;
                     }
                     int discount_idConv = cartData["discount_id"]?.ToString() != null ? int.Parse(cartData["discount_id"]?.ToString()) : 0;
-                    string? discount_codeConv = cartData["discount_code"]?.ToString() != null ? cartData["discount_code"]?.ToString() : (string)null;
-                    string? discounts_valueConv = cartData["discounts_value"]?.ToString() != null ? cartData["discounts_value"]?.ToString() : (string)null; // Null if no discount value
-                    string? discounts_is_percentConv = cartData["discounts_is_percent"]?.ToString() != null ? cartData["discounts_is_percent"]?.ToString() : (string)null;
+                    string discount_codeConv = cartData["discount_code"]?.ToString() != null ? cartData["discount_code"]?.ToString() : (string)null;
+                    string discounts_valueConv = cartData["discounts_value"]?.ToString() != null ? cartData["discounts_value"]?.ToString() : (string)null; // Null if no discount value
+                    string discounts_is_percentConv = cartData["discounts_is_percent"]?.ToString() != null ? cartData["discounts_is_percent"]?.ToString() : (string)null;
+
+                    var qtyTotal = cartDetails.Sum(item => (int)item["qty"]);
+                    int discounted_price = subtotalCart - totalCartAmount;
+                    int discounted_priceperitem = discounted_price / int.Parse(qtyTotal.ToString());
                     // Prepare transaction data
                     var transactionData = new
                     {
@@ -417,6 +421,7 @@ namespace KASIR.OfflineMode
                         discount_code = discount_codeConv,
                         discounts_value = discounts_valueConv,
                         discounts_is_percent = discounts_is_percentConv,
+                        discounted_peritem_price = discounted_priceperitem,
                         member_name = (string)null, // Null if no member name
                         member_phone_number = (string)null, // Null if no member phone number
                         is_refund_all = 0,
@@ -547,7 +552,7 @@ namespace KASIR.OfflineMode
                             serving_type_id = item.serving_type_id,
                             serving_type_name = item.serving_type_name,
                             discount_id = int.Parse(item.cart_detail_id.ToString()), // Tidak ada data discount
-                            discount_code = item.serving_type_name,
+                            discount_code = item.discount_code?.ToString(),
                             discounts_value = int.Parse(item.discounts_value.ToString()),
                             discounted_price = int.Parse(item.discounted_price.ToString()),
                             discounts_is_percent = int.Parse(item.discounts_is_percent.ToString()),

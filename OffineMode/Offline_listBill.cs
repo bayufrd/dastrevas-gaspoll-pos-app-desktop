@@ -24,6 +24,7 @@ using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 using KASIR.OfflineMode;
 using System.Transactions;
+using System.Security.Cryptography.Xml;
 
 
 namespace KASIR.OffineMode
@@ -274,38 +275,38 @@ namespace KASIR.OffineMode
                             outlet_address = dataOutlet.data.address,
                             outlet_phone_number = dataOutlet.data.phone_number,
                             outlet_footer = dataOutlet.data.footer,
-                            transaction_id = int.Parse(cartData["transaction_id"]?.ToString()),
+                            transaction_id = int.TryParse(cartData["transaction_id"]?.ToString(), out var transId) ? transId : 0,
                             receipt_number = cartData["receipt_number"]?.ToString(),
                             invoice_due_date = cartData["invoice_due_date"]?.ToString(),
                             customer_name = cartData["customer_name"]?.ToString(),
-                            customer_seat = int.Parse(cartData["customer_seat"]?.ToString()),
+                            customer_seat = int.TryParse(cartData["customer_seat"]?.ToString(), out var seat) ? seat : 0,
+                            customer_change = int.TryParse(cartData["customer_change"]?.ToString(), out var change) ? change : 0,
                             payment_type = cartData["payment_type"]?.ToString(),
                             delivery_type = null,
                             delivery_note = null,
                             cart_id = 0,
-                            subtotal = int.Parse(cartData["subtotal"]?.ToString()),
-                            total = int.Parse(cartData["total"]?.ToString()),
-                            discount_id = int.Parse(cartData["discount_id"].ToString()) != 0 ? int.Parse(cartData["discount_id"].ToString()) : 0,
-                            discount_code = cartData["discount_code"].ToString() != null ? cartData["discount_code"].ToString() : null,
-                            discounts_value = int.Parse(cartData["discounts_value"].ToString()) != null ? int.Parse(cartData["discounts_value"].ToString()) : null,
-                            discounts_is_percent = cartData["discounts_is_percent"].ToString() != null ? cartData["discounts_is_percent"].ToString() : null,
+                            subtotal = int.TryParse(cartData["subtotal"]?.ToString(), out var subTotal) ? subTotal : 0,
+                            total = int.TryParse(cartData["total"]?.ToString(), out var total) ? total : 0,
+                            discount_id = int.TryParse(cartData["discount_id"]?.ToString(), out var discountId) && discountId != 0 ? discountId : 0,
+                            discount_code = cartData["discount_code"]?.ToString(),
+                            discounts_value = int.TryParse(cartData["discounts_value"]?.ToString(), out var discountValue) ? discountValue : 0,
+                            discounts_is_percent = cartData["discounts_is_percent"]?.ToString(),
                             cart_details = new List<CartDetailStrukCustomerTransaction>(),
                             canceled_items = new List<CanceledItemStrukCustomerTransaction>(),
                             kitchenBarCartDetails = new List<KitchenAndBarCartDetails>(),
                             kitchenBarCanceledItems = new List<KitchenAndBarCanceledItems>(),
-                            customer_cash = int.Parse(cartData["customer_cash"]?.ToString()),
+                            customer_cash = int.TryParse(cartData["customer_cash"]?.ToString(), out var customerCash) ? customerCash : 0,
                             member_name = null,
                             member_phone_number = null
                         }
                     };
+
                     foreach (var item in cartDetails)
                     {
                         // Cast the JToken to JObject
                         var cartDetailObject = item as JObject;
 
-                        // Now, check if it is not null and if 'is_ordered' exists
-                        if (cartDetailObject != null && cartDetailObject["is_ordered"]?.ToString() == "0")
-                        {
+                        
                             // Membuat objek CartDetailStrukCustomerTransaction
                             var cartDetail = new CartDetailStrukCustomerTransaction
                             {
@@ -360,7 +361,6 @@ namespace KASIR.OffineMode
                             // Menambahkan ke kitchenBarCartDetails
                             strukCustomerTransaction.data.kitchenBarCartDetails.Add(kitchenAndBarCartDetail);
                         }
-                    }
 
                     // Serialisasi ke JSON
                     string response = JsonConvert.SerializeObject(strukCustomerTransaction);
@@ -378,7 +378,7 @@ namespace KASIR.OffineMode
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Gagal cetak ulang struk " + ex.Message, "Gaspol");
+                    MessageBox.Show("Gagal cetak ulang struk " + ex.ToString(), "Gaspol");
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
@@ -543,6 +543,8 @@ namespace KASIR.OffineMode
             }
             catch (Exception ex)
             {
+                MessageBox.Show(ex.ToString());
+
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }

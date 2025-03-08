@@ -2133,6 +2133,11 @@ namespace KASIR.OfflineMode
                         subTotalPrice = 0;
                         ButtonSplit.Enabled = true;
 
+                        //set tombol disc
+                        iconButtonGet.Text = "Gunakan Disc";
+                        iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
+                        isDiscountActive = false;
+                        iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
                     }
                 }
 

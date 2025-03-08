@@ -134,12 +134,13 @@ namespace KASIR.OfflineMode
                     // Mengambil nilai dari invoice_due_date dan mengganti titik dengan titik koma
                     string invoiceDueDate = firstTransaction["invoice_due_date"].ToString();
 
-                    // Menggunakan Regex untuk mengganti semua titik (.) dengan titik koma (;)
-                    string updatedInvoiceDueDate = Regex.Replace(invoiceDueDate, @"\.", ":");
+                    // Menggunakan Regex untuk mengganti semua titik (.) dengan titik koma (:) hanya di bagian waktu
+                    string updatedInvoiceDueDate = Regex.Replace(invoiceDueDate, @"(\d)\.(\d)", "$1:$2");
+
                     DateTime parsedDate;
                     // Only parse the date part, ignoring the time
                     if (DateTime.TryParseExact(
-                        updatedInvoiceDueDate,//firstTransaction["invoice_due_date"].ToString(),
+                        updatedInvoiceDueDate, //firstTransaction["invoice_due_date"].ToString(),
                         "yyyy-MM-dd HH:mm:ss",
                         CultureInfo.InvariantCulture,
                         DateTimeStyles.None,
@@ -150,8 +151,23 @@ namespace KASIR.OfflineMode
                     }
                     else
                     {
-                        // Handle invalid date format
-                        LoggerUtil.LogError(new Exception("Invalid date format"), "Invalid invoice_due_date format for first transaction.");
+                        FileInfo fileInfo = new FileInfo(sourceDirectory);
+                        DateTime fileCreationDate = fileInfo.CreationTime.Date; // Mengambil tanggal pembuatan file
+                        if (fileCreationDate != DateTime.Now.Date)
+                        {
+                                try
+                                {
+                                    shiftReport c = new shiftReport();
+                                    //c.SyncCompleted += SyncCompletedHandler;
+                                    await c.SyncDataTransactions();
+                                    // Move the files created after the specified time span
+                                    transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, TimeSpan.FromHours(20));
+                                }
+                                catch (Exception ex)
+                                {
+                                    LoggerUtil.LogError(ex, "Error moving transaction files: {ErrorMessage}", ex.Message);
+                                }
+                        }
                         return;
                     }
                 }

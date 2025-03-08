@@ -43,14 +43,12 @@ namespace KASIR.Komponen
             lblShiftSekarang.Visible = false;
         }
 
-
         public async Task SyncDataTransactions()
         {
             try
             {
 
                 string filePath = "DT-Cache\\Transaction\\transaction.data";
-                //string filePath = "DT-Cache\\Transaction\\transactionSyncing.data";
                 string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
                 //File.Copy(filetransactionOri, filePath);
                 IApiService apiService = new ApiService();
@@ -58,7 +56,7 @@ namespace KASIR.Komponen
                 // Mendapatkan direktori dari filePath
                 string directoryPath = Path.GetDirectoryName(filePath);
                 string newFileName = "";
-                string apiUrl = "/sync-transactions-outlet-testing?outlet_id=" + baseOutlet; // testing
+                string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet; // testing
                 newFileName = $"{baseOutlet}_SyncSuccess_{DateTime.Now:yyyyMMdd}.data";
                 // Memastikan direktori tujuan ada
                 if (!Directory.Exists(directoryPath))
@@ -131,7 +129,7 @@ namespace KASIR.Komponen
 
                         SyncSuccess(filePath);
                         NewDataChecker = 1;
-                       
+
                     }
                     else
                     {
@@ -206,7 +204,7 @@ namespace KASIR.Komponen
             }
 
         }
-  
+
         public static readonly object FileLock = new object();
         public event Action SyncCompleted;  // Event untuk memberi tahu form utama bahwa sinkronisasi berhasil
 
@@ -292,33 +290,33 @@ namespace KASIR.Komponen
         }
         private async Task<string> GetShiftData(string configOfflineMode)
         {
-           /* if (NewDataChecker == 0 && configOfflineMode == "ON")
-            {
-                // Directly fetch from API
-                IApiService apiService = new ApiService();
-                return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-            }
-            else if (NewDataChecker == 1 && configOfflineMode == "ON")
-            {
-                // Try to read from the local file
-                string shiftData = $"DT-Cache\\Transaction\\ShiftRepot{baseOutlet}.data";
-                if (File.Exists(shiftData))
-                {
-                    return File.ReadAllText(shiftData);
-                }
-                else
-                {
-                    // If file is not found, fallback to API
-                    IApiService apiService = new ApiService();
-                    return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-                }
-            }
-            else
-            {*/
-                // Default: use API if NewDataChecker is neither 0 nor 1
-                IApiService apiService = new ApiService();
-                return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-        //}
+            /* if (NewDataChecker == 0 && configOfflineMode == "ON")
+             {
+                 // Directly fetch from API
+                 IApiService apiService = new ApiService();
+                 return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
+             }
+             else if (NewDataChecker == 1 && configOfflineMode == "ON")
+             {
+                 // Try to read from the local file
+                 string shiftData = $"DT-Cache\\Transaction\\ShiftRepot{baseOutlet}.data";
+                 if (File.Exists(shiftData))
+                 {
+                     return File.ReadAllText(shiftData);
+                 }
+                 else
+                 {
+                     // If file is not found, fallback to API
+                     IApiService apiService = new ApiService();
+                     return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
+                 }
+             }
+             else
+             {*/
+            // Default: use API if NewDataChecker is neither 0 nor 1
+            IApiService apiService = new ApiService();
+            return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
+            //}
         }
         private static bool isSyncing = false;  // Static flag to track sync status
         public async Task LoadData()
@@ -329,7 +327,7 @@ namespace KASIR.Komponen
                 MessageBox.Show("Data sedang di koad. Tolong tunggu sebentar!");
                 return;
             }
-
+            btnCetakStruk.Enabled = false;
             const int maxRetryAttempts = 3;
             int retryAttempts = 0;
             bool success = false;
@@ -650,7 +648,7 @@ namespace KASIR.Komponen
         private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
         {
             // Tambahkan separator row ke DataTable
-            dataTable.Rows.Add(null, groupKey , null); // Add a separator row
+            dataTable.Rows.Add(null, groupKey, null); // Add a separator row
 
             // Ambil indeks baris terakhir yang baru saja ditambahkan
             int lastRowIndex = dataTable.Rows.Count - 1;
@@ -659,7 +657,7 @@ namespace KASIR.Komponen
             dataGridView.DataSource = dataTable;
 
             // Mengatur gaya sel untuk kolom tertentu
-            int[] cellIndexesToStyle = { 1 , 2 }; // Indeks kolom yang ingin diatur
+            int[] cellIndexesToStyle = { 1, 2 }; // Indeks kolom yang ingin diatur
             SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
         }
         private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)
@@ -782,7 +780,6 @@ namespace KASIR.Komponen
 
         private void btnRiwayatShift_Click(object sender, EventArgs e)
         {
-            ////LoggerUtil.LogPrivateMethod(nameof(btnRiwayatShift_Click));
 
             Form background = new Form
             {
@@ -806,12 +803,6 @@ namespace KASIR.Komponen
                     DialogResult dialogResult = payForm.ShowDialog();
 
                     background.Dispose();
-
-                    /*if (printReportShift.KeluarButtonPrintReportShiftClicked)
-                    {
-                        LoadData(); 
-                    }
-    */
                     if (dialogResult == DialogResult.OK && payForm.ReloadDataInBaseForm)
                     {
                         LoadData();

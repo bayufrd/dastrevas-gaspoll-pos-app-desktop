@@ -881,8 +881,6 @@ namespace KASIR.Komponen
                 UseShellExecute = true, // Perlu diaktifkan untuk menggunakan shell default sistem operasi
                 Verb = "open"
             });
-
-            //Console.WriteLine($"Folder {folderPath} telah dibuka.");
         }
 
         private void iconButton1_Click(object sender, EventArgs e)

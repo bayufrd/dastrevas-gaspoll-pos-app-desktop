@@ -16,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="OffineMode\Offline_Complaint.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="OffineMode\Offline_listBill.cs">
       <SubType>Form</SubType>
     </Compile>

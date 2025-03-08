@@ -472,6 +472,42 @@
   <metadata name="SyncTimer.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="btnContact.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
+    <value>Flat</value>
+  </data>
+  <data name="btnContact.ImageAlign" type="System.Drawing.ContentAlignment, System.Drawing">
+    <value>MiddleLeft</value>
+  </data>
+  <data name="btnContact.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="btnContact.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 323</value>
+  </data>
+  <data name="btnContact.Size" type="System.Drawing.Size, System.Drawing">
+    <value>106, 60</value>
+  </data>
+  <data name="btnContact.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="btnContact.Text" xml:space="preserve">
+    <value>Contact Us</value>
+  </data>
+  <data name="btnContact.TextImageRelation" type="System.Windows.Forms.TextImageRelation, System.Windows.Forms">
+    <value>ImageBeforeText</value>
+  </data>
+  <data name="&gt;&gt;btnContact.Name" xml:space="preserve">
+    <value>btnContact</value>
+  </data>
+  <data name="&gt;&gt;btnContact.Type" xml:space="preserve">
+    <value>FontAwesome.Sharp.IconButton, FontAwesome.Sharp, Culture=neutral, PublicKeyToken=d16d1e4e568ec10f</value>
+  </data>
+  <data name="&gt;&gt;btnContact.Parent" xml:space="preserve">
+    <value>gradientPanel2</value>
+  </data>
+  <data name="&gt;&gt;btnContact.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
   <data name="SignalPing.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom, Left</value>
   </data>
@@ -509,7 +545,7 @@
     <value>gradientPanel2</value>
   </data>
   <data name="&gt;&gt;SignalPing.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>1</value>
   </data>
   <data name="lblPing.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom, Left</value>
@@ -545,7 +581,7 @@
     <value>gradientPanel2</value>
   </data>
   <data name="&gt;&gt;lblPing.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="btnShiftLaporan.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
@@ -578,7 +614,7 @@
     <value>gradientPanel2</value>
   </data>
   <data name="&gt;&gt;btnShiftLaporan.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="iconButton1.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
@@ -611,7 +647,7 @@
     <value>gradientPanel2</value>
   </data>
   <data name="&gt;&gt;iconButton1.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>4</value>
   </data>
   <data name="iconButton2.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
@@ -647,7 +683,7 @@
     <value>gradientPanel2</value>
   </data>
   <data name="&gt;&gt;iconButton2.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>5</value>
   </data>
   <data name="panel3.Location" type="System.Drawing.Point, System.Drawing">
     <value>30, 93</value>
@@ -668,7 +704,7 @@
     <value>gradientPanel2</value>
   </data>
   <data name="&gt;&gt;panel3.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>6</value>
   </data>
   <data name="button2.Location" type="System.Drawing.Point, System.Drawing">
     <value>0, -9</value>
@@ -692,7 +728,7 @@
     <value>gradientPanel2</value>
   </data>
   <data name="&gt;&gt;button2.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>7</value>
   </data>
   <data name="gradientPanel2.Location" type="System.Drawing.Point, System.Drawing">
     <value>-3, -4</value>

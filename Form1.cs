@@ -256,7 +256,7 @@ namespace KASIR
                     await File.WriteAllTextAsync("setting\\RunningText.data", data);
                 }
                 //DuplicateTemp();
-                
+
                 //CacheDataApp.Show();
             }
             catch (Exception ex)
@@ -957,7 +957,7 @@ namespace KASIR
         {
             Color randomColor = PickRandomColor();  // Pick a random color for button
             ActivateButton(sender, randomColor);    // Activate the button
-            
+
             try
             {
                 // Read the OfflineMode status
@@ -1303,9 +1303,9 @@ namespace KASIR
                 /*    Offline_masterPos m = new Offline_masterPos();
 
                     m.refreshCacheTransaction();*/
-                    shiftReport c = new shiftReport();
-                    //c.SyncCompleted += SyncCompletedHandler;
-                    c.SyncDataTransactions();
+                shiftReport c = new shiftReport();
+                //c.SyncCompleted += SyncCompletedHandler;
+                c.SyncDataTransactions();
             }
         }
         private void SyncCompletedHandler()
@@ -1476,7 +1476,7 @@ namespace KASIR
                 iconButton2.Enabled = true;
                 lblTitleChildForm.Text = "Shift Report - Report Shift and Shift Transactions, Print Shift and Cash Out";
 
-                
+
                 Form background = new Form
                 {
                     StartPosition = FormStartPosition.Manual,
@@ -1507,45 +1507,72 @@ namespace KASIR
 
         private void iconButton3_Click(object sender, EventArgs e)
         {
-           /* //settingsButton
-            //====by
-            ActivateButton(sender, RGBColors.color4);
-            try
-            {
-                SettingsForm c = new SettingsForm(this);
+            /* //settingsButton
+             //====by
+             ActivateButton(sender, RGBColors.color4);
+             try
+             {
+                 SettingsForm c = new SettingsForm(this);
 
-                // Misalkan 'obj' adalah objek yang mungkin null
-                if (c == null)
-                {
-                    MessageBox.Show("Terjadi kesalahan cek koneksi anda", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-                //panel3.Height = btn1.Height;
-                //panel3.Top = btn1.Top;
-                c.Dock = DockStyle.Fill;
-                panel1.Controls.Add(c);
-                c.BringToFront();
-                c.Show();
-                lblTitleChildForm.Text = "Settings - ";
-                Form background = new Form
-                {
-                    StartPosition = FormStartPosition.Manual,
-                    FormBorderStyle = FormBorderStyle.None,
-                    Opacity = 0.7d,
-                    BackColor = Color.Black,
-                    WindowState = FormWindowState.Maximized,
-                    TopMost = true,
-                    Location = this.Location,
-                    ShowInTaskbar = false,
-                };
-                // Lakukan operasi dengan 'obj'
-                // ...
-            }
-            catch (NullReferenceException ex)
+                 // Misalkan 'obj' adalah objek yang mungkin null
+                 if (c == null)
+                 {
+                     MessageBox.Show("Terjadi kesalahan cek koneksi anda", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                     return;
+                 }
+                 //panel3.Height = btn1.Height;
+                 //panel3.Top = btn1.Top;
+                 c.Dock = DockStyle.Fill;
+                 panel1.Controls.Add(c);
+                 c.BringToFront();
+                 c.Show();
+                 lblTitleChildForm.Text = "Settings - ";
+                 Form background = new Form
+                 {
+                     StartPosition = FormStartPosition.Manual,
+                     FormBorderStyle = FormBorderStyle.None,
+                     Opacity = 0.7d,
+                     BackColor = Color.Black,
+                     WindowState = FormWindowState.Maximized,
+                     TopMost = true,
+                     Location = this.Location,
+                     ShowInTaskbar = false,
+                 };
+                 // Lakukan operasi dengan 'obj'
+                 // ...
+             }
+             catch (NullReferenceException ex)
+             {
+                 MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                 // Log error jika diperlukan
+             }*/
+        }
+
+        private void btnContact_Click(object sender, EventArgs e)
+        {
+
+            Form background = new Form
             {
-                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                // Log error jika diperlukan
-            }*/
+                StartPosition = FormStartPosition.Manual,
+                FormBorderStyle = FormBorderStyle.None,
+                Opacity = 0.7d,
+                BackColor = Color.Black,
+                WindowState = FormWindowState.Maximized,
+                TopMost = true,
+                Location = this.Location,
+                ShowInTaskbar = false,
+            };
+
+            using (Offline_Complaint c = new Offline_Complaint())
+            {
+                c.Owner = background;
+
+                background.Show();
+
+                DialogResult dialogResult = c.ShowDialog();
+
+                background.Dispose();
+            }
         }
     }
 }

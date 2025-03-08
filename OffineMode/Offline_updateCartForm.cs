@@ -79,42 +79,42 @@ namespace KASIR.OfflineMode
             /*int newHeight = Screen.PrimaryScreen.WorkingArea.Height - 100;
             Height = newHeight;*/
         }
-    /*    private async void LoadDataDiscount()
-        {
-            if (!Directory.Exists(folder)) { Directory.CreateDirectory(folder); }
-
-            // Load menu data from local file if available
-            if (File.Exists(folder + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data"))
+        /*    private async void LoadDataDiscount()
             {
-                try
-                {
-                    string json = File.ReadAllText(folder + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data");
-                    DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(json);
-                    List<DataDiscountCart> data = menuModel.data;
-                    var options = data;
-                    dataDiskonList = data;
-                    options.Insert(0, new DataDiscountCart { id = -1, code = "Pilih Diskon" });
-                    cmbDiskon.DataSource = options;
-                    cmbDiskon.DisplayMember = "code";
-                    cmbDiskon.ValueMember = "id";
+                if (!Directory.Exists(folder)) { Directory.CreateDirectory(folder); }
 
-                }
-                catch (Exception ex)
+                // Load menu data from local file if available
+                if (File.Exists(folder + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data"))
                 {
-                    //MessageBox.Show("Gagal tambah data " + ex.Message, "Gaspol");
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                }
-            }
-            else
-            {
-                MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
-                CacheDataApp form3 = new CacheDataApp("Sync");
-                DialogResult = DialogResult.Cancel;
-                this.Close();
-                form3.Show();
-            }
+                    try
+                    {
+                        string json = File.ReadAllText(folder + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data");
+                        DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(json);
+                        List<DataDiscountCart> data = menuModel.data;
+                        var options = data;
+                        dataDiskonList = data;
+                        options.Insert(0, new DataDiscountCart { id = -1, code = "Pilih Diskon" });
+                        cmbDiskon.DataSource = options;
+                        cmbDiskon.DisplayMember = "code";
+                        cmbDiskon.ValueMember = "id";
 
-        }*/
+                    }
+                    catch (Exception ex)
+                    {
+                        //MessageBox.Show("Gagal tambah data " + ex.Message, "Gaspol");
+                        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                    CacheDataApp form3 = new CacheDataApp("Sync");
+                    DialogResult = DialogResult.Cancel;
+                    this.Close();
+                    form3.Show();
+                }
+
+            }*/
         private async void LoadDataVarianAsync()
         {
             try
@@ -567,11 +567,11 @@ namespace KASIR.OfflineMode
         {
             if (is_ordered == "1")
             {
-              /*  if (cmbDiskon.SelectedIndex != 0)
-                {
-                    cmbDiskon.SelectedIndex = 0;
-                    MessageBox.Show("Jika melakukan perubahan kuantitas, Diskon akan direset.", "Peringatan!");
-                }*/
+                /*  if (cmbDiskon.SelectedIndex != 0)
+                  {
+                      cmbDiskon.SelectedIndex = 0;
+                      MessageBox.Show("Jika melakukan perubahan kuantitas, Diskon akan direset.", "Peringatan!");
+                  }*/
             }
             if (int.TryParse(txtKuantitas.Text, out int numericValue))
             {
@@ -629,7 +629,7 @@ namespace KASIR.OfflineMode
                         }
                     }
                 }
-                
+
                 await UpdateCartItemLocally(cartdetail, updateReason);
 
 
@@ -637,7 +637,7 @@ namespace KASIR.OfflineMode
                 Close();
             }
 
-            
+
             catch (TaskCanceledException ex)
             {
                 MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -672,7 +672,7 @@ namespace KASIR.OfflineMode
                     {
                         int selectedVarian = int.TryParse(cmbVarian.SelectedValue?.ToString(), out var varianResult) ? varianResult : -1;
                         string VarianName = cmbVarian.Text.ToString();
-                        if(VarianName == "Normal") VarianName = (string)null;
+                        if (VarianName == "Normal") VarianName = (string)null;
                         int serving_type = int.Parse(comboBox1.SelectedValue.ToString());
                         int quantity = int.Parse(txtKuantitas.Text.ToString());
                         string notes = txtNotes.Text.ToString();
@@ -729,6 +729,7 @@ namespace KASIR.OfflineMode
                         string? discountCode = (string)null;
                         int discountId = 0;
                         int discountedPrice = 0;
+                        int discounted_peritemPrice = 0;
                         diskon = int.Parse(cmbDiskon.SelectedValue.ToString());
                         if (diskon == -1)
                         {
@@ -736,42 +737,63 @@ namespace KASIR.OfflineMode
                         }
                         if (diskon != -1)
                         {
+                            /*if (await cekPeritemDiskon() != 0)
+                            {
+                                MessageBox.Show("masok");
+                                json = File.ReadAllText(configCart);
+
+                                // Parse the JSON string into a JObject (dynamic)
+                                cartData = JObject.Parse(json);
+
+                                // Find the item with the matching cart_detail_id
+                                cartDetails = (JArray)cartData["cart_details"];
+                                itemToUpdate = cartDetails.FirstOrDefault(item => item["cart_detail_id"].ToString() == cartDetailId);
+                            }*/
                             discountPercent = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.is_percent ?? 0;
                             discountValue = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.value ?? 0;
 
                             int discountMax = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.max_discount ?? int.MaxValue;
                             diskon = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.id ?? 0;
-                            int tempTotal = 0;
                             discountCode = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.code.ToString() ?? string.Empty;
 
-                            if (discountPercent != 0)
+                            int tempTotal = 0;
+
+
+                            if (discountPercent != 0) // Jika diskon berupa persentase
                             {
+                                // Menghitung nilai diskon berdasarkan persentase
                                 tempTotal = subtotal_item * discountValue / 100;
                                 if (tempTotal > discountMax)
                                 {
-                                    discountedPrice = discountMax;
+                                    discountedPrice = discountMax; // Potongan diskon maksimal
                                 }
                                 else
                                 {
-                                    discountedPrice = subtotal_item - tempTotal;
+                                    discountedPrice = tempTotal; // Potongan diskon sesuai persen
                                 }
-                                total_item_withDiscount = subtotal_item - discountedPrice;
-                                discountedPrice = discountedPrice / quantity;
+                                total_item_withDiscount = subtotal_item - discountedPrice; // Total setelah diskon
+                                discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
                             }
-                            else
+                            else // Jika diskon berupa nilai tetap
                             {
+                                // Mengurangi subtotal dengan diskon nilai tetap
                                 tempTotal = subtotal_item - discountValue;
                                 if (tempTotal > discountMax)
                                 {
-                                    discountedPrice = discountMax;
+                                    discountedPrice = discountMax; // Potongan diskon maksimal
                                 }
                                 else
                                 {
-                                    discountedPrice = subtotal_item - tempTotal;
+                                    discountedPrice = subtotal_item - tempTotal; // Potongan diskon tetap
                                 }
-                                total_item_withDiscount = subtotal_item - discountedPrice;
-                                discountedPrice = discountedPrice / quantity;
+                                total_item_withDiscount = subtotal_item - discountedPrice; // Total setelah diskon
+                                discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
                             }
+                            cartData["discount_id"] = 0;
+                            cartData["discount_code"] = (string)null;
+                            cartData["discounts_value"] = (string)null;
+                            cartData["discounted_price"] = (string)null;
+                            cartData["discounts_is_percent"] = (string)null;
                         }
                         itemToUpdate["total_price"] = total_item_withDiscount;
                         itemToUpdate["edited_reason"] = updateReason ?? "";
@@ -780,6 +802,7 @@ namespace KASIR.OfflineMode
                         itemToUpdate["discounts_value"] = discountValue;
                         itemToUpdate["discounts_is_percent"] = discountPercent;
                         itemToUpdate["discounted_price"] = discountedPrice;
+                        itemToUpdate["discounted_item_price"] = discounted_peritemPrice;
                         var cartDetailsArray = (JArray)cartData["cart_details"];
                         // Update the subtotal and total based on cart details
                         var subtotal = cartDetailsArray.Sum(item => (int)item["price"] * (int)item["qty"]);
@@ -805,8 +828,54 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"An error occurred: {ex.ToString()}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+        private async Task<int> cekPeritemDiskon()
+        {
+            int lanjutan;
+
+            try
+            {
+                // Path for the cart data cache
+                string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
+                // Check if the cart file exists
+                if (File.Exists(cacheFilePath))
+                {
+                    string cartJson = File.ReadAllText(cacheFilePath);
+                    var cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
+                    var cartDetails = cartData["cart_details"] as JArray;
+
+                    // Retrieve cart details
+
+                    if (int.Parse(cartData["discounted_price"].ToString()) != 0)
+                    {
+                        lanjutan = 1;
+
+                        cartData["discount_id"] = 0;
+                        cartData["discount_code"] = (string)null;
+                        cartData["discounts_value"] = (string)null;
+                        cartData["discounted_price"] = (string)null;
+                        cartData["discounts_is_percent"] = (string)null;
+                        cartData["total"] = cartDetails.Sum(item => (int)item["price"] * (int)item["qty"]);
+                    }
+                    
+                    // Menyimpan kembali data cart yang telah diperbarui ke file cache
+                    File.WriteAllText(cacheFilePath, cartData.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal cek diskon: " + ex.Message, "Gaspol");
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+
+            lanjutan = 0;
+            if (lanjutan == 1)
+            {
+                return 1;
+            }
+            return 0;
         }
         private async void LoadDataDiscount()
         {
@@ -826,7 +895,7 @@ namespace KASIR.OfflineMode
                     cmbDiskon.DisplayMember = "code";
                     cmbDiskon.ValueMember = "id";
 
-                    
+
                 }
             }
             catch (Exception ex)
@@ -841,38 +910,6 @@ namespace KASIR.OfflineMode
         {
         }
 
-        private async void cekKeranjangDiskon()
-        {
-            if (await cekPeritemDiskon() != 0)
-            {
-                MessageBox.Show("Memasang Diskon Peritem, Diskon Cart akan di Hapus");
-            }
-        }
-        private async Task<int> cekPeritemDiskon()
-        {
-            try
-            {
-                ApiService apiService = new ApiService();
-                string response = await apiService.Get("/cart?outlet_id=" + baseOutlet);
-                GetCartModel dataModel = JsonConvert.DeserializeObject<GetCartModel>(response);
-                if (dataModel.data != null)
-                {
-                    if (dataModel.data.discount_id != 0)
-                    {
-                        return 1;
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Gagal cek diskon: " + ex.Message, "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-
-            return 0;
-        }
-
         private void txtKuantitas_TextChanged(object sender, EventArgs e)
         {
             if (is_ordered == "1")
@@ -883,6 +920,11 @@ namespace KASIR.OfflineMode
                     txtKuantitas.Text = kuantitas.ToString();
                 }
             }
+        }
+
+        private void Offline_updateCartForm_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

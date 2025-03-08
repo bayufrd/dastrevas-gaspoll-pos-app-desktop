@@ -17,6 +17,13 @@ using KASIR.OffineMode;
 using SharpCompress.Common;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Windows.Documents;
+using MessageBox = System.Windows.Forms.MessageBox;
+using FontStyle = System.Drawing.FontStyle;
+using Point = System.Drawing.Point;
+using SystemFonts = System.Drawing.SystemFonts;
+using Size = System.Drawing.Size;
+using System.Windows;
 
 
 namespace KASIR.OfflineMode
@@ -1909,6 +1916,14 @@ namespace KASIR.OfflineMode
                         lblTotal1.Text = "Rp. 0,-";
                         buttonPayment.Text = "Bayar ";
                         subTotalPrice = 0; diskonID = 0;
+
+                        //set tombol disc
+                        iconButtonGet.Text = "Gunakan Disc";
+                        iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
+                        isDiscountActive = false;
+                        iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
+
+
                     }
                     else
                     {
@@ -1936,6 +1951,23 @@ namespace KASIR.OfflineMode
                             File.WriteAllText(cacheFilePath, cartData.ToString()); // Save back to file
                         }
 
+                        if(cartData["discount_id"] != null && int.Parse(cartData["discount_id"].ToString()) != 0)
+                        {
+                            iconButtonGet.Text = "Hapus Disc";
+                            iconButtonGet.ForeColor = Color.Red;
+                            isDiscountActive = true;
+                            iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
+
+                        }
+                        else
+                        {
+                            iconButtonGet.Text = "Gunakan Disc";
+                            iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
+                            isDiscountActive = false;
+                            iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
+
+                        }
+
                         customer_name = (string)null;
                         customer_seat = (string)null;
                         // Set customer information
@@ -1951,14 +1983,12 @@ namespace KASIR.OfflineMode
                         }
 
                         // Calculate subtotal and total
-                        decimal subtotal = cartData["subtotal"] != null ? decimal.Parse(cartData["subtotal"].ToString()) : 0;
-                        int subtotalint = (int)subtotal;  // Explicitly cast decimal to int
+                        int subtotal = cartData["subtotal"] != null ? int.Parse(cartData["subtotal"].ToString()) : 0;
 
-                        decimal total = cartData["total"] != null ? decimal.Parse(cartData["total"].ToString()) : 0;
-                        int totalInt = (int)total;  // Explicitly cast decimal to int
+                        int total = cartData["total"] != null ? int.Parse(cartData["total"].ToString()) : 0;
                         lblDiskon1.Text = string.Format("Rp. {0:n0},-", total - subtotal);
-                        subTotalPrice = subtotalint;
                         lblSubTotal1.Text = string.Format("Rp. {0:n0},-", subtotal);
+                        subTotalPrice = subtotal;
                         lblTotal1.Text = string.Format("Rp. {0:n0},-", total);
                         buttonPayment.Text = string.Format("Bayar Rp. {0:n0},-", total);
 
@@ -2366,8 +2396,29 @@ namespace KASIR.OfflineMode
                 MessageBox.Show("Keranjang kosong. Silakan tambahkan item ke keranjang sebelum menerapkan diskon.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            int selectedDiskon = (int)cmbDiskon.SelectedValue;
 
+            if (isDiscountActive)
+            {
+                // Mengambil data cart dari file cache
+                string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
+                string cartDataJson = File.ReadAllText(cartDataPath);
+                var cartData = JsonConvert.DeserializeObject<JObject>(cartDataJson);
+                // Memperbarui data cart dengan nilai diskon yang dipilih
+                cartData["discount_id"] = 0; // Gunakan selectedDiskon yang sudah diganti
+                cartData["discount_code"] = (string)null;
+                cartData["discounts_value"] = (string)null;
+                cartData["discounts_is_percent"] = (string)null;
+                cartData["discounted_price"] = 0;
+                cartData["total"] = cartData["subtotal"];
+
+                // Menyimpan kembali data cart yang telah diperbarui ke file cache
+                File.WriteAllText(cartDataPath, cartData.ToString());
+                // Refresh UI dengan data terbaru
+                ReloadCart();
+                cmbDiskon.SelectedIndex = 0;
+                return;
+            }
+            int selectedDiskon = (int)cmbDiskon.SelectedValue;
             if (diskonID != 0) // Jika diskon sudah diterapkan, maka hapus diskon
             {
                 selectedDiskon = 0;
@@ -2393,7 +2444,6 @@ namespace KASIR.OfflineMode
             {
                 if (await cekPeritemDiskon() != 0 && selectedDiskon != 0)
                 {
-                    MessageBox.Show("Memasang Diskon Cart, Diskon peritem akan dilepas");
                     LoadCart();
                 }
                 // Mengambil nilai diskon yang dipilih dari combobox
@@ -2416,57 +2466,60 @@ namespace KASIR.OfflineMode
 
                 int total_item_withDiscount = 0;
                 int discountPercent = 0;
+                int discounted_peritemPrice = 0;
                 int discountValue = 0;
                 int discountedPrice = 0;
                 int discountMax = 0;
+                int tempTotal = 0;
+
                 string discountCode = (string)null;
+
                 if (selectedDiskon != 0) // Jika diskon yang dipilih bukan 0, proses diskon
                 {
                     // Mendapatkan informasi diskon berdasarkan id diskon yang dipilih
                     var discount = dataDiscountListCart.FirstOrDefault(d => d.id == selectedDiskon);
                     if (discount != null)
                     {
-
                         discountPercent = discount.is_percent;
                         discountValue = discount.value;
                         discountMax = discount.max_discount ?? int.MaxValue;
                         discountCode = discount.code ?? "";
 
-                        int tempTotal = 0;
 
-                        if (discountPercent != 0)
+                        if (discountPercent != 0) // Jika diskon berupa persentase
                         {
+                            // Menghitung nilai diskon berdasarkan persentase
                             tempTotal = subtotal_item * discountValue / 100;
                             if (tempTotal > discountMax)
                             {
-                                discountedPrice = discountMax;
+                                discountedPrice = discountMax; // Potongan diskon maksimal
                             }
                             else
                             {
-                                discountedPrice = subtotal_item - tempTotal;
+                                discountedPrice = tempTotal; // Potongan diskon sesuai persen
                             }
-                            total_item_withDiscount = subtotal_item - discountedPrice;
-                            discountedPrice = discountedPrice / quantity;
+                            total_item_withDiscount = subtotal_item - discountedPrice; // Total setelah diskon
+                            discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
                         }
-                        else
+                        else // Jika diskon berupa nilai tetap
                         {
+                            // Mengurangi subtotal dengan diskon nilai tetap
                             tempTotal = subtotal_item - discountValue;
                             if (tempTotal > discountMax)
                             {
-                                discountedPrice = discountMax;
+                                discountedPrice = discountMax; // Potongan diskon maksimal
                             }
                             else
                             {
-                                discountedPrice = subtotal_item - tempTotal;
+                                discountedPrice = subtotal_item - tempTotal; // Potongan diskon tetap
                             }
-                            total_item_withDiscount = subtotal_item - discountedPrice;
-
-                            discountedPrice = discountedPrice / quantity;
+                            total_item_withDiscount = subtotal_item - discountedPrice; // Total setelah diskon
+                            discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
                         }
+
 
                     }
                 }
-
                 // Memperbarui data cart dengan nilai diskon yang dipilih
                 cartData["discount_id"] = selectedDiskon; // Gunakan selectedDiskon yang sudah diganti
                 cartData["discount_code"] = discountCode;
@@ -2478,7 +2531,7 @@ namespace KASIR.OfflineMode
                 // Menyimpan kembali data cart yang telah diperbarui ke file cache
                 File.WriteAllText(cartDataPath, cartData.ToString());
                 // Refresh UI dengan data terbaru
-                LoadCart();
+                ReloadCart();
             }
             catch (Exception ex)
             {
@@ -2486,7 +2539,7 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
+        bool isDiscountActive = false;
 
         private async Task<int> cekPeritemDiskon()
         {

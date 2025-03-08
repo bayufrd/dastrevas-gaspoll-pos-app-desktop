@@ -347,7 +347,9 @@ namespace KASIR.OfflineMode
                 string? discountCode = (string)null;
                 int discountId = 0;
                 int discountedPrice = 0;
-                if(diskon == -1)
+                int discounted_peritemPrice = 0;
+
+                if (diskon == -1)
                 {
                     discountId = diskon;
                 }
@@ -362,33 +364,35 @@ namespace KASIR.OfflineMode
                     int tempTotal = 0;
 
 
-                    if (discountPercent != 0)
+                    if (discountPercent != 0) // Jika diskon berupa persentase
                     {
-                        tempTotal = subtotal_item * discountValue/100;
-                        if(tempTotal > discountMax)
+                        // Menghitung nilai diskon berdasarkan persentase
+                        tempTotal = subtotal_item * discountValue / 100;
+                        if (tempTotal > discountMax)
                         {
-                            discountedPrice = discountMax;
+                            discountedPrice = discountMax; // Potongan diskon maksimal
                         }
                         else
                         {
-                            discountedPrice = subtotal_item - tempTotal;
+                            discountedPrice = tempTotal; // Potongan diskon sesuai persen
                         }
-                        total_item_withDiscount = subtotal_item - discountedPrice;
-                        discountedPrice = discountedPrice / quantity;
+                        total_item_withDiscount = subtotal_item - discountedPrice; // Total setelah diskon
+                        discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
                     }
-                    else
+                    else // Jika diskon berupa nilai tetap
                     {
+                        // Mengurangi subtotal dengan diskon nilai tetap
                         tempTotal = subtotal_item - discountValue;
                         if (tempTotal > discountMax)
                         {
-                            discountedPrice = discountMax;
+                            discountedPrice = discountMax; // Potongan diskon maksimal
                         }
                         else
                         {
-                            discountedPrice = subtotal_item - tempTotal;
+                            discountedPrice = subtotal_item - tempTotal; // Potongan diskon tetap
                         }
-                        total_item_withDiscount = subtotal_item - discountedPrice;
-                        discountedPrice = discountedPrice / quantity;
+                        total_item_withDiscount = subtotal_item - discountedPrice; // Total setelah diskon
+                        discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
                     }
                 }
                 string created_atTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
@@ -414,6 +418,7 @@ namespace KASIR.OfflineMode
                     { "discount_code", discountCode },
                     { "discounts_value", discountValue },
                     { "discounted_price", discountedPrice },
+                    { "discounted_item_price", discounted_peritemPrice },
                     { "discounts_is_percent", discountPercent },
                     { "subtotal_price", int.Parse(subtotal_item.ToString()) },
                     { "total_price", total_item_withDiscount }

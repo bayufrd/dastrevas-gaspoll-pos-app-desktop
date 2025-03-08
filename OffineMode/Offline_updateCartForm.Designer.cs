@@ -196,9 +196,8 @@
             label3.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label3.Location = new Point(6, 5);
             label3.Name = "label3";
-            label3.Size = new Size(57, 15);
+            label3.Size = new Size(0, 15);
             label3.TabIndex = 8;
-            label3.Text = "CATATAN";
             // 
             // txtNotes
             // 
@@ -245,9 +244,8 @@
             lblTipe.AutoSize = true;
             lblTipe.Location = new Point(5, 26);
             lblTipe.Name = "lblTipe";
-            lblTipe.Size = new Size(29, 15);
+            lblTipe.Size = new Size(0, 15);
             lblTipe.TabIndex = 8;
-            lblTipe.Text = "Tipe";
             // 
             // label2
             // 
@@ -255,9 +253,8 @@
             label2.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label2.Location = new Point(4, 5);
             label2.Name = "label2";
-            label2.Size = new Size(100, 15);
+            label2.Size = new Size(0, 15);
             label2.TabIndex = 1;
-            label2.Text = "TIPE PENJUALAN";
             // 
             // panel2
             // 
@@ -344,9 +341,8 @@
             label1.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label1.Location = new Point(5, 5);
             label1.Name = "label1";
-            label1.Size = new Size(71, 15);
+            label1.Size = new Size(0, 15);
             label1.TabIndex = 1;
-            label1.Text = "KUANTITAS";
             // 
             // flowLayoutPanel1
             // 
@@ -376,9 +372,8 @@
             lblDiscount.AutoSize = true;
             lblDiscount.Location = new Point(5, 24);
             lblDiscount.Name = "lblDiscount";
-            lblDiscount.Size = new Size(46, 15);
+            lblDiscount.Size = new Size(0, 15);
             lblDiscount.TabIndex = 7;
-            lblDiscount.Text = "Diskon ";
             // 
             // panel11
             // 
@@ -394,7 +389,6 @@
             // 
             cmbDiskon.BackColor = Color.White;
             cmbDiskon.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbDiskon.Enabled = false;
             cmbDiskon.FlatStyle = FlatStyle.Flat;
             cmbDiskon.FormattingEnabled = true;
             cmbDiskon.Location = new Point(3, 7);
@@ -409,9 +403,8 @@
             label5.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label5.Location = new Point(4, 6);
             label5.Name = "label5";
-            label5.Size = new Size(52, 15);
+            label5.Size = new Size(0, 15);
             label5.TabIndex = 4;
-            label5.Text = "DISKON";
             // 
             // panel8
             // 
@@ -428,9 +421,8 @@
             lblVarian.AutoSize = true;
             lblVarian.Location = new Point(5, 24);
             lblVarian.Name = "lblVarian";
-            lblVarian.Size = new Size(39, 15);
+            lblVarian.Size = new Size(0, 15);
             lblVarian.TabIndex = 6;
-            lblVarian.Text = "Varian";
             // 
             // panel9
             // 
@@ -459,9 +451,8 @@
             label4.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label4.Location = new Point(4, 6);
             label4.Name = "label4";
-            label4.Size = new Size(50, 15);
+            label4.Size = new Size(0, 15);
             label4.TabIndex = 4;
-            label4.Text = "VARIAN";
             // 
             // Offline_updateCartForm
             // 
@@ -475,8 +466,8 @@
             MaximumSize = new Size(600, 600);
             Name = "Offline_updateCartForm";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "updateCart";
             TopMost = true;
+            Load += Offline_updateCartForm_Load;
             panel1.ResumeLayout(false);
             panel6.ResumeLayout(false);
             panel6.PerformLayout();

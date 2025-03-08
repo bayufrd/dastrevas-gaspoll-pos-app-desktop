@@ -165,6 +165,7 @@ namespace KASIR.OffineMode
                 string firstCartDetailId = cartDetails?.FirstOrDefault()?["cart_detail_id"].ToString();
                 transactionId = firstCartDetailId;
                 int totalCartAmount = int.Parse(cartData["total"].ToString());
+                int subtotalcart = int.Parse(cartData["subtotal"].ToString());
                 string receiptMaker = cartDetails?.FirstOrDefault()?["created_at"].ToString();
                 string invoiceMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                 string formattedreceiptMaker;
@@ -188,6 +189,12 @@ namespace KASIR.OffineMode
                 {
                     transaction_ref_splitted = cartData["transaction_ref_split"]?.ToString();
                 }
+                int discount_idc = int.Parse(cartData["discount_id"]?.ToString() ?? "0");  // If null, set to 0
+                string discount_codec = cartData["discount_code"]?.ToString() ?? "";  // If null, set to empty string
+                string discounts_valuec = cartData["discounts_value"]?.ToString() ?? "0";  // If null, set to "0"
+                string discounts_is_percentc = cartData["discounts_is_percent"]?.ToString() ?? "0";  // If null, set to "0"
+                int discounted_pricec = int.TryParse(cartData["discounted_price"]?.ToString(), out int result) ? result : 0;  // If null, set to 0
+
                 // Prepare transaction data
                 var transactionData = new
                 {
@@ -204,7 +211,7 @@ namespace KASIR.OffineMode
                     customer_cash = 0,
                     customer_change = 0,
                     total = totalCartAmount,
-                    subtotal = totalCartAmount, // You can replace this with actual subtotal if available
+                    subtotal = subtotalcart, // You can replace this with actual subtotal if available
                     created_at = receiptMaker,
                     updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                     deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
@@ -212,10 +219,11 @@ namespace KASIR.OffineMode
                     refund_reason = (string)null, // Null if no refund reason
                     delivery_type = (string)null, // Null value for delivery_type
                     delivery_note = (string)null, // Null value for delivery_note
-                    discount_id = 0,
-                    discount_code = (string)null, // Null if no discount code
-                    discounts_value = (string)null, // Null if no discount value
-                    discounts_is_percent = (string)null, // Null if no discount percent
+                    discount_id = discount_idc,
+                    discount_code = discount_codec,
+                    discounts_value = discounts_valuec,
+                    discounts_is_percent = discounts_is_percentc,
+                    discounted_price = discounted_pricec,
                     member_name = (string)null, // Null if no member name
                     member_phone_number = (string)null, // Null if no member phone number
                     is_refund_all = 0,
@@ -254,7 +262,7 @@ namespace KASIR.OffineMode
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show("Terjadi kesalahan, silakan coba lagi.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Terjadi kesalahan, silakan coba lagi.{ex.ToString()}", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 ResetButtonState();
             }
         }
@@ -308,10 +316,10 @@ namespace KASIR.OffineMode
                         cart_id = 0,
                         subtotal = (int)cartData.subtotal,
                         total = (int)cartData.total,
-                        discount_id = 0,
-                        discount_code = null,
-                        discounts_value = null,
-                        discounts_is_percent = null,
+                        discount_id = cartData?.discount_id != 0 ? cartData.discount_id : 0, // If discount_id is not 0, use it, else default to 0
+                        discount_code = string.IsNullOrEmpty(cartData?.discount_code) ? (string)null : cartData.discount_code, // Set to null if discount_code is empty or null
+                        discounts_value = string.IsNullOrEmpty(cartData?.discounts_value?.ToString()) ? (int?)null : (int?)int.Parse(cartData?.discounts_value.ToString()), // Set to null if no discount
+                        discounts_is_percent = (cartData?.discounts_is_percent == null) ? (string)null : cartData?.discounts_is_percent.ToString(), // Set to null if no discount
                         cart_details = new List<CartDetailStrukCustomerTransaction>(),
                         canceled_items = new List<CanceledItemStrukCustomerTransaction>(),
                         kitchenBarCartDetails = new List<KitchenAndBarCartDetails>(),

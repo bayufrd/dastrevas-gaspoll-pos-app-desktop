@@ -29,11 +29,6 @@ namespace KASIR.OffineMode
 {
     public partial class Offline_Complaint : Form
     {
-        //private successTransaction SuccessTransaction { get; set; }
-        private List<CartDetailTransaction> item = new List<CartDetailTransaction>();
-        private List<RefundModel> refundItems = new List<RefundModel>();
-        private readonly string MacAddressKasir;
-        private readonly string PinPrinterKasir;
         private readonly string BaseOutletName;
         private readonly string Version;
         public bool ReloadDataInBaseForm { get; private set; }
@@ -43,8 +38,6 @@ namespace KASIR.OffineMode
         private readonly ILogger _log = LoggerService.Instance._log;
         public Offline_Complaint()
         {
-            PinPrinterKasir = Properties.Settings.Default.PinPrinterKasir;
-            MacAddressKasir = Properties.Settings.Default.MacAddressKasir;
             baseOutlet = Properties.Settings.Default.BaseOutlet;
             BaseOutletName = Properties.Settings.Default.BaseOutletName;
             Version = Properties.Settings.Default.Version;
@@ -110,8 +103,16 @@ namespace KASIR.OffineMode
                 var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
                 string BaseOutletNameID = dataOutlet?.data?.name?.ToString() ?? "";
 
-                // Format tanggal saat ini
                 string formatDate = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+
+                // Mengubah string formatDate ke DateTime
+                DateTime date = DateTime.ParseExact(formatDate, "yyyyMMdd", CultureInfo.InvariantCulture);
+
+                // Mengurangi satu hari
+                DateTime previousDay = date.AddDays(-1);
+
+                // Mengonversi kembali ke format string
+                string previousDayString = previousDay.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
 
                 // Folder untuk cache dan log
                 string FolderCache = "DT-Cache\\Transaction";
@@ -121,7 +122,7 @@ namespace KASIR.OffineMode
                 string FolderLogCache_transaction = Path.Combine(FolderCache, "transaction.data");
                 string FolderLogCache_failed_transaction = Path.Combine(FolderCache, "FailedSyncTransaction", $"{baseOutlet}_FailedSync_{formatDate}.data");
                 string FolderLogCache_success_transaction = Path.Combine(FolderCache, "SyncSuccessTransaction", $"{baseOutlet}_SyncSuccess_{formatDate}.data");
-                string FolderLogCache_history_transaction = Path.Combine(FolderCache, "HistoryTransaction", $"History_transaction_DT-{baseOutlet}_{formatDate}.data");
+                string FolderLogCache_history_transaction = Path.Combine(FolderCache, "HistoryTransaction", $"History_transaction_DT-{baseOutlet}_{previousDayString}.data");
 
                 // Membaca isi file log cache atau mengembalikan "{}" jika file tidak ada
                 string LogCacheData = ReadFileContentAsSingleLine(FolderLogCacheData);
@@ -148,7 +149,6 @@ namespace KASIR.OffineMode
 
                 // Mengubah objek menjadi string JSON
                 string jsonString = JsonConvert.SerializeObject(json, Formatting.None); // Tidak ada indentasi
-
                 IApiService apiService = new ApiService();
 
                 HttpResponseMessage response = await apiService.notifikasiPengeluaran(jsonString, $"/complaint?outlet_id={baseOutlet}");
@@ -183,14 +183,17 @@ namespace KASIR.OffineMode
             }
 
         }
-        private static string Ex_ReadFileContentAsSingleLine(string filePath)
+        private static string XReadFileContentAsSingleLine(string filePath)
         {
             if (File.Exists(filePath))
             {
                 string jsonContent = File.ReadAllText(filePath);
 
                 // Menghapus escape backslash secara eksplisit
-                jsonContent = jsonContent.Replace("\\", "");
+                jsonContent = jsonContent.Replace("\\", ""); 
+                jsonContent = jsonContent.Replace("\"", "");
+
+
 
                 // Deserialisasi dan serialisasi untuk memastikan JSON valid
                 var parsedJson = JsonConvert.DeserializeObject(jsonContent);

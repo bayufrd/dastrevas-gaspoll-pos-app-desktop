@@ -25,6 +25,7 @@ namespace KASIR.Model
         public string? discount_code { get; set; }
         public int? discounts_value { get; set; }
         public int? discounted_price { get; set; }
+        public int? discounted_item_price { get; set; }
         public string discounts_is_percent { get; set; }
         public int menu_price { get; set; }
         public string note_item { get; set; }

@@ -33,6 +33,9 @@ namespace KASIR.Komponen
         public CacheDataApp(string TypeCacheEksekusi)
         {
             InitializeComponent();
+            StartPosition = FormStartPosition.CenterScreen; // Menampilkan form di tengah layar
+            MaximizeBox = false;  // Menonaktifkan tombol maximize untuk menghindari form lebih besar dari layar
+            FormBorderStyle = FormBorderStyle.FixedDialog; // Mengatur border agar tidak bisa diubah-ubah ukuran
             progressBar.Minimum = 0;
             progressBar.Maximum = 100;
             choice = TypeCacheEksekusi.ToString();

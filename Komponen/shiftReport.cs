@@ -95,8 +95,6 @@ namespace KASIR.Komponen
                 }
                 else
                 {
-                    //string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet; //Origin
-
                     HttpResponseMessage response = await apiService.SyncTransaction(jsonData, apiUrl);
                     if (response.IsSuccessStatusCode)
                     {
@@ -134,7 +132,14 @@ namespace KASIR.Komponen
                     else
                     {
                         //GagalSync
-                        MessageBox.Show("Gagal mengirim data Transactions.");
+                        // Handle the failed sync case
+                        string errorMessage = $"Gagal mengirim data Transactions. API Response: {response.ReasonPhrase}";
+                        MessageBox.Show(errorMessage);
+
+                        // Optionally capture the response body for detailed error message
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        string detailedErrorMessage = $"{errorMessage} || Response Body: {responseBody}";
+
                         string folderGagall = "DT-Cache\\Transaction\\FailedSyncTransaction";
                         newFileName = $"{baseOutlet}_SyncFailed_{DateTime.Now:yyyyMMdd}.data";
 
@@ -161,7 +166,8 @@ namespace KASIR.Komponen
                         {
                             File.Copy(destinationPath, folderCombine);
                         }
-                        throw new Exception("Gagal mengirim data Transactions." + response.ToString());
+                        // Throw an exception with a detailed error message, including both the ReasonPhrase and the response body
+                        throw new Exception(detailedErrorMessage);
                     }
                 }
                 string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";

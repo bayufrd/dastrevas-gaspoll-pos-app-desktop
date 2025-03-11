@@ -54,6 +54,7 @@ namespace KASIR.OfflineMode
         {
             baseOutlet = Properties.Settings.Default.BaseOutlet;
             InitializeComponent();
+
             btnSimpan.Enabled = false;
             lblNameCart.Text = "Checking Data...";
             flowLayoutPanel1.FlowDirection = FlowDirection.TopDown;

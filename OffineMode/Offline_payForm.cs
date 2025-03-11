@@ -391,8 +391,8 @@ namespace KASIR.OfflineMode
                     string discounts_is_percentConv = cartData["discounts_is_percent"]?.ToString() != null ? cartData["discounts_is_percent"]?.ToString() : (string)null;
 
                     var qtyTotal = cartDetails.Sum(item => (int)item["qty"]);
-                    int discounted_price = subtotalCart - totalCartAmount;
-                    int discounted_priceperitem = discounted_price / int.Parse(qtyTotal.ToString());
+                    int discounted_price1 = subtotalCart - totalCartAmount;
+                    int discounted_priceperitem = discounted_price1 / int.Parse(qtyTotal.ToString());
                     // Prepare transaction data
                     var transactionData = new
                     {
@@ -421,6 +421,7 @@ namespace KASIR.OfflineMode
                         discount_code = discount_codeConv,
                         discounts_value = discounts_valueConv,
                         discounts_is_percent = discounts_is_percentConv,
+                        discounted_price = discounted_price1,
                         discounted_peritem_price = discounted_priceperitem,
                         member_name = (string)null, // Null if no member name
                         member_phone_number = (string)null, // Null if no member phone number
@@ -488,20 +489,19 @@ namespace KASIR.OfflineMode
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
                 // Deserialize JSON ke object CartDataCache
                 var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
-                /* if(discounts_valueConv.ToString() == null){
-                     discounts_valueConv = "0";
-                 }*/
-                int discounts_valueConvIntm;
-                if(discounts_valueConv == null)
+                int discounts_valueConvIntm = 0;
+                if (!string.IsNullOrEmpty(discounts_valueConv) && discounts_valueConv != "null")
                 {
-                    discounts_valueConvIntm = 0;
+                    bool isValidDiscount = int.TryParse(discounts_valueConv, out discounts_valueConvIntm);
+                    if (!isValidDiscount)
+                    {
+                        // Log the issue or set a default value (already set 0 by default)
+                        discounts_valueConvIntm = 0;
+                    }
                 }
-                else
-                {
-                    discounts_valueConvIntm = int.Parse(discounts_valueConv);
-                }
-                 // Konversi ke format GetStrukCustomerTransaction
-                 var strukCustomerTransaction = new GetStrukCustomerTransaction
+
+                // Konversi ke format GetStrukCustomerTransaction
+                var strukCustomerTransaction = new GetStrukCustomerTransaction
                 {
                     code = 201,
                     message = "Transaksi Sukses!",

@@ -57,6 +57,7 @@ namespace KASIR
             button2 = new PictureBox();
             Setting = new IconButton();
             panel2 = new Panel();
+            btnDev = new IconButton();
             panel1.SuspendLayout();
             panelTitleBar.SuspendLayout();
             gradientPanel1.SuspendLayout();
@@ -203,6 +204,7 @@ namespace KASIR
             // 
             gradientPanel2.Angle = 90F;
             gradientPanel2.BottomColor = Color.FromArgb(31, 30, 68);
+            gradientPanel2.Controls.Add(btnDev);
             gradientPanel2.Controls.Add(btnContact);
             gradientPanel2.Controls.Add(SignalPing);
             gradientPanel2.Controls.Add(lblPing);
@@ -326,6 +328,20 @@ namespace KASIR
             panel2.Name = "panel2";
             panel2.Paint += panel2_Paint;
             // 
+            // btnDev
+            // 
+            btnDev.BackColor = Color.Transparent;
+            btnDev.FlatAppearance.BorderSize = 0;
+            resources.ApplyResources(btnDev, "btnDev");
+            btnDev.ForeColor = Color.Gainsboro;
+            btnDev.IconChar = IconChar.GetPocket;
+            btnDev.IconColor = Color.Gainsboro;
+            btnDev.IconFont = IconFont.Auto;
+            btnDev.IconSize = 25;
+            btnDev.Name = "btnDev";
+            btnDev.UseVisualStyleBackColor = false;
+            btnDev.Click += btnDev_Click;
+            // 
             // Form1
             // 
             resources.ApplyResources(this, "$this");
@@ -382,5 +398,6 @@ namespace KASIR
         private IconButton btnShiftLaporan;
         private IconButton SignalPing;
         private IconButton btnContact;
+        private IconButton btnDev;
     }
 }

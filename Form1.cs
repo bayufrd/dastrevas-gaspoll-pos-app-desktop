@@ -66,6 +66,10 @@ namespace KASIR
             lblDetail.Visible = false;
             progressBar.Visible = false;
             StarterApp();
+            if(baseOutlet != "4")
+            {
+                btnDev.Visible = false;
+            }
         }
         private async void ConfigOfflineMode()
         {
@@ -546,7 +550,6 @@ namespace KASIR
                 string userName = Environment.UserName;
                 string cariFolder3 = Path.Combine("C:\\Users", userName, "Downloads");
 
-                LoggerUtil.LogWarning("Open Updater App Dastrevass");
 
                 if (Directory.Exists(cariFolder1))
                 {
@@ -702,7 +705,7 @@ namespace KASIR
                 var json = new
                 {
                     outlet_name = dataOutlet.data.name,
-                    version = currentVersion,
+                    version = currentVersion + " UpdaterVer: " + VersionUpdaterApp,
                     new_version = newVersion,
                     last_updated = DateTime.Now.ToString("yyyy-MM-dd HH=mm=ss", CultureInfo.InvariantCulture)
                 };
@@ -712,8 +715,8 @@ namespace KASIR
 
                 HttpResponseMessage response = await apiService.notifikasiPengeluaran(jsonString, $"/update-confirm?outlet_id={baseOutlet}");
             }
-            catch (Exception ex) 
-            { 
+            catch (Exception ex)
+            {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -1602,6 +1605,32 @@ namespace KASIR
 
                 background.Dispose();
             }
+        }
+
+        private void btnDev_Click(object sender, EventArgs e)
+        {
+            ActivateButton(sender, RGBColors.color4);
+
+            DevMonitor c = new DevMonitor();
+
+            c.Dock = DockStyle.Fill;
+            panel1.Controls.Add(c);
+            c.BringToFront();
+            c.Show();
+
+
+            Form background = new Form
+            {
+                StartPosition = FormStartPosition.Manual,
+                FormBorderStyle = FormBorderStyle.None,
+                Opacity = 0.7d,
+                BackColor = Color.Black,
+                WindowState = FormWindowState.Maximized,
+                TopMost = true,
+                Location = this.Location,
+                ShowInTaskbar = false,
+            };
+
         }
     }
 }

@@ -24,6 +24,7 @@ using Point = System.Drawing.Point;
 using SystemFonts = System.Drawing.SystemFonts;
 using Size = System.Drawing.Size;
 using System.Windows;
+using Polly.Caching;
 
 
 namespace KASIR.OfflineMode
@@ -144,17 +145,12 @@ namespace KASIR.OfflineMode
                     // Menggunakan Regex untuk mengganti semua titik (.) dengan titik koma (:) hanya di bagian waktu
                     string updatedInvoiceDueDate = Regex.Replace(invoiceDueDate, @"(\d)\.(\d)", "$1:$2");
 
-                    DateTime parsedDate;
-                    // Only parse the date part, ignoring the time
-                    if (DateTime.TryParseExact(
-                        updatedInvoiceDueDate, //firstTransaction["invoice_due_date"].ToString(),
-                        "yyyy-MM-dd HH:mm:ss",
-                        CultureInfo.InvariantCulture,
-                        DateTimeStyles.None,
-                        out parsedDate))
+                    // Parse the invoice_due_date string to a DateTime object
+                    DateTime parsedInvoiceDueDate;
+                    if (DateTime.TryParseExact(updatedInvoiceDueDate, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedInvoiceDueDate))
                     {
-                        // Store only the date part of the first transaction's updated_at
-                        firstTransactionDate = parsedDate.Date;
+                        // Store the parsed date and time from invoice_due_date
+                        firstTransactionDate = parsedInvoiceDueDate;
                     }
                     else
                     {
@@ -178,21 +174,33 @@ namespace KASIR.OfflineMode
                         return;
                     }
                 }
-                // 5. Compare the first transaction's date with today's date
-                if (firstTransactionDate.HasValue && firstTransactionDate.Value != DateTime.Now.Date)
+                // 5. Compare the "invoice_due_date" with current date and time
+                if (firstTransactionDate.HasValue)
                 {
-                    try
-                    {
+                    DateTime currentDateTime = DateTime.Now; // Current local date and time
 
-                        shiftReport c = new shiftReport();
-                        //c.SyncCompleted += SyncCompletedHandler;
-                        await c.SyncDataTransactions();
-                        // Move the files created after the specified time span
-                        transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, TimeSpan.FromHours(20));
-                    }
-                    catch (Exception ex)
+                    // Calculate the time difference between current time and invoice_due_date
+                    TimeSpan timeDifference = currentDateTime - firstTransactionDate.Value;
+
+                    // Display the time difference for debugging
+                    //MessageBox.Show($"Time Difference: {timeDifference.TotalHours} hours");
+
+                    // Check if the time difference is greater than 20 hours
+                    if (timeDifference.TotalHours > 20)
                     {
-                        LoggerUtil.LogError(ex, "Error moving transaction files: {ErrorMessage}", ex.Message);
+                        try
+                        {
+                            shiftReport c = new shiftReport();
+                            //c.SyncCompleted += SyncCompletedHandler;
+                            await c.SyncDataTransactions();
+
+                            // Move the files created after the specified time span (20 hours in this case)
+                            transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, TimeSpan.FromHours(20));
+                        }
+                        catch (Exception ex)
+                        {
+                            LoggerUtil.LogError(ex, "Error moving transaction files: {ErrorMessage}", ex.Message);
+                        }
                     }
                 }
             }
@@ -846,6 +854,7 @@ namespace KASIR.OfflineMode
                 // Cek apakah file Cart.data ada
                 if (File.Exists(filePath))
                 {
+                    cmbDiskon.SelectedIndex = 0;
                     // Membaca isi file Cart.data
                     string cartJson = File.ReadAllText(filePath);
 
@@ -1897,12 +1906,14 @@ namespace KASIR.OfflineMode
         {
             try
             {
+
                 // Path for the cart data cache
                 string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
 
                 // Check if the cart file exists
                 if (File.Exists(cacheFilePath))
                 {
+
                     string cartJson = File.ReadAllText(cacheFilePath);
                     var cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
 
@@ -1957,7 +1968,6 @@ namespace KASIR.OfflineMode
                             iconButtonGet.ForeColor = Color.Red;
                             isDiscountActive = true;
                             iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
-
                         }
                         else
                         {
@@ -2140,6 +2150,7 @@ namespace KASIR.OfflineMode
                         iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
                     }
                 }
+                ReloadDisc();
 
                 await SignalReload(); // Ensure the UI is updated
             }
@@ -2381,6 +2392,8 @@ namespace KASIR.OfflineMode
                     // Handle the result if needed
                     if (result == DialogResult.OK)
                     {
+                        cmbDiskon.SelectedIndex = 0;
+
                         background.Dispose();
                         ReloadCart();
                     }
@@ -2392,6 +2405,14 @@ namespace KASIR.OfflineMode
                     }
                 }
             }
+        }
+        private async void ReloadDisc()
+        {
+            if(cmbDiskon.SelectedItem == null || cmbDiskon == null) { return; } 
+            int selectedDiskon = (int)cmbDiskon.SelectedValue;
+            if(selectedDiskon == 0 || selectedDiskon == -1) { return; }
+            ProcessDiscountCart(selectedDiskon);
+
         }
         private async void btnGet_Click(object sender, EventArgs e)
         {
@@ -2458,7 +2479,20 @@ namespace KASIR.OfflineMode
                 {
                     selectedDiskon = 0;
                 }
-
+                ProcessDiscountCart(selectedDiskon);
+                // Refresh UI dengan data terbaru
+                ReloadCart();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal menggunakan diskon: " + ex.Message, "Gaspol");
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+        private async void ProcessDiscountCart(int selectedDiskon)
+        {
+            try
+            {
                 // Mengambil data cart dari file cache
                 string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
                 string cartDataJson = File.ReadAllText(cartDataPath);
@@ -2533,10 +2567,11 @@ namespace KASIR.OfflineMode
                 cartData["discounted_price"] = discountedPrice;
                 cartData["total"] = total_item_withDiscount;
 
+
+                lblTotal1.Text = string.Format("Rp. {0:n0},-", total_item_withDiscount);
+                lblDiskon1.Text = string.Format("Rp. - {0:n0},-", discountedPrice);
                 // Menyimpan kembali data cart yang telah diperbarui ke file cache
                 File.WriteAllText(cartDataPath, cartData.ToString());
-                // Refresh UI dengan data terbaru
-                ReloadCart();
             }
             catch (Exception ex)
             {
@@ -2968,6 +3003,7 @@ namespace KASIR.OfflineMode
                     // Handle the result if needed
                     if (result == DialogResult.OK)
                     {
+                        cmbDiskon.SelectedIndex = 0;
                         background.Dispose();
                         ReloadCart();
                         LoadCart();

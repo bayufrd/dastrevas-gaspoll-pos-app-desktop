@@ -231,19 +231,20 @@ namespace KASIR.OfflineMode
                         int cash = filteredTransaction["customer_cash"] != null ? int.Parse(filteredTransaction["customer_cash"].ToString()) : 0;
                         int kembalian = filteredTransaction["customer_change"] != null ? int.Parse(filteredTransaction["customer_change"].ToString()) : 0;
                         int refund = filteredTransaction["total_refund"] != null ? int.Parse(filteredTransaction["total_refund"].ToString()) : 0;
-                        string? discountPrice = filteredTransaction["discounts_value"]?.ToString();
-                        int? discountPriced = 0;
-                        if (discountPrice != "0")
-                        {
-                            discountPriced = int.Parse(filteredTransaction["subtotal"].ToString()) - int.Parse(filteredTransaction["total"].ToString());
-                        }
-                        discountPrice = discountPriced.ToString();
-                        lblDiscountCode.Text = "Discount Code: " + filteredTransaction["discount_code"].ToString() != null ? filteredTransaction["discount_code"].ToString() : "-";
-                        lblDiscountValue.Text = "Discount Value: " + filteredTransaction["discounts_value"]?.ToString() != "0" ? filteredTransaction["discounts_value"]?.ToString() : "-";
-                        lblDiscountPrice.Text = "Discount Price: " + string.Format("{0:n0}", int.Parse(discountPrice.ToString()));
-                        lblCustomerCash.Text = "Customer Cash: " + string.Format("{0:n0}", cash);
-                        lblKembalian.Text = "Change: " + string.Format("{0:n0}", kembalian);
-                        lblTotalRefund.Text = "Refund: " + string.Format("{0:n0}", refund);
+                        string? discountPrice = filteredTransaction["discounted_price"]?.ToString() != "0" ? string.Format("{0:n0}", int.Parse(filteredTransaction["discounted_price"]?.ToString())) : "-";
+                        lblDiscountCode.Text = "Discount Code: ";
+                        lblDiscountValue.Text = "Discount Value: ";
+                        lblDiscountPrice.Text = "Discount Price: ";
+                        lblCustomerCash.Text = "Customer Cash: ";
+                        lblKembalian.Text = "Change: ";
+                        lblTotalRefund.Text = "Refund: ";
+
+                        lblDiscountCode.Text += filteredTransaction["discount_code"].ToString() != null ? filteredTransaction["discount_code"].ToString() : "-";
+                        lblDiscountValue.Text += filteredTransaction["discounts_value"]?.ToString() != "0" ? filteredTransaction["discounts_value"]?.ToString() : "-";
+                        lblDiscountPrice.Text += discountPrice;
+                        lblCustomerCash.Text += string.Format("{0:n0}", cash);
+                        lblKembalian.Text += string.Format("{0:n0}", kembalian);
+                        lblTotalRefund.Text += string.Format("{0:n0}", refund);
 
                         // Ambil data cart_details dan refund_details
                         var cartDetails = filteredTransaction["cart_details"] as JArray;

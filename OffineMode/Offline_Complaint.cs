@@ -82,6 +82,7 @@ namespace KASIR.OffineMode
 
         private async void button2_Click(object sender, EventArgs e)
         {
+            btnSimpan.Enabled = false;
             try
             {
                 if (lblNama.Text == null || lblNama.Text == "")
@@ -120,16 +121,20 @@ namespace KASIR.OffineMode
 
                 // Path untuk berbagai file log cache
                 string FolderLogCache_transaction = Path.Combine(FolderCache, "transaction.data");
-                string FolderLogCache_failed_transaction = Path.Combine(FolderCache, "FailedSyncTransaction", $"{baseOutlet}_FailedSync_{formatDate}.data");
+                string FolderLogCache_failed_transaction = Path.Combine(FolderCache, "FailedSyncTransaction", $"{baseOutlet}_SyncFailed_{formatDate}.data");
                 string FolderLogCache_success_transaction = Path.Combine(FolderCache, "SyncSuccessTransaction", $"{baseOutlet}_SyncSuccess_{formatDate}.data");
                 string FolderLogCache_history_transaction = Path.Combine(FolderCache, "HistoryTransaction", $"History_transaction_DT-{baseOutlet}_{previousDayString}.data");
 
                 // Membaca isi file log cache atau mengembalikan "{}" jika file tidak ada
-                string LogCacheData = ReadFileContentAsSingleLine(FolderLogCacheData);
-                string Cache_transaction = ReadFileContentAsSingleLine(FolderLogCache_transaction);
-                string Cache_failed_transaction = ReadFileContentAsSingleLine(FolderLogCache_failed_transaction);
-                string Cache_success_transaction = ReadFileContentAsSingleLine(FolderLogCache_success_transaction);
-                string Cache_history_transaction = ReadFileContentAsSingleLine(FolderLogCache_history_transaction);
+                
+                string LogCacheData =
+                ReadFileContentAsPlainText(FolderLogCacheData) != "{}"
+                ? ReadFileContentAsPlainText(FolderLogCacheData)
+                : ReadFileContentAsPlainText($"log\\{baseOutlet}_unknown_log{formatDate}.txt"); 
+                string Cache_transaction = ReadFileContentWithRetry(FolderLogCache_transaction);
+                string Cache_failed_transaction = ReadFileContentWithRetry(FolderLogCache_failed_transaction);
+                string Cache_success_transaction = ReadFileContentWithRetry(FolderLogCache_success_transaction);
+                string Cache_history_transaction = ReadFileContentWithRetry(FolderLogCache_history_transaction);
 
                 string nameID = $"{baseOutlet}_{DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}_{BaseOutletNameID}_{Version}_{lblNama.Text.ToString()}";
 
@@ -167,7 +172,7 @@ namespace KASIR.OffineMode
                     else
                     {
                         MessageBox.Show("Gagal dikirim, Coba cek koneksi internet ulang " + response.StatusCode);
-                        _log.Error("Gagal dikirim, Coba cek koneksi internet ulang ");
+                        _log.Error("Gagal dikirim, Coba cek koneksi internet ulang "+response.ToString());
                     }
                 }
             }
@@ -179,49 +184,99 @@ namespace KASIR.OffineMode
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                btnSimpan.Enabled = true;
+
+            }
+            finally
+            {
+                btnSimpan.Enabled = true;
 
             }
 
         }
-        private static string XReadFileContentAsSingleLine(string filePath)
+        private static string ReadFileContentAsPlainText(string filePath)
         {
             if (File.Exists(filePath))
             {
-                string jsonContent = File.ReadAllText(filePath);
+                try
+                {
+                    using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (StreamReader reader = new StreamReader(fs))
+                    {
+                        string content = reader.ReadToEnd();
 
-                // Menghapus escape backslash secara eksplisit
-                jsonContent = jsonContent.Replace("\\", ""); 
-                jsonContent = jsonContent.Replace("\"", "");
+                        if (string.IsNullOrEmpty(content))
+                        {
+                            return "{}"; // Mengembalikan objek JSON kosong jika input null atau kosong
+                        }
 
-
-
-                // Deserialisasi dan serialisasi untuk memastikan JSON valid
-                var parsedJson = JsonConvert.DeserializeObject(jsonContent);
-
-                // Serialize kembali tanpa escape characters
-                return JsonConvert.SerializeObject(parsedJson, Formatting.None);
+                        // Mengonversi string ke objek JSON
+                        var jsonObject = new { Content = content };
+                        string json = JsonConvert.SerializeObject(jsonObject);
+                        return json; // Mengembalikan string JSON
+                    }
+                }
+                catch (IOException ioEx)
+                {
+                    // Log kesalahan jika terjadi
+                    LoggerUtil.LogError(ioEx, "Error accessing file {FilePath}", filePath);
+                    return "{}"; // Mengembalikan objek JSON kosong dalam kasus kesalahan
+                }
+                catch (JsonException jsonEx)
+                {
+                    // Log kesalahan jika terjadi
+                    LoggerUtil.LogError(jsonEx, "Error converting string to JSON");
+                    return "{}"; // Mengembalikan objek JSON kosong dalam kasus kesalahan
+                }
             }
-            return "{}";  // Kembalikan "{}" jika file tidak ada
+            return "{}"; // Mengembalikan objek JSON kosong jika file tidak ada
+        }
+        private static string ReadFileContentWithRetry(string filePath)
+        {
+            int maxRetries = 3;
+            int retries = 0;
+            while (retries < maxRetries)
+            {
+                try
+                {
+                    return ReadFileContentAsSingleLine(filePath);
+                }
+                catch (IOException)
+                {
+                    retries++;
+                    Thread.Sleep(500); // Wait for 500 ms before retrying
+                }
+            }
+            return "{}"; // Return empty JSON if all retries fail
         }
 
         private static string ReadFileContentAsSingleLine(string filePath)
         {
             if (File.Exists(filePath))
             {
-                string jsonContent = File.ReadAllText(filePath);
-
-                // Deserialisasi JSON dan serialisasi kembali
-                var parsedJson = JsonConvert.DeserializeObject(jsonContent);
-
-                // Serialize kembali dengan pengaturan escape handling
-                return JsonConvert.SerializeObject(parsedJson, Formatting.None, new JsonSerializerSettings
+                try
                 {
-                    StringEscapeHandling = StringEscapeHandling.EscapeHtml
-                });
+                    using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (StreamReader reader = new StreamReader(fs))
+                    {
+                        string jsonContent = reader.ReadToEnd();
+                        // Deserialisasi JSON dan serialisasi kembali
+                        var parsedJson = JsonConvert.DeserializeObject(jsonContent);
+                        return JsonConvert.SerializeObject(parsedJson, Formatting.None, new JsonSerializerSettings
+                        {
+                            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+                        });
+                    }
+                }
+                catch (IOException ioEx)
+                {
+                    // Log the error (you can add more specific error messages if needed)
+                    LoggerUtil.LogError(ioEx, "Error accessing file {FilePath}", filePath);
+                    return "{}";  // Return empty JSON in case of failure
+                }
             }
-            return "{}";  // Kembalikan "{}" jika file tidak ada
+            return "{}";  // Return "{}" if file doesn't exist
         }
-
 
         private void txtJumlahCicil_TextChanged(object sender, EventArgs e)
         {

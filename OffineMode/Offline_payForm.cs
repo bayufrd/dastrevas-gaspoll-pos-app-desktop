@@ -302,10 +302,18 @@ namespace KASIR.OfflineMode
                         return;
                     }
 
+                    fulus = Regex.Replace(txtCash.Text, "[^0-9]", "");
+                    if (string.IsNullOrWhiteSpace(fulus))
+                    {
+                        MessageBox.Show("Masukkan harga dengan benar.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ResetButtonState();
+                        return;
+                    }
+
                     int fulusAmount;
                     if (!int.TryParse(fulus, out fulusAmount))
                     {
-                        MessageBox.Show("Masukkan harga dengan benar.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Harga tidak valid.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         ResetButtonState();
                         return;
                     }

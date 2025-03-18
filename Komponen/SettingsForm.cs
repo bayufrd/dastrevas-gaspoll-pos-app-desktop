@@ -74,6 +74,7 @@ using TextBox = System.Windows.Forms.TextBox;
 using SharpCompress.Common;
 using SharpCompress.Compressors.Xz;
 using KASIR.OfflineMode;
+using System.Security.Cryptography.Xml;
 
 namespace KASIR.Komponen
 {
@@ -256,22 +257,6 @@ namespace KASIR.Komponen
             await printerModel.SaveCheckBoxSettingAsync(checkBoxName, isChecked);
         }
 
-
-        private async Task<bool> LoadCheckBoxSettingAsync(string checkBoxName)
-        {
-            // Load checkbox state based on its name
-            // Example implementation:
-            bool isChecked = await printerModel.LoadCheckBoxSettingAsync(checkBoxName);
-            return isChecked;
-        }
-
-        private async void SaveCheckBoxSettingAsync(string checkBoxName, bool isChecked)
-        {
-            // Save checkbox state based on its name
-            // Example implementation:
-            await printerModel.SaveCheckBoxSettingAsync(checkBoxName, isChecked);
-        }
-
         private List<CheckBox> FindCheckBoxesByPrefix(string prefix)
         {
             List<CheckBox> checkBoxes = new List<CheckBox> {
@@ -290,14 +275,6 @@ namespace KASIR.Komponen
             };
 
             return checkBoxes;
-        }
-
-        private async Task<bool> LoadCheckBoxSetting(string checkBoxName)
-        {
-            // Load checkbox state based on its name
-            // Example implementation:
-            bool isChecked = await printerModel.LoadCheckBoxSettingAsync(checkBoxName);
-            return isChecked;
         }
 
         private async void ComboBoxPrinter_SelectedIndexChanged(object sender, EventArgs e)
@@ -889,6 +866,64 @@ namespace KASIR.Komponen
             this.Close();
 
             u.Show();
+            /* iconButton1.Click += (sender, e) =>
+             {
+                 this.Close();
+
+                 // Open a new form with details when clicked
+                 ShowOutletDetailsForm();
+             };*/
+        }
+        private void ShowOutletDetailsForm()
+        {
+            Form detailsForm = new Form
+            {
+                Text = "GMC - Config",
+                Width = 600,  // Mengatur lebar form ke lebar layar
+                Height = 200,  // Mengatur tinggi form ke tinggi layar
+                StartPosition = FormStartPosition.CenterScreen,  // Menampilkan form di tengah layar
+                MaximizeBox = false,  // Menonaktifkan tombol maximize untuk menghindari form lebih besar dari layar
+                FormBorderStyle = FormBorderStyle.FixedDialog  // Mengatur border agar tidak bisa diubah-ubah ukuran
+            };
+            int totalWidth = detailsForm.ClientSize.Width;
+            System.Windows.Forms.Label status = new System.Windows.Forms.Label
+            {
+                Text = "Masukkan Password: :",
+                Width = (int)(totalWidth * 0.9),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Top = 30
+            };
+            TextBox password = new TextBox
+            {
+                Text = "",
+                PlaceholderText = "****",
+                Width = (int)(totalWidth * 0.9),
+                Height = 50,
+                UseSystemPasswordChar = true,
+                Top = 60
+            };
+            // Add controls to the details form
+            detailsForm.Controls.Add(status);
+            detailsForm.Controls.Add(password);
+
+            // Show the details form
+            detailsForm.ShowDialog();
+            password.TextChanged += (sender, e) =>
+            {
+                if (password.Text != "GMC1234")
+                {
+                    status.Text = "Password Salah!";
+                    status.ForeColor = Color.Red;
+
+                }
+                else
+                {
+                    SettingsConfig u = new SettingsConfig();
+                    this.Close();
+
+                    u.Show();
+                }
+            };
         }
 
         private async void sButtonOffline_CheckedChanged(object sender, EventArgs e)

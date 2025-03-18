@@ -70,7 +70,7 @@ namespace KASIR.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://api.gaspollmanagementcenter.com")]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://api.gaspollmanagementcenter.com")]
         public string BaseAddressDev {
             get {
                 return ((string)(this["BaseAddressDev"]));
@@ -88,7 +88,7 @@ namespace KASIR.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://api.gaspollmanagementcenter.com")]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://api.gaspollmanagementcenter.com")]
         public string BaseAddressProd {
             get {
                 return ((string)(this["BaseAddressProd"]));
@@ -106,7 +106,7 @@ namespace KASIR.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://gaspollmanagementcenter.com/update/version.txt")]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://gaspollmanagementcenter.com/update/version.txt")]
         public string BaseAddressVersion {
             get {
                 return ((string)(this["BaseAddressVersion"]));

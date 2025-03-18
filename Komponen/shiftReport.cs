@@ -47,50 +47,55 @@ namespace KASIR.Komponen
         {
             try
             {
-
                 string filePath = "DT-Cache\\Transaction\\transaction.data";
                 string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
-                //File.Copy(filetransactionOri, filePath);
+                string destinationPath = "DT-Cache\\Transaction\\transactionSyncing.data";
+
+                
+                if (File.Exists(destinationPath)) try { File.Delete(destinationPath); } catch(Exception ex) { LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message); }
+
                 IApiService apiService = new ApiService();
 
-                // Mendapatkan direktori dari filePath
+                // Ensure directories exist
                 string directoryPath = Path.GetDirectoryName(filePath);
                 string newFileName = "";
-                string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet; // testing
+                string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
                 newFileName = $"{baseOutlet}_SyncSuccess_{DateTime.Now:yyyyMMdd}.data";
-                // Memastikan direktori tujuan ada
+
                 if (!Directory.Exists(directoryPath))
                 {
                     Directory.CreateDirectory(directoryPath);
                 }
 
-                // Membaca konten file .data yang berisi JSON
                 if (!File.Exists(filePath))
                 {
                     return;
                 }
+
                 if (!Directory.Exists(newSyncFileTransaction))
                 {
                     Directory.CreateDirectory(newSyncFileTransaction);
                 }
-                // Membuat path lengkap untuk file baru
-                string destinationPath = "DT-Cache\\Transaction\\transactionSyncing.data";
 
-                // Memindahkan file dan mengganti nama, paksa overwrite jika sudah ada file dengan nama yang sama
-                File.Copy(filePath, destinationPath, true);  // true untuk overwrite file yang sudah ada
+                // Using streams to copy the file instead of File.Copy
+                using (FileStream sourceStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (FileStream destStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
+                {
+                    await sourceStream.CopyToAsync(destStream);
+                }
 
                 //Simplysent
                 SimplifyAndSaveData(destinationPath);
 
-                // 1. Baca file JSON
+                // Read file JSON
                 string jsonData = File.ReadAllText(destinationPath);
                 JObject data = JObject.Parse(jsonData);
 
-                // 2. Dapatkan array "data"
+                // Get "data" array
                 JArray transactions = (JArray)data["data"];
-                if (transactions == null || !transactions.Any()/*transactions.Count == 0*/)
+                if (transactions == null || !transactions.Any())
                 {
-                    // Menghapus file jika data kosong
+                    // Delete file if data is empty
                     File.Delete(destinationPath);
                 }
                 else
@@ -98,45 +103,48 @@ namespace KASIR.Komponen
                     HttpResponseMessage response = await apiService.SyncTransaction(jsonData, apiUrl);
                     if (response.IsSuccessStatusCode)
                     {
-                        //MessageBox.Show(response.ToString());
                         if (!Directory.Exists(newSyncFileTransaction))
                         {
                             Directory.CreateDirectory(newSyncFileTransaction);
                         }
                         string folderCombine = Path.Combine(newSyncFileTransaction, newFileName);
-                        // Cek apakah file sudah ada, jika ada, baca file dan tambahkan transaksi baru
+
+                        // Check if file exists, if yes, read file and add new transactions
                         if (File.Exists(folderCombine))
                         {
-                            string existingData = File.ReadAllText(destinationPath);
+                            string existingData = File.ReadAllText(folderCombine);
                             JObject existingDataJson = JObject.Parse(existingData);
                             JArray existingTransactions = (JArray)existingDataJson["data"];
 
-                            // Menambahkan transaksi baru ke dalam data yang ada
+                            // Add new transactions to existing data
                             existingTransactions.Add(transactions);
                             existingDataJson["data"] = existingTransactions;
 
-                            // Simpan kembali file yang sudah diperbarui
+                            // Save the updated file
                             File.WriteAllText(folderCombine, existingDataJson.ToString());
                         }
                         else
                         {
-                            File.Copy(destinationPath, folderCombine, true);  // true untuk overwrite file yang sudah ada
+                            // Copy file using streams
+                            using (FileStream sourceStream = new FileStream(destinationPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                            using (FileStream destStream = new FileStream(folderCombine, FileMode.Create, FileAccess.Write))
+                            {
+                                await sourceStream.CopyToAsync(destStream);
+                            }
                         }
-                        // Mengirimkan pemberitahuan kepada form utama bahwa sinkronisasi berhasil
-                        SyncCompleted?.Invoke(); // Memicu event untuk memberi tahu form utama bahwa sinkronisasi berhasil
+
+                        // Notify main form that sync was successful
+                        SyncCompleted?.Invoke();
 
                         SyncSuccess(filePath);
                         NewDataChecker = 1;
-
                     }
                     else
                     {
-                        //GagalSync
-                        // Handle the failed sync case
+                        // Handle failed sync
                         string errorMessage = $"Gagal mengirim data Transactions. API Response: {response.ReasonPhrase}";
                         MessageBox.Show(errorMessage);
 
-                        // Optionally capture the response body for detailed error message
                         string responseBody = await response.Content.ReadAsStringAsync();
                         string detailedErrorMessage = $"{errorMessage} || Response Body: {responseBody}";
 
@@ -149,50 +157,60 @@ namespace KASIR.Komponen
                         {
                             Directory.CreateDirectory(folderGagall);
                         }
+
                         if (File.Exists(folderCombine))
                         {
-                            string existingData = File.ReadAllText(destinationPath);
+                            string existingData = File.ReadAllText(folderCombine);
                             JObject existingDataJson = JObject.Parse(existingData);
                             JArray existingTransactions = (JArray)existingDataJson["data"];
 
-                            // Menambahkan transaksi baru ke dalam data yang ada
                             existingTransactions.Add(transactions);
                             existingDataJson["data"] = existingTransactions;
 
-                            // Simpan kembali file yang sudah diperbarui
                             File.WriteAllText(folderCombine, existingDataJson.ToString());
                         }
                         else
                         {
-                            File.Copy(destinationPath, folderCombine);
+                            // Copy file using streams
+                            using (FileStream sourceStream = new FileStream(destinationPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                            using (FileStream destStream = new FileStream(folderCombine, FileMode.Create, FileAccess.Write))
+                            {
+                                await sourceStream.CopyToAsync(destStream);
+                            }
                         }
-                        // Throw an exception with a detailed error message, including both the ReasonPhrase and the response body
+
                         throw new Exception(detailedErrorMessage);
                     }
                 }
+
                 string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
                 string saveBillDataPathClone = "DT-Cache\\Transaction\\saveBillSync.data";
 
-                // 1. Baca file JSON
                 if (!File.Exists(saveBillDataPath))
                 {
                     return;
                 }
                 else
                 {
-                    File.Copy(saveBillDataPath, saveBillDataPathClone, true);  // true untuk overwrite file yang sudah ada
+                    // Copy saveBill data using streams
+                    using (FileStream sourceStream = new FileStream(saveBillDataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (FileStream destStream = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write))
+                    {
+                        await sourceStream.CopyToAsync(destStream);
+                    }
 
                     SimplifyAndSaveData(saveBillDataPathClone);
 
                     string jsonSavwDataSync = File.ReadAllText(saveBillDataPathClone);
                     JObject dataSave = JObject.Parse(jsonSavwDataSync);
 
-                    // 2. Dapatkan array "data"
                     JArray transactionsSaveBill = (JArray)dataSave["data"];
-                    if (transactions == null || !transactions.Any()/*transactions.Count == 0*/)
+                    if (transactionsSaveBill == null || !transactionsSaveBill.Any())
                     {
                         File.Delete(saveBillDataPathClone);
+                        return;
                     }
+
                     HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonSavwDataSync, apiUrl);
                     if (savebillSync.IsSuccessStatusCode)
                     {
@@ -202,7 +220,6 @@ namespace KASIR.Komponen
                     {
                         MessageBox.Show("Gagal mengirim data SaveBill.");
                         throw new Exception("Gagal mengirim data SaveBill." + savebillSync.ToString());
-
                     }
                 }
             }
@@ -211,7 +228,6 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 MessageBox.Show(ex.ToString());
             }
-
         }
 
         public static readonly object FileLock = new object();

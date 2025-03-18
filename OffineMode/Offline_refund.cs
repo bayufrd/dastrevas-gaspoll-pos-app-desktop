@@ -668,7 +668,7 @@ namespace KASIR.OfflineMode
         }
         private void UpdateTransactionTotals(JArray cartDetails, JArray refundDetails, JObject filteredTransaction, int discountedPrice)
         {
-            // Inisialisasi variabel untuk subtotal dan total refund
+            // Initialize variables for subtotal and total refund
             int updatedSubtotal = 0;
             int updatedTotal = 0;
             int totalRefund = 0;
@@ -676,34 +676,64 @@ namespace KASIR.OfflineMode
             int cartsubTotal = 0;
             int discountedPriced = 0;
             int qtytot = 0;
-            // Menghitung total refund berdasarkan refundDetails
-            foreach (var refundItem in refundDetails)
+
+            // Calculate total refund based on refundDetails
+            if (refundDetails != null)
             {
-                int pricefix = (int)refundItem["price"] - (int)refundItem["discounted_item_price"];
-                refundItem["refund_total"] = pricefix * (int)refundItem["refund_qty"];
-                totalRefund += int.Parse(refundItem["refund_total"]?.ToString() ?? "0");
+                foreach (var refundItem in refundDetails)
+                {
+                    // Safely parse the price and discounted_item_price values
+                    int price = 0;
+                    int discountedItemPrice = 0;
+
+                    // Safe parsing with null checks
+                    int.TryParse(refundItem["price"]?.ToString() ?? "0", out price);
+                    int.TryParse(refundItem["discounted_item_price"]?.ToString() ?? "0", out discountedItemPrice);
+
+                    int refundQty = 0;
+                    int.TryParse(refundItem["refund_qty"]?.ToString() ?? "0", out refundQty);
+
+                    int pricefix = price - discountedItemPrice;
+                    int refundTotal = pricefix * refundQty;
+
+                    // Update the refund_total in the JSON
+                    refundItem["refund_total"] = refundTotal;
+                    totalRefund += refundTotal;
+                }
             }
 
-            // Update subtotal dan total berdasarkan cartDetails dan refundDetails
-            foreach (var cartItem in cartDetails)
+            // Update subtotal and total based on cartDetails
+            if (cartDetails != null)
             {
-                /*int cartQty = int.Parse(cartItem["qty"]?.ToString() ?? "0");
-                qtytot = int.Parse(cartItem["qty"]?.ToString() ?? "0");
-                int cartPricewithDisc = int.Parse(cartItem["price"]?.ToString() ?? "0") - int.Parse(cartItem["discounted_item_price"]?.ToString() ?? "0");
-                int cartPrice = int.Parse(cartItem["price"]?.ToString() ?? "0");
-                cartsubTotal += cartQty * cartPrice; // Total harga untuk item di cart
-                cartItem["total_price"] = cartQty * cartPricewithDisc;*/
-                cartTotal += (int)cartItem["total_price"]; //cartQty * cartPricewithDisc;
+                foreach (var cartItem in cartDetails)
+                {
+                    // Safely get total_price or default to 0
+                    int totalPrice = 0;
+                    int.TryParse(cartItem["total_price"]?.ToString() ?? "0", out totalPrice);
+                    cartTotal += totalPrice;
+
+                    // If you need to calculate qty for other purposes
+                    int.TryParse(cartItem["qty"]?.ToString() ?? "0", out int cartQty);
+                    qtytot += cartQty;
+                }
             }
 
-            // Update nilai refund_total pada filteredTransaction (jika ada)
-            int refundTotal = int.Parse(filteredTransaction["refund_total"]?.ToString() ?? "0");
-            // Hitung total refund baru
-            filteredTransaction["total_refund"] = Math.Max(totalRefund, 0); // Pastikan refund_total tidak kurang dari 0
-            TotalRefunded = Math.Max(totalRefund, 0); // Pastikan TotalRefunded tidak kurang dari 0
-            discountedPriced = qtytot * int.Parse(filteredTransaction["discounted_peritem_price"]?.ToString() ?? "0");
-            filteredTransaction["subtotal"] = Math.Max(cartsubTotal, 0); // Pastikan subtotal tidak kurang dari 0
-            filteredTransaction["total"] = Math.Max(cartTotal, 0); // Pastikan total tidak kurang dari 0
+            // Update the refund_total in filteredTransaction
+            int existingRefundTotal = 0;
+            int.TryParse(filteredTransaction["refund_total"]?.ToString() ?? "0", out existingRefundTotal);
+
+            // Calculate new total refund
+            filteredTransaction["total_refund"] = Math.Max(totalRefund, 0); // Ensure refund_total is not less than 0
+            TotalRefunded = Math.Max(totalRefund, 0); // Ensure TotalRefunded is not less than 0
+
+            // Safely calculate discountedPriced
+            int discountPerItemPrice = 0;
+            int.TryParse(filteredTransaction["discounted_peritem_price"]?.ToString() ?? "0", out discountPerItemPrice);
+            discountedPriced = qtytot * discountPerItemPrice;
+
+            // Update subtotal and total
+            filteredTransaction["subtotal"] = Math.Max(cartsubTotal, 0); // Ensure subtotal is not less than 0
+            filteredTransaction["total"] = Math.Max(cartTotal, 0); // Ensure total is not less than 0
         }
 
         private void AddAllItemsToRefundDetails(JArray cartDetails, JArray refundDetails, string refundReason, int refundPaymentType)

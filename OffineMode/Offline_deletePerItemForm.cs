@@ -26,6 +26,7 @@ using Serilog.Core;
 using Serilog.Sinks.File;
 using Newtonsoft.Json.Linq;
 using System.Windows.Markup;
+using KASIR.Komponen;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_deletePerItemForm : Form
@@ -103,10 +104,13 @@ namespace KASIR.OfflineMode
                         
                         itemToRemove["edited_reason"] = txtReason.Text.ToString() ?? "";
 
-                        // Process the refund details
+                        // Check if canceled_items exists, if not create it
+                        if (cartData["canceled_items"] == null)
+                        {
+                            cartData["canceled_items"] = new JArray();
+                        }
                         var refundDetails = cartData["canceled_items"] as JArray;
 
-                        // Add the refund item to the refund details array
                         refundDetails.Add(new JObject
                         {
                             ["cart_detail_id"] = itemToRemove["cart_detail_id"],

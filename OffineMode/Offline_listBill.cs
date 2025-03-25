@@ -411,6 +411,14 @@ namespace KASIR.OffineMode
                     // Ambil cart_details dari transaksi
                     var cartDetails = filteredTransaction["cart_details"] as JArray;
 
+                    // Check if canceled_items exists, if not create it
+                    if (filteredTransaction["canceled_items"] == null)
+                    {
+                        filteredTransaction["canceled_items"] = new JArray();
+                    }
+                    var cancelDetails = filteredTransaction["canceled_items"] as JArray;
+
+
                     // Buat format JSON baru
                     var newTransaction = new JObject
                     {
@@ -453,7 +461,7 @@ namespace KASIR.OffineMode
                         ["is_sent_sync"] = int.Parse(filteredTransaction["is_sent_sync"]?.ToString()),
                         ["cart_details"] = cartDetails,
                         ["refund_details"] = new JArray(),
-                        ["canceled_items"] = new JArray()
+                        ["canceled_items"] = cancelDetails
                     };
 
                     // Menulis JSON baru ke dalam file baru

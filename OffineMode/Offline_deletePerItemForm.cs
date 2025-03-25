@@ -109,9 +109,12 @@ namespace KASIR.OfflineMode
                         {
                             cartData["canceled_items"] = new JArray();
                         }
-                        var refundDetails = cartData["canceled_items"] as JArray;
+                        var cancelDetails = cartData["canceled_items"] as JArray;
 
-                        refundDetails.Add(new JObject
+                        int discounted_priceFix = int.Parse(itemToRemove["price"].ToString()) - int.Parse(itemToRemove["discounted_item_price"].ToString());
+                        int total_priceCanceled = discounted_priceFix * int.Parse(itemToRemove["qty"].ToString());
+
+                        cancelDetails.Add(new JObject
                         {
                             ["cart_detail_id"] = itemToRemove["cart_detail_id"],
                             ["menu_id"] = itemToRemove["menu_id"],
@@ -128,11 +131,12 @@ namespace KASIR.OfflineMode
                             ["note_item"] = itemToRemove["note_item"],
                             ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                             ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
-                            ["discount_id"] = null,
-                            ["discount_code"] = null,
-                            ["discounts_value"] = null,
-                            ["discounted_price"] = 0,
-                            ["discounts_is_percent"] = null,
+                            ["discount_id"] = int.Parse(itemToRemove["discount_id"]?.ToString()),
+                            ["discount_code"] = itemToRemove["discount_code"]?.ToString() ?? (string)null,
+                            ["discounts_value"] = int.Parse(itemToRemove["discounts_value"]?.ToString()),
+                            ["discounted_price"] = int.Parse(itemToRemove["discounted_price"]?.ToString()),
+                            ["discounts_is_percent"] = int.Parse(itemToRemove["discounts_is_percent"]?.ToString()),
+                            ["discounted_item_price"] = int.Parse(itemToRemove["discounted_item_price"]?.ToString()),
                             ["cancel_reason"] = txtReason.Text.ToString(),
                             ["subtotal_price"] = itemToRemove["subtotal_price"],
                             ["total_price"] = itemToRemove["total_price"]

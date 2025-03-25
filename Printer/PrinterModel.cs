@@ -3829,7 +3829,8 @@ namespace KASIR.Printer
             byte[] NewLine = new byte[] { 0x0A }; // New line
 
             // Construct receipt text
-            string strukText = kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions.ToString());
+            string strukText = kodeHeksadesimalNormal;
+            strukText += kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions.ToString());
             strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + CenterText("CHECKER");
@@ -3850,7 +3851,7 @@ namespace KASIR.Printer
             else
             {
                 // Jika receipt_number null atau kosong, cetak pesan alternatif
-                strukText += CenterText("Receipt No. Tidak Tersedia");
+                strukText += CenterText("Receipt No. -");
             }
 
 

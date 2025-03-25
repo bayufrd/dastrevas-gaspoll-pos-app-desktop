@@ -137,10 +137,10 @@ namespace KASIR.OfflineMode
                 DateTime? firstTransactionDate = null;
 
                 // 4. Check if the "updated_at" exists and parse it
-                if (firstTransaction["invoice_due_date"] != null)
+                if (firstTransaction["created_at"] != null)
                 {
                     // Mengambil nilai dari invoice_due_date dan mengganti titik dengan titik koma
-                    string invoiceDueDate = firstTransaction["invoice_due_date"].ToString();
+                    string invoiceDueDate = firstTransaction["created_at"].ToString();
 
                     // Menggunakan Regex untuk mengganti semua titik (.) dengan titik koma (:) hanya di bagian waktu
                     string updatedInvoiceDueDate = Regex.Replace(invoiceDueDate, @"(\d)\.(\d)", "$1:$2");
@@ -158,6 +158,9 @@ namespace KASIR.OfflineMode
                         DateTime fileCreationDate = fileInfo.CreationTime.Date; // Mengambil tanggal pembuatan file
                         if (fileCreationDate != DateTime.Now.Date)
                         {
+                            // Check if today is after 6 AM before executing the block
+                            if (DateTime.Now.Hour >= 6)
+                            {
                                 try
                                 {
                                     shiftReport c = new shiftReport();
@@ -165,43 +168,42 @@ namespace KASIR.OfflineMode
                                     await c.SyncDataTransactions();
                                     // Move the files created after the specified time span
                                     transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, TimeSpan.FromHours(20));
+                                    return;
                                 }
                                 catch (Exception ex)
                                 {
                                     LoggerUtil.LogError(ex, "Error moving transaction files: {ErrorMessage}", ex.Message);
                                 }
+                            }
                         }
-                        return;
                     }
                 }
                 // 5. Compare the "invoice_due_date" with current date and time
                 if (firstTransactionDate.HasValue)
                 {
                     DateTime currentDateTime = DateTime.Now; // Current local date and time
-
-                    // Calculate the time difference between current time and invoice_due_date
-                    TimeSpan timeDifference = currentDateTime - firstTransactionDate.Value;
-
-                    // Display the time difference for debugging
-                    //MessageBox.Show($"Time Difference: {timeDifference.TotalHours} hours");
-
-                    // Check if the time difference is greater than 20 hours
-                    if (timeDifference.TotalHours > 20)
+                    // Check if the first transaction date is different from today's date
+                    if (firstTransactionDate.HasValue && firstTransactionDate.Value.Date != currentDateTime.Date)
                     {
-                        try
+                        // Check if the current time is after 6 AM
+                        if (currentDateTime.Hour >= 6)
                         {
-                            shiftReport c = new shiftReport();
-                            //c.SyncCompleted += SyncCompletedHandler;
-                            await c.SyncDataTransactions();
+                            try
+                            {
+                                shiftReport c = new shiftReport();
+                                //c.SyncCompleted += SyncCompletedHandler;
+                                await c.SyncDataTransactions();
 
-                            // Move the files created after the specified time span (20 hours in this case)
-                            transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, TimeSpan.FromHours(20));
-                        }
-                        catch (Exception ex)
-                        {
-                            LoggerUtil.LogError(ex, "Error moving transaction files: {ErrorMessage}", ex.Message);
+                                // Move the files created after the specified time span (20 hours in this case)
+                                transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, TimeSpan.FromHours(20));
+                            }
+                            catch (Exception ex)
+                            {
+                                LoggerUtil.LogError(ex, "Error moving transaction files: {ErrorMessage}", ex.Message);
+                            }
                         }
                     }
+
                 }
             }
             catch (Exception ex)
@@ -1934,6 +1936,8 @@ namespace KASIR.OfflineMode
                         isDiscountActive = false;
                         iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
 
+                        //reset servingtype
+                        selectedServingTypeallItems = 1;
 
                     }
                     else
@@ -2130,6 +2134,7 @@ namespace KASIR.OfflineMode
                         // Ganti nama file
                         File.Move(cacheFilePathSplit, cacheFilePath);
                         LoadCartData();
+                        selectedServingTypeallItems = 1;
                         return;
                     }
                     else
@@ -2148,6 +2153,9 @@ namespace KASIR.OfflineMode
                         iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
                         isDiscountActive = false;
                         iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
+
+                        //reset servingtype
+                        selectedServingTypeallItems = 1;
                     }
                 }
                 ReloadDisc();

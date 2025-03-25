@@ -152,6 +152,15 @@ namespace KASIR.OffineMode
 
                 // Get the first cart_detail_id to set as transaction_id
                 var cartDetails = cartData["cart_details"] as JArray;
+
+                // Check if canceled_items exists, if not create it
+                if (cartData["canceled_items"] == null)
+                {
+                    cartData["canceled_items"] = new JArray();
+                }
+                var cancelDetails = cartData["canceled_items"] as JArray;
+
+
                 // Iterasi setiap transaksi dan hanya perbarui yang statusnya is_sent_sync = 0
                 foreach (var items in cartDetails)
                 {
@@ -237,7 +246,7 @@ namespace KASIR.OffineMode
                     is_sent_sync = 0,
                     cart_details = cartDetails,
                     refund_details = new JArray(), // Empty array for refund_details
-                    canceled_items = new JArray() // Empty array for canceled_items
+                    canceled_items = cancelDetails // Empty array for canceled_items
                 };
 
                 // Save transaction data to transaction.data

@@ -67,6 +67,14 @@ namespace KASIR.Komponen
                     Directory.CreateDirectory(directoryPath);
                 }
 
+                string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
+                string saveBillDataPathClone = "DT-Cache\\Transaction\\saveBillSync.data";
+
+                if (File.Exists(saveBillDataPath))
+                {
+                    SyncSaveBillData(saveBillDataPath, saveBillDataPathClone, apiUrl);
+                }
+
                 if (!File.Exists(filePath))
                 {
                     return;
@@ -182,51 +190,51 @@ namespace KASIR.Komponen
                         throw new Exception(detailedErrorMessage);
                     }
                 }
-
-                string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
-                string saveBillDataPathClone = "DT-Cache\\Transaction\\saveBillSync.data";
-
-                if (!File.Exists(saveBillDataPath))
-                {
-                    return;
-                }
-                else
-                {
-                    // Copy saveBill data using streams
-                    using (FileStream sourceStream = new FileStream(saveBillDataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    using (FileStream destStream = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write))
-                    {
-                        await sourceStream.CopyToAsync(destStream);
-                    }
-
-                    SimplifyAndSaveData(saveBillDataPathClone);
-
-                    string jsonSavwDataSync = File.ReadAllText(saveBillDataPathClone);
-                    JObject dataSave = JObject.Parse(jsonSavwDataSync);
-
-                    JArray transactionsSaveBill = (JArray)dataSave["data"];
-                    if (transactionsSaveBill == null || !transactionsSaveBill.Any())
-                    {
-                        File.Delete(saveBillDataPathClone);
-                        return;
-                    }
-
-                    HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonSavwDataSync, apiUrl);
-                    if (savebillSync.IsSuccessStatusCode)
-                    {
-                        SyncSuccess(saveBillDataPath);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Gagal mengirim data SaveBill.");
-                        throw new Exception("Gagal mengirim data SaveBill." + savebillSync.ToString());
-                    }
-                }
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 MessageBox.Show(ex.ToString());
+            }
+        }
+
+        public async void SyncSaveBillData(string saveBillDataPath, string saveBillDataPathClone, string apiUrl)
+        {
+            try
+            {
+                // Copy saveBill data using streams
+                using (FileStream sourceStream = new FileStream(saveBillDataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (FileStream destStream = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write))
+                {
+                    await sourceStream.CopyToAsync(destStream);
+                }
+
+                SimplifyAndSaveData(saveBillDataPathClone);
+
+                string jsonSavwDataSync = File.ReadAllText(saveBillDataPathClone);
+                JObject dataSave = JObject.Parse(jsonSavwDataSync);
+
+                JArray transactionsSaveBill = (JArray)dataSave["data"];
+                if (transactionsSaveBill == null || !transactionsSaveBill.Any())
+                {
+                    File.Delete(saveBillDataPathClone);
+                    return;
+                }
+
+                HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonSavwDataSync, apiUrl);
+                if (savebillSync.IsSuccessStatusCode)
+                {
+                    SyncSuccess(saveBillDataPath);
+                }
+                else
+                {
+                    MessageBox.Show("Gagal mengirim data SaveBill.");
+                    throw new Exception("Gagal mengirim data SaveBill." + savebillSync.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
 
@@ -274,15 +282,12 @@ namespace KASIR.Komponen
                 // 1. Baca file JSON
                 string jsonData = File.ReadAllText(filePath);
                 JObject data = JObject.Parse(jsonData);
-
                 // 2. Dapatkan array "data"
                 JArray transactions = (JArray)data["data"];
-
                 // 3. Iterasi setiap transaksi dan hapus elemen yang tidak diperlukan
                 for (int i = transactions.Count - 1; i >= 0; i--) // Iterasi mundur untuk menghindari masalah saat menghapus
                 {
                     JObject transaction = (JObject)transactions[i];
-
                     // Hapus transaksi jika is_sent_sync = 1
                     if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 1)
                     {
@@ -293,18 +298,72 @@ namespace KASIR.Komponen
                     transaction.Remove("transaction_id");
                     transaction.Remove("payment_type_name");
 
-                    // Iterasi ke cart_details dan refund_details untuk menghapus field yang tidak dibutuhkan
+                    // Proses untuk menangani canceled_items dan cart_details
                     JArray cartDetails = (JArray)transaction["cart_details"];
+                    JArray canceledItems = (JArray)transaction["canceled_items"];
+
+                    // Periksa apakah canceled_items tidak kosong
+                    if (canceledItems != null && canceledItems.Count > 0)
+                    {
+                        foreach (JObject canceledItem in canceledItems)
+                        {
+                            long canceledCartDetailId = (long)canceledItem["cart_detail_id"];
+                            string cancelReason = (string)canceledItem["cancel_reason"];
+
+                            // Cari item di cart_details dengan cart_detail_id yang sama
+                            for (int j = 0; j < cartDetails.Count; j++)
+                            {
+                                JObject cartItem = (JObject)cartDetails[j];
+                                long cartDetailId = (long)cartItem["cart_detail_id"];
+
+                                if (cartDetailId == canceledCartDetailId)
+                                {
+                                    // Periksa jika qty pada cart_details tidak sama dengan 0
+                                    if ((int)cartItem["qty"] != 0)
+                                    {
+                                        // Duplikasi item dan tambahkan is_canceled=1 dan cancel_reason
+                                        JObject duplicateItem = (JObject)cartItem.DeepClone();
+
+                                        // Modifikasi cart_detail_id dengan menambahkan 1 di awal
+                                        string originalDetailId = cartDetailId.ToString();
+                                        string newDetailId = "1" + originalDetailId;
+                                        duplicateItem["cart_detail_id"] = long.Parse(newDetailId);
+
+                                        // Tambahkan is_canceled dan cancel_reason
+                                        duplicateItem["is_canceled"] = 1;
+                                        duplicateItem["cancel_reason"] = cancelReason;
+
+                                        // Tambahkan item yang sudah diduplikasi ke cartDetails
+                                        cartDetails.Add(duplicateItem);
+                                    }
+                                    else // Jika qty = 0 
+                                    {
+                                        // Modifikasi item yang ada alih-alih menduplikasi
+                                        cartItem["qty"] = (int)canceledItem["qty"];
+                                        cartItem["is_canceled"] = 1;
+                                        cartItem["cancel_reason"] = cancelReason;
+                                        cartItem["total_price"] = (int)canceledItem["total_price"];
+                                        cartItem["subtotal_price"] = (int)canceledItem["subtotal_price"];
+                                    }
+
+                                    break; // Keluar dari loop setelah menemukan dan memproses item
+                                }
+                            }
+                        }
+                    }
+
+                    // Iterasi ke cart_details untuk menghapus field yang tidak dibutuhkan
                     foreach (JObject cartItem in cartDetails)
                     {
                         cartItem.Remove("menu_name"); // Hapus serving_type_name dari cart detail
                         cartItem.Remove("menu_type");  // Hapus menu_detail_name jika tidak diperlukan
-                        cartItem.Remove("menu_detail_name");            // Hapus varian jika tidak diperluka
+                        cartItem.Remove("menu_detail_name");  // Hapus varian jika tidak diperluka
                     }
                 }
-                // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama
-                File.WriteAllText(filePath, data.ToString());
 
+                // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama
+                // MessageBox.Show(data.ToString());
+                File.WriteAllText(filePath, data.ToString());
             }
             catch (Exception ex)
             {

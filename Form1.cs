@@ -87,16 +87,6 @@ namespace KASIR
                 // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
                 File.WriteAllText(Config, "ON");
             }
-            if (File.Exists(Config) && baseOutlet != "1")
-            {
-                File.WriteAllText(Config, "ON"); //paksa sahulu untuk inisiasi ramadhan sambel colek
-            }
-            else
-            {
-                File.WriteAllText(Config, "OFF"); //paksa sahulu untuk inisiasi ramadhan sambel colek
-            }
-
-
             string allSettingsData = File.ReadAllText(Config); // Ambil status offline
 
             // Jika status offline ON, tampilkan Offline_masterPos

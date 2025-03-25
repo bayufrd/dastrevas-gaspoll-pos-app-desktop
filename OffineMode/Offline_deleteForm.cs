@@ -19,6 +19,8 @@ using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using System.Globalization;
 using Serilog;
+using Newtonsoft.Json.Linq;
+using System.Transactions;
 
 namespace KASIR.OfflineMode
 {
@@ -99,68 +101,171 @@ namespace KASIR.OfflineMode
                     return;
                 }
 
-                var json = new
+                string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
+                // Deserialize JSON ke object CartDataCache
+                var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
+                if (txtPin.Text.ToString() != dataOutlet.data.pin.ToString())
                 {
-                    outlet_id = baseOutlet,
-                    cart_id = cart_id,
-                    pin = txtPin.Text.ToString(),
-                    cancel_reason = txtReason.Text.ToString()
+                    MessageBox.Show("Pin salah atau format kurang tepat", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                string configCart = "DT-Cache\\Transaction\\Cart.data";
+                // Read the cart file content as a string
+                string json = File.ReadAllText(configCart);
+
+                // Parse the JSON string into a JObject (dynamic)
+                JObject cartData = JObject.Parse(json);
+
+                // Find all items in cart_details and set their qty and price to 0
+                JArray cartDetails = (JArray)cartData["cart_details"];
+
+                // Check if canceled_items exists, if not create it
+                if (cartData["canceled_items"] == null)
+                {
+                    cartData["canceled_items"] = new JArray();
+                }
+                var cancelDetails = cartData["canceled_items"] as JArray;
+
+                foreach (var item in cartDetails)
+                {
+                    // Calculate the canceled item's total price
+                    int discounted_priceFix = int.Parse(item["price"].ToString()) - int.Parse(item["discounted_item_price"].ToString());
+                    int total_priceCanceled = discounted_priceFix * int.Parse(item["qty"].ToString());
+
+                    cancelDetails.Add(new JObject
+                    {
+                        ["cart_detail_id"] = item["cart_detail_id"],
+                        ["menu_id"] = item["menu_id"],
+                        ["menu_name"] = item["menu_name"],
+                        ["menu_type"] = item["menu_type"],
+                        ["menu_detail_id"] = item["menu_detail_id"],
+                        ["menu_detail_name"] = item["menu_detail_name"],
+                        ["varian"] = item["varian"],
+                        ["is_ordered"] = 1,
+                        ["serving_type_id"] = item["serving_type_id"],
+                        ["serving_type_name"] = item["serving_type_name"],
+                        ["price"] = item["price"],
+                        ["qty"] = item["qty"],
+                        ["note_item"] = item["note_item"],
+                        ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                        ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                        ["discount_id"] = int.Parse(item["discount_id"]?.ToString()),
+                        ["discount_code"] = item["discount_code"]?.ToString() ?? (string)null,
+                        ["discounts_value"] = int.Parse(item["discounts_value"]?.ToString()),
+                        ["discounted_price"] = int.Parse(item["discounted_price"]?.ToString()),
+                        ["discounts_is_percent"] = int.Parse(item["discounts_is_percent"]?.ToString()),
+                        ["discounted_item_price"] = int.Parse(item["discounted_item_price"]?.ToString()),
+                        ["cancel_reason"] = txtReason.Text.ToString(),
+                        ["subtotal_price"] = item["subtotal_price"],
+                        ["total_price"] = item["total_price"]
+                    });
+
+                    // Set the quantity and price to 0 for each item in cart_details
+                    item["qty"] = 0;
+                    item["total_price"] = 0;
+                    item["subtotal_price"] = 0;
+                }
+
+                // Recalculate subtotal and total
+                int subtotal = 0;
+                foreach (var item in cartDetails)
+                {
+                    subtotal += (int)item["total_price"];
+                }
+
+                // Update the cart totals
+                cartData["subtotal"] = 0;
+                cartData["total"] = 0;
+                cartData["is_sent_sync"] = 0;
+                cartData["is_canceled"] = 1;
+
+                int edited_sync = 0;
+                if(int.Parse(cartData["discount_id"]?.ToString()) == 1) { edited_sync = 1; }
+                // Prepare transaction data
+                var transactionData = new
+                {
+                    transaction_id = int.TryParse(cartData["transaction_id"]?.ToString(), out var tempTransactionId) ? tempTransactionId : 0,
+                    receipt_number = cartData["receipt_number"]?.ToString(),
+                    transaction_ref = cartData["transaction_ref"]?.ToString(),
+                    transaction_ref_split = (string)null,
+                    invoice_number = (string)null,  // Custom invoice number with formatted date
+                    invoice_due_date = (string)null, // Adjust due date as needed
+                    payment_type_id = int.TryParse(cartData["payment_type_id"]?.ToString(), out var tempPaymentTypeId) ? tempPaymentTypeId : 0,
+                    payment_type_name = (string)null, // No need for .ToString() if paymentTypeName is already a string
+                    customer_name = cartData["customer_name"]?.ToString(),
+                    customer_seat = int.TryParse(cartData["customer_seat"]?.ToString(), out var tempCustomerSeat) ? tempCustomerSeat : 0,
+                    customer_cash = 0,
+                    customer_change = 0,
+                    total = 0,
+                    subtotal = 0, // You can replace this with actual subtotal if available
+                    created_at = cartData["created_at"]?.ToString(),
+                    updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                    deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
+                    is_refund = 0,
+                    refund_reason = (string)null, // Null if no refund reason
+                    delivery_type = (string)null, // Null value for delivery_type
+                    delivery_note = (string)null, // Null value for delivery_note
+                    discount_id = int.TryParse(cartData["discount_id"]?.ToString(), out var tempDiscountId) ? tempDiscountId : 0,
+                    discount_code = cartData["discount_code"]?.ToString(),
+                    discounts_value = cartData["discounts_value"]?.ToString(),
+                    discounts_is_percent = cartData["discounts_is_percent"]?.ToString(),
+                    discounted_price = int.TryParse(cartData["discounted_price"]?.ToString(), out var tempDiscountedPrice) ? tempDiscountedPrice : 0,
+                    discounted_peritem_price = int.TryParse(cartData["discounted_peritem_price"]?.ToString(), out var tempDiscountedPeritemPrice) ? tempDiscountedPeritemPrice : 0,
+                    member_name = (string)null, // Null if no member name
+                    member_phone_number = (string)null, // Null if no member phone number
+                    is_refund_all = 0,
+                    refund_reason_all = (string)null,
+                    refund_payment_id_all = 0,
+                    refund_created_at_all = (string)null,
+                    total_refund = 0,
+                    refund_payment_name_all = (string)null,
+                    is_edited_sync = edited_sync,
+                    is_sent_sync = 0,
+                    is_canceled = 1,
+                    is_savebill = int.TryParse(cartData["is_savebill"]?.ToString(), out var tempIsSavebill) ? tempIsSavebill : 0,
+                    cart_details = cartDetails,
+                    refund_details = new JArray(), // Empty array for refund_details
+                    canceled_items = cancelDetails // Empty array for canceled_items
                 };
 
-                string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
-
-                IApiService apiService = new ApiService();
-
-                HttpResponseMessage response = await apiService.deleteCart(jsonString, "/delete-cart");
-
-                if (response != null)
+                // Save transaction data to transaction.data
+                string transactionDataPath = "DT-Cache\\Transaction\\transaction.data";
+                JArray transactionDataArray = new JArray();
+                if (File.Exists(transactionDataPath))
                 {
-                    if (response.IsSuccessStatusCode)
-                    {
+                    // If the transaction file exists, read and append the new transaction
+                    string existingData = File.ReadAllText(transactionDataPath);
+                    var existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
+                    transactionDataArray = existingTransactions["data"] as JArray ?? new JArray();
+                }
 
-                        if (Application.OpenForms["masterPos"] is masterPos masterPosForm)
-                        {
-                            // Call a method in the MasterPos form to refresh the cart
-                            masterPosForm.ReloadCart();
-                            masterPosForm.ReloadData2();
-                            // You'll need to define this method in MasterPos
-                        }
-                        // ReloadDataInBaseForm = true;
-                        DialogResult = DialogResult.OK;
-                        Close();
+                // Add new transaction
+                transactionDataArray.Add(JToken.FromObject(transactionData));
 
-                    }
-                    else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                    {
-                        MessageBox.Show("PIN salah. Silakan coba lagi.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-                    else
-                    {
-                        DialogResult = DialogResult.Cancel;
-                        MessageBox.Show("Hapus keranjang gagal: " + response.StatusCode, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
-            catch (TaskCanceledException ex)
-            {
-                if (ex.CancellationToken.IsCancellationRequested)
+                // Serialize and save back to transaction.data
+                var newTransactionData = new JObject { { "data", transactionDataArray } };
+                File.WriteAllText(transactionDataPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
+                // Tentukan lokasi path file yang ingin dihapus
+                string filePath = "DT-Cache\\Transaction\\Cart.data";
+
+                // Cek apakah file tersebut ada
+                if (File.Exists(filePath))
                 {
-                    MessageBox.Show("PIN salah atau koneksi tidak stabil. Silakan coba beberapa saat lagi.", "Timeout/Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    // Hapus file
+                    File.Delete(filePath);
                 }
-                else
-                {
-                    MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                DialogResult = DialogResult.OK;
+
+                this.Close();
             }
             catch (Exception ex)
             {
+                MessageBox.Show(ex.ToString());
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
             }
-
         }
+
 
         private void txtJumlahCicil_TextChanged(object sender, EventArgs e)
         {

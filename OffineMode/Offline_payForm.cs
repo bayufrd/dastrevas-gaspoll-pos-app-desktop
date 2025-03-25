@@ -26,13 +26,6 @@ namespace KASIR.OfflineMode
         public string btnPayType;
         string outletID, cartID, totalCart, ttl2;
         private readonly string baseOutlet;
-        private readonly string MacAddressKasir;
-        private readonly string MacAddressKitchen;
-        private readonly string MacAddressBar;
-        private readonly string PinPrinterKasir;
-        private readonly string PinPrinterKitchen;
-        private readonly string PinPrinterBar;
-        private readonly string BaseOutletName;
         private string Kakimu;
         private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
 
@@ -53,13 +46,6 @@ namespace KASIR.OfflineMode
             btnSimpan.Enabled = false;
             _masterPos = masterPosForm;
             baseOutlet = Properties.Settings.Default.BaseOutlet;
-            MacAddressKasir = Properties.Settings.Default.MacAddressKasir;
-            MacAddressKitchen = Properties.Settings.Default.MacAddressKitchen;
-            MacAddressBar = Properties.Settings.Default.MacAddressBar;
-            PinPrinterKasir = Properties.Settings.Default.PinPrinterKasir;
-            PinPrinterKitchen = Properties.Settings.Default.PinPrinterKitchen;
-            PinPrinterBar = Properties.Settings.Default.PinPrinterBar;
-            BaseOutletName = Properties.Settings.Default.BaseOutletName;
             //Kakimu = Properties.Settings.Default.FooterStruk;
             flowLayoutPanel1.FlowDirection = FlowDirection.TopDown;
             flowLayoutPanel1.WrapContents = true;
@@ -356,6 +342,14 @@ namespace KASIR.OfflineMode
 
                     // Get the first cart_detail_id to set as transaction_id
                     var cartDetails = cartData["cart_details"] as JArray;
+
+                    // Check if canceled_items exists, if not create it
+                    if (cartData["canceled_items"] == null)
+                    {
+                        cartData["canceled_items"] = new JArray();
+                    }
+                    var cancelDetails = cartData["canceled_items"] as JArray;
+
                     string firstCartDetailId = cartDetails?.FirstOrDefault()?["cart_detail_id"].ToString();
                     transactionId = firstCartDetailId;
                     string paymentTypeName = cmbPayform.Text.ToString();
@@ -444,7 +438,7 @@ namespace KASIR.OfflineMode
                         is_savebill = savebill,
                         cart_details = cartDetails,
                         refund_details = new JArray(), // Empty array for refund_details
-                        canceled_items = new JArray() // Empty array for canceled_items
+                        canceled_items = cancelDetails // Empty array for canceled_items
                     };
 
                     // Save transaction data to transaction.data

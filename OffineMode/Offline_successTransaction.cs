@@ -111,6 +111,10 @@ namespace KASIR.OfflineMode
                         string paymentType = transaction["payment_type_name"]?.ToString() ?? "-";
 
                         DateTime transactionTime;
+                        if (transaction["is_canceled"]?.ToString() == "1")
+                        {
+                            continue;
+                        }
                         // Parse the created_at field and format it
                         if (DateTime.TryParse(transaction["created_at"]?.ToString(), out transactionTime))
                         {

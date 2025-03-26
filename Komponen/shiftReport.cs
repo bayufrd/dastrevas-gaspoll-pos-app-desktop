@@ -13,6 +13,7 @@ using System.Transactions;
 using System.Windows.Markup;
 using System.Data.Common;
 using KASIR.OffineMode;
+using System.Text;
 namespace KASIR.Komponen
 {
     public partial class shiftReport : UserControl
@@ -42,7 +43,6 @@ namespace KASIR.Komponen
             //LoadData();
             lblShiftSekarang.Visible = false;
         }
-
         public async Task SyncDataTransactions()
         {
             try
@@ -51,8 +51,9 @@ namespace KASIR.Komponen
                 string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
                 string destinationPath = "DT-Cache\\Transaction\\transactionSyncing.data";
 
-                
-                if (File.Exists(destinationPath)) try { File.Delete(destinationPath); } catch(Exception ex) { LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message); }
+                if (File.Exists(destinationPath))
+                    try { File.Delete(destinationPath); }
+                    catch (Exception ex) { LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message); }
 
                 IApiService apiService = new ApiService();
 
@@ -62,10 +63,7 @@ namespace KASIR.Komponen
                 string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
                 newFileName = $"{baseOutlet}_SyncSuccess_{DateTime.Now:yyyyMMdd}.data";
 
-                if (!Directory.Exists(directoryPath))
-                {
-                    Directory.CreateDirectory(directoryPath);
-                }
+                EnsureDirectoryExists(directoryPath);
 
                 string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
                 string saveBillDataPathClone = "DT-Cache\\Transaction\\saveBillSync.data";
@@ -80,115 +78,47 @@ namespace KASIR.Komponen
                     return;
                 }
 
-                if (!Directory.Exists(newSyncFileTransaction))
-                {
-                    Directory.CreateDirectory(newSyncFileTransaction);
-                }
+                EnsureDirectoryExists(newSyncFileTransaction);
 
-                // Using streams to copy the file instead of File.Copy
-                using (FileStream sourceStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (FileStream destStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
-                {
-                    await sourceStream.CopyToAsync(destStream);
-                }
+                // Copy file to destination for processing
+                CopyFileWithStreams(filePath, destinationPath);
 
-                //Simplysent
                 SimplifyAndSaveData(destinationPath);
 
-                // Read file JSON
-                string jsonData = File.ReadAllText(destinationPath);
-                JObject data = JObject.Parse(jsonData);
+                // Process the transactions
+                JObject data = ParseAndRepairJsonFile(destinationPath);
+                JArray transactions = GetTransactionsFromData(data);
 
-                // Get "data" array
-                JArray transactions = (JArray)data["data"];
                 if (transactions == null || !transactions.Any())
                 {
-                    // Delete file if data is empty
-                    File.Delete(destinationPath);
+                    // Delete file if data is empty but continue process
+                    try { File.Delete(destinationPath); }
+                    catch (Exception ex) { LoggerUtil.LogError(ex, "Failed to delete empty file: {ErrorMessage}", ex.Message); }
+
+                    File.WriteAllText(destinationPath, "{\"data\":[]}");
+                    transactions = new JArray();
+                    data["data"] = transactions;
+                }
+
+                // Sync with API
+                HttpResponseMessage response = await apiService.SyncTransaction(data.ToString(), apiUrl);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string folderCombine = Path.Combine(newSyncFileTransaction, newFileName);
+
+                    // Handle successful sync
+                    ProcessSuccessfulSync(destinationPath, folderCombine);
+
+                    // Notify main form that sync was successful
+                    SyncCompleted?.Invoke();
+                    SyncSuccess(filePath);
+                    NewDataChecker = 1;
                 }
                 else
                 {
-                    HttpResponseMessage response = await apiService.SyncTransaction(jsonData, apiUrl);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        if (!Directory.Exists(newSyncFileTransaction))
-                        {
-                            Directory.CreateDirectory(newSyncFileTransaction);
-                        }
-                        string folderCombine = Path.Combine(newSyncFileTransaction, newFileName);
-
-                        // Check if file exists, if yes, read file and add new transactions
-                        if (File.Exists(folderCombine))
-                        {
-                            string existingData = File.ReadAllText(folderCombine);
-                            JObject existingDataJson = JObject.Parse(existingData);
-                            JArray existingTransactions = (JArray)existingDataJson["data"];
-
-                            // Add new transactions to existing data
-                            existingTransactions.Add(transactions);
-                            existingDataJson["data"] = existingTransactions;
-
-                            // Save the updated file
-                            File.WriteAllText(folderCombine, existingDataJson.ToString());
-                        }
-                        else
-                        {
-                            // Copy file using streams
-                            using (FileStream sourceStream = new FileStream(destinationPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                            using (FileStream destStream = new FileStream(folderCombine, FileMode.Create, FileAccess.Write))
-                            {
-                                await sourceStream.CopyToAsync(destStream);
-                            }
-                        }
-
-                        // Notify main form that sync was successful
-                        SyncCompleted?.Invoke();
-
-                        SyncSuccess(filePath);
-                        NewDataChecker = 1;
-                    }
-                    else
-                    {
-                        // Handle failed sync
-                        string errorMessage = $"Gagal mengirim data Transactions. API Response: {response.ReasonPhrase}";
-                        MessageBox.Show(errorMessage);
-
-                        string responseBody = await response.Content.ReadAsStringAsync();
-                        string detailedErrorMessage = $"{errorMessage} || Response Body: {responseBody}";
-
-                        string folderGagall = "DT-Cache\\Transaction\\FailedSyncTransaction";
-                        newFileName = $"{baseOutlet}_SyncFailed_{DateTime.Now:yyyyMMdd}.data";
-
-                        string folderCombine = Path.Combine(folderGagall, newFileName);
-
-                        if (!Directory.Exists(folderGagall))
-                        {
-                            Directory.CreateDirectory(folderGagall);
-                        }
-
-                        if (File.Exists(folderCombine))
-                        {
-                            string existingData = File.ReadAllText(folderCombine);
-                            JObject existingDataJson = JObject.Parse(existingData);
-                            JArray existingTransactions = (JArray)existingDataJson["data"];
-
-                            existingTransactions.Add(transactions);
-                            existingDataJson["data"] = existingTransactions;
-
-                            File.WriteAllText(folderCombine, existingDataJson.ToString());
-                        }
-                        else
-                        {
-                            // Copy file using streams
-                            using (FileStream sourceStream = new FileStream(destinationPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                            using (FileStream destStream = new FileStream(folderCombine, FileMode.Create, FileAccess.Write))
-                            {
-                                await sourceStream.CopyToAsync(destStream);
-                            }
-                        }
-
-                        throw new Exception(detailedErrorMessage);
-                    }
+                    // Handle failed sync
+                    ProcessFailedSync(destinationPath, response, baseOutlet);
                 }
             }
             catch (Exception ex)
@@ -198,45 +128,604 @@ namespace KASIR.Komponen
             }
         }
 
-        public async void SyncSaveBillData(string saveBillDataPath, string saveBillDataPathClone, string apiUrl)
+        private JObject ParseAndRepairJsonFile(string filePath)
+        {
+            string jsonData = File.ReadAllText(filePath);
+            JObject data;
+
+            try
+            {
+                // Try normal parsing first
+                data = JObject.Parse(jsonData);
+                return data;
+            }
+            catch (JsonReaderException jsonEx)
+            {
+                LoggerUtil.LogError(jsonEx, "JSON parsing error detected, attempting repair");
+
+                // Backup corrupted file
+                BackupCorruptedFile(filePath);
+
+                // Try repair methods in sequence
+                string errorInfo = ExtractErrorInfo(jsonEx, out string errorPath, out int errorIndex);
+
+                // Try various repair methods
+                if (TryRepairByRemovingProblematicTransaction(jsonData, errorIndex, out data))
+                    return data;
+
+                if (TryRepairWithRegexExtraction(jsonData, out data))
+                    return data;
+
+                if (TryRepairUnexpectedEndOfContent(jsonData, jsonEx, out data))
+                    return data;
+
+                if (TryManualJsonPatch(jsonData, jsonEx, out data))
+                    return data;
+
+                // If all repair methods fail, create minimal valid JSON
+                LoggerUtil.LogWarning("All repair methods failed, creating minimal valid JSON");
+                return JObject.Parse("{\"data\":[{\"id\":\"recovery\",\"message\":\"Data recovery failed\"}]}");
+            }
+            catch (Exception otherEx)
+            {
+                // Handle non-JSON errors
+                LoggerUtil.LogError(otherEx, "Non-JSON parsing error occurred");
+
+                try
+                {
+                    // Try parse as plain text and wrap in valid JSON
+                    return JObject.Parse("{\"data\":[{\"raw_content\":\"" +
+                           jsonData.Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n") +
+                           "\"}]}");
+                }
+                catch
+                {
+                    // Last fallback if everything fails
+                    return JObject.Parse("{\"data\":[{\"id\":\"recovery_fallback\"}]}");
+                }
+            }
+        }
+
+        private void BackupCorruptedFile(string filePath)
         {
             try
             {
-                // Copy saveBill data using streams
-                using (FileStream sourceStream = new FileStream(saveBillDataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (FileStream destStream = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write))
+                string backupPath = $"DT-Cache\\Transaction\\corrupted_{DateTime.Now:yyyyMMddHHmmss}.data";
+                File.Copy(filePath, backupPath);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to backup corrupted file");
+            }
+        }
+
+        private string ExtractErrorInfo(JsonReaderException jsonEx, out string errorPath, out int errorIndex)
+        {
+            errorPath = "";
+            errorIndex = -1;
+
+            if (jsonEx.Message.Contains("Path '"))
+            {
+                errorPath = jsonEx.Message.Split('\'')[1];
+                if (errorPath.StartsWith("data[") && errorPath.Contains("]"))
                 {
-                    await sourceStream.CopyToAsync(destStream);
+                    string indexStr = errorPath.Substring(5, errorPath.IndexOf(']') - 5);
+                    int.TryParse(indexStr, out errorIndex);
                 }
+            }
 
-                SimplifyAndSaveData(saveBillDataPathClone);
+            return jsonEx.Message;
+        }
 
-                string jsonSavwDataSync = File.ReadAllText(saveBillDataPathClone);
-                JObject dataSave = JObject.Parse(jsonSavwDataSync);
+        private bool TryRepairByRemovingProblematicTransaction(string jsonData, int errorIndex, out JObject repairedData)
+        {
+            repairedData = null;
+            if (errorIndex < 0) return false;
 
-                JArray transactionsSaveBill = (JArray)dataSave["data"];
-                if (transactionsSaveBill == null || !transactionsSaveBill.Any())
+            try
+            {
+                // Find problematic transaction
+                int openBrackets = 0;
+                int closeBrackets = 0;
+                int transactionStart = 0;
+                int currentTrans = 0;
+                bool inTransaction = false;
+
+                for (int i = 0; i < jsonData.Length; i++)
                 {
-                    File.Delete(saveBillDataPathClone);
-                    return;
-                }
-
-                HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonSavwDataSync, apiUrl);
-                if (savebillSync.IsSuccessStatusCode)
-                {
-                    SyncSuccess(saveBillDataPath);
-                }
-                else
-                {
-                    MessageBox.Show("Gagal mengirim data SaveBill.");
-                    throw new Exception("Gagal mengirim data SaveBill." + savebillSync.ToString());
+                    if (jsonData[i] == '{')
+                    {
+                        openBrackets++;
+                        if (openBrackets == 2 && !inTransaction)
+                        {
+                            inTransaction = true;
+                            transactionStart = i;
+                        }
+                    }
+                    else if (jsonData[i] == '}')
+                    {
+                        closeBrackets++;
+                        if (openBrackets == closeBrackets + 1 && inTransaction)
+                        {
+                            inTransaction = false;
+                            if (currentTrans == errorIndex)
+                            {
+                                // Cut JSON just before problematic transaction
+                                string fixedJson = jsonData.Substring(0, transactionStart);
+                                // Add closing brackets
+                                fixedJson = fixedJson.TrimEnd(',') + "]}";
+                                repairedData = JObject.Parse(fixedJson);
+                                LoggerUtil.LogWarning($"Repaired JSON by removing problematic transaction at index {errorIndex}");
+                                return true;
+                            }
+                            currentTrans++;
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                LoggerUtil.LogError(ex, "Repair by removing problematic transaction failed");
+            }
+
+            return false;
+        }
+
+        private bool TryRepairWithRegexExtraction(string jsonData, out JObject repairedData)
+        {
+            repairedData = null;
+
+            try
+            {
+                string pattern = @"\{(?:[^{}]|(?<open>\{)|(?<-open>\}))+(?(open)(?!))\}";
+                MatchCollection matches = Regex.Matches(jsonData, pattern);
+
+                if (matches.Count > 0)
+                {
+                    // Get first match which should be JSON root
+                    JObject rootObj = JObject.Parse(matches[0].Value);
+                    // Create new data array
+                    JArray newDataArray = new JArray();
+
+                    // Loop through all matches (transactions) after root and try to parse
+                    for (int i = 1; i < matches.Count; i++)
+                    {
+                        try
+                        {
+                            JObject transObj = JObject.Parse(matches[i].Value);
+                            newDataArray.Add(transObj);
+                        }
+                        catch
+                        {
+                            // Skip transactions that can't be parsed
+                            LoggerUtil.LogWarning($"Skipping invalid transaction match at index {i}");
+                        }
+                    }
+
+                    // Replace data array in root with new array
+                    rootObj["data"] = newDataArray;
+                    repairedData = rootObj;
+
+                    LoggerUtil.LogWarning($"Repaired JSON using regex extraction, recovered {newDataArray.Count} transactions");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Repair with regex extraction failed");
+            }
+
+            return false;
+        }
+
+        private bool TryRepairUnexpectedEndOfContent(string jsonData, JsonReaderException jsonEx, out JObject repairedData)
+        {
+            repairedData = null;
+
+            if (!jsonEx.Message.Contains("Unexpected end of content")) return false;
+
+            try
+            {
+                // Try fixing by adding closing brackets
+                string fixedJson = jsonData;
+                // Count opening and closing brackets
+                int openCount = fixedJson.Count(c => c == '{');
+                int closeCount = fixedJson.Count(c => c == '}');
+                int arrayOpen = fixedJson.Count(c => c == '[');
+                int arrayClose = fixedJson.Count(c => c == ']');
+
+                // Add missing closing brackets
+                for (int i = 0; i < openCount - closeCount; i++)
+                {
+                    fixedJson += "}";
+                }
+
+                // Add missing array closing brackets
+                for (int i = 0; i < arrayOpen - arrayClose; i++)
+                {
+                    fixedJson += "]";
+                }
+
+                repairedData = JObject.Parse(fixedJson);
+                LoggerUtil.LogWarning("Repaired JSON by adding missing closing brackets");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Repair unexpected end of content failed");
+            }
+
+            return false;
+        }
+
+        private bool TryManualJsonPatch(string jsonData, JsonReaderException jsonEx, out JObject repairedData)
+        {
+            repairedData = null;
+
+            try
+            {
+                // Get JSON segment before error
+                int errorPos = 0;
+                if (jsonEx.LinePosition > 0 && jsonEx.LineNumber > 0)
+                {
+                    // Find error position by counting lines and position
+                    string[] lines = jsonData.Split('\n');
+                    for (int i = 0; i < Math.Min(jsonEx.LineNumber - 1, lines.Length); i++)
+                    {
+                        errorPos += lines[i].Length + 1; // +1 for newline
+                    }
+                    errorPos += Math.Min(jsonEx.LinePosition - 1, lines[Math.Min(jsonEx.LineNumber - 1, lines.Length - 1)].Length);
+                }
+
+                // Cut JSON before error and fix
+                if (errorPos > 0)
+                {
+                    string partialJson = jsonData.Substring(0, errorPos);
+                    // Add necessary closing brackets
+                    StringBuilder sb = new StringBuilder(partialJson);
+
+                    // Figure out how many brackets need to be closed
+                    int openBraces = partialJson.Count(c => c == '{');
+                    int closeBraces = partialJson.Count(c => c == '}');
+                    int openBrackets = partialJson.Count(c => c == '[');
+                    int closeBrackets = partialJson.Count(c => c == ']');
+
+                    // Close JSON structure
+                    for (int i = 0; i < openBraces - closeBraces; i++)
+                    {
+                        sb.Append("}");
+                    }
+
+                    for (int i = 0; i < openBrackets - closeBrackets; i++)
+                    {
+                        sb.Append("]");
+                    }
+
+                    string fixedJson = sb.ToString();
+                    repairedData = JObject.Parse(fixedJson);
+                    LoggerUtil.LogWarning("Repaired JSON using manual truncation and closure");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Manual JSON patch failed");
+            }
+
+            return false;
+        }
+
+        private JArray GetTransactionsFromData(JObject data)
+        {
+            JArray transactions = (JArray)data["data"];
+            if (transactions == null)
+            {
+                // If data array is null, create a new one
+                transactions = new JArray();
+                data["data"] = transactions;
+            }
+            return transactions;
+        }
+
+        private void ProcessSuccessfulSync(string sourcePath, string destinationPath)
+        {
+            if (File.Exists(destinationPath))
+            {
+                // Read existing data and add new transactions
+                string existingData = File.ReadAllText(destinationPath);
+                JObject existingDataJson = JObject.Parse(existingData);
+                JArray existingTransactions = (JArray)existingDataJson["data"];
+
+                // Read source file
+                string jsonData = File.ReadAllText(sourcePath);
+                JObject data = JObject.Parse(jsonData);
+                JArray transactions = (JArray)data["data"];
+
+                // Add new transactions to existing data
+                foreach (var transaction in transactions)
+                {
+                    existingTransactions.Add(transaction);
+                }
+
+                // Save updated file
+                File.WriteAllText(destinationPath, existingDataJson.ToString());
+            }
+            else
+            {
+                // Copy file using streams
+                CopyFileWithStreams(sourcePath, destinationPath);
             }
         }
+
+        private void ProcessFailedSync(string sourcePath, HttpResponseMessage response, string outletId)
+        {
+            string errorMessage = $"Gagal mengirim data Transactions. API Response: {response.ReasonPhrase}";
+            MessageBox.Show(errorMessage);
+
+            string responseBody = response.Content.ReadAsStringAsync().Result;
+            string detailedErrorMessage = $"{errorMessage} || Response Body: {responseBody}";
+
+            string folderGagal = "DT-Cache\\Transaction\\FailedSyncTransaction";
+            string newFileName = $"{outletId}_SyncFailed_{DateTime.Now:yyyyMMdd}.data";
+            string folderCombine = Path.Combine(folderGagal, newFileName);
+
+            EnsureDirectoryExists(folderGagal);
+
+            if (File.Exists(folderCombine))
+            {
+                // Update existing failed sync file
+                UpdateExistingFailedSyncFile(sourcePath, folderCombine);
+            }
+            else
+            {
+                // Copy to failed sync folder
+                CopyFileWithStreams(sourcePath, folderCombine);
+            }
+
+            throw new Exception(detailedErrorMessage);
+        }
+
+        private void UpdateExistingFailedSyncFile(string sourcePath, string destinationPath)
+        {
+            try
+            {
+                // Read existing failed sync data
+                string existingData = File.ReadAllText(destinationPath);
+                JObject existingDataJson = JObject.Parse(existingData);
+                JArray existingTransactions = (JArray)existingDataJson["data"];
+
+                // Read source file
+                string jsonData = File.ReadAllText(sourcePath);
+                JObject data = JObject.Parse(jsonData);
+                JArray transactions = (JArray)data["data"];
+
+                // Add new transactions to existing data
+                foreach (var transaction in transactions)
+                {
+                    existingTransactions.Add(transaction);
+                }
+
+                // Save updated file
+                File.WriteAllText(destinationPath, existingDataJson.ToString());
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to update existing failed sync file, copying full file instead");
+                CopyFileWithStreams(sourcePath, destinationPath);
+            }
+        }
+
+        private void EnsureDirectoryExists(string directoryPath)
+        {
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+        }
+
+        private void CopyFileWithStreams(string sourcePath, string destinationPath)
+        {
+            using (FileStream sourceStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (FileStream destStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
+            {
+                sourceStream.CopyTo(destStream);
+            }
+        }
+        /*
+                public async Task SyncDataTransactions()
+                {
+                    try
+                    {
+                        string filePath = "DT-Cache\\Transaction\\transaction.data";
+                        string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
+                        string destinationPath = "DT-Cache\\Transaction\\transactionSyncing.data";
+
+
+                        if (File.Exists(destinationPath)) try { File.Delete(destinationPath); } catch(Exception ex) { LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message); }
+
+                        IApiService apiService = new ApiService();
+
+                        // Ensure directories exist
+                        string directoryPath = Path.GetDirectoryName(filePath);
+                        string newFileName = "";
+                        string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
+                        newFileName = $"{baseOutlet}_SyncSuccess_{DateTime.Now:yyyyMMdd}.data";
+
+                        if (!Directory.Exists(directoryPath))
+                        {
+                            Directory.CreateDirectory(directoryPath);
+                        }
+
+                        string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
+                        string saveBillDataPathClone = "DT-Cache\\Transaction\\saveBillSync.data";
+
+                        if (File.Exists(saveBillDataPath))
+                        {
+                            SyncSaveBillData(saveBillDataPath, saveBillDataPathClone, apiUrl);
+                        }
+
+                        if (!File.Exists(filePath))
+                        {
+                            return;
+                        }
+
+                        if (!Directory.Exists(newSyncFileTransaction))
+                        {
+                            Directory.CreateDirectory(newSyncFileTransaction);
+                        }
+
+                        // Using streams to copy the file instead of File.Copy
+                        using (FileStream sourceStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        using (FileStream destStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
+                        {
+                            await sourceStream.CopyToAsync(destStream);
+                        }
+
+                        //Simplysent
+                        SimplifyAndSaveData(destinationPath);
+
+                        // Read file JSON
+                        string jsonData = File.ReadAllText(destinationPath);
+                        JObject data = JObject.Parse(jsonData);
+
+                        // Get "data" array
+                        JArray transactions = (JArray)data["data"];
+                        if (transactions == null || !transactions.Any())
+                        {
+                            // Delete file if data is empty
+                            File.Delete(destinationPath);
+                        }
+                        else
+                        {
+                            HttpResponseMessage response = await apiService.SyncTransaction(jsonData, apiUrl);
+                            if (response.IsSuccessStatusCode)
+                            {
+                                if (!Directory.Exists(newSyncFileTransaction))
+                                {
+                                    Directory.CreateDirectory(newSyncFileTransaction);
+                                }
+                                string folderCombine = Path.Combine(newSyncFileTransaction, newFileName);
+
+                                // Check if file exists, if yes, read file and add new transactions
+                                if (File.Exists(folderCombine))
+                                {
+                                    string existingData = File.ReadAllText(folderCombine);
+                                    JObject existingDataJson = JObject.Parse(existingData);
+                                    JArray existingTransactions = (JArray)existingDataJson["data"];
+
+                                    // Add new transactions to existing data
+                                    existingTransactions.Add(transactions);
+                                    existingDataJson["data"] = existingTransactions;
+
+                                    // Save the updated file
+                                    File.WriteAllText(folderCombine, existingDataJson.ToString());
+                                }
+                                else
+                                {
+                                    // Copy file using streams
+                                    using (FileStream sourceStream = new FileStream(destinationPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                                    using (FileStream destStream = new FileStream(folderCombine, FileMode.Create, FileAccess.Write))
+                                    {
+                                        await sourceStream.CopyToAsync(destStream);
+                                    }
+                                }
+
+                                // Notify main form that sync was successful
+                                SyncCompleted?.Invoke();
+
+                                SyncSuccess(filePath);
+                                NewDataChecker = 1;
+                            }
+                            else
+                            {
+                                // Handle failed sync
+                                string errorMessage = $"Gagal mengirim data Transactions. API Response: {response.ReasonPhrase}";
+                                MessageBox.Show(errorMessage);
+
+                                string responseBody = await response.Content.ReadAsStringAsync();
+                                string detailedErrorMessage = $"{errorMessage} || Response Body: {responseBody}";
+
+                                string folderGagall = "DT-Cache\\Transaction\\FailedSyncTransaction";
+                                newFileName = $"{baseOutlet}_SyncFailed_{DateTime.Now:yyyyMMdd}.data";
+
+                                string folderCombine = Path.Combine(folderGagall, newFileName);
+
+                                if (!Directory.Exists(folderGagall))
+                                {
+                                    Directory.CreateDirectory(folderGagall);
+                                }
+
+                                if (File.Exists(folderCombine))
+                                {
+                                    string existingData = File.ReadAllText(folderCombine);
+                                    JObject existingDataJson = JObject.Parse(existingData);
+                                    JArray existingTransactions = (JArray)existingDataJson["data"];
+
+                                    existingTransactions.Add(transactions);
+                                    existingDataJson["data"] = existingTransactions;
+
+                                    File.WriteAllText(folderCombine, existingDataJson.ToString());
+                                }
+                                else
+                                {
+                                    // Copy file using streams
+                                    using (FileStream sourceStream = new FileStream(destinationPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                                    using (FileStream destStream = new FileStream(folderCombine, FileMode.Create, FileAccess.Write))
+                                    {
+                                        await sourceStream.CopyToAsync(destStream);
+                                    }
+                                }
+
+                                throw new Exception(detailedErrorMessage);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                        MessageBox.Show(ex.ToString());
+                    }
+                }
+        */
+                public async void SyncSaveBillData(string saveBillDataPath, string saveBillDataPathClone, string apiUrl)
+                {
+                    try
+                    {
+                        // Copy saveBill data using streams
+                        using (FileStream sourceStream = new FileStream(saveBillDataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        using (FileStream destStream = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write))
+                        {
+                            await sourceStream.CopyToAsync(destStream);
+                        }
+
+                        SimplifyAndSaveData(saveBillDataPathClone);
+
+                        string jsonSavwDataSync = File.ReadAllText(saveBillDataPathClone);
+                        JObject dataSave = JObject.Parse(jsonSavwDataSync);
+
+                        JArray transactionsSaveBill = (JArray)dataSave["data"];
+                        if (transactionsSaveBill == null || !transactionsSaveBill.Any())
+                        {
+                            File.Delete(saveBillDataPathClone);
+                            return;
+                        }
+
+                        HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonSavwDataSync, apiUrl);
+                        if (savebillSync.IsSuccessStatusCode)
+                        {
+                            SyncSuccess(saveBillDataPath);
+                        }
+                        else
+                        {
+                            MessageBox.Show("Gagal mengirim data SaveBill.");
+                            throw new Exception("Gagal mengirim data SaveBill." + savebillSync.ToString());
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                    }
+                }
 
         public static readonly object FileLock = new object();
         public event Action SyncCompleted;  // Event untuk memberi tahu form utama bahwa sinkronisasi berhasil

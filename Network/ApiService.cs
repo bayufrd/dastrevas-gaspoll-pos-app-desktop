@@ -22,20 +22,36 @@ namespace KASIR.Network
 
         public ApiService()
         {
-            baseAddress = Properties.Settings.Default.BaseAddress;
-            httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri(baseAddress); // Replace with your API base URL
+            string baseAddress = Properties.Settings.Default.BaseAddress;
+
+            httpClient = new HttpClient
+            {
+                BaseAddress = new Uri(baseAddress),
+                Timeout = Timeout.InfiniteTimeSpan // Polly timeout will manage it
+            };
+
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
+            // Retry jika response gagal
             retryPolicy = Policy
                 .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-                .RetryAsync(3);
+                .RetryAsync(3, onRetry: (response, retryCount, context) =>
+                {
+                    MessageBox.Show($"[RETRY] Percobaan ke-{retryCount}, Status: {response.Result?.StatusCode}");
+                });
 
+            // Timeout 10 detik untuk semua eksekusi
             timeoutPolicy = Policy
-                .TimeoutAsync<HttpResponseMessage>(10); // Set the timeout duration to 10 seconds, adjust as needed
+                .TimeoutAsync<HttpResponseMessage>(10, TimeoutStrategy.Pessimistic, onTimeoutAsync: (context, timespan, task, ex) =>
+                {
+                    MessageBox.Show($"[TIMEOUT] Request timeout setelah {timespan.TotalSeconds} detik.");
+                    return Task.CompletedTask;
+                });
 
-            combinedPolicy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
+            // Gunakan timeout sebagai lapisan luar
+            combinedPolicy = timeoutPolicy.WrapAsync(retryPolicy);
+
         }
 
         // Utility method to send requests with retry and timeout policy

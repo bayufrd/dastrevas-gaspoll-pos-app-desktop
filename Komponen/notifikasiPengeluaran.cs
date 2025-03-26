@@ -58,86 +58,79 @@ namespace KASIR.Komponen
         {
             try
             {
-
                 IApiService apiService = new ApiService();
-
                 string response = await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-                if (response != null)
+
+                if (string.IsNullOrEmpty(response))
                 {
-                    /* if (response.IsSuccessStatusCode)
-                     {
-     */
-                    //tempat struk
-
-                    GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
-                    DataShift data = cekShift.data;
-                    List<ExpenditureStrukShift> listExpenditure = data.expenditures;
-                    List<CartDetailsSuccessStrukShift> listCartDetailsSuccessStrukShift = data.cart_details_success;
-                    List<CartDetailsPendingStrukShift> listCartDetailsPendingStrukShift = data.cart_details_pending;
-                    List<CartDetailsCanceledStrukShift> listCartDetailsCanceledStrukShift = data.cart_details_canceled;
-                    List<RefundDetailStrukShift> listRefundDetailStrukShift = data.refund_details;
-                    List<PaymentDetailStrukShift> listPaymentDetailStrukShift = data.payment_details;
-                    try
-                    {
-                        DataShift datas = cekShift.data;
-                        List<ExpenditureStrukShift> expenditures = datas.expenditures;
-                        List<CartDetailsSuccessStrukShift> cartDetailsSuccess = datas.cart_details_success;
-                        List<CartDetailsPendingStrukShift> cartDetailsPending = datas.cart_details_pending;
-                        List<CartDetailsCanceledStrukShift> cartDetailsCanceled = datas.cart_details_canceled;
-                        List<RefundDetailStrukShift> refundDetails = datas.refund_details;
-                        List<PaymentDetailStrukShift> paymentDetails = datas.payment_details;
-                        DataTable dataTable = new DataTable();
-                        dataTable.Columns.Add("ID", typeof(string)); //biar ga error columnsnya :)
-                        dataTable.Columns.Add("DATA", typeof(string));
-                        dataTable.Columns.Add("Detail", typeof(string));
-
-                        dataTable.Rows.Add(null, datas.outlet_name, null);
-                        dataTable.Rows.Add(null, "Start Date :", datas.start_date);
-                        dataTable.Rows.Add(null, "End Date :", datas.end_date);
-                        dataTable.Rows.Add(null, "Shift Number :", datas.shift_number);
-                        dataTable.Rows.Add(null, "--------------------------------", null);
-                        if (expenditures.Count != 0)
-                        {
-                            dataTable.Rows.Add(null, "EXPENSE", null);
-                            foreach (var expense in expenditures)
-                            {
-                                dataTable.Rows.Add(null, expense.description, string.Format("Rp. {0:n0},-", expense.nominal));
-                            }
-
-                        }
-
-
-                        dataGridView1.DataSource = dataTable;
-                        DataGridViewCellStyle boldStyle = new DataGridViewCellStyle();
-                        boldStyle.Font = new Font(dataGridView1.Font, FontStyle.Italic);
-                        dataGridView1.Columns["DATA"].DefaultCellStyle = boldStyle;
-                        dataGridView1.Columns["ID"].Visible = false;
-                        //dataGridView1.Columns["DATA"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-                        button2.Enabled = true;
-
-
-
-                    }
-                    catch (TaskCanceledException ex)
-                    {
-                        MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                    }
-                    catch (Exception ex)
-                    {
-
-                        button2.Enabled = true;
-                        MessageBox.Show("Error: " + ex.Message);
-                        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                    }
-
+                    MessageBox.Show("Tidak ada respon dari server.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
                 }
+
+                var cekShift = JsonConvert.DeserializeObject<GetShift>(response);
+                if (cekShift?.data == null)
+                {
+                    MessageBox.Show("Data shift tidak tersedia atau tidak valid.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var datas = cekShift.data;
+                var expenditures = datas.expenditures ?? new List<ExpenditureStrukShift>();
+                var cartDetailsSuccess = datas.cart_details_success ?? new List<CartDetailsSuccessStrukShift>();
+                var cartDetailsPending = datas.cart_details_pending ?? new List<CartDetailsPendingStrukShift>();
+                var cartDetailsCanceled = datas.cart_details_canceled ?? new List<CartDetailsCanceledStrukShift>();
+                var refundDetails = datas.refund_details ?? new List<RefundDetailStrukShift>();
+                var paymentDetails = datas.payment_details ?? new List<PaymentDetailStrukShift>();
+
+                var dataTable = new DataTable();
+                dataTable.Columns.Add("ID", typeof(string));
+                dataTable.Columns.Add("DATA", typeof(string));
+                dataTable.Columns.Add("Detail", typeof(string));
+
+                dataTable.Rows.Add(null, datas.outlet_name, null);
+                dataTable.Rows.Add(null, "Start Date :", datas.start_date);
+                dataTable.Rows.Add(null, "End Date :", datas.end_date);
+                dataTable.Rows.Add(null, "Shift Number :", datas.shift_number);
+                dataTable.Rows.Add(null, "--------------------------------", null);
+
+                if (expenditures.Any())
+                {
+                    dataTable.Rows.Add(null, "EXPENSE", null);
+                    foreach (var expense in expenditures)
+                    {
+                        dataTable.Rows.Add(null, expense.description, $"Rp. {expense.nominal:n0},-");
+                    }
+                }
+
+                dataGridView1.DataSource = dataTable;
+
+                var boldStyle = new DataGridViewCellStyle
+                {
+                    Font = new Font(dataGridView1.Font, FontStyle.Italic)
+                };
+                dataGridView1.Columns["DATA"].DefaultCellStyle = boldStyle;
+                dataGridView1.Columns["ID"].Visible = false;
+
+                button2.Enabled = true;
+            }
+            catch (TaskCanceledException ex)
+            {
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LoggerUtil.LogError(ex, "TaskCanceledException: {ErrorMessage}", ex.Message);
+            }
+            catch (JsonSerializationException ex)
+            {
+                MessageBox.Show("Gagal memproses data dari server.", "Deserialization Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LoggerUtil.LogError(ex, "Deserialization error: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-
+                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Unhandled Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LoggerUtil.LogError(ex, "Unexpected error: {ErrorMessage}", ex.Message);
+                button2.Enabled = true;
             }
         }
+
         private void btnKeluar_Click(object sender, EventArgs e)
         {
             this.Close();

@@ -14,6 +14,7 @@ namespace KASIR
         {
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
+            Application.EnableVisualStyles();
             ApplicationConfiguration.Initialize();
             // Increase the maximum number of window handles that the application can create.
             Application.SetCompatibleTextRenderingDefault(false);

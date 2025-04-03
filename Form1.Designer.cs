@@ -47,6 +47,7 @@ namespace KASIR
             lblTitleChildForm = new Label();
             SyncTimer = new System.Windows.Forms.Timer(components);
             gradientPanel2 = new GradientPanel();
+            btnDev = new IconButton();
             btnContact = new IconButton();
             SignalPing = new IconButton();
             lblPing = new Label();
@@ -57,7 +58,6 @@ namespace KASIR
             button2 = new PictureBox();
             Setting = new IconButton();
             panel2 = new Panel();
-            btnDev = new IconButton();
             panel1.SuspendLayout();
             panelTitleBar.SuspendLayout();
             gradientPanel1.SuspendLayout();
@@ -197,7 +197,7 @@ namespace KASIR
             // SyncTimer
             // 
             SyncTimer.Enabled = true;
-            SyncTimer.Interval = 1800000;
+            SyncTimer.Interval = 300000;
             SyncTimer.Tick += timer1_Tick;
             // 
             // gradientPanel2
@@ -216,6 +216,20 @@ namespace KASIR
             resources.ApplyResources(gradientPanel2, "gradientPanel2");
             gradientPanel2.Name = "gradientPanel2";
             gradientPanel2.TopColor = Color.Black;
+            // 
+            // btnDev
+            // 
+            btnDev.BackColor = Color.Transparent;
+            btnDev.FlatAppearance.BorderSize = 0;
+            resources.ApplyResources(btnDev, "btnDev");
+            btnDev.ForeColor = Color.Gainsboro;
+            btnDev.IconChar = IconChar.GetPocket;
+            btnDev.IconColor = Color.Gainsboro;
+            btnDev.IconFont = IconFont.Auto;
+            btnDev.IconSize = 25;
+            btnDev.Name = "btnDev";
+            btnDev.UseVisualStyleBackColor = false;
+            btnDev.Click += btnDev_Click;
             // 
             // btnContact
             // 
@@ -327,20 +341,6 @@ namespace KASIR
             resources.ApplyResources(panel2, "panel2");
             panel2.Name = "panel2";
             panel2.Paint += panel2_Paint;
-            // 
-            // btnDev
-            // 
-            btnDev.BackColor = Color.Transparent;
-            btnDev.FlatAppearance.BorderSize = 0;
-            resources.ApplyResources(btnDev, "btnDev");
-            btnDev.ForeColor = Color.Gainsboro;
-            btnDev.IconChar = IconChar.GetPocket;
-            btnDev.IconColor = Color.Gainsboro;
-            btnDev.IconFont = IconFont.Auto;
-            btnDev.IconSize = 25;
-            btnDev.Name = "btnDev";
-            btnDev.UseVisualStyleBackColor = false;
-            btnDev.Click += btnDev_Click;
             // 
             // Form1
             // 

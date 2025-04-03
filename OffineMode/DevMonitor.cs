@@ -147,21 +147,21 @@ namespace KASIR.OfflineMode
 
         private async void loadDataComplaint()
         {
-            // Panggil API untuk mendapatkan data
-            IApiService apiService = new ApiService();
-            string response = await apiService.GetActiveCart("/complaint");
-
-            // Log response untuk debugging
-            Console.WriteLine(response);
-
-            if (string.IsNullOrEmpty(response) || response.StartsWith("<"))
-            {
-                MessageBox.Show("API response is not valid JSON.");
-                return;
-            }
-
             try
             {
+                // Panggil API untuk mendapatkan data
+                IApiService apiService = new ApiService();
+                string response = await apiService.GetActiveCart("/complaint");
+
+                // Log response untuk debugging
+                Console.WriteLine(response);
+
+                if (string.IsNullOrEmpty(response) || response.StartsWith("<"))
+                {
+                    MessageBox.Show("API response is not valid JSON.");
+                    return;
+                }
+
                 // Mengonversi response JSON menjadi objek JObject
                 var jsonResponse = JObject.Parse(response);
 
@@ -196,7 +196,7 @@ namespace KASIR.OfflineMode
                     // Membuat button untuk setiap outlet
                     System.Windows.Forms.Button outletNameButton = new System.Windows.Forms.Button
                     {
-                        Text = outlet["name"]?.ToString() +" || " +outlet["sent_at"]?.ToString(),
+                        Text = outlet["name"]?.ToString() + " || " + outlet["sent_at"]?.ToString(),
                         Width = totalWidth,
                         Height = 40,
                         FlatStyle = FlatStyle.Flat,

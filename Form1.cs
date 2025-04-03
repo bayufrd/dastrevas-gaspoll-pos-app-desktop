@@ -26,6 +26,7 @@ using KASIR.Printer;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 using KASIR.OffineMode;
 using System.Globalization;
+using System.Reflection;
 
 
 namespace KASIR
@@ -34,11 +35,6 @@ namespace KASIR
     {
         private IconButton currentBtn;
         private Panel leftBorderBtn;
-        private Form currentChildForm;
-        private readonly ILogger _log = LoggerService.Instance._log;
-
-        private static Form1 _instance;
-        private readonly string namaOutlet = Properties.Settings.Default.BaseOutletName.ToString();
         private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet.ToString();
         private readonly string macKasir = Properties.Settings.Default.MacAddressKasir.ToString();
         private readonly string macBar = Properties.Settings.Default.MacAddressBar.ToString();
@@ -51,6 +47,8 @@ namespace KASIR
         public Form1()
         {
             InitializeComponent();
+            // Panggil di constructor setelah InitializeComponent()
+            SetDoubleBufferedForAllControls(this);
             //this.Height = 768;
             //this.Width = 1024;
             this.Load += btnMaximize_Click;
@@ -66,9 +64,54 @@ namespace KASIR
             lblDetail.Visible = false;
             progressBar.Visible = false;
             StarterApp();
-            if(baseOutlet != "4")
+            if (baseOutlet != "4")
             {
                 btnDev.Visible = false;
+            }
+            this.Shown += Form1_Shown; // Tambahkan ini
+        }
+        // Event handler untuk form shown
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            RefreshIconButtons();
+        }
+        // Method untuk refresh icon buttons
+        private void RefreshIconButtons()
+        {
+            this.SuspendLayout();
+            foreach (Control c in this.Controls)
+            {
+                RecursiveRefreshIcons(c);
+            }
+            this.ResumeLayout(true);
+        }
+
+        // Method untuk recursive refresh
+        private void RecursiveRefreshIcons(Control control)
+        {
+            if (control is IconButton iconBtn)
+            {
+                iconBtn.Invalidate(); // Force redraw
+            }
+
+            foreach (Control child in control.Controls)
+            {
+                RecursiveRefreshIcons(child);
+            }
+        }
+        // Tambahkan method ini di Form1
+        public static void SetDoubleBufferedForAllControls(Control control)
+        {
+            foreach (Control c in control.Controls)
+            {
+                PropertyInfo prop = c.GetType().GetProperty("DoubleBuffered",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                if (prop != null)
+                {
+                    prop.SetValue(c, true, null);
+                }
+
+                SetDoubleBufferedForAllControls(c);
             }
         }
         private async void ConfigOfflineMode()
@@ -351,9 +394,10 @@ namespace KASIR
             {
                 Offline_masterPos cache = new Offline_masterPos();
                 //await refreshCacheTransaction();
-                isSyncing = true;
+                TransactionSync.IsSyncing = true;
                 cache.refreshCacheTransaction();
-                isSyncing = false;
+                TransactionSync.IsSyncing = false;
+
             }
 
             if (NetworkInterface.GetIsNetworkAvailable())
@@ -414,7 +458,6 @@ namespace KASIR
                 await headerOutletName("Check Last Update..");
                 findingdownloadpath();
                 string startupPath = AppDomain.CurrentDomain.BaseDirectory;
-                string linkFolderName = "KASIRinstaller";
                 PathKasir = startupPath;
                 string directoryPath = "update";
                 string filePath = Path.Combine(directoryPath, "versionUpdater.txt");
@@ -948,32 +991,6 @@ namespace KASIR
                 currentBtn.ImageAlign = ContentAlignment.MiddleLeft;
             }
         }
-        private void OpenChildForm(Form childForm)
-        {
-            //open only form
-            if (currentChildForm != null)
-            {
-                currentChildForm.Close();
-            }
-            currentChildForm = childForm;
-            //End
-            childForm.TopLevel = false;
-            childForm.FormBorderStyle = FormBorderStyle.None;
-            childForm.Dock = DockStyle.Fill;
-            panel2.Controls.Add(childForm);
-            panel2.Tag = childForm;
-            childForm.BringToFront();
-            childForm.Show();
-            lblTitleChildForm.Text = childForm.Text;
-        }
-        private void Reset()
-        {
-            DisableButton();
-            leftBorderBtn.Visible = false;
-            iconCurrentChildForm.IconChar = IconChar.Home;
-            iconCurrentChildForm.IconColor = Color.MediumPurple;
-            lblTitleChildForm.Text = "Menu";
-        }
 
         private async void button6_Click(object sender, EventArgs e)
         {
@@ -1274,37 +1291,37 @@ namespace KASIR
                 background.Dispose();
             }
         }
-        private static bool isSyncing = false;  // Flag to check if sync is in progress
 
         private async void timer1_Tick(object sender, EventArgs e)
         {
             // Read the OfflineMode status
             string config = "setting\\OfflineMode.data";
             string allSettingsData = File.ReadAllText(config);  // Get the current OfflineMode setting
-
-            // Check if OfflineMode is ON
+                                                                // Check if OfflineMode is ON
             if (allSettingsData != "ON")
             {
                 return;
             }
-
-            if (isSyncing) // Check if sync is already in progress
+            if (!NetworkInterface.GetIsNetworkAvailable())
+            {
+                SignalPing.ForeColor = Color.Red;
+                SignalPing.Text = $"Error Sync \n{DateTime.Now:HH:mm}";
+                SignalPing.IconColor = Color.White;
+                return;
+            }
+            if (TransactionSync.IsSyncing) // Check using the shared manager
             {
                 return; // If sync is already running, exit
             }
-
             try
             {
-                isSyncing = true;  // Set the flag to indicate sync is in progress
-
+                TransactionSync.IsSyncing = true;  // Set the flag to indicate sync is in progress
                 lblPing.ForeColor = Color.LightGreen;
                 lblPing.Text = "Sync...";
                 SignalPing.ForeColor = Color.LightGreen;
                 SignalPing.Text = "Sync...";
                 SignalPing.IconColor = Color.LightGreen;
-
                 await sendDataSyncPerHours(allSettingsData);
-
                 lblPing.ForeColor = Color.White;
                 lblPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
                 SignalPing.ForeColor = Color.White;
@@ -1313,7 +1330,7 @@ namespace KASIR
             }
             finally
             {
-                isSyncing = false;  // Reset the flag when sync is finished
+                TransactionSync.IsSyncing = false;  // Reset the flag when sync is finished
             }
         }
 
@@ -1322,22 +1339,9 @@ namespace KASIR
             // Check if OfflineMode is ON
             if (allSettingsData == "ON")
             {
-                /*    Offline_masterPos m = new Offline_masterPos();
-
-                    m.refreshCacheTransaction();*/
                 shiftReport c = new shiftReport();
-                //c.SyncCompleted += SyncCompletedHandler;
                 c.SyncDataTransactions();
             }
-        }
-        private void SyncCompletedHandler()
-        {
-            string filePath = "DT-Cache\\Transaction\\transaction.data";
-
-            // Memperbarui file yang telah disinkronkan atau memperbarui status UI
-            SyncSuccess(filePath);
-
-            // Misalnya, memanggil fungsi untuk memperbarui status is_sent_sync di form utama
         }
         public static readonly object FileLock = new object();
         public static void SyncSuccess(string filePath)
@@ -1468,13 +1472,6 @@ namespace KASIR
             ActivateButton(sender, RGBColors.color4);
             try
             {
-                if (isSyncing)
-                {
-                    // If syncing is already in progress, don't do anything
-                    MessageBox.Show("Data sedang di load. Tolong tunggu sebentar!");
-                    return;
-                }
-                isSyncing = true;
                 shiftReport c = new shiftReport();
 
                 // Misalkan 'obj' adalah objek yang mungkin null
@@ -1520,11 +1517,6 @@ namespace KASIR
                 MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 // Log error jika diperlukan
             }
-            finally
-            {
-                isSyncing = false;
-            }
-
         }
 
         private void iconButton3_Click(object sender, EventArgs e)

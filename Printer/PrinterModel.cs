@@ -149,7 +149,7 @@ namespace KASIR.Printer
                                     availablePrinters.Add(new PrinterItem(printerName, printerId));
                                 }
                             }
-                            catch (Exception innerEx)
+                            catch (Exception)
                             {
                                 // Log individual printer query errors
                                 //MessageBox.Show($"Error processing printer: {innerEx.Message}");
@@ -158,7 +158,7 @@ namespace KASIR.Printer
                     }
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log general errors
                 //MessageBox.Show($"Error retrieving printers: {ex.Message}");
@@ -2966,7 +2966,7 @@ namespace KASIR.Printer
             {
                 await LoadPrinterSettings(); // Load printer settings
                 await LoadSettingsAsync();   // Load additional settings
-                
+
                 List<KeyValuePair<string, string>> printerSettingsCopy;
                 lock (printerSettings)
                 {
@@ -3059,11 +3059,11 @@ namespace KASIR.Printer
 
             byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
             byte[] NewLine = new byte[] { 0x0A }; // New line
-/*
-            // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
-            byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
-            stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
-*/
+            /*
+                        // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
+                        byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
+                        stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
+            */
             // Write initialization bytes
             stream.Write(InitPrinter, 0, InitPrinter.Length);
 
@@ -3114,17 +3114,17 @@ namespace KASIR.Printer
                             strukText += "  Discount Code: " + cartDetail.discount_code + "\n";
                         if (cartDetail.discounts_value != null && Convert.ToDecimal(cartDetail.discounts_value) != 0)
                             strukText += "  Discount Value: " + (cartDetail.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", cartDetail.discounts_value.ToString()) : cartDetail.discounts_value.ToString() + " %") + "\n";
-/*
-                        strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.price)) + "\n";
-                        if (!string.IsNullOrEmpty(cartDetail.varian))
-                            strukText += "   Varian: " + cartDetail.varian + "\n";
-                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                            strukText += "   Note: " + cartDetail.note_item + "\n";
-                        if (!string.IsNullOrEmpty(cartDetail.discount_code))
-                            strukText += "   Discount Code: " + cartDetail.discount_code + "\n";
-                        if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
-                            strukText += "   Total Discount: " + string.Format("{0:n0}", cartDetail.discounted_price) + "\n";
-                        strukText += "   Total Price: " + string.Format("{0:n0}", cartDetail.total_price) + "\n";*/
+                        /*
+                                                strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.price)) + "\n";
+                                                if (!string.IsNullOrEmpty(cartDetail.varian))
+                                                    strukText += "   Varian: " + cartDetail.varian + "\n";
+                                                if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                                    strukText += "   Note: " + cartDetail.note_item + "\n";
+                                                if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                                                    strukText += "   Discount Code: " + cartDetail.discount_code + "\n";
+                                                if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
+                                                    strukText += "   Total Discount: " + string.Format("{0:n0}", cartDetail.discounted_price) + "\n";
+                                                strukText += "   Total Price: " + string.Format("{0:n0}", cartDetail.total_price) + "\n";*/
                         //strukText += "\n";
                     }
                 }
@@ -3823,7 +3823,6 @@ namespace KASIR.Printer
             int totalTransactions)
         {
             string kodeHeksadesimalBold = "\x1B\x45\x01";
-            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
 
             byte[] NewLine = new byte[] { 0x0A }; // New line
@@ -3862,7 +3861,7 @@ namespace KASIR.Printer
                 strukText += CenterText(datas?.invoice_due_date);
 
             strukText += "Name: " + datas?.customer_name + "\n";
-            
+
             // Ordered items
             if (cartDetails.Count > 0 && cartDetails != null)
             {
@@ -3937,7 +3936,7 @@ namespace KASIR.Printer
                     }
                 }
             }
-            
+
             // Subtotal, discount, and total
             strukText += "--------------------------------\n";
             strukText += FormatSimpleLine("Subtotal", string.Format("{0:n0}", datas.subtotal)) + "\n";
@@ -3948,7 +3947,7 @@ namespace KASIR.Printer
             strukText += FormatSimpleLine("Total", string.Format("{0:n0}", datas.total)) + "\n";
 
             // Add the "Meja No." at the bottom
-            strukText += kodeHeksadesimalNormal + CenterText("Meja No. " + datas?.customer_seat); 
+            strukText += kodeHeksadesimalNormal + CenterText("Meja No. " + datas?.customer_seat);
             strukText += "--------------------------------\n";
             //strukText += "--------------------------------\n";
 
@@ -4427,7 +4426,7 @@ namespace KASIR.Printer
                     {
                         strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
 
-                        strukText += FormatSimpleLine(cartDetail.menu_name, cartDetail.qty ) + "\n";
+                        strukText += FormatSimpleLine(cartDetail.menu_name, cartDetail.qty) + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.varian))
                             strukText += "Varian: " + cartDetail.varian + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
@@ -5312,11 +5311,11 @@ namespace KASIR.Printer
 
             byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
             byte[] NewLine = new byte[] { 0x0A }; // New line
-/*
-            // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
-            byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
-            stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
-*/
+            /*
+                        // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
+                        byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
+                        stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
+            */
             // Write initialization bytes
             stream.Write(InitPrinter, 0, InitPrinter.Length);
 
@@ -5609,273 +5608,443 @@ namespace KASIR.Printer
                 }
                 // Struct Customer ====
                 if (ShouldPrint(printerId, "Kasir"))
+                {
+                    PrintDocument printDocument = new PrintDocument();
+                    printDocument.PrintPage += (sender, e) =>
                     {
-                        PrintDocument printDocument = new PrintDocument();
-                        printDocument.PrintPage += (sender, e) =>
+                        Graphics graphics = e.Graphics;
+
+                        // Mengatur font normal dan tebal
+                        Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                        Font boldFont = new Font("Arial", 8, FontStyle.Bold);
+                        Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
+                        Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+
+                        float leftMargin = 5; // Margin kiri (dalam pixel)
+                        float rightMargin = 5; // Margin kanan (dalam pixel)
+                        float topMargin = 5; // Margin atas (dalam pixel)
+                        float yPos = topMargin;
+
+                        // Lebar kertas thermal 58mm, sesuaikan dengan margin
+                        float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                        float printableWidth = paperWidth - leftMargin - rightMargin;
+
+                        // Fungsi untuk format teks kiri dan kanan
+                        void DrawSimpleLine(string textLeft, string textRight)
                         {
-                            Graphics graphics = e.Graphics;
+                            SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
+                            SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
+                            e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
+                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                            yPos += normalFont.GetHeight(e.Graphics);
+                        }
 
-                            // Mengatur font normal dan tebal
-                            Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                            Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                            Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                            Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
-
-                            float leftMargin = 5; // Margin kiri (dalam pixel)
-                            float rightMargin = 5; // Margin kanan (dalam pixel)
-                            float topMargin = 5; // Margin atas (dalam pixel)
-                            float yPos = topMargin;
-
-                            // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                            float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
-                            float printableWidth = paperWidth - leftMargin - rightMargin;
-
-                            // Fungsi untuk format teks kiri dan kanan
-                            void DrawSimpleLine(string textLeft, string textRight)
+                        // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
+                        void DrawCenterText(string text, Font font)
+                        {
+                            if (text == null) text = string.Empty;
+                            if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            string[] words = text.Split(' ');
+                            StringBuilder currentLine = new StringBuilder();
+                            foreach (string word in words)
                             {
-                                SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
-                                SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
-                                e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                                e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
-                                yPos += normalFont.GetHeight(e.Graphics);
-                            }
-
-                            // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
-                            void DrawCenterText(string text, Font font)
-                            {
-                                if (text == null) text = string.Empty;
-                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
-                                string[] words = text.Split(' ');
-                                StringBuilder currentLine = new StringBuilder();
-                                foreach (string word in words)
+                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                if (size.Width > printableWidth)
                                 {
-                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
-                                    if (size.Width > printableWidth)
-                                    {
-                                        // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                        SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
-                                        yPos += font.GetHeight(e.Graphics);
-                                        currentLine.Clear();
-                                    }
-                                    // Tambahkan kata ke baris saat ini
-                                    currentLine.Append(word + " ");
-                                }
-                                // Gambar baris terakhir
-                                if (currentLine.Length > 0)
-                                {
+                                    // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
                                     yPos += font.GetHeight(e.Graphics);
+                                    currentLine.Clear();
                                 }
+                                // Tambahkan kata ke baris saat ini
+                                currentLine.Append(word + " ");
                             }
-
-                            // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
-                            void DrawLeftText(string text, Font font)
+                            // Gambar baris terakhir
+                            if (currentLine.Length > 0)
                             {
-                                if (text == null)
+                                SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
+                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                yPos += font.GetHeight(e.Graphics);
+                            }
+                        }
+
+                        // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
+                        void DrawLeftText(string text, Font font)
+                        {
+                            if (text == null)
+                            {
+                                //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                return;
+                            }
+                            string[] words = text.Split(' ');
+                            StringBuilder currentLine = new StringBuilder();
+                            foreach (string word in words)
+                            {
+                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                if (size.Width > printableWidth)
                                 {
-                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
-                                    return;
-                                }
-                                string[] words = text.Split(' ');
-                                StringBuilder currentLine = new StringBuilder();
-                                foreach (string word in words)
-                                {
-                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
-                                    if (size.Width > printableWidth)
-                                    {
-                                        // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
-                                        yPos += font.GetHeight(e.Graphics);
-                                        currentLine.Clear();
-                                    }
-                                    // Tambahkan kata ke baris saat ini
-                                    currentLine.Append(word + " ");
-                                }
-                                // Gambar baris terakhir
-                                if (currentLine.Length > 0)
-                                {
+                                    // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
                                     yPos += font.GetHeight(e.Graphics);
+                                    currentLine.Clear();
                                 }
+                                // Tambahkan kata ke baris saat ini
+                                currentLine.Append(word + " ");
                             }
+                            // Gambar baris terakhir
+                            if (currentLine.Length > 0)
+                            {
+                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                yPos += font.GetHeight(e.Graphics);
+                            }
+                        }
 
 
-                            // Fungsi untuk menggambar garis pemisah
-                            void DrawSeparator()
+                        // Fungsi untuk menggambar garis pemisah
+                        void DrawSeparator()
+                        {
+                            e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
+                            yPos += normalFont.GetHeight(e.Graphics);
+                        }
+                        // Fungsi untuk mendapatkan dan mengonversi gambar logo ke hitam dan putih
+                        Image GetLogoImage(string path)
+                        {
+                            Image img = Image.FromFile(path);
+                            Bitmap bmp = new Bitmap(img.Width, img.Height);
+                            using (Graphics g = Graphics.FromImage(bmp))
                             {
-                                e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
-                                yPos += normalFont.GetHeight(e.Graphics);
-                            }
-                            // Fungsi untuk mendapatkan dan mengonversi gambar logo ke hitam dan putih
-                            Image GetLogoImage(string path)
-                            {
-                                Image img = Image.FromFile(path);
-                                Bitmap bmp = new Bitmap(img.Width, img.Height);
-                                using (Graphics g = Graphics.FromImage(bmp))
+                                ColorMatrix colorMatrix = new ColorMatrix(new float[][]
                                 {
-                                    ColorMatrix colorMatrix = new ColorMatrix(new float[][]
-                                    {
                                         new float[] { 0.3f, 0.3f, 0.3f, 0, 0 },
                                         new float[] { 0.59f, 0.59f, 0.59f, 0, 0 },
                                         new float[] { 0.11f, 0.11f, 0.11f, 0, 0 },
                                         new float[] { 0, 0, 0, 1, 0 },
                                         new float[] { 0, 0, 0, 0, 1 }
-                                    });
-                                    ImageAttributes attributes = new ImageAttributes();
-                                    attributes.SetColorMatrix(colorMatrix);
-                                    g.DrawImage(img, new Rectangle(0, 0, img.Width, img.Height), 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, attributes);
-                                }
-                                return bmp;
+                                });
+                                ImageAttributes attributes = new ImageAttributes();
+                                attributes.SetColorMatrix(colorMatrix);
+                                g.DrawImage(img, new Rectangle(0, 0, img.Width, img.Height), 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, attributes);
                             }
-
-                            // Menambahkan logo dan teks "Powered by" di akhir struk
-                            void DrawPoweredByLogo(string path)
-                            {
-                                // Menambahkan jarak sebelum mencetak teks dan logo
-                                float spaceBefore = 50; // Jarak dalam pixel, sesuaikan dengan kebutuhan
-                                yPos += spaceBefore;
-
-                                // Mengukur teks "Powered by Your Company"
-                                string poweredByText = "Powered by Dastrevas";
-                                SizeF textSize = e.Graphics.MeasureString(poweredByText, normalFont);
-
-                                // Gambar teks
-                                float textX = leftMargin + (printableWidth - textSize.Width) / 2;
-                                e.Graphics.DrawString(poweredByText, normalFont, Brushes.Black, textX, yPos);
-
-                                // Sesuaikan yPos untuk logo
-                                yPos += textSize.Height;
-
-                                // Menggambar logo
-                                Image logoPoweredBy = GetLogoImage(path);
-                                float targetWidth = 35; // Ukuran lebar logo dalam pixel, sesuaikan dengan kebutuhan
-                                float scaleFactor = targetWidth / logoPoweredBy.Width;
-                                float logoHeight = logoPoweredBy.Height * scaleFactor;
-
-                                float logoX = leftMargin + (printableWidth - targetWidth) / 2;
-                                e.Graphics.DrawImage(logoPoweredBy, logoX, yPos, targetWidth, logoHeight);
-
-                                spaceBefore = 5;
-                                yPos += spaceBefore;
-                                // Sesuaikan yPos untuk elemen berikutnya
-                                yPos += logoHeight;
-                            }
-                            void DrawSpace()
-                            {
-                                yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
-                            }
-
-
-                            DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
-
-                            // Path ke logo Powered by Anda
-                            string poweredByLogoPath = "icon\\DT-Logo.bmp"; // Ganti dengan path logo Powered by Anda
-
-                            // Menambahkan logo di bagian atas dengan ukuran yang proporsional
-                            string logoPath = "icon\\OutletLogo.bmp"; // Ganti dengan path logo Anda
-                            Image logo = GetLogoImage(logoPath);
-                            float logoTargetWidthMm = 25; // Lebar target logo dalam mm
-                            float logoTargetWidthPx = logoTargetWidthMm / 25.4f * 100; // Konversi ke pixel
-
-                            // Hitung tinggi logo berdasarkan lebar yang diinginkan dengan mempertahankan rasio aspek
-                            float scaleFactor = logoTargetWidthPx / logo.Width;
-                            float logoHeight = logo.Height * scaleFactor;
-                            float logoX = leftMargin + (printableWidth - logoTargetWidthPx) / 2;
-
-                            // Gambar logo dengan ukuran yang diubah
-                            e.Graphics.DrawImage(logo, logoX, yPos, logoTargetWidthPx, logoHeight);
-                            yPos += logoHeight + 5; // Menambahkan jarak setelah logo
-
-                            // Struct templateDrawCenterText(datas.data.outlet_name, BigboldFont);
-                            DrawCenterText(datas.data.outlet_address, normalFont);
-                            DrawCenterText(datas.data.outlet_phone_number, normalFont);
-                            DrawSpace();
-                            DrawCenterText("Receipt No. " + datas.data.receipt_number + "\n", normalFont);
-
-                            DrawSeparator();
-                            string nomorMeja = "Meja No." + datas.data.customer_seat;
-                            DrawCenterText(datas.data.outlet_name, BigboldFont);
-                            DrawCenterText(datas.data.outlet_address, normalFont);
-                            DrawCenterText(datas.data.outlet_phone_number, normalFont);
-                            DrawSpace();
-                            DrawCenterText("Receipt No. " + datas.data.receipt_number + "\n", normalFont);
-
-                            DrawSeparator();
-
-                            DrawCenterText("PEMBELIAN", boldFont);
-                            DrawSeparator();
-                            DrawCenterText(datas.data.invoice_due_date + "\n", normalFont);
-                            DrawSpace();
-                            DrawSimpleLine(datas.data.customer_name, "");
-
-                            if (datas.data.member_name != null)
-                            {
-                                DrawSeparator();
-                                DrawSimpleLine("MEMBER: ", datas.data.member_name);
-                                DrawSimpleLine("No. HP: ", datas.data.member_phone_number);
-                                DrawSeparator();
-                            }
-
-                            var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
-                            foreach (var servingType in servingTypes)
-                            {
-                                var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-                                if (itemsForServingType.Count == 0)
-                                    continue;
-                                DrawSeparator();
-                                DrawCenterText(servingType, normalFont);
-                                DrawSeparator();
-                                foreach (var cartDetail in itemsForServingType)
-                                {
-                                    DrawSimpleLine(cartDetail.qty.ToString() + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.price));
-                                    if (!string.IsNullOrEmpty(cartDetail.varian))
-                                        DrawLeftText("   Varian: " + cartDetail.varian, normalFont);
-                                    if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                        DrawLeftText("   Note: " + cartDetail.note_item, normalFont);
-                                    if (!string.IsNullOrEmpty(cartDetail.discount_code))
-                                        DrawLeftText("   Discount Code: " + cartDetail.discount_code, normalFont);
-                                    if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
-                                        DrawSimpleLine("   Total Discount: ", string.Format("{0:n0}", cartDetail.discounted_price));
-                                    DrawSimpleLine("   Total Price:", string.Format("{0:n0}", cartDetail.total_price));
-                                    DrawSpace();
-                                }
-                            }
-
-                            DrawSeparator();
-                            DrawSimpleLine("Subtotal", string.Format("{0:n0}", datas.data.subtotal));
-                            if (!string.IsNullOrEmpty(datas.data.discount_code))
-                                DrawLeftText("Discount Code: " + datas.data.discount_code, normalFont);
-                            if (datas.data.discounts_value.HasValue && datas.data.discounts_value != 0)
-                                DrawSimpleLine("Discount Value: ", (datas.data.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", datas.data.discounts_value.ToString()) : datas.data.discounts_value.ToString() + " %"));
-                            DrawSimpleLine("Total", string.Format("{0:n0}", datas.data.total));
-                            DrawLeftText("Payment Type: " + datas.data.payment_type, normalFont);
-                            DrawSimpleLine("Cash", string.Format("{0:n0}", datas.data.customer_cash));
-                            DrawSimpleLine("Change", string.Format("{0:n0}", datas.data.customer_change));
-                            DrawSeparator();
-                            DrawCenterText(datas.data.outlet_footer, normalFont);
-                            DrawCenterText(Kakimu.ToString(), normalFont);
-                            DrawPoweredByLogo(poweredByLogoPath);
-                            DrawSpace();
-                            DrawCenterText(nomorMeja, NomorAntrian);
-                        };
-                        /*
-                        if (IsBluetoothPrinter(printerName))
-                        {
-                            printerName = ConvertMacAddressFormat(printerName);
-                            PrintViaBluetooth(printerName, printDocument);
+                            return bmp;
                         }
-                        else
+
+                        // Menambahkan logo dan teks "Powered by" di akhir struk
+                        void DrawPoweredByLogo(string path)
                         {
-                            printDocument.PrinterSettings.PrinterName = printerName;
-                            printDocument.Print();
+                            // Menambahkan jarak sebelum mencetak teks dan logo
+                            float spaceBefore = 50; // Jarak dalam pixel, sesuaikan dengan kebutuhan
+                            yPos += spaceBefore;
+
+                            // Mengukur teks "Powered by Your Company"
+                            string poweredByText = "Powered by Dastrevas";
+                            SizeF textSize = e.Graphics.MeasureString(poweredByText, normalFont);
+
+                            // Gambar teks
+                            float textX = leftMargin + (printableWidth - textSize.Width) / 2;
+                            e.Graphics.DrawString(poweredByText, normalFont, Brushes.Black, textX, yPos);
+
+                            // Sesuaikan yPos untuk logo
+                            yPos += textSize.Height;
+
+                            // Menggambar logo
+                            Image logoPoweredBy = GetLogoImage(path);
+                            float targetWidth = 35; // Ukuran lebar logo dalam pixel, sesuaikan dengan kebutuhan
+                            float scaleFactor = targetWidth / logoPoweredBy.Width;
+                            float logoHeight = logoPoweredBy.Height * scaleFactor;
+
+                            float logoX = leftMargin + (printableWidth - targetWidth) / 2;
+                            e.Graphics.DrawImage(logoPoweredBy, logoX, yPos, targetWidth, logoHeight);
+
+                            spaceBefore = 5;
+                            yPos += spaceBefore;
+                            // Sesuaikan yPos untuk elemen berikutnya
+                            yPos += logoHeight;
                         }
-                        */
+                        void DrawSpace()
+                        {
+                            yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                        }
+
+
+                        DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
+
+                        // Path ke logo Powered by Anda
+                        string poweredByLogoPath = "icon\\DT-Logo.bmp"; // Ganti dengan path logo Powered by Anda
+
+                        // Menambahkan logo di bagian atas dengan ukuran yang proporsional
+                        string logoPath = "icon\\OutletLogo.bmp"; // Ganti dengan path logo Anda
+                        Image logo = GetLogoImage(logoPath);
+                        float logoTargetWidthMm = 25; // Lebar target logo dalam mm
+                        float logoTargetWidthPx = logoTargetWidthMm / 25.4f * 100; // Konversi ke pixel
+
+                        // Hitung tinggi logo berdasarkan lebar yang diinginkan dengan mempertahankan rasio aspek
+                        float scaleFactor = logoTargetWidthPx / logo.Width;
+                        float logoHeight = logo.Height * scaleFactor;
+                        float logoX = leftMargin + (printableWidth - logoTargetWidthPx) / 2;
+
+                        // Gambar logo dengan ukuran yang diubah
+                        e.Graphics.DrawImage(logo, logoX, yPos, logoTargetWidthPx, logoHeight);
+                        yPos += logoHeight + 5; // Menambahkan jarak setelah logo
+
+                        // Struct templateDrawCenterText(datas.data.outlet_name, BigboldFont);
+                        DrawCenterText(datas.data.outlet_address, normalFont);
+                        DrawCenterText(datas.data.outlet_phone_number, normalFont);
+                        DrawSpace();
+                        DrawCenterText("Receipt No. " + datas.data.receipt_number + "\n", normalFont);
+
+                        DrawSeparator();
+                        string nomorMeja = "Meja No." + datas.data.customer_seat;
+                        DrawCenterText(datas.data.outlet_name, BigboldFont);
+                        DrawCenterText(datas.data.outlet_address, normalFont);
+                        DrawCenterText(datas.data.outlet_phone_number, normalFont);
+                        DrawSpace();
+                        DrawCenterText("Receipt No. " + datas.data.receipt_number + "\n", normalFont);
+
+                        DrawSeparator();
+
+                        DrawCenterText("PEMBELIAN", boldFont);
+                        DrawSeparator();
+                        DrawCenterText(datas.data.invoice_due_date + "\n", normalFont);
+                        DrawSpace();
+                        DrawSimpleLine(datas.data.customer_name, "");
+
+                        if (datas.data.member_name != null)
+                        {
+                            DrawSeparator();
+                            DrawSimpleLine("MEMBER: ", datas.data.member_name);
+                            DrawSimpleLine("No. HP: ", datas.data.member_phone_number);
+                            DrawSeparator();
+                        }
+
+                        var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
+                        foreach (var servingType in servingTypes)
+                        {
+                            var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                            if (itemsForServingType.Count == 0)
+                                continue;
+                            DrawSeparator();
+                            DrawCenterText(servingType, normalFont);
+                            DrawSeparator();
+                            foreach (var cartDetail in itemsForServingType)
+                            {
+                                DrawSimpleLine(cartDetail.qty.ToString() + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.price));
+                                if (!string.IsNullOrEmpty(cartDetail.varian))
+                                    DrawLeftText("   Varian: " + cartDetail.varian, normalFont);
+                                if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                    DrawLeftText("   Note: " + cartDetail.note_item, normalFont);
+                                if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                                    DrawLeftText("   Discount Code: " + cartDetail.discount_code, normalFont);
+                                if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
+                                    DrawSimpleLine("   Total Discount: ", string.Format("{0:n0}", cartDetail.discounted_price));
+                                DrawSimpleLine("   Total Price:", string.Format("{0:n0}", cartDetail.total_price));
+                                DrawSpace();
+                            }
+                        }
+
+                        DrawSeparator();
+                        DrawSimpleLine("Subtotal", string.Format("{0:n0}", datas.data.subtotal));
+                        if (!string.IsNullOrEmpty(datas.data.discount_code))
+                            DrawLeftText("Discount Code: " + datas.data.discount_code, normalFont);
+                        if (datas.data.discounts_value.HasValue && datas.data.discounts_value != 0)
+                            DrawSimpleLine("Discount Value: ", (datas.data.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", datas.data.discounts_value.ToString()) : datas.data.discounts_value.ToString() + " %"));
+                        DrawSimpleLine("Total", string.Format("{0:n0}", datas.data.total));
+                        DrawLeftText("Payment Type: " + datas.data.payment_type, normalFont);
+                        DrawSimpleLine("Cash", string.Format("{0:n0}", datas.data.customer_cash));
+                        DrawSimpleLine("Change", string.Format("{0:n0}", datas.data.customer_change));
+                        DrawSeparator();
+                        DrawCenterText(datas.data.outlet_footer, normalFont);
+                        DrawCenterText(Kakimu.ToString(), normalFont);
+                        DrawPoweredByLogo(poweredByLogoPath);
+                        DrawSpace();
+                        DrawCenterText(nomorMeja, NomorAntrian);
+                    };
+                    /*
+                    if (IsBluetoothPrinter(printerName))
+                    {
+                        printerName = ConvertMacAddressFormat(printerName);
+                        PrintViaBluetooth(printerName, printDocument);
                     }
+                    else
+                    {
+                        printDocument.PrinterSettings.PrinterName = printerName;
+                        printDocument.Print();
+                    }
+                    */
+                }
 
-                    // Struck Checker
-                    if (ShouldPrint(printerId, "Checker"))
+                // Struck Checker
+                if (ShouldPrint(printerId, "Checker"))
+                {
+                    PrintDocument printDocument = new PrintDocument();
+                    printDocument.PrintPage += (sender, e) =>
+                    {
+                        Graphics graphics = e.Graphics;
+
+                        // Mengatur font normal dan tebal
+                        Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                        Font boldFont = new Font("Arial", 8, FontStyle.Bold);
+                        Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
+                        Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+
+                        float leftMargin = 5; // Margin kiri (dalam pixel)
+                        float rightMargin = 5; // Margin kanan (dalam pixel)
+                        float topMargin = 5; // Margin atas (dalam pixel)
+                        float yPos = topMargin;
+
+                        // Lebar kertas thermal 58mm, sesuaikan dengan margin
+                        float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                        float printableWidth = paperWidth - leftMargin - rightMargin;
+
+
+                        // Fungsi untuk format teks kiri dan kanan
+                        void DrawSimpleLine(string textLeft, string textRight)
+                        {
+                            SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
+                            SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
+                            e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
+                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                            yPos += normalFont.GetHeight(e.Graphics);
+                        }
+
+                        // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
+                        void DrawCenterText(string text, Font font)
+                        {
+                            if (text == null) text = string.Empty;
+                            if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            string[] words = text.Split(' ');
+                            StringBuilder currentLine = new StringBuilder();
+                            foreach (string word in words)
+                            {
+                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                if (size.Width > printableWidth)
+                                {
+                                    // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
+                                    SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    yPos += font.GetHeight(e.Graphics);
+                                    currentLine.Clear();
+                                }
+                                // Tambahkan kata ke baris saat ini
+                                currentLine.Append(word + " ");
+                            }
+                            // Gambar baris terakhir
+                            if (currentLine.Length > 0)
+                            {
+                                SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
+                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                yPos += font.GetHeight(e.Graphics);
+                            }
+                        }
+
+                        // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
+                        void DrawLeftText(string text, Font font)
+                        {
+                            if (text == null)
+                            {
+                                //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                return;
+                            }
+                            string[] words = text.Split(' ');
+                            StringBuilder currentLine = new StringBuilder();
+                            foreach (string word in words)
+                            {
+                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                if (size.Width > printableWidth)
+                                {
+                                    // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    yPos += font.GetHeight(e.Graphics);
+                                    currentLine.Clear();
+                                }
+                                // Tambahkan kata ke baris saat ini
+                                currentLine.Append(word + " ");
+                            }
+                            // Gambar baris terakhir
+                            if (currentLine.Length > 0)
+                            {
+                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                yPos += font.GetHeight(e.Graphics);
+                            }
+                        }
+
+
+                        // Fungsi untuk menggambar garis pemisah
+                        void DrawSeparator()
+                        {
+                            e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
+                            yPos += normalFont.GetHeight(e.Graphics);
+                        }
+                        void DrawSpace()
+                        {
+                            yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                        }
+
+
+                        DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
+                        string nomorMeja = "Meja No." + datas.data.customer_seat;
+                        DrawSeparator();
+
+                        //Struct Checker
+                        DrawCenterText("CHECKER", BigboldFont);
+                        DrawCenterText("Receipt No. " + datas.data.receipt_number, normalFont);
+                        DrawSeparator();
+                        DrawCenterText(datas.data.invoice_due_date, normalFont);
+                        DrawSpace();
+                        DrawSimpleLine(datas.data.customer_name, "");
+                        // Iterate through cart details and group by serving_type_name
+                        var checkerServingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
+
+                        foreach (var checkerServingType in checkerServingTypes)
+                        {
+                            // Filter cart details by serving_type_name
+                            var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == checkerServingType).ToList();
+
+                            // Skip if there are no items for this serving type
+                            if (itemsForServingType.Count == 0)
+                                continue;
+
+                            // Add a section for the serving type
+                            DrawSeparator();
+                            DrawCenterText(checkerServingType, normalFont);
+                            DrawSeparator();
+
+                            // Iterate through items for this serving type
+                            foreach (var cartDetail in itemsForServingType)
+                            {
+                                DrawSimpleLine(cartDetail.menu_name, cartDetail.qty.ToString());
+                                // Add detail items
+                                if (!string.IsNullOrEmpty(cartDetail.varian))
+                                    DrawLeftText("   Varian: " + cartDetail.varian, normalFont);
+                                if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                    DrawLeftText("   Note: " + cartDetail.note_item.ToString(), normalFont);
+                                DrawSpace();
+                            }
+                        }
+                        DrawSeparator();
+                        DrawSpace();
+                        DrawCenterText(nomorMeja, NomorAntrian);
+                    };
+                    /*
+                    if (IsBluetoothPrinter(printerName))
+                    {
+                        printerName = ConvertMacAddressFormat(printerName);
+                        PrintViaBluetooth(printerName, printDocument);
+                    }
+                    else
+                    {
+                        printDocument.PrinterSettings.PrinterName = printerName;
+                        printDocument.Print();
+                    }
+                    */
+                }
+
+                // Struct Kitchen
+
+                if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
+                {
+
+                    if (ShouldPrint(printerId, "Makanan"))
                     {
                         PrintDocument printDocument = new PrintDocument();
                         printDocument.PrintPage += (sender, e) =>
@@ -5984,42 +6153,277 @@ namespace KASIR.Printer
 
                             DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
                             string nomorMeja = "Meja No." + datas.data.customer_seat;
-                            DrawSeparator();
 
-                            //Struct Checker
-                            DrawCenterText("CHECKER", BigboldFont);
-                            DrawCenterText("Receipt No. " + datas.data.receipt_number, normalFont);
+                            // Generate struk text
+                            DrawSeparator();
+                            DrawCenterText("MAKANAN", BigboldFont);
+                            DrawCenterText(datas.data.receipt_number, normalFont);
                             DrawSeparator();
                             DrawCenterText(datas.data.invoice_due_date, normalFont);
                             DrawSpace();
                             DrawSimpleLine(datas.data.customer_name, "");
-                            // Iterate through cart details and group by serving_type_name
-                            var checkerServingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
 
-                            foreach (var checkerServingType in checkerServingTypes)
+                            if (KitchenCartDetails.Count != 0)
                             {
-                                // Filter cart details by serving_type_name
-                                var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == checkerServingType).ToList();
-
-                                // Skip if there are no items for this serving type
-                                if (itemsForServingType.Count == 0)
-                                    continue;
-
-                                // Add a section for the serving type
+                                var servingTypes = KitchenCartDetails.Select(cd => cd.serving_type_name).Distinct();
                                 DrawSeparator();
-                                DrawCenterText(checkerServingType, normalFont);
-                                DrawSeparator();
+                                DrawCenterText("ORDER", boldFont);
 
-                                // Iterate through items for this serving type
-                                foreach (var cartDetail in itemsForServingType)
+                                foreach (var servingType in servingTypes)
                                 {
-                                    DrawSimpleLine(cartDetail.menu_name, cartDetail.qty.ToString());
-                                    // Add detail items
-                                    if (!string.IsNullOrEmpty(cartDetail.varian))
-                                        DrawLeftText("   Varian: " + cartDetail.varian, normalFont);
-                                    if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                        DrawLeftText("   Note: " + cartDetail.note_item.ToString(), normalFont);
-                                    DrawSpace();
+                                    var itemsForServingType = KitchenCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+
+                                    if (itemsForServingType.Count == 0)
+                                        continue;
+
+                                    DrawSeparator();
+                                    DrawCenterText(servingType, normalFont);
+
+                                    foreach (var cartDetail in itemsForServingType)
+                                    {
+                                        string qtyMenu = "x" + cartDetail.qty.ToString();
+                                        DrawCenterText(qtyMenu + " " + cartDetail.menu_name, BigboldFont);
+
+                                        if (!string.IsNullOrEmpty(cartDetail.varian))
+                                            DrawCenterText("Varian: " + cartDetail.varian, BigboldFont);
+                                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                            DrawCenterText("Note: " + cartDetail.note_item, BigboldFont);
+                                        DrawSpace();
+                                    }
+                                }
+                            }
+
+                            if (KitchenCancelItems.Count != 0)
+                            {
+                                var servingTypes = KitchenCancelItems.Select(cd => cd.serving_type_name).Distinct();
+                                DrawSeparator();
+                                DrawCenterText("CANCELED", boldFont);
+
+                                foreach (var servingType in servingTypes)
+                                {
+                                    var itemsForServingType = KitchenCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+
+                                    if (itemsForServingType.Count == 0)
+                                        continue;
+
+                                    DrawSeparator();
+                                    DrawCenterText(servingType, boldFont);
+
+                                    foreach (var cancelItem in itemsForServingType)
+                                    {
+                                        string qtyMenu = "x" + cancelItem.qty.ToString();
+                                        DrawCenterText(qtyMenu + " " + cancelItem.menu_name, BigboldFont);
+
+                                        if (!string.IsNullOrEmpty(cancelItem.varian))
+                                            DrawCenterText("Varian: " + cancelItem.varian, BigboldFont);
+                                        if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                                            DrawCenterText("Note: " + cancelItem.note_item?.ToString(), BigboldFont);
+                                        if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                                            DrawCenterText("Canceled Reason: " + cancelItem.cancel_reason, BigboldFont);
+                                        DrawSpace();
+                                    }
+                                }
+                            }
+                            DrawSeparator();
+                            DrawSpace();
+                            DrawCenterText(nomorMeja, NomorAntrian);
+                        };
+                        /*
+                        if (IsBluetoothPrinter(printerName))
+                        {
+                            printerName = ConvertMacAddressFormat(printerName);
+                            PrintViaBluetooth(printerName, printDocument);
+                        }
+                        if(printerName.Length > 3 && printerName != null && printerName != "" && printerName != " ")
+                        {
+                            printDocument.PrinterSettings.PrinterName = printerName;
+                            printDocument.Print();
+                        }
+                        */
+                    }
+                }
+
+                // Struct Bar
+                if (BarCartDetails.Any() || BarCancelItems.Any())
+                {
+                    if (ShouldPrint(printerId, "Minuman"))
+                    {
+                        PrintDocument printDocument = new PrintDocument();
+                        printDocument.PrintPage += (sender, e) =>
+                        {
+                            Graphics graphics = e.Graphics;
+
+                            // Mengatur font normal dan tebal
+                            Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                            Font boldFont = new Font("Arial", 8, FontStyle.Bold);
+                            Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
+                            Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+
+                            float leftMargin = 5; // Margin kiri (dalam pixel)
+                            float rightMargin = 5; // Margin kanan (dalam pixel)
+                            float topMargin = 5; // Margin atas (dalam pixel)
+                            float yPos = topMargin;
+
+                            // Lebar kertas thermal 58mm, sesuaikan dengan margin
+                            float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                            float printableWidth = paperWidth - leftMargin - rightMargin;
+
+
+                            // Fungsi untuk format teks kiri dan kanan
+                            void DrawSimpleLine(string textLeft, string textRight)
+                            {
+                                SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
+                                SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
+                                e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
+                                e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                                yPos += normalFont.GetHeight(e.Graphics);
+                            }
+
+                            // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
+                            void DrawCenterText(string text, Font font)
+                            {
+                                if (text == null) text = string.Empty;
+                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                                string[] words = text.Split(' ');
+                                StringBuilder currentLine = new StringBuilder();
+                                foreach (string word in words)
+                                {
+                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                    if (size.Width > printableWidth)
+                                    {
+                                        // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
+                                        SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
+                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                        yPos += font.GetHeight(e.Graphics);
+                                        currentLine.Clear();
+                                    }
+                                    // Tambahkan kata ke baris saat ini
+                                    currentLine.Append(word + " ");
+                                }
+                                // Gambar baris terakhir
+                                if (currentLine.Length > 0)
+                                {
+                                    SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    yPos += font.GetHeight(e.Graphics);
+                                }
+                            }
+
+                            // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
+                            void DrawLeftText(string text, Font font)
+                            {
+                                if (text == null)
+                                {
+                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
+                                    return;
+                                }
+                                string[] words = text.Split(' ');
+                                StringBuilder currentLine = new StringBuilder();
+                                foreach (string word in words)
+                                {
+                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                    if (size.Width > printableWidth)
+                                    {
+                                        // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
+                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                        yPos += font.GetHeight(e.Graphics);
+                                        currentLine.Clear();
+                                    }
+                                    // Tambahkan kata ke baris saat ini
+                                    currentLine.Append(word + " ");
+                                }
+                                // Gambar baris terakhir
+                                if (currentLine.Length > 0)
+                                {
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    yPos += font.GetHeight(e.Graphics);
+                                }
+                            }
+
+
+                            // Fungsi untuk menggambar garis pemisah
+                            void DrawSeparator()
+                            {
+                                e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
+                                yPos += normalFont.GetHeight(e.Graphics);
+                            }
+                            void DrawSpace()
+                            {
+                                yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                            }
+
+
+                            DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
+                            string nomorMeja = "Meja No." + datas.data.customer_seat;
+
+                            // Generate struk text
+                            DrawSeparator();
+                            DrawCenterText("MINUMAN", BigboldFont);
+                            DrawCenterText(datas.data.receipt_number, normalFont);
+                            DrawSeparator();
+                            DrawCenterText(datas.data.invoice_due_date, normalFont);
+                            DrawSpace();
+                            DrawSimpleLine(datas.data.customer_name, "");
+
+                            if (BarCartDetails.Count != 0)
+                            {
+                                var servingTypes = BarCartDetails.Select(cd => cd.serving_type_name).Distinct();
+                                DrawSeparator();
+                                DrawCenterText("ORDER", boldFont);
+
+                                foreach (var servingType in servingTypes)
+                                {
+                                    var itemsForServingType = BarCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+
+                                    if (itemsForServingType.Count == 0)
+                                        continue;
+
+                                    DrawSeparator();
+                                    DrawCenterText(servingType, normalFont);
+
+                                    foreach (var cartDetail in itemsForServingType)
+                                    {
+                                        string qtyMenu = "x" + cartDetail.qty.ToString();
+                                        DrawCenterText(qtyMenu + " " + cartDetail.menu_name, BigboldFont);
+
+                                        if (!string.IsNullOrEmpty(cartDetail.varian))
+                                            DrawCenterText("Varian: " + cartDetail.varian, BigboldFont);
+                                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                            DrawCenterText("Note: " + cartDetail.note_item, BigboldFont);
+                                        DrawSpace();
+                                    }
+                                }
+                            }
+
+                            if (BarCancelItems.Count != 0)
+                            {
+                                var servingTypes = BarCancelItems.Select(cd => cd.serving_type_name).Distinct();
+                                DrawSeparator();
+                                DrawCenterText("CANCELED", boldFont);
+
+                                foreach (var servingType in servingTypes)
+                                {
+                                    var itemsForServingType = BarCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+
+                                    if (itemsForServingType.Count == 0)
+                                        continue;
+
+                                    DrawSeparator();
+                                    DrawCenterText(servingType, boldFont);
+
+                                    foreach (var cancelItem in itemsForServingType)
+                                    {
+                                        string qtyMenu = "x" + cancelItem.qty.ToString();
+                                        DrawCenterText(qtyMenu + " " + cancelItem.menu_name, BigboldFont);
+
+                                        if (!string.IsNullOrEmpty(cancelItem.varian))
+                                            DrawCenterText("Varian: " + cancelItem.varian, BigboldFont);
+                                        if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                                            DrawCenterText("Note: " + cancelItem.note_item?.ToString(), BigboldFont);
+                                        if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                                            DrawCenterText("Canceled Reason: " + cancelItem.cancel_reason, BigboldFont);
+                                        DrawSpace();
+                                    }
                                 }
                             }
                             DrawSeparator();
@@ -6038,415 +6442,10 @@ namespace KASIR.Printer
                             printDocument.Print();
                         }
                         */
+
                     }
+                }
 
-                    // Struct Kitchen
-
-                    if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
-                    {
-
-                        if (ShouldPrint(printerId, "Makanan"))
-                        {
-                            PrintDocument printDocument = new PrintDocument();
-                            printDocument.PrintPage += (sender, e) =>
-                            {
-                                Graphics graphics = e.Graphics;
-
-                                // Mengatur font normal dan tebal
-                                Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                                Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                                Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                                Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
-
-                                float leftMargin = 5; // Margin kiri (dalam pixel)
-                                float rightMargin = 5; // Margin kanan (dalam pixel)
-                                float topMargin = 5; // Margin atas (dalam pixel)
-                                float yPos = topMargin;
-
-                                // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                                float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
-                                float printableWidth = paperWidth - leftMargin - rightMargin;
-
-
-                                // Fungsi untuk format teks kiri dan kanan
-                                void DrawSimpleLine(string textLeft, string textRight)
-                                {
-                                    SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
-                                    SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
-                                    e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                                    e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
-                                    yPos += normalFont.GetHeight(e.Graphics);
-                                }
-
-                                // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
-                                void DrawCenterText(string text, Font font)
-                                {
-                                    if (text == null) text = string.Empty;
-                                    if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
-                                    string[] words = text.Split(' ');
-                                    StringBuilder currentLine = new StringBuilder();
-                                    foreach (string word in words)
-                                    {
-                                        SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
-                                        if (size.Width > printableWidth)
-                                        {
-                                            // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                            SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                            e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
-                                            yPos += font.GetHeight(e.Graphics);
-                                            currentLine.Clear();
-                                        }
-                                        // Tambahkan kata ke baris saat ini
-                                        currentLine.Append(word + " ");
-                                    }
-                                    // Gambar baris terakhir
-                                    if (currentLine.Length > 0)
-                                    {
-                                        SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
-                                        yPos += font.GetHeight(e.Graphics);
-                                    }
-                                }
-
-                                // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
-                                void DrawLeftText(string text, Font font)
-                                {
-                                    if (text == null)
-                                    {
-                                        //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
-                                        return;
-                                    }
-                                    string[] words = text.Split(' ');
-                                    StringBuilder currentLine = new StringBuilder();
-                                    foreach (string word in words)
-                                    {
-                                        SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
-                                        if (size.Width > printableWidth)
-                                        {
-                                            // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                            e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
-                                            yPos += font.GetHeight(e.Graphics);
-                                            currentLine.Clear();
-                                        }
-                                        // Tambahkan kata ke baris saat ini
-                                        currentLine.Append(word + " ");
-                                    }
-                                    // Gambar baris terakhir
-                                    if (currentLine.Length > 0)
-                                    {
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
-                                        yPos += font.GetHeight(e.Graphics);
-                                    }
-                                }
-
-
-                                // Fungsi untuk menggambar garis pemisah
-                                void DrawSeparator()
-                                {
-                                    e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
-                                    yPos += normalFont.GetHeight(e.Graphics);
-                                }
-                                void DrawSpace()
-                                {
-                                    yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
-                                }
-
-
-                                DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
-                                string nomorMeja = "Meja No." + datas.data.customer_seat;
-
-                                // Generate struk text
-                                DrawSeparator();
-                                DrawCenterText("MAKANAN", BigboldFont);
-                                DrawCenterText(datas.data.receipt_number, normalFont);
-                                DrawSeparator();
-                                DrawCenterText(datas.data.invoice_due_date, normalFont);
-                                DrawSpace();
-                                DrawSimpleLine(datas.data.customer_name, "");
-
-                                if (KitchenCartDetails.Count != 0)
-                                {
-                                    var servingTypes = KitchenCartDetails.Select(cd => cd.serving_type_name).Distinct();
-                                    DrawSeparator();
-                                    DrawCenterText("ORDER", boldFont);
-
-                                    foreach (var servingType in servingTypes)
-                                    {
-                                        var itemsForServingType = KitchenCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                                        if (itemsForServingType.Count == 0)
-                                            continue;
-
-                                        DrawSeparator();
-                                        DrawCenterText(servingType, normalFont);
-
-                                        foreach (var cartDetail in itemsForServingType)
-                                        {
-                                            string qtyMenu = "x" + cartDetail.qty.ToString();
-                                            DrawCenterText(qtyMenu + " " + cartDetail.menu_name, BigboldFont);
-
-                                            if (!string.IsNullOrEmpty(cartDetail.varian))
-                                                DrawCenterText("Varian: " + cartDetail.varian, BigboldFont);
-                                            if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                                DrawCenterText("Note: " + cartDetail.note_item, BigboldFont);
-                                            DrawSpace();
-                                        }
-                                    }
-                                }
-
-                                if (KitchenCancelItems.Count != 0)
-                                {
-                                    var servingTypes = KitchenCancelItems.Select(cd => cd.serving_type_name).Distinct();
-                                    DrawSeparator();
-                                    DrawCenterText("CANCELED", boldFont);
-
-                                    foreach (var servingType in servingTypes)
-                                    {
-                                        var itemsForServingType = KitchenCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                                        if (itemsForServingType.Count == 0)
-                                            continue;
-
-                                        DrawSeparator();
-                                        DrawCenterText(servingType, boldFont);
-
-                                        foreach (var cancelItem in itemsForServingType)
-                                        {
-                                            string qtyMenu = "x" + cancelItem.qty.ToString();
-                                            DrawCenterText(qtyMenu + " " + cancelItem.menu_name, BigboldFont);
-
-                                            if (!string.IsNullOrEmpty(cancelItem.varian))
-                                                DrawCenterText("Varian: " + cancelItem.varian, BigboldFont);
-                                            if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
-                                                DrawCenterText("Note: " + cancelItem.note_item?.ToString(), BigboldFont);
-                                            if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
-                                                DrawCenterText("Canceled Reason: " + cancelItem.cancel_reason, BigboldFont);
-                                            DrawSpace();
-                                        }
-                                    }
-                                }
-                                DrawSeparator();
-                                DrawSpace();
-                                DrawCenterText(nomorMeja, NomorAntrian);
-                            };
-                            /*
-                            if (IsBluetoothPrinter(printerName))
-                            {
-                                printerName = ConvertMacAddressFormat(printerName);
-                                PrintViaBluetooth(printerName, printDocument);
-                            }
-                            if(printerName.Length > 3 && printerName != null && printerName != "" && printerName != " ")
-                            {
-                                printDocument.PrinterSettings.PrinterName = printerName;
-                                printDocument.Print();
-                            }
-                            */
-                        }
-                    }
-
-                    // Struct Bar
-                    if (BarCartDetails.Any() || BarCancelItems.Any())
-                    {
-                        if (ShouldPrint(printerId, "Minuman"))
-                        {
-                            PrintDocument printDocument = new PrintDocument();
-                            printDocument.PrintPage += (sender, e) =>
-                            {
-                                Graphics graphics = e.Graphics;
-
-                                // Mengatur font normal dan tebal
-                                Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                                Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                                Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                                Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
-
-                                float leftMargin = 5; // Margin kiri (dalam pixel)
-                                float rightMargin = 5; // Margin kanan (dalam pixel)
-                                float topMargin = 5; // Margin atas (dalam pixel)
-                                float yPos = topMargin;
-
-                                // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                                float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
-                                float printableWidth = paperWidth - leftMargin - rightMargin;
-
-
-                                // Fungsi untuk format teks kiri dan kanan
-                                void DrawSimpleLine(string textLeft, string textRight)
-                                {
-                                    SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
-                                    SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
-                                    e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                                    e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
-                                    yPos += normalFont.GetHeight(e.Graphics);
-                                }
-
-                                // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
-                                void DrawCenterText(string text, Font font)
-                                {
-                                    if (text == null) text = string.Empty;
-                                    if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
-                                    string[] words = text.Split(' ');
-                                    StringBuilder currentLine = new StringBuilder();
-                                    foreach (string word in words)
-                                    {
-                                        SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
-                                        if (size.Width > printableWidth)
-                                        {
-                                            // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                            SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                            e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
-                                            yPos += font.GetHeight(e.Graphics);
-                                            currentLine.Clear();
-                                        }
-                                        // Tambahkan kata ke baris saat ini
-                                        currentLine.Append(word + " ");
-                                    }
-                                    // Gambar baris terakhir
-                                    if (currentLine.Length > 0)
-                                    {
-                                        SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
-                                        yPos += font.GetHeight(e.Graphics);
-                                    }
-                                }
-
-                                // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
-                                void DrawLeftText(string text, Font font)
-                                {
-                                    if (text == null)
-                                    {
-                                        //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
-                                        return;
-                                    }
-                                    string[] words = text.Split(' ');
-                                    StringBuilder currentLine = new StringBuilder();
-                                    foreach (string word in words)
-                                    {
-                                        SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
-                                        if (size.Width > printableWidth)
-                                        {
-                                            // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                            e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
-                                            yPos += font.GetHeight(e.Graphics);
-                                            currentLine.Clear();
-                                        }
-                                        // Tambahkan kata ke baris saat ini
-                                        currentLine.Append(word + " ");
-                                    }
-                                    // Gambar baris terakhir
-                                    if (currentLine.Length > 0)
-                                    {
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
-                                        yPos += font.GetHeight(e.Graphics);
-                                    }
-                                }
-
-
-                                // Fungsi untuk menggambar garis pemisah
-                                void DrawSeparator()
-                                {
-                                    e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
-                                    yPos += normalFont.GetHeight(e.Graphics);
-                                }
-                                void DrawSpace()
-                                {
-                                    yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
-                                }
-
-
-                                DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
-                                string nomorMeja = "Meja No." + datas.data.customer_seat;
-
-                                // Generate struk text
-                                DrawSeparator();
-                                DrawCenterText("MINUMAN", BigboldFont);
-                                DrawCenterText(datas.data.receipt_number, normalFont);
-                                DrawSeparator();
-                                DrawCenterText(datas.data.invoice_due_date, normalFont);
-                                DrawSpace();
-                                DrawSimpleLine(datas.data.customer_name, "");
-
-                                if (BarCartDetails.Count != 0)
-                                {
-                                    var servingTypes = BarCartDetails.Select(cd => cd.serving_type_name).Distinct();
-                                    DrawSeparator();
-                                    DrawCenterText("ORDER", boldFont);
-
-                                    foreach (var servingType in servingTypes)
-                                    {
-                                        var itemsForServingType = BarCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                                        if (itemsForServingType.Count == 0)
-                                            continue;
-
-                                        DrawSeparator();
-                                        DrawCenterText(servingType, normalFont);
-
-                                        foreach (var cartDetail in itemsForServingType)
-                                        {
-                                            string qtyMenu = "x" + cartDetail.qty.ToString();
-                                            DrawCenterText(qtyMenu + " " + cartDetail.menu_name, BigboldFont);
-
-                                            if (!string.IsNullOrEmpty(cartDetail.varian))
-                                                DrawCenterText("Varian: " + cartDetail.varian, BigboldFont);
-                                            if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                                DrawCenterText("Note: " + cartDetail.note_item, BigboldFont);
-                                            DrawSpace();
-                                        }
-                                    }
-                                }
-
-                                if (BarCancelItems.Count != 0)
-                                {
-                                    var servingTypes = BarCancelItems.Select(cd => cd.serving_type_name).Distinct();
-                                    DrawSeparator();
-                                    DrawCenterText("CANCELED", boldFont);
-
-                                    foreach (var servingType in servingTypes)
-                                    {
-                                        var itemsForServingType = BarCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
-
-                                        if (itemsForServingType.Count == 0)
-                                            continue;
-
-                                        DrawSeparator();
-                                        DrawCenterText(servingType, boldFont);
-
-                                        foreach (var cancelItem in itemsForServingType)
-                                        {
-                                            string qtyMenu = "x" + cancelItem.qty.ToString();
-                                            DrawCenterText(qtyMenu + " " + cancelItem.menu_name, BigboldFont);
-
-                                            if (!string.IsNullOrEmpty(cancelItem.varian))
-                                                DrawCenterText("Varian: " + cancelItem.varian, BigboldFont);
-                                            if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
-                                                DrawCenterText("Note: " + cancelItem.note_item?.ToString(), BigboldFont);
-                                            if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
-                                                DrawCenterText("Canceled Reason: " + cancelItem.cancel_reason, BigboldFont);
-                                            DrawSpace();
-                                        }
-                                    }
-                                }
-                                DrawSeparator();
-                                DrawSpace();
-                                DrawCenterText(nomorMeja, NomorAntrian);
-                            };
-                            /*
-                            if (IsBluetoothPrinter(printerName))
-                            {
-                                printerName = ConvertMacAddressFormat(printerName);
-                                PrintViaBluetooth(printerName, printDocument);
-                            }
-                            else
-                            {
-                                printDocument.PrinterSettings.PrinterName = printerName;
-                                printDocument.Print();
-                            }
-                            */
-
-                        }
-                    }
-                
             }
             catch (Exception ex)
             {

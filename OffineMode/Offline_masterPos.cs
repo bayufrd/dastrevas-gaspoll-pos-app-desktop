@@ -25,6 +25,7 @@ using SystemFonts = System.Drawing.SystemFonts;
 using Size = System.Drawing.Size;
 using System.Windows;
 using Polly.Caching;
+using System.Reflection;
 
 
 namespace KASIR.OfflineMode
@@ -77,6 +78,8 @@ namespace KASIR.OfflineMode
             baseOutlet = Properties.Settings.Default.BaseOutlet;
             baseUrl = Properties.Settings.Default.BaseAddress;
             InitializeComponent();
+            // Panggil di constructor setelah InitializeComponent()
+            SetDoubleBufferedForAllControls(this);
             apiService = new ApiService();
             panel8.Margin = new Padding(0, 0, 0, 0);       // No margin at the bottom
             dataGridView3.Margin = new Padding(0, 0, 0, 0);
@@ -106,14 +109,57 @@ namespace KASIR.OfflineMode
             // Mengaitkan event handler dengan form utama
             KeyPreview = true;
             KeyDown += YourForm_KeyDown;
+            this.Shown += Form1_Shown; // Tambahkan ini
+        }
+        // Event handler untuk form shown
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            RefreshIconButtons();
+        }
+        // Method untuk refresh icon buttons
+        private void RefreshIconButtons()
+        {
+            this.SuspendLayout();
+            foreach (Control c in this.Controls)
+            {
+                RecursiveRefreshIcons(c);
+            }
+            this.ResumeLayout(true);
         }
 
+        // Method untuk recursive refresh
+        private void RecursiveRefreshIcons(Control control)
+        {
+            if (control is IconButton iconBtn)
+            {
+                iconBtn.Invalidate(); // Force redraw
+            }
+
+            foreach (Control child in control.Controls)
+            {
+                RecursiveRefreshIcons(child);
+            }
+        }
+        // Tambahkan method ini di Form1
+        public static void SetDoubleBufferedForAllControls(Control control)
+        {
+            foreach (Control c in control.Controls)
+            {
+                PropertyInfo prop = c.GetType().GetProperty("DoubleBuffered",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                if (prop != null)
+                {
+                    prop.SetValue(c, true, null);
+                }
+
+                SetDoubleBufferedForAllControls(c);
+            }
+        }
         public async Task refreshCacheTransaction()
         {
             string sourceDirectory = "DT-Cache\\Transaction\\transaction.data"; // Path to source
             string destinationDirectory = "DT-Cache\\Transaction\\HistoryTransaction"; // Path to destination
             TimeSpan timeSpan = TimeSpan.FromHours(20); // 20 hours time span
-            bool notSentSync = false; // Variable to check if there are unsynced items
 
             try
             {
@@ -1966,7 +2012,7 @@ namespace KASIR.OfflineMode
                             File.WriteAllText(cacheFilePath, cartData.ToString()); // Save back to file
                         }
 
-                        if(cartData["discount_id"] != null && int.Parse(cartData["discount_id"].ToString()) != 0)
+                        if (cartData["discount_id"] != null && int.Parse(cartData["discount_id"].ToString()) != 0)
                         {
                             iconButtonGet.Text = "Hapus Disc";
                             iconButtonGet.ForeColor = Color.Red;
@@ -2196,22 +2242,22 @@ namespace KASIR.OfflineMode
         }
 
 
-/*
-        private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
-        {
-            // Tambahkan separator row ke DataTable
-            dataTable.Rows.Add(null, null, null, groupKey + "s\n", null, null); // Add a separator row
+        /*
+                private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
+                {
+                    // Tambahkan separator row ke DataTable
+                    dataTable.Rows.Add(null, null, null, groupKey + "s\n", null, null); // Add a separator row
 
-            // Ambil indeks baris terakhir yang baru saja ditambahkan
-            int lastRowIndex = dataTable.Rows.Count - 1;
+                    // Ambil indeks baris terakhir yang baru saja ditambahkan
+                    int lastRowIndex = dataTable.Rows.Count - 1;
 
-            // Menambahkan row ke DataGridView
-            dataGridView.DataSource = dataTable;
+                    // Menambahkan row ke DataGridView
+                    dataGridView.DataSource = dataTable;
 
-            // Mengatur gaya sel untuk kolom tertentu
-            int[] cellIndexesToStyle = { 3, 4, 5 }; // Indeks kolom yang ingin diatur
-            SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
-        }*/
+                    // Mengatur gaya sel untuk kolom tertentu
+                    int[] cellIndexesToStyle = { 3, 4, 5 }; // Indeks kolom yang ingin diatur
+                    SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
+                }*/
         private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)
         {
             foreach (int index in cellIndexes)
@@ -2416,9 +2462,9 @@ namespace KASIR.OfflineMode
         }
         private async void ReloadDisc()
         {
-            if(cmbDiskon.SelectedItem == null || cmbDiskon == null) { return; } 
+            if (cmbDiskon.SelectedItem == null || cmbDiskon == null) { return; }
             int selectedDiskon = (int)cmbDiskon.SelectedValue;
-            if(selectedDiskon == 0 || selectedDiskon == -1) { return; }
+            if (selectedDiskon == 0 || selectedDiskon == -1) { return; }
             ProcessDiscountCart(selectedDiskon);
 
         }
@@ -2607,7 +2653,7 @@ namespace KASIR.OfflineMode
                     var cartDetails = cartData["cart_details"] as JArray;
                     foreach (var itema in cartDetails)
                     {
-                        if (int.Parse(itema["discounted_price"].ToString())!= 0)
+                        if (int.Parse(itema["discounted_price"].ToString()) != 0)
                         {
                             lanjutan = 1;
 
@@ -2631,7 +2677,7 @@ namespace KASIR.OfflineMode
             }
 
             lanjutan = 0;
-            if(lanjutan == 1)
+            if (lanjutan == 1)
             {
                 return 1;
             }
@@ -2761,7 +2807,7 @@ namespace KASIR.OfflineMode
                 items = dataGridView2.RowCount;
                 lblCountingItems.Text = items + " items";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // MessageBox.Show($"Tidak ada pilihan {selectedFilter}");
             }
@@ -2856,7 +2902,7 @@ namespace KASIR.OfflineMode
                     {
                         discountPercent = discount.is_percent;
                         discountValue = discount.value;
-                        discountMax = discount.max_discount?? 0;
+                        discountMax = discount.max_discount ?? 0;
 
                         int tempTotal = 0;
                         if (discountPercent != 0)
@@ -2949,7 +2995,7 @@ namespace KASIR.OfflineMode
             {
                 MessageBox.Show("Demo ListView/1jam off. Contact PM");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
             }

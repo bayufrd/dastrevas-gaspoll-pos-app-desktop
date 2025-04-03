@@ -47,6 +47,13 @@ namespace KASIR.Komponen
         {
             try
             {
+                if (TransactionSync.IsSyncing) // Check if sync is already in progress using the shared manager
+                {
+                    return; // If sync is already running, exit
+                }
+
+                TransactionSync.IsSyncing = true; // Set the sync flag
+
                 string filePath = "DT-Cache\\Transaction\\transaction.data";
                 string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
                 string destinationPath = "DT-Cache\\Transaction\\transactionSyncing.data";
@@ -125,6 +132,10 @@ namespace KASIR.Komponen
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 MessageBox.Show(ex.ToString());
+            }
+            finally
+            {
+                TransactionSync.IsSyncing = false; // Always reset the sync flag when done
             }
         }
 
@@ -460,7 +471,8 @@ namespace KASIR.Komponen
         private void ProcessFailedSync(string sourcePath, HttpResponseMessage response, string outletId)
         {
             string errorMessage = $"Gagal mengirim data Transactions. API Response: {response.ReasonPhrase}";
-            MessageBox.Show(errorMessage);
+            //MessageBox.Show(errorMessage);
+
 
             string responseBody = response.Content.ReadAsStringAsync().Result;
             string detailedErrorMessage = $"{errorMessage} || Response Body: {responseBody}";
@@ -531,45 +543,45 @@ namespace KASIR.Komponen
                 sourceStream.CopyTo(destStream);
             }
         }
-                public async void SyncSaveBillData(string saveBillDataPath, string saveBillDataPathClone, string apiUrl)
+        public async void SyncSaveBillData(string saveBillDataPath, string saveBillDataPathClone, string apiUrl)
+        {
+            try
+            {
+                // Copy saveBill data using streams
+                using (FileStream sourceStream = new FileStream(saveBillDataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (FileStream destStream = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write))
                 {
-                    try
-                    {
-                        // Copy saveBill data using streams
-                        using (FileStream sourceStream = new FileStream(saveBillDataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                        using (FileStream destStream = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write))
-                        {
-                            await sourceStream.CopyToAsync(destStream);
-                        }
-
-                        SimplifyAndSaveData(saveBillDataPathClone);
-
-                        string jsonSavwDataSync = File.ReadAllText(saveBillDataPathClone);
-                        JObject dataSave = JObject.Parse(jsonSavwDataSync);
-
-                        JArray transactionsSaveBill = (JArray)dataSave["data"];
-                        if (transactionsSaveBill == null || !transactionsSaveBill.Any())
-                        {
-                            File.Delete(saveBillDataPathClone);
-                            return;
-                        }
-
-                        HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonSavwDataSync, apiUrl);
-                        if (savebillSync.IsSuccessStatusCode)
-                        {
-                            SyncSuccess(saveBillDataPath);
-                        }
-                        else
-                        {
-                            MessageBox.Show("Gagal mengirim data SaveBill.");
-                            throw new Exception("Gagal mengirim data SaveBill." + savebillSync.ToString());
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                    }
+                    await sourceStream.CopyToAsync(destStream);
                 }
+
+                SimplifyAndSaveData(saveBillDataPathClone);
+
+                string jsonSavwDataSync = File.ReadAllText(saveBillDataPathClone);
+                JObject dataSave = JObject.Parse(jsonSavwDataSync);
+
+                JArray transactionsSaveBill = (JArray)dataSave["data"];
+                if (transactionsSaveBill == null || !transactionsSaveBill.Any())
+                {
+                    File.Delete(saveBillDataPathClone);
+                    return;
+                }
+
+                HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonSavwDataSync, apiUrl);
+                if (savebillSync.IsSuccessStatusCode)
+                {
+                    SyncSuccess(saveBillDataPath);
+                }
+                else
+                {
+                    MessageBox.Show("Gagal mengirim data SaveBill.");
+                    throw new Exception("Gagal mengirim data SaveBill." + savebillSync.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
 
         public static readonly object FileLock = new object();
         public event Action SyncCompleted;  // Event untuk memberi tahu form utama bahwa sinkronisasi berhasil
@@ -705,56 +717,31 @@ namespace KASIR.Komponen
         }
         private async Task<string> GetShiftData(string configOfflineMode)
         {
-            /* if (NewDataChecker == 0 && configOfflineMode == "ON")
-             {
-                 // Directly fetch from API
-                 IApiService apiService = new ApiService();
-                 return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-             }
-             else if (NewDataChecker == 1 && configOfflineMode == "ON")
-             {
-                 // Try to read from the local file
-                 string shiftData = $"DT-Cache\\Transaction\\ShiftRepot{baseOutlet}.data";
-                 if (File.Exists(shiftData))
-                 {
-                     return File.ReadAllText(shiftData);
-                 }
-                 else
-                 {
-                     // If file is not found, fallback to API
-                     IApiService apiService = new ApiService();
-                     return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-                 }
-             }
-             else
-             {*/
-            // Default: use API if NewDataChecker is neither 0 nor 1
             IApiService apiService = new ApiService();
             return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-            //}
         }
         private static bool isSyncing = false;  // Static flag to track sync status
         public async Task LoadData()
         {
             if (isSyncing)
             {
-                // If syncing is already in progress, don't do anything
-                MessageBox.Show("Data sedang di koad. Tolong tunggu sebentar!");
+                // Jika sedang menyinkronkan, tunggu 2 detik dan panggil LoadData lagi
+                await Task.Delay(5000); // Tunggu 5 detik
+                await LoadData(); // Panggil LoadData lagi
                 return;
             }
             btnCetakStruk.Enabled = false;
             const int maxRetryAttempts = 3;
             int retryAttempts = 0;
             bool success = false;
+            string Config = "setting\\OfflineMode.data";
 
             while (retryAttempts < maxRetryAttempts && !success)
             {
                 try
                 {
                     NewDataChecker = 0;
-                    // Mengecek apakah sButtonOffline dalam status checked
-                    string Config = "setting\\OfflineMode.data";
-                    // Ensure the directory exists
+                    // Mengecek apakah sButtonOffline dalam status checked,l=
                     string directoryPath = Path.GetDirectoryName(Config);
                     if (!Directory.Exists(directoryPath))
                     {
@@ -772,8 +759,6 @@ namespace KASIR.Komponen
                     if (!string.IsNullOrEmpty(allSettingsData) && allSettingsData == "ON")
                     {
                         await SyncDataTransactions();
-                        /*TransactionSync c = new TransactionSync();
-                        c.SyncIndividualTransactions();*/
                     }
 
                     string response = await GetShiftData(allSettingsData);
@@ -1034,15 +1019,19 @@ namespace KASIR.Komponen
                             retryAttempts++;
                             if (retryAttempts >= maxRetryAttempts)
                             {
-                                MessageBox.Show("A null reference error occurred: " + ex.Message, "Null Reference Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                //MessageBox.Show("A null reference error occurred: " + ex.Message, "Null Reference Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                                 LoggerUtil.LogError(ex, "A null reference error occurred: {ErrorMessage}", ex.Message);
+                                CleanFormAndAddRetryButton(ex.Message);
+
                                 break; // Stop retrying after max attempts
                             }
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show("Error: " + ex.Message);
+                            //MessageBox.Show("Error: " + ex.Message);
                             LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                            CleanFormAndAddRetryButton(ex.Message);
+
                             break; // Stop retrying on other exceptions
                         }
                     }
@@ -1051,11 +1040,15 @@ namespace KASIR.Komponen
                 {
                     MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                    CleanFormAndAddRetryButton(ex.Message);
+
                     break; // Do not retry on TaskCanceledException
                 }
                 catch (Exception ex)
                 {
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                    CleanFormAndAddRetryButton(ex.Message);
+
                     break; // Stop retrying on other exceptions
                 }
             }
@@ -1083,7 +1076,109 @@ namespace KASIR.Komponen
                 row.Cells[index].Style.Font = new Font(dataGridView1.Font, fontStyle);
             }
         }
+        private void CleanFormAndAddRetryButton(string ex)
+        {
+            // Bersihkan form
+            if (dataGridView1 != null && dataGridView1.DataSource != null)
+            {
+                dataGridView1.DataSource = null;
+                dataGridView1.Rows.Clear();
+            }
 
+            lblShiftSekarang.Text = "Shift: ";
+            txtActualCash.Clear();
+            txtNamaKasir.Clear();
+            panel1.Visible = false;
+            panel2.Visible = false;
+
+            // Tambahkan PictureBox untuk gambar
+            PictureBox pictureBox = new PictureBox();
+            pictureBox.Name = "ErrorImg";
+            pictureBox.Size = new Size(100, 100); // Sesuaikan ukuran gambar
+            pictureBox.Location = new Point((this.ClientSize.Width - pictureBox.Width) / 2, (this.ClientSize.Height - pictureBox.Height) / 2 - 110); // Posisi di atas tombol
+            pictureBox.SizeMode = PictureBoxSizeMode.StretchImage; // Atur ukuran gambar agar sesuai dengan PictureBox
+            using (FileStream fs = new FileStream("icon\\OutletLogo.bmp", FileMode.Open, FileAccess.Read))
+            {
+                pictureBox.Image = Image.FromStream(fs);
+            }
+            // Tambahkan tombol retry
+            Button btnRetry = new Button();
+            btnRetry.Name = "btnRetry";
+            btnRetry.Text = "Retry Load Data\nOut of Service";
+            btnRetry.Size = new Size(190, 60);
+            btnRetry.Location = new Point((this.ClientSize.Width - btnRetry.Width) / 2, (this.ClientSize.Height - btnRetry.Height) / 2);
+            btnRetry.BackColor = Color.FromArgb(30, 31, 68);
+            btnRetry.FlatStyle = FlatStyle.Flat;
+            btnRetry.Font = new Font("Arial", 10, FontStyle.Bold);
+            btnRetry.ForeColor = Color.White; // Mengatur warna teks tombol menjadi putih
+            btnRetry.Click += new EventHandler(BtnRetry_Click);
+
+            // Membuat sudut membulat
+            System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+            path.AddArc(0, 0, 20, 20, 180, 90);
+            path.AddArc(btnRetry.Width - 20, 0, 20, 20, 270, 90);
+            path.AddArc(btnRetry.Width - 20, btnRetry.Height - 20, 20, 20, 0, 90);
+            path.AddArc(0, btnRetry.Height - 20, 20, 20, 90, 90);
+            path.CloseFigure();
+            btnRetry.Region = new Region(path);
+
+            // Menambahkan ikon FontAwesome
+            // Pastikan Anda sudah menambahkan FontAwesome ke proyek Anda
+            // Misalnya, menggunakan FontAwesome.Sharp
+            // Anda bisa menggunakan Label untuk menampilkan ikon
+            Label lblIcon = new Label();
+            lblIcon.Text = "\uf021"; // Ganti dengan kode ikon FontAwesome yang sesuai
+            lblIcon.Font = new Font("FontAwesome", 14); // Pastikan font FontAwesome sudah ditambahkan
+            lblIcon.ForeColor = Color.White;
+            lblIcon.Location = new Point(10, 10); // Sesuaikan posisi ikon
+            lblIcon.AutoSize = true;
+            // Menambahkan label di bawah tombol
+            Label lblInfo = new Label();
+            lblInfo.Name = "ErrorMsg";
+            lblInfo.Text = ex.ToString(); // Teks yang ingin ditampilkan
+            lblInfo.Font = new Font("Arial", 9, FontStyle.Regular);
+            lblInfo.ForeColor = Color.Black; // Warna teks label
+            lblInfo.AutoSize = true; // Agar label menyesuaikan ukuran teks
+
+            // Mengatur posisi label agar berada di tengah
+            lblInfo.Location = new Point((this.ClientSize.Width - lblInfo.Width) / 4, btnRetry.Bottom + 10); // Posisi di bawah tombol
+
+            // Menambahkan kontrol ke form
+            this.Controls.Add(pictureBox); // Menambahkan PictureBox ke form
+            this.Controls.Add(btnRetry);
+            this.Controls.Add(lblInfo); // Menambahkan label ke form
+
+
+            this.Controls.Add(btnRetry);
+            btnRetry.BringToFront();
+        }
+
+        private void BtnRetry_Click(object sender, EventArgs e)
+        {
+            // Hapus tombol retry
+            if (sender is Button btnRetry)
+            {
+                this.Controls.Remove(btnRetry);
+            }
+
+            // Hapus label informasi jika ada
+            var lblInfo = this.Controls.OfType<Label>().FirstOrDefault(lbl => lbl.Name == "ErrorMsg");
+            if (lblInfo != null)
+            {
+                this.Controls.Remove(lblInfo);
+            }
+
+            var ErrImg = this.Controls.OfType<PictureBox>().FirstOrDefault(lbl => lbl.Name == "ErrorImg");
+            if (ErrImg != null)
+            {
+                this.Controls.Remove(ErrImg);
+            }
+            // Reinisialisasi form jika diperlukan
+            InitializeComponent();
+
+            // Muat data kembali
+            _ = LoadData();
+        }
         private void convertDateTime(string mulai, string akhir)
         {
             // Attempt to convert the string to a DateTime object using the DateTime.ParseExact method

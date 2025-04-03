@@ -11,11 +11,30 @@ namespace KASIR.OffineMode
     public class TransactionSync
     {
         private readonly string baseOutlet;
+        private static bool isSyncing = false;
+        private static readonly object syncLock = new object();
         // Your async method should be inside a class// Constructor where you can assign the readonly field
         public TransactionSync()
         {
             // Assign the value of baseOutlet in the constructor
             baseOutlet = Properties.Settings.Default.BaseOutlet;
+        }
+        public static bool IsSyncing
+        {
+            get
+            {
+                lock (syncLock)
+                {
+                    return isSyncing;
+                }
+            }
+            set
+            {
+                lock (syncLock)
+                {
+                    isSyncing = value;
+                }
+            }
         }
 
         public async Task SyncIndividualTransactions()

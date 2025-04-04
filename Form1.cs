@@ -61,8 +61,6 @@ namespace KASIR
             panel2.Controls.Add(leftBorderBtn);
             this.Height += 100;
             button2.Visible = true;
-            lblDetail.Visible = false;
-            progressBar.Visible = false;
             StarterApp();
             if (baseOutlet != "4")
             {
@@ -394,9 +392,7 @@ namespace KASIR
             {
                 Offline_masterPos cache = new Offline_masterPos();
                 //await refreshCacheTransaction();
-                TransactionSync.IsSyncing = true;
                 cache.refreshCacheTransaction();
-                TransactionSync.IsSyncing = false;
 
             }
 
@@ -1104,7 +1100,7 @@ namespace KASIR
             try
             {
                 // Specify the URL to open
-                string url = "http://cms.gaspol-services.site";
+                string url = "http://cms.gaspollmanagementcenter.com";
 
                 // Use the default browser to open the URL
                 Process.Start(new ProcessStartInfo
@@ -1315,7 +1311,6 @@ namespace KASIR
             }
             try
             {
-                TransactionSync.IsSyncing = true;  // Set the flag to indicate sync is in progress
                 lblPing.ForeColor = Color.LightGreen;
                 lblPing.Text = "Sync...";
                 SignalPing.ForeColor = Color.LightGreen;
@@ -1328,9 +1323,9 @@ namespace KASIR
                 SignalPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
                 SignalPing.IconColor = Color.White;
             }
-            finally
+            catch (Exception ex)
             {
-                TransactionSync.IsSyncing = false;  // Reset the flag when sync is finished
+                LoggerUtil.LogError(ex, "An error occurred during SyncSuccess: {ErrorMessage}", ex.Message);
             }
         }
 

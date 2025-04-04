@@ -51,91 +51,97 @@ namespace KASIR.Komponen
                 {
                     return; // If sync is already running, exit
                 }
-
-                TransactionSync.IsSyncing = true; // Set the sync flag
-
-                string filePath = "DT-Cache\\Transaction\\transaction.data";
-                string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
-                string destinationPath = "DT-Cache\\Transaction\\transactionSyncing.data";
-
-                if (File.Exists(destinationPath))
-                    try { File.Delete(destinationPath); }
-                    catch (Exception ex) { LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message); }
-
-                IApiService apiService = new ApiService();
-
-                // Ensure directories exist
-                string directoryPath = Path.GetDirectoryName(filePath);
-                string newFileName = "";
-                string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
-                newFileName = $"{baseOutlet}_SyncSuccess_{DateTime.Now:yyyyMMdd}.data";
-
-                EnsureDirectoryExists(directoryPath);
-
-                string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
-                string saveBillDataPathClone = "DT-Cache\\Transaction\\saveBillSync.data";
-
-                if (File.Exists(saveBillDataPath))
+                // Coba untuk memulai sinkronisasi
+                bool canSync = await TransactionSync.BeginSyncAsync();
+                if (!canSync)
                 {
-                    SyncSaveBillData(saveBillDataPath, saveBillDataPathClone, apiUrl);
+                    return; // Keluar jika tidak berhasil mendapatkan lock
                 }
-
-                if (!File.Exists(filePath))
+                try
                 {
-                    return;
+                    string filePath = "DT-Cache\\Transaction\\transaction.data";
+                    string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
+                    string destinationPath = "DT-Cache\\Transaction\\transactionSyncing.data";
+
+                    if (File.Exists(destinationPath))
+                        try { File.Delete(destinationPath); }
+                        catch (Exception ex) { LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message); }
+
+                    IApiService apiService = new ApiService();
+
+                    // Ensure directories exist
+                    string directoryPath = Path.GetDirectoryName(filePath);
+                    string newFileName = "";
+                    string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
+                    newFileName = $"{baseOutlet}_SyncSuccess_{DateTime.Now:yyyyMMdd}.data";
+
+                    EnsureDirectoryExists(directoryPath);
+
+                    string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
+                    string saveBillDataPathClone = "DT-Cache\\Transaction\\saveBillSync.data";
+
+                    if (File.Exists(saveBillDataPath))
+                    {
+                        SyncSaveBillData(saveBillDataPath, saveBillDataPathClone, apiUrl);
+                    }
+
+                    if (!File.Exists(filePath))
+                    {
+                        return;
+                    }
+
+                    EnsureDirectoryExists(newSyncFileTransaction);
+
+                    // Copy file to destination for processing
+                    CopyFileWithStreams(filePath, destinationPath);
+
+                    SimplifyAndSaveData(destinationPath);
+
+                    // Process the transactions
+                    JObject data = ParseAndRepairJsonFile(destinationPath);
+                    JArray transactions = GetTransactionsFromData(data);
+
+                    if (transactions == null || !transactions.Any())
+                    {
+                        // Delete file if data is empty but continue process
+                        try { File.Delete(destinationPath); }
+                        catch (Exception ex) { LoggerUtil.LogError(ex, "Failed to delete empty file: {ErrorMessage}", ex.Message); }
+
+                        File.WriteAllText(destinationPath, "{\"data\":[]}");
+                        transactions = new JArray();
+                        data["data"] = transactions;
+                    }
+
+                    // Sync with API
+                    HttpResponseMessage response = await apiService.SyncTransaction(data.ToString(), apiUrl);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string folderCombine = Path.Combine(newSyncFileTransaction, newFileName);
+
+                        // Handle successful sync
+                        ProcessSuccessfulSync(destinationPath, folderCombine);
+
+                        // Notify main form that sync was successful
+                        SyncCompleted?.Invoke();
+                        SyncSuccess(filePath);
+                        NewDataChecker = 1;
+                    }
+                    else
+                    {
+                        // Handle failed sync
+                        ProcessFailedSync(destinationPath, response, baseOutlet);
+                    }
                 }
-
-                EnsureDirectoryExists(newSyncFileTransaction);
-
-                // Copy file to destination for processing
-                CopyFileWithStreams(filePath, destinationPath);
-
-                SimplifyAndSaveData(destinationPath);
-
-                // Process the transactions
-                JObject data = ParseAndRepairJsonFile(destinationPath);
-                JArray transactions = GetTransactionsFromData(data);
-
-                if (transactions == null || !transactions.Any())
+                finally
                 {
-                    // Delete file if data is empty but continue process
-                    try { File.Delete(destinationPath); }
-                    catch (Exception ex) { LoggerUtil.LogError(ex, "Failed to delete empty file: {ErrorMessage}", ex.Message); }
-
-                    File.WriteAllText(destinationPath, "{\"data\":[]}");
-                    transactions = new JArray();
-                    data["data"] = transactions;
-                }
-
-                // Sync with API
-                HttpResponseMessage response = await apiService.SyncTransaction(data.ToString(), apiUrl);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string folderCombine = Path.Combine(newSyncFileTransaction, newFileName);
-
-                    // Handle successful sync
-                    ProcessSuccessfulSync(destinationPath, folderCombine);
-
-                    // Notify main form that sync was successful
-                    SyncCompleted?.Invoke();
-                    SyncSuccess(filePath);
-                    NewDataChecker = 1;
-                }
-                else
-                {
-                    // Handle failed sync
-                    ProcessFailedSync(destinationPath, response, baseOutlet);
+                    // Selalu selesaikan sinkronisasi, apapun yang terjadi
+                    TransactionSync.EndSync();
                 }
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show(ex.ToString());
-            }
-            finally
-            {
-                TransactionSync.IsSyncing = false; // Always reset the sync flag when done
             }
         }
 
@@ -723,7 +729,7 @@ namespace KASIR.Komponen
         private static bool isSyncing = false;  // Static flag to track sync status
         public async Task LoadData()
         {
-            if (isSyncing)
+            if (TransactionSync.IsSyncing)
             {
                 // Jika sedang menyinkronkan, tunggu 2 detik dan panggil LoadData lagi
                 await Task.Delay(5000); // Tunggu 5 detik

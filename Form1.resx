@@ -262,57 +262,6 @@
   <data name="&gt;&gt;btnExit.ZOrder" xml:space="preserve">
     <value>2</value>
   </data>
-  <data name="progressBar.Location" type="System.Drawing.Point, System.Drawing">
-    <value>552, 28</value>
-  </data>
-  <data name="progressBar.Size" type="System.Drawing.Size, System.Drawing">
-    <value>112, 10</value>
-  </data>
-  <data name="progressBar.TabIndex" type="System.Int32, mscorlib">
-    <value>51</value>
-  </data>
-  <data name="&gt;&gt;progressBar.Name" xml:space="preserve">
-    <value>progressBar</value>
-  </data>
-  <data name="&gt;&gt;progressBar.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ProgressBar, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;progressBar.Parent" xml:space="preserve">
-    <value>gradientPanel1</value>
-  </data>
-  <data name="&gt;&gt;progressBar.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="lblDetail.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="lblDetail.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Segoe UI, 9pt, style=Italic</value>
-  </data>
-  <data name="lblDetail.Location" type="System.Drawing.Point, System.Drawing">
-    <value>551, 7</value>
-  </data>
-  <data name="lblDetail.Size" type="System.Drawing.Size, System.Drawing">
-    <value>37, 15</value>
-  </data>
-  <data name="lblDetail.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
-  </data>
-  <data name="lblDetail.Text" xml:space="preserve">
-    <value>Menu</value>
-  </data>
-  <data name="&gt;&gt;lblDetail.Name" xml:space="preserve">
-    <value>lblDetail</value>
-  </data>
-  <data name="&gt;&gt;lblDetail.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;lblDetail.Parent" xml:space="preserve">
-    <value>gradientPanel1</value>
-  </data>
-  <data name="&gt;&gt;lblDetail.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
   <data name="lblNamaOutlet.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
@@ -323,13 +272,10 @@
     <value>167, 9</value>
   </data>
   <data name="lblNamaOutlet.Size" type="System.Drawing.Size, System.Drawing">
-    <value>44, 19</value>
+    <value>0, 19</value>
   </data>
   <data name="lblNamaOutlet.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
-  </data>
-  <data name="lblNamaOutlet.Text" xml:space="preserve">
-    <value>Menu</value>
   </data>
   <data name="&gt;&gt;lblNamaOutlet.Name" xml:space="preserve">
     <value>lblNamaOutlet</value>
@@ -341,7 +287,7 @@
     <value>gradientPanel1</value>
   </data>
   <data name="&gt;&gt;lblNamaOutlet.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>0</value>
   </data>
   <data name="iconCurrentChildForm.Location" type="System.Drawing.Point, System.Drawing">
     <value>115, 3</value>
@@ -362,7 +308,7 @@
     <value>gradientPanel1</value>
   </data>
   <data name="&gt;&gt;iconCurrentChildForm.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>1</value>
   </data>
   <data name="lblTitleChildForm.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -374,13 +320,10 @@
     <value>256, 13</value>
   </data>
   <data name="lblTitleChildForm.Size" type="System.Drawing.Size, System.Drawing">
-    <value>38, 15</value>
+    <value>0, 15</value>
   </data>
   <data name="lblTitleChildForm.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
-  </data>
-  <data name="lblTitleChildForm.Text" xml:space="preserve">
-    <value>Menu</value>
   </data>
   <data name="lblTitleChildForm.Visible" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -395,7 +338,7 @@
     <value>gradientPanel1</value>
   </data>
   <data name="&gt;&gt;lblTitleChildForm.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>2</value>
   </data>
   <data name="gradientPanel1.Location" type="System.Drawing.Point, System.Drawing">
     <value>-109, 0</value>
@@ -596,13 +539,10 @@
     <value>3, 464</value>
   </data>
   <data name="lblPing.Size" type="System.Drawing.Size, System.Drawing">
-    <value>37, 13</value>
+    <value>0, 13</value>
   </data>
   <data name="lblPing.TabIndex" type="System.Int32, mscorlib">
     <value>20</value>
-  </data>
-  <data name="lblPing.Text" xml:space="preserve">
-    <value>Ping:</value>
   </data>
   <data name="lblPing.Visible" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -1015,9 +955,6 @@
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterScreen</value>
-  </data>
-  <data name="$this.Text" xml:space="preserve">
-    <value>Kasir</value>
   </data>
   <data name="&gt;&gt;SyncTimer.Name" xml:space="preserve">
     <value>SyncTimer</value>

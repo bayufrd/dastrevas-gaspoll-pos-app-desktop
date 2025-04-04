@@ -28,6 +28,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 using Newtonsoft.Json.Linq;
 using KASIR.Komponen;
 using System.Globalization;
+using System.Reflection;
 
 
 namespace KASIR.OfflineMode
@@ -39,7 +40,7 @@ namespace KASIR.OfflineMode
         string idmenu;
         private DataMenuDetail datas;
         public string btnServingType;
-        public int selectedServingTypeall {  get; set; }
+        public int selectedServingTypeall { get; set; }
         public bool ReloadDataInBaseForm { get; private set; }
         private readonly string baseOutlet;
         List<MenuDetailDataCart> menuDetailDataCarts;
@@ -54,6 +55,7 @@ namespace KASIR.OfflineMode
         {
             baseOutlet = Properties.Settings.Default.BaseOutlet;
             InitializeComponent();
+            SetDoubleBufferedForAllControls(this);
 
             btnSimpan.Enabled = false;
             lblNameCart.Text = "Checking Data...";
@@ -82,8 +84,53 @@ namespace KASIR.OfflineMode
             LoadDataVarianAsync();
 
             lblNameCart.TextAlign = ContentAlignment.MiddleCenter;
+
+            this.Shown += Form1_Shown; // Tambahkan ini
+        }
+        // Event handler untuk form shown
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            RefreshIconButtons();
+        }
+        // Method untuk refresh icon buttons
+        private void RefreshIconButtons()
+        {
+            this.SuspendLayout();
+            foreach (Control c in this.Controls)
+            {
+                RecursiveRefreshIcons(c);
+            }
+            this.ResumeLayout(true);
         }
 
+        // Method untuk recursive refresh
+        private void RecursiveRefreshIcons(Control control)
+        {
+            if (control is IconButton iconBtn)
+            {
+                iconBtn.Invalidate(); // Force redraw
+            }
+
+            foreach (Control child in control.Controls)
+            {
+                RecursiveRefreshIcons(child);
+            }
+        }
+        // Tambahkan method ini di Form1
+        public static void SetDoubleBufferedForAllControls(Control control)
+        {
+            foreach (Control c in control.Controls)
+            {
+                PropertyInfo prop = c.GetType().GetProperty("DoubleBuffered",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                if (prop != null)
+                {
+                    prop.SetValue(c, true, null);
+                }
+
+                SetDoubleBufferedForAllControls(c);
+            }
+        }
 
 
         private async void LoadDataVarianAsync()
@@ -169,7 +216,7 @@ namespace KASIR.OfflineMode
                     servingType = data.serving_types;
                     btnSimpan.Enabled = true;
                     lblNameCart.Text = namelabel;
-                    if (servingtypeall!= null)
+                    if (servingtypeall != null)
                     {
                         SetComboBoxSelectionByName(data.serving_types, comboBox1, servingtypeall);
                     }

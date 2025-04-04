@@ -11,30 +11,43 @@ namespace KASIR.OffineMode
     public class TransactionSync
     {
         private readonly string baseOutlet;
-        private static bool isSyncing = false;
-        private static readonly object syncLock = new object();
-        // Your async method should be inside a class// Constructor where you can assign the readonly field
+        // Gunakan static SemaphoreSlim sebagai flag global yang dapat diakses semua kelas
+        private static SemaphoreSlim syncSemaphore = new SemaphoreSlim(1, 1);
         public TransactionSync()
         {
             // Assign the value of baseOutlet in the constructor
             baseOutlet = Properties.Settings.Default.BaseOutlet;
         }
+        // Property untuk mengecek status sinkronisasi di seluruh aplikasi
         public static bool IsSyncing
         {
-            get
+            get => syncSemaphore.CurrentCount == 0;
+        }
+
+        // Method untuk memulai sinkronisasi - mengembalikan true jika berhasil mendapatkan lock
+        public static bool BeginSync()
+        {
+            // Coba mendapatkan semaphore tanpa menunggu
+            return syncSemaphore.Wait(0);
+        }
+
+        // Method untuk menyelesaikan sinkronisasi
+        public static void EndSync()
+        {
+            try
             {
-                lock (syncLock)
-                {
-                    return isSyncing;
-                }
+                syncSemaphore.Release();
             }
-            set
+            catch (SemaphoreFullException)
             {
-                lock (syncLock)
-                {
-                    isSyncing = value;
-                }
+                // Abaikan jika semaphore sudah di-release sebelumnya
             }
+        }
+
+        // Method async untuk memulai sinkronisasi dalam operasi async
+        public static async Task<bool> BeginSyncAsync()
+        {
+            return await syncSemaphore.WaitAsync(0);
         }
 
         public async Task SyncIndividualTransactions()
@@ -171,7 +184,8 @@ namespace KASIR.OffineMode
                         }
                     }
                 }
-                if (success == true) {
+                if (success == true)
+                {
                     SyncSuccess(filePath);
 
                 }

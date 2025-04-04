@@ -40,8 +40,6 @@ namespace KASIR
             btnMax = new IconButton();
             btnExit = new IconButton();
             gradientPanel1 = new GradientPanel();
-            progressBar = new ProgressBar();
-            lblDetail = new Label();
             lblNamaOutlet = new Label();
             iconCurrentChildForm = new IconPictureBox();
             lblTitleChildForm = new Label();
@@ -142,8 +140,6 @@ namespace KASIR
             // 
             gradientPanel1.Angle = 0F;
             gradientPanel1.BottomColor = Color.FromArgb(30, 31, 68);
-            gradientPanel1.Controls.Add(progressBar);
-            gradientPanel1.Controls.Add(lblDetail);
             gradientPanel1.Controls.Add(lblNamaOutlet);
             gradientPanel1.Controls.Add(iconCurrentChildForm);
             gradientPanel1.Controls.Add(lblTitleChildForm);
@@ -151,22 +147,6 @@ namespace KASIR
             gradientPanel1.Name = "gradientPanel1";
             gradientPanel1.TopColor = Color.Black;
             gradientPanel1.MouseDown += panelTitleBar_MouseDown;
-            // 
-            // progressBar
-            // 
-            progressBar.ForeColor = SystemColors.ControlText;
-            resources.ApplyResources(progressBar, "progressBar");
-            progressBar.MarqueeAnimationSpeed = 30;
-            progressBar.Name = "progressBar";
-            progressBar.Step = 100;
-            progressBar.Style = ProgressBarStyle.Continuous;
-            // 
-            // lblDetail
-            // 
-            resources.ApplyResources(lblDetail, "lblDetail");
-            lblDetail.BackColor = Color.Transparent;
-            lblDetail.ForeColor = Color.Gainsboro;
-            lblDetail.Name = "lblDetail";
             // 
             // lblNamaOutlet
             // 
@@ -393,8 +373,6 @@ namespace KASIR
         private IconButton Setting;
         private Label lblPing;
         private Panel panel2;
-        private Label lblDetail;
-        private ProgressBar progressBar;
         private IconButton btnShiftLaporan;
         private IconButton SignalPing;
         private IconButton btnContact;

@@ -25,6 +25,7 @@ using Serilog.Core;
 using Serilog.Sinks.File;
 using System.Text.RegularExpressions;
 using System.Windows.Markup;
+using System.Security.Cryptography.Xml;
 namespace KASIR.Komponen
 {
     public partial class notifikasiPengeluaran : Form
@@ -54,6 +55,7 @@ namespace KASIR.Komponen
 
         }
 
+        // Modifikasi method LoadData() untuk menambahkan handling error
         private async void LoadData()
         {
             try
@@ -63,42 +65,45 @@ namespace KASIR.Komponen
 
                 if (string.IsNullOrEmpty(response))
                 {
-                    MessageBox.Show("Tidak ada respon dari server.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    CleanFormAndAddRetryButton("Tidak ada respon dari server.");
                     return;
                 }
 
                 var cekShift = JsonConvert.DeserializeObject<GetShift>(response);
                 if (cekShift?.data == null)
                 {
-                    MessageBox.Show("Data shift tidak tersedia atau tidak valid.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    CleanFormAndAddRetryButton("Data shift tidak tersedia atau tidak valid.");
                     return;
                 }
 
                 var datas = cekShift.data;
-                var expenditures = datas.expenditures ?? new List<ExpenditureStrukShift>();
-                var cartDetailsSuccess = datas.cart_details_success ?? new List<CartDetailsSuccessStrukShift>();
-                var cartDetailsPending = datas.cart_details_pending ?? new List<CartDetailsPendingStrukShift>();
-                var cartDetailsCanceled = datas.cart_details_canceled ?? new List<CartDetailsCanceledStrukShift>();
-                var refundDetails = datas.refund_details ?? new List<RefundDetailStrukShift>();
-                var paymentDetails = datas.payment_details ?? new List<PaymentDetailStrukShift>();
+
+                // Pastikan semua properti diakses dengan aman menggunakan null conditional operator
+                var expenditures = datas?.expenditures ?? new List<ExpenditureStrukShift>();
+                var cartDetailsSuccess = datas?.cart_details_success ?? new List<CartDetailsSuccessStrukShift>();
+                var cartDetailsPending = datas?.cart_details_pending ?? new List<CartDetailsPendingStrukShift>();
+                var cartDetailsCanceled = datas?.cart_details_canceled ?? new List<CartDetailsCanceledStrukShift>();
+                var refundDetails = datas?.refund_details ?? new List<RefundDetailStrukShift>();
+                var paymentDetails = datas?.payment_details ?? new List<PaymentDetailStrukShift>();
 
                 var dataTable = new DataTable();
                 dataTable.Columns.Add("ID", typeof(string));
                 dataTable.Columns.Add("DATA", typeof(string));
                 dataTable.Columns.Add("Detail", typeof(string));
 
-                dataTable.Rows.Add(null, datas.outlet_name, null);
-                dataTable.Rows.Add(null, "Start Date :", datas.start_date);
-                dataTable.Rows.Add(null, "End Date :", datas.end_date);
-                dataTable.Rows.Add(null, "Shift Number :", datas.shift_number);
+                // Pastikan datas.outlet_name tidak null
+                dataTable.Rows.Add(null, datas?.outlet_name ?? "Unknown Outlet", null);
+                dataTable.Rows.Add(null, "Start Date :", datas?.start_date);
+                dataTable.Rows.Add(null, "End Date :", datas?.end_date);
+                dataTable.Rows.Add(null, "Shift Number :", datas?.shift_number);
                 dataTable.Rows.Add(null, "--------------------------------", null);
 
-                if (expenditures.Any())
+                if (expenditures != null && expenditures.Any())
                 {
                     dataTable.Rows.Add(null, "EXPENSE", null);
                     foreach (var expense in expenditures)
                     {
-                        dataTable.Rows.Add(null, expense.description, $"Rp. {expense.nominal:n0},-");
+                        dataTable.Rows.Add(null, expense?.description ?? "No description", $"Rp. {expense?.nominal:n0},-");
                     }
                 }
 
@@ -115,20 +120,120 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "TaskCanceledException: {ErrorMessage}", ex.Message);
+                CleanFormAndAddRetryButton("Koneksi tidak stabil: " + ex.Message);
             }
             catch (JsonSerializationException ex)
             {
-                MessageBox.Show("Gagal memproses data dari server.", "Deserialization Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "Deserialization error: {ErrorMessage}", ex.Message);
+                CleanFormAndAddRetryButton("Gagal memproses data: " + ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                LoggerUtil.LogError(ex, "Null reference error: {ErrorMessage}", ex.Message);
+                CleanFormAndAddRetryButton("Data referensi tidak ditemukan: " + ex.Message);
+                button2.Enabled = false;
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Unhandled Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "Unexpected error: {ErrorMessage}", ex.Message);
-                button2.Enabled = true;
+                CleanFormAndAddRetryButton("Terjadi kesalahan: " + ex.Message);
+                button2.Enabled = false;
             }
+        }
+
+        // Tambahkan method CleanFormAndAddRetryButton dari contoh yang diberikan
+        private void CleanFormAndAddRetryButton(string ex)
+        {
+            // Bersihkan form
+            if (dataGridView1 != null && dataGridView1.DataSource != null)
+            {
+                dataGridView1.DataSource = null;
+                dataGridView1.Rows.Clear();
+            }
+
+            // Tambahkan PictureBox untuk gambar
+            PictureBox pictureBox = new PictureBox();
+            pictureBox.Name = "ErrorImg";
+            pictureBox.Size = new Size(100, 100); // Sesuaikan ukuran gambar
+            pictureBox.Location = new Point((this.ClientSize.Width - pictureBox.Width) / 2, (this.ClientSize.Height - pictureBox.Height) / 2 - 110); // Posisi di atas tombol
+            pictureBox.SizeMode = PictureBoxSizeMode.StretchImage; // Atur ukuran gambar agar sesuai dengan PictureBox
+            try
+            {
+                using (FileStream fs = new FileStream("icon\\OutletLogo.bmp", FileMode.Open, FileAccess.Read))
+                {
+                    pictureBox.Image = Image.FromStream(fs);
+                }
+            }
+            catch
+            {
+                // Jika gagal memuat gambar, jangan tampilkan PictureBox
+                pictureBox.Visible = false;
+            }
+
+            // Tambahkan tombol retry
+            System.Windows.Forms.Button btnRetry = new System.Windows.Forms.Button();
+            btnRetry.Name = "btnRetry";
+            btnRetry.Text = "Retry Load Data\nOut of Service";
+            btnRetry.Size = new Size(190, 60);
+            btnRetry.Location = new Point((this.ClientSize.Width - btnRetry.Width) / 2, (this.ClientSize.Height - btnRetry.Height) / 2);
+            btnRetry.BackColor = Color.FromArgb(30, 31, 68);
+            btnRetry.FlatStyle = FlatStyle.Flat;
+            btnRetry.Font = new Font("Arial", 10, FontStyle.Bold);
+            btnRetry.ForeColor = Color.White; // Mengatur warna teks tombol menjadi putih
+            btnRetry.Click += new EventHandler(BtnRetry_Click);
+
+            // Membuat sudut membulat
+            System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+            path.AddArc(0, 0, 20, 20, 180, 90);
+            path.AddArc(btnRetry.Width - 20, 0, 20, 20, 270, 90);
+            path.AddArc(btnRetry.Width - 20, btnRetry.Height - 20, 20, 20, 0, 90);
+            path.AddArc(0, btnRetry.Height - 20, 20, 20, 90, 90);
+            path.CloseFigure();
+            btnRetry.Region = new Region(path);
+
+            // Menambahkan label di bawah tombol
+            Label lblInfo = new Label();
+            lblInfo.Name = "ErrorMsg";
+            lblInfo.Text = ex.ToString(); // Teks yang ingin ditampilkan
+            lblInfo.Font = new Font("Arial", 9, FontStyle.Regular);
+            lblInfo.ForeColor = Color.Black; // Warna teks label
+            lblInfo.AutoSize = true; // Agar label menyesuaikan ukuran teks
+
+            // Mengatur posisi label agar berada di tengah
+            lblInfo.Location = new Point((this.ClientSize.Width - lblInfo.Width) / 4, btnRetry.Bottom + 10); // Posisi di bawah tombol
+
+            // Menambahkan kontrol ke form
+            this.Controls.Add(pictureBox); // Menambahkan PictureBox ke form
+            this.Controls.Add(btnRetry);
+            this.Controls.Add(lblInfo); // Menambahkan label ke form
+
+            btnRetry.BringToFront();
+        }
+
+        private void BtnRetry_Click(object sender, EventArgs e)
+        {
+            // Hapus tombol retry
+            if (sender is System.Windows.Forms.Button btnRetry)
+            {
+                this.Controls.Remove(btnRetry);
+            }
+
+            // Hapus label informasi jika ada
+            var lblInfo = this.Controls.OfType<Label>().FirstOrDefault(lbl => lbl.Name == "ErrorMsg");
+            if (lblInfo != null)
+            {
+                this.Controls.Remove(lblInfo);
+            }
+
+            var ErrImg = this.Controls.OfType<PictureBox>().FirstOrDefault(lbl => lbl.Name == "ErrorImg");
+            if (ErrImg != null)
+            {
+                this.Controls.Remove(ErrImg);
+            }
+
+            // Muat data kembali
+            LoadData();
         }
 
         private void btnKeluar_Click(object sender, EventArgs e)

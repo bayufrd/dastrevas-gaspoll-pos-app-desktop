@@ -1,19 +1,15 @@
 using KASIR.komponen;
 using KASIR.Komponen;
 using FontAwesome.Sharp;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrayNotify;
 using System.Runtime.InteropServices;
 using System.Net;
-using System.Windows.Shapes;
 using System.Diagnostics;
 using KASIR.Model;
 using System.Net.NetworkInformation;
-using Serilog;
 using KASIR.Network;
 using Newtonsoft.Json;
 using Menu = KASIR.Model.Menu;
 using Path = System.IO.Path;
-using System.Xml;
 using SharpCompress.Archives;
 using SharpCompress.Common;
 using DrawingColor = System.Drawing.Color;
@@ -21,9 +17,6 @@ using Color = System.Drawing.Color;
 using KASIR.OfflineMode;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
-using System.Linq;
-using KASIR.Printer;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 using KASIR.OffineMode;
 using System.Globalization;
 using System.Reflection;
@@ -434,12 +427,16 @@ namespace KASIR
         {
             if (lblNamaOutlet.InvokeRequired)
             {
-                // Jika kita berada di thread yang berbeda, panggil metode ini di UI thread
-                lblNamaOutlet.Invoke(new Action(() => headerOutletName(text)));
+                await Task.Factory.FromAsync(
+                    lblNamaOutlet.BeginInvoke(
+                        new Action(() => lblNamaOutlet.Text = "Please Wait.. " + text),
+                        null
+                    ),
+                    ar => lblNamaOutlet.EndInvoke(ar)
+                );
             }
             else
             {
-                // Jika kita berada di UI thread, lakukan pembaruan langsung
                 lblNamaOutlet.Text = "Please Wait.. " + text;
             }
         }
@@ -1290,52 +1287,78 @@ namespace KASIR
 
         private async void timer1_Tick(object sender, EventArgs e)
         {
-            // Read the OfflineMode status
-            string config = "setting\\OfflineMode.data";
-            string allSettingsData = File.ReadAllText(config);  // Get the current OfflineMode setting
-                                                                // Check if OfflineMode is ON
-            if (allSettingsData != "ON")
-            {
-                return;
-            }
-            if (!NetworkInterface.GetIsNetworkAvailable())
-            {
-                SignalPing.ForeColor = Color.Red;
-                SignalPing.Text = $"Error Sync \n{DateTime.Now:HH:mm}";
-                SignalPing.IconColor = Color.White;
-                return;
-            }
-            if (TransactionSync.IsSyncing) // Check using the shared manager
-            {
-                return; // If sync is already running, exit
-            }
+            // Disable timer while processing to prevent multiple overlapping executions
+            SyncTimer.Enabled = false;
+
             try
             {
-                lblPing.ForeColor = Color.LightGreen;
-                lblPing.Text = "Sync...";
-                SignalPing.ForeColor = Color.LightGreen;
-                SignalPing.Text = "Sync...";
-                SignalPing.IconColor = Color.LightGreen;
-                await sendDataSyncPerHours(allSettingsData);
-                lblPing.ForeColor = Color.White;
-                lblPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
-                SignalPing.ForeColor = Color.White;
-                SignalPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
-                SignalPing.IconColor = Color.White;
+                // Read the OfflineMode status
+                string config = "setting\\OfflineMode.data";
+                string allSettingsData = File.ReadAllText(config);  // Get the current OfflineMode setting
+
+                // Check if OfflineMode is ON
+                if (allSettingsData != "ON")
+                {
+                    return;
+                }
+
+                if (!NetworkInterface.GetIsNetworkAvailable())
+                {
+                    SignalPing.ForeColor = Color.Red;
+                    SignalPing.Text = $"Error Sync \n{DateTime.Now:HH:mm}";
+                    SignalPing.IconColor = Color.White;
+                    return;
+                }
+
+                if (TransactionSync.IsSyncing) // Check using the shared manager
+                {
+                    return; // If sync is already running, exit
+                }
+
+                try
+                {
+                    lblPing.ForeColor = Color.LightGreen;
+                    lblPing.Text = "Sync...";
+                    SignalPing.ForeColor = Color.LightGreen;
+                    SignalPing.Text = "Sync...";
+                    SignalPing.IconColor = Color.LightGreen;
+
+                    // Properly await the sync operation
+                    await sendDataSyncPerHours(allSettingsData);
+
+                    lblPing.ForeColor = Color.White;
+                    lblPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
+                    SignalPing.ForeColor = Color.White;
+                    SignalPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
+                    SignalPing.IconColor = Color.White;
+                }
+                catch (Exception ex)
+                {
+                    SignalPing.ForeColor = Color.Red;
+                    SignalPing.Text = $"Error Sync \n{DateTime.Now:HH:mm}";
+                    SignalPing.IconColor = Color.White;
+                    LoggerUtil.LogError(ex, "An error occurred during SyncSuccess: {ErrorMessage}", ex.Message);
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                LoggerUtil.LogError(ex, "An error occurred during SyncSuccess: {ErrorMessage}", ex.Message);
+                // Re-enable timer after processing is complete
+                SyncTimer.Enabled = true;
             }
         }
-
         public async Task sendDataSyncPerHours(string allSettingsData)
         {
             // Check if OfflineMode is ON
             if (allSettingsData == "ON")
             {
-                shiftReport c = new shiftReport();
-                c.SyncDataTransactions();
+                using (shiftReport c = new shiftReport())
+                {
+                    // Set background operation flag to true since we're not displaying the form
+                    c.IsBackgroundOperation = true;
+
+                    // Call the sync method which will respect the background flag
+                    await c.SyncDataTransactions();
+                }
             }
         }
         public static readonly object FileLock = new object();
@@ -1516,45 +1539,6 @@ namespace KASIR
 
         private void iconButton3_Click(object sender, EventArgs e)
         {
-            /* //settingsButton
-             //====by
-             ActivateButton(sender, RGBColors.color4);
-             try
-             {
-                 SettingsForm c = new SettingsForm(this);
-
-                 // Misalkan 'obj' adalah objek yang mungkin null
-                 if (c == null)
-                 {
-                     MessageBox.Show("Terjadi kesalahan cek koneksi anda", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                     return;
-                 }
-                 //panel3.Height = btn1.Height;
-                 //panel3.Top = btn1.Top;
-                 c.Dock = DockStyle.Fill;
-                 panel1.Controls.Add(c);
-                 c.BringToFront();
-                 c.Show();
-                 lblTitleChildForm.Text = "Settings - ";
-                 Form background = new Form
-                 {
-                     StartPosition = FormStartPosition.Manual,
-                     FormBorderStyle = FormBorderStyle.None,
-                     Opacity = 0.7d,
-                     BackColor = Color.Black,
-                     WindowState = FormWindowState.Maximized,
-                     TopMost = true,
-                     Location = this.Location,
-                     ShowInTaskbar = false,
-                 };
-                 // Lakukan operasi dengan 'obj'
-                 // ...
-             }
-             catch (NullReferenceException ex)
-             {
-                 MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                 // Log error jika diperlukan
-             }*/
         }
 
         private void btnContact_Click(object sender, EventArgs e)

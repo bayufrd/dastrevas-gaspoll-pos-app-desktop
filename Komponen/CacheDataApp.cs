@@ -1,18 +1,8 @@
 ﻿using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Forms;
 using Menu = KASIR.Model.Menu;
 using Image = System.Drawing.Image;
-using System.Net;
-using System.IO;
-using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
@@ -190,7 +180,7 @@ namespace KASIR.Komponen
                 UpdateDetailLabel("Checking Image...");
                 await LoadImageToPictureBox(pictureBox, menu);
                 progressBar.Value = x * items;
-                
+
             }
         }
 
@@ -903,7 +893,7 @@ namespace KASIR.Komponen
                 {
                     items++;
                     int x = 100 / menuModel.data.Count;
-                    
+
                     PictureBox pictureBox = new PictureBox();
                     UpdateDetailLabel($"Downloading Data...[{items} / {menuModel.data.Count}]");
 
@@ -926,8 +916,8 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
 
-            }
-        
+        }
+
         private async Task LoadServingTypeItems()
         {
             try
@@ -970,7 +960,7 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        
+
         private async Task LoadDataVarianItems()
         {
             try
@@ -1012,7 +1002,7 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        
+
 
         private async Task LoadDiscountPeritems()
         {
@@ -1045,7 +1035,7 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        
+
 
         private async Task LoadPayform()
         {
@@ -1079,7 +1069,7 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        
+
         private async Task LoadDiscountPerCart()
         {
             try
@@ -1116,7 +1106,7 @@ namespace KASIR.Komponen
             }
         }
 
-        
+
         // Fungsi untuk memuat gambar ke PictureBox dengan mengambil dari cache atau unduh jika tidak ada di cache
         private async Task LoadImageToPictureBox(PictureBox pictureBox, Menu menu)
         {
@@ -1133,7 +1123,7 @@ namespace KASIR.Komponen
                     try
                     {
 
-                    
+
                         // Create a rounded rectangle for the PictureBox
                         using (Graphics graphics = Graphics.FromHwnd(pictureBox.Handle))
                         {

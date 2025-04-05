@@ -211,6 +211,8 @@ namespace KASIR.OfflineMode
                                 {
                                     shiftReport c = new shiftReport();
                                     //c.SyncCompleted += SyncCompletedHandler;
+                                    c.IsBackgroundOperation = true;
+
                                     await c.SyncDataTransactions();
                                     // Move the files created after the specified time span
                                     transactionFileMover.MoveFilesCreatedAfter(baseOutlet.ToString(), sourceDirectory, destinationDirectory, TimeSpan.FromHours(20));
@@ -238,6 +240,8 @@ namespace KASIR.OfflineMode
                             {
                                 shiftReport c = new shiftReport();
                                 //c.SyncCompleted += SyncCompletedHandler;
+                                c.IsBackgroundOperation = true;
+
                                 await c.SyncDataTransactions();
 
                                 // Move the files created after the specified time span (20 hours in this case)

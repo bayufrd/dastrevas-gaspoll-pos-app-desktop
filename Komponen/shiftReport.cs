@@ -1,49 +1,258 @@
-﻿
-using KASIR.komponen;
-using KASIR.Model;
+﻿using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
-using Serilog;
 using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using KASIR.Printer;
 using Newtonsoft.Json.Linq;
-using System.Transactions;
-using System.Windows.Markup;
-using System.Data.Common;
 using KASIR.OffineMode;
 using System.Text;
 namespace KASIR.Komponen
 {
     public partial class shiftReport : UserControl
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
         private ApiService apiService;
         private readonly string baseOutlet;
-
-        private readonly string MacAddressKasir;
-        private readonly string PinPrinterKasir;
-        private readonly string BaseOutletName;
         int bedaCash = 0;
         int shiftnumber, NewDataChecker = 0;
         DateTime mulaishift, akhirshift;
-
         public shiftReport()
         {
             baseOutlet = Properties.Settings.Default.BaseOutlet;
-            PinPrinterKasir = Properties.Settings.Default.PinPrinterKasir;
-            MacAddressKasir = Properties.Settings.Default.MacAddressKasir;
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
-            BaseOutletName = Properties.Settings.Default.BaseOutletName;
             InitializeComponent();
             apiService = new ApiService();
             btnCetakStruk.Enabled = true;
             lblNotifikasi.Visible = false;
+
+            // Initialize progress UI
+            InitializeLoadingUI();
+
+            // Ensure resources are cleaned up when form is closed
+            this.Disposed += (s, e) =>
+            {
+                cts?.Cancel();
+                cts?.Dispose();
+            };
+
             //LoadData();
             lblShiftSekarang.Visible = false;
         }
-        public async Task SyncDataTransactions()
+        // Add these to the class fields
+        private Panel loadingPanel;
+        private Label loadingLabel;
+        private ProgressBar progressBar;
+        private CancellationTokenSource cts;
+        private int currentProgress = 0;
+
+        // Flag to track if this is a background operation
+        public bool IsBackgroundOperation { get; set; } = false;
+
+        // Helper method to check if we should show progress UI
+        private bool ShouldShowProgress()
+        {
+            return this.Visible && this.IsHandleCreated && !this.IsDisposed && !IsBackgroundOperation;
+        }
+
+        private void InitializeLoadingUI()
+        {
+            try
+            {
+                // Create panel for loading
+                loadingPanel = new Panel
+                {
+                    BackColor = Color.White,
+                    BorderStyle = BorderStyle.Fixed3D,
+                    Size = new Size(300, 120),
+                    Location = new Point((this.ClientSize.Width - 400) / 2, (this.ClientSize.Height - 200) / 2),
+                    Visible = false
+                };
+
+                // Add label for loading text
+                loadingLabel = new Label
+                {
+                    Text = "Mengambil data dari server...",
+                    Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                    ForeColor = Color.White,
+                    AutoSize = false,
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    Size = new Size(280, 30),
+                    Location = new Point(10, 20)
+                };
+
+                // Add progress bar
+                progressBar = new ProgressBar
+                {
+                    Style = ProgressBarStyle.Continuous,
+                    Size = new Size(280, 25),
+                    Location = new Point(10, 60),
+                    Minimum = 0,
+                    Maximum = 100,
+                    Value = 0
+                };
+
+                // Modify panel background to match the image
+                loadingPanel.BackColor = Color.FromArgb(30, 31, 68); // Light blue background
+
+                // Add components to panel
+                loadingPanel.Controls.Add(loadingLabel);
+                loadingPanel.Controls.Add(progressBar);
+
+                // Add panel to form
+                this.Controls.Add(loadingPanel);
+                loadingPanel.BringToFront();
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't crash if UI initialization fails
+                LoggerUtil.LogError(ex, "Error initializing loading UI: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private void ShowLoading()
+        {
+            // Skip showing loading if form is not visible or if running in background
+            if (!this.Visible || !this.IsHandleCreated || this.IsDisposed)
+            {
+                return;
+            }
+
+            if (this.InvokeRequired)
+            {
+                try
+                {
+                    // Try to invoke on UI thread, but don't block if it fails
+                    this.BeginInvoke(new Action(ShowLoading));
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Form might be disposed or closing, just ignore
+                    return;
+                }
+                catch (InvalidOperationException)
+                {
+                    // Form might not be completely initialized
+                    return;
+                }
+                return;
+            }
+
+            try
+            {
+                // Check if controls exist and aren't disposed
+                if (loadingPanel != null && !loadingPanel.IsDisposed &&
+                    progressBar != null && !progressBar.IsDisposed &&
+                    loadingLabel != null && !loadingLabel.IsDisposed)
+                {
+                    loadingPanel.Visible = true;
+                    progressBar.Value = 0;
+                    loadingLabel.Text = "Mengambil data dari server...";
+                }
+            }
+            catch (Exception)
+            {
+                // Suppress any UI update errors
+                return;
+            }
+        }
+
+        private void HideLoading()
+        {
+            // Skip hiding loading if form is not visible or if running in background
+            if (!this.Visible || !this.IsHandleCreated || this.IsDisposed)
+            {
+                return;
+            }
+
+            if (this.InvokeRequired)
+            {
+                try
+                {
+                    // Try to invoke on UI thread, but don't block if it fails
+                    this.BeginInvoke(new Action(HideLoading));
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Form might be disposed or closing, just ignore
+                    return;
+                }
+                catch (InvalidOperationException)
+                {
+                    // Form might not be completely initialized
+                    return;
+                }
+                return;
+            }
+
+            try
+            {
+                // Check if loadingPanel exists and isn't disposed
+                if (loadingPanel != null && !loadingPanel.IsDisposed)
+                {
+                    loadingPanel.Visible = false;
+                }
+            }
+            catch (Exception)
+            {
+                // Suppress any UI update errors
+                return;
+            }
+        }
+
+        private void UpdateProgress(int percentage, string message = null)
+        {
+            // Skip progress updates if form is not visible or if running in background
+            if (!this.Visible || !this.IsHandleCreated || this.IsDisposed)
+            {
+                return;
+            }
+
+            if (this.InvokeRequired)
+            {
+                try
+                {
+                    // Try to invoke on UI thread, but don't block if it fails
+                    this.BeginInvoke(new Action<int, string>(UpdateProgress), percentage, message);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Form might be disposed or closing, just ignore
+                    return;
+                }
+                catch (InvalidOperationException)
+                {
+                    // Form might not be completely initialized
+                    return;
+                }
+                return;
+            }
+
+            // Only update UI if progress panel is visible
+            if (!loadingPanel.Visible)
+            {
+                return;
+            }
+
+            // Update progress bar
+            try
+            {
+                if (percentage >= 0 && percentage <= 100 && progressBar != null && !progressBar.IsDisposed)
+                {
+                    progressBar.Value = percentage;
+                }
+
+                if (!string.IsNullOrEmpty(message) && loadingLabel != null && !loadingLabel.IsDisposed)
+                {
+                    loadingLabel.Text = message;
+                }
+            }
+            catch (Exception)
+            {
+                // Suppress any UI update errors
+                return;
+            }
+        }
+        public async Task SyncDataTransactions(bool isBackground = false)
         {
             try
             {
@@ -51,17 +260,34 @@ namespace KASIR.Komponen
                 {
                     return; // If sync is already running, exit
                 }
-                // Coba untuk memulai sinkronisasi
+
+                // Set background operation flag
+                IsBackgroundOperation = isBackground;
+
+                if (ShouldShowProgress())
+                {
+                    ShowLoading();
+                    UpdateProgress(10, "Menyiapkan sinkronisasi data...");
+                }
+
+                // Try to start synchronization
                 bool canSync = await TransactionSync.BeginSyncAsync();
                 if (!canSync)
                 {
-                    return; // Keluar jika tidak berhasil mendapatkan lock
+                    if (ShouldShowProgress())
+                    {
+                        HideLoading();
+                    }
+                    return; // Exit if unable to get lock
                 }
+
                 try
                 {
                     string filePath = "DT-Cache\\Transaction\\transaction.data";
                     string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
                     string destinationPath = "DT-Cache\\Transaction\\transactionSyncing.data";
+
+                    UpdateProgress(15, "Memverifikasi file transaksi...");
 
                     if (File.Exists(destinationPath))
                         try { File.Delete(destinationPath); }
@@ -75,6 +301,7 @@ namespace KASIR.Komponen
                     string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
                     newFileName = $"{baseOutlet}_SyncSuccess_{DateTime.Now:yyyyMMdd}.data";
 
+                    UpdateProgress(20, "Membuat direktori jika belum ada...");
                     EnsureDirectoryExists(directoryPath);
 
                     string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
@@ -82,22 +309,29 @@ namespace KASIR.Komponen
 
                     if (File.Exists(saveBillDataPath))
                     {
+                        UpdateProgress(25, "Sinkronisasi data SaveBill...");
                         SyncSaveBillData(saveBillDataPath, saveBillDataPathClone, apiUrl);
+                        UpdateProgress(35, "Selesai sinkronisasi SaveBill");
                     }
 
                     if (!File.Exists(filePath))
                     {
+                        UpdateProgress(40, "Tidak ada file transaksi, melewati sinkronisasi...");
                         return;
                     }
 
+                    UpdateProgress(45, "Memastikan direktori sinkronisasi tersedia...");
                     EnsureDirectoryExists(newSyncFileTransaction);
 
                     // Copy file to destination for processing
+                    UpdateProgress(50, "Menyalin file transaksi...");
                     CopyFileWithStreams(filePath, destinationPath);
 
+                    UpdateProgress(55, "Menyederhanakan data...");
                     SimplifyAndSaveData(destinationPath);
 
                     // Process the transactions
+                    UpdateProgress(60, "Memproses data transaksi...");
                     JObject data = ParseAndRepairJsonFile(destinationPath);
                     JArray transactions = GetTransactionsFromData(data);
 
@@ -113,6 +347,7 @@ namespace KASIR.Komponen
                     }
 
                     // Sync with API
+                    UpdateProgress(70, "Mengirim data ke server...");
                     HttpResponseMessage response = await apiService.SyncTransaction(data.ToString(), apiUrl);
 
                     if (response.IsSuccessStatusCode)
@@ -120,22 +355,44 @@ namespace KASIR.Komponen
                         string folderCombine = Path.Combine(newSyncFileTransaction, newFileName);
 
                         // Handle successful sync
+                        if (ShouldShowProgress())
+                        {
+                            UpdateProgress(85, "Sinkronisasi berhasil, menyimpan data...");
+                        }
+
                         ProcessSuccessfulSync(destinationPath, folderCombine);
 
                         // Notify main form that sync was successful
                         SyncCompleted?.Invoke();
                         SyncSuccess(filePath);
                         NewDataChecker = 1;
+
+                        if (ShouldShowProgress())
+                        {
+                            UpdateProgress(100, "Sinkronisasi selesai!");
+                            await Task.Delay(500); // Short delay to show completion
+                        }
                     }
                     else
                     {
                         // Handle failed sync
+                        if (ShouldShowProgress())
+                        {
+                            UpdateProgress(85, "Sinkronisasi gagal, menyimpan log kegagalan...");
+                        }
+
                         ProcessFailedSync(destinationPath, response, baseOutlet);
+
+                        if (ShouldShowProgress())
+                        {
+                            UpdateProgress(100, "Pencatatan kegagalan selesai");
+                            await Task.Delay(500); // Short delay to show completion
+                        }
                     }
                 }
                 finally
                 {
-                    // Selalu selesaikan sinkronisasi, apapun yang terjadi
+                    // Always complete synchronization, whatever happens
                     TransactionSync.EndSync();
                 }
             }
@@ -559,7 +816,6 @@ namespace KASIR.Komponen
                 {
                     await sourceStream.CopyToAsync(destStream);
                 }
-
                 SimplifyAndSaveData(saveBillDataPathClone);
 
                 string jsonSavwDataSync = File.ReadAllText(saveBillDataPathClone);
@@ -579,7 +835,7 @@ namespace KASIR.Komponen
                 }
                 else
                 {
-                    MessageBox.Show("Gagal mengirim data SaveBill.");
+                    //MessageBox.Show("Gagal mengirim data SaveBill.");
                     throw new Exception("Gagal mengirim data SaveBill." + savebillSync.ToString());
                 }
             }
@@ -727,27 +983,51 @@ namespace KASIR.Komponen
             return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
         }
         private static bool isSyncing = false;  // Static flag to track sync status
-        public async Task LoadData()
+        public async Task LoadData(bool isBackground = false)
         {
+            // Set background operation flag
+            IsBackgroundOperation = isBackground;
+
             if (TransactionSync.IsSyncing)
             {
-                // Jika sedang menyinkronkan, tunggu 2 detik dan panggil LoadData lagi
-                await Task.Delay(5000); // Tunggu 5 detik
-                await LoadData(); // Panggil LoadData lagi
+                // If synchronizing, wait 5 seconds and call LoadData again
+                await Task.Delay(5000); // Wait 5 seconds
+                await LoadData(isBackground); // Call LoadData again with same background flag
                 return;
             }
-            btnCetakStruk.Enabled = false;
+
+            // Cancel previous token if it exists
+            if (cts != null)
+            {
+                cts.Cancel();
+                cts.Dispose();
+            }
+
+            cts = new CancellationTokenSource();
+            var token = cts.Token;
+
+            if (ShouldShowProgress())
+            {
+                btnCetakStruk.Enabled = false;
+            }
+
             const int maxRetryAttempts = 3;
             int retryAttempts = 0;
             bool success = false;
             string Config = "setting\\OfflineMode.data";
+
+            if (ShouldShowProgress())
+            {
+                ShowLoading();
+                UpdateProgress(10, "Memeriksa konfigurasi...");
+            }
 
             while (retryAttempts < maxRetryAttempts && !success)
             {
                 try
                 {
                     NewDataChecker = 0;
-                    // Mengecek apakah sButtonOffline dalam status checked,l=
+                    // Mengecek apakah sButtonOffline dalam status checked
                     string directoryPath = Path.GetDirectoryName(Config);
                     if (!Directory.Exists(directoryPath))
                     {
@@ -764,15 +1044,57 @@ namespace KASIR.Komponen
                     // Jika status offline ON, tampilkan Offline_masterPos
                     if (!string.IsNullOrEmpty(allSettingsData) && allSettingsData == "ON")
                     {
-                        await SyncDataTransactions();
+                        if (ShouldShowProgress())
+                        {
+                            UpdateProgress(20, "Mode offline terdeteksi, sinkronisasi data...");
+                        }
+
+                        // Pass the background flag to SyncDataTransactions
+                        await SyncDataTransactions(IsBackgroundOperation);
+
+                        if (ShouldShowProgress())
+                        {
+                            UpdateProgress(30, "Sinkronisasi selesai, melanjutkan...");
+                        }
                     }
 
+                    // Only run progress simulation if not in background mode
+                    if (ShouldShowProgress())
+                    {
+                        // Run task to simulate progress while waiting for API response
+                        var progressTask = Task.Run(async () =>
+                        {
+                            int progress = 30;
+                            while (progress < 80 && !token.IsCancellationRequested)
+                            {
+                                await Task.Delay(300, token);
+                                progress += 2;
+                                UpdateProgress(progress, $"Mengambil data shift... ({progress}%)");
+                            }
+                        }, token);
+
+                        UpdateProgress(35, "Menghubungi server untuk data shift...");
+                    }
                     string response = await GetShiftData(allSettingsData);
+
+                    if (token.IsCancellationRequested)
+                        return;
+
+                    if (ShouldShowProgress())
+                    {
+                        UpdateProgress(80, "Data diterima, memproses...");
+                    }
+
                     //File.WriteAllText($"DT-Cache\\Transaction\\ShiftRepot{baseOutlet}.data", JsonConvert.SerializeObject(response, Formatting.Indented));
                     if (response != null)
                     {
                         try
                         {
+                            if (ShouldShowProgress())
+                            {
+                                UpdateProgress(85, "Mengurai data shift...");
+                            }
+
                             GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
                             DataShift datas = cekShift.data;
                             List<ExpenditureStrukShift> expenditures = datas.expenditures;
@@ -786,6 +1108,10 @@ namespace KASIR.Komponen
                             dataTable.Columns.Add("DATA", typeof(string));
                             dataTable.Columns.Add("Detail", typeof(string));
 
+                            if (ShouldShowProgress())
+                            {
+                                UpdateProgress(90, "Memformat data untuk tampilan...");
+                            }
                             //dataTable.Rows.Add(null, "SHIFT REPORT : -", null); // Add a separator row
                             // Panggil metode untuk menambahkan separator row
                             AddSeparatorRow(dataTable, "SHIFT REPORT", dataGridView1);
@@ -964,6 +1290,10 @@ namespace KASIR.Komponen
                             }
                             dataTable.Rows.Add(null, "TOTAL TRANSACTION", string.Format("{0:n0}", datas.total_transaction));
 
+                            if (ShouldShowProgress())
+                            {
+                                UpdateProgress(95, "Menampilkan data...");
+                            }
                             if (dataGridView1 == null)
                             {
                                 ReloadDataGridView(dataTable);
@@ -1003,6 +1333,12 @@ namespace KASIR.Komponen
                                 }
                             }
 
+                            if (ShouldShowProgress())
+                            {
+                                UpdateProgress(100, "Selesai!");
+                                await Task.Delay(500); // Short delay to show completion
+                                HideLoading();
+                            }
                             btnCetakStruk.Enabled = true;
                             bedaCash = datas.ending_cash_expected;
                             txtActualCash.Text = datas.ending_cash_expected.ToString();
@@ -1025,18 +1361,36 @@ namespace KASIR.Komponen
                             retryAttempts++;
                             if (retryAttempts >= maxRetryAttempts)
                             {
-                                //MessageBox.Show("A null reference error occurred: " + ex.Message, "Null Reference Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                                 LoggerUtil.LogError(ex, "A null reference error occurred: {ErrorMessage}", ex.Message);
-                                CleanFormAndAddRetryButton(ex.Message);
+
+                                if (ShouldShowProgress())
+                                {
+                                    HideLoading();
+                                    CleanFormAndAddRetryButton(ex.Message);
+                                }
 
                                 break; // Stop retrying after max attempts
+                            }
+
+                            if (ShouldShowProgress())
+                            {
+                                UpdateProgress(40, $"Percobaan ulang {retryAttempts}/{maxRetryAttempts}...");
+                                await Task.Delay(1000);
+                            }
+                            else
+                            {
+                                await Task.Delay(2000); // Still wait a bit in background mode before retry
                             }
                         }
                         catch (Exception ex)
                         {
-                            //MessageBox.Show("Error: " + ex.Message);
                             LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                            CleanFormAndAddRetryButton(ex.Message);
+
+                            if (ShouldShowProgress())
+                            {
+                                HideLoading();
+                                CleanFormAndAddRetryButton(ex.Message);
+                            }
 
                             break; // Stop retrying on other exceptions
                         }
@@ -1044,16 +1398,26 @@ namespace KASIR.Komponen
                 }
                 catch (TaskCanceledException ex)
                 {
-                    MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                    CleanFormAndAddRetryButton(ex.Message);
+
+                    if (ShouldShowProgress())
+                    {
+                        HideLoading();
+                        MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        CleanFormAndAddRetryButton(ex.Message);
+                    }
 
                     break; // Do not retry on TaskCanceledException
                 }
                 catch (Exception ex)
                 {
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                    CleanFormAndAddRetryButton(ex.Message);
+
+                    if (ShouldShowProgress())
+                    {
+                        HideLoading();
+                        CleanFormAndAddRetryButton(ex.Message);
+                    }
 
                     break; // Stop retrying on other exceptions
                 }

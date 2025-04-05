@@ -1,21 +1,13 @@
-﻿
-using InTheHand.Net;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using KASIR.Model;
+﻿using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
 using Serilog;
 using System.Data;
-using System.Text;
 using System.Text.RegularExpressions;
 using KASIR.Komponen;
 using System.Globalization;
-using System.Net.Sockets;
 using KASIR.Printer;
 using Newtonsoft.Json.Linq;
-using System.Windows.Markup;
-using System.Windows.Forms.VisualStyles;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_payForm : Form
@@ -42,11 +34,9 @@ namespace KASIR.OfflineMode
         public Offline_payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat, string name, Offline_masterPos masterPosForm)
         {
             InitializeComponent();
-            //panel4.Visible = false;
             btnSimpan.Enabled = false;
             _masterPos = masterPosForm;
             baseOutlet = Properties.Settings.Default.BaseOutlet;
-            //Kakimu = Properties.Settings.Default.FooterStruk;
             flowLayoutPanel1.FlowDirection = FlowDirection.TopDown;
             flowLayoutPanel1.WrapContents = true;
 
@@ -372,11 +362,11 @@ namespace KASIR.OfflineMode
                     string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{formattedreceiptMaker}";
                     string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                     string transaction_ref_sent = cartData["transaction_ref"].ToString();
-                    string transaction_ref_splitted = (string)null;
+                    string transaction_ref_splitted = null;
                     if (!string.IsNullOrEmpty(cartData["transaction_ref_split"]?.ToString()))
                     {
                         transaction_ref_splitted = cartData["transaction_ref_split"]?.ToString();
-                    
+
                     }
                     int edited_sync = 0;
                     int sent_sync = 0;
@@ -388,9 +378,9 @@ namespace KASIR.OfflineMode
                         savebill = 1;
                     }
                     int discount_idConv = cartData["discount_id"]?.ToString() != null ? int.Parse(cartData["discount_id"]?.ToString()) : 0;
-                    string discount_codeConv = cartData["discount_code"]?.ToString() != null ? cartData["discount_code"]?.ToString() : (string)null;
-                    string discounts_valueConv = cartData["discounts_value"]?.ToString() != null ? cartData["discounts_value"]?.ToString() : (string)null; // Null if no discount value
-                    string discounts_is_percentConv = cartData["discounts_is_percent"]?.ToString() != null ? cartData["discounts_is_percent"]?.ToString() : (string)null;
+                    string discount_codeConv = cartData["discount_code"]?.ToString() != null ? cartData["discount_code"]?.ToString() : null;
+                    string discounts_valueConv = cartData["discounts_value"]?.ToString() != null ? cartData["discounts_value"]?.ToString() : null; // Null if no discount value
+                    string discounts_is_percentConv = cartData["discounts_is_percent"]?.ToString() != null ? cartData["discounts_is_percent"]?.ToString() : null;
 
                     var qtyTotal = cartDetails.Sum(item => (int)item["qty"]);
                     int discounted_price1 = subtotalCart - totalCartAmount;
@@ -413,7 +403,7 @@ namespace KASIR.OfflineMode
                         total = totalCartAmount,
                         subtotal = subtotalCart, // You can replace this with actual subtotal if available
                         created_at = receiptMaker,
-                        updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss",CultureInfo.InvariantCulture),
+                        updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
                         is_refund = 0,
                         refund_reason = (string)null, // Null if no refund reason
@@ -522,8 +512,8 @@ namespace KASIR.OfflineMode
                         delivery_type = null,
                         delivery_note = null,
                         cart_id = 0,
-                        subtotal = (int)cartData.subtotal,
-                        total = (int)cartData.total,
+                        subtotal = cartData.subtotal,
+                        total = cartData.total,
                         discount_id = discount_idConv,
                         discount_code = discount_codeConv,
                         discounts_value = discounts_valueConvIntm,
@@ -542,33 +532,33 @@ namespace KASIR.OfflineMode
                 // Mengisi cart_details dan kitchenBarCartDetails
                 foreach (var item in cartData.cart_details)
                 {
-                        // Membuat objek CartDetailStrukCustomerTransaction
-                        var cartDetail = new CartDetailStrukCustomerTransaction
-                        {
-                            cart_detail_id = int.Parse(item.cart_detail_id), // Mengonversi string ke int
-                            menu_id = item.menu_id,
-                            menu_name = item.menu_name,
-                            menu_type = item.menu_type,
-                            menu_detail_id = item.menu_detail_id,
-                            varian = item.menu_detail_name, // Tidak ada data varian
-                            serving_type_id = item.serving_type_id,
-                            serving_type_name = item.serving_type_name,
-                            discount_id = int.Parse(item.cart_detail_id.ToString()), // Tidak ada data discount
-                            discount_code = item.discount_code?.ToString(),
-                            discounts_value = int.Parse(item.discounts_value.ToString()),
-                            discounted_price = int.Parse(item.discounted_price.ToString()),
-                            discounts_is_percent = int.Parse(item.discounts_is_percent.ToString()),
-                            price = item.price, // Mengonversi string ke int
-                            total_price = item.price * item.qty, // Total price dihitung dari price * qty
-                            subtotal = item.price * item.qty, // Total price dihitung dari price * qty
-                            subtotal_price = item.price * item.qty, // Total price dihitung dari price * qty
-                            qty = item.qty,
-                            note_item = string.IsNullOrEmpty(item.note_item) ? "" : item.note_item,
-                            is_ordered = item.is_ordered
-                        };
+                    // Membuat objek CartDetailStrukCustomerTransaction
+                    var cartDetail = new CartDetailStrukCustomerTransaction
+                    {
+                        cart_detail_id = int.Parse(item.cart_detail_id), // Mengonversi string ke int
+                        menu_id = item.menu_id,
+                        menu_name = item.menu_name,
+                        menu_type = item.menu_type,
+                        menu_detail_id = item.menu_detail_id,
+                        varian = item.menu_detail_name, // Tidak ada data varian
+                        serving_type_id = item.serving_type_id,
+                        serving_type_name = item.serving_type_name,
+                        discount_id = int.Parse(item.cart_detail_id.ToString()), // Tidak ada data discount
+                        discount_code = item.discount_code?.ToString(),
+                        discounts_value = int.Parse(item.discounts_value.ToString()),
+                        discounted_price = int.Parse(item.discounted_price.ToString()),
+                        discounts_is_percent = int.Parse(item.discounts_is_percent.ToString()),
+                        price = item.price, // Mengonversi string ke int
+                        total_price = item.price * item.qty, // Total price dihitung dari price * qty
+                        subtotal = item.price * item.qty, // Total price dihitung dari price * qty
+                        subtotal_price = item.price * item.qty, // Total price dihitung dari price * qty
+                        qty = item.qty,
+                        note_item = string.IsNullOrEmpty(item.note_item) ? "" : item.note_item,
+                        is_ordered = item.is_ordered
+                    };
 
-                        // Menambahkan ke cart_details
-                        strukCustomerTransaction.data.cart_details.Add(cartDetail);
+                    // Menambahkan ke cart_details
+                    strukCustomerTransaction.data.cart_details.Add(cartDetail);
                     // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
 
                     if (item.is_ordered == 0)

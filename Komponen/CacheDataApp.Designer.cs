@@ -121,6 +121,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(307, 83);
             Controls.Add(gradientPanel2);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximumSize = new Size(323, 122);
             Name = "CacheDataApp";
             StartPosition = FormStartPosition.CenterScreen;

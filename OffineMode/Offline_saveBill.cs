@@ -1,17 +1,9 @@
-﻿
-using FontAwesome.Sharp;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
-using KASIR.Model;
-using KASIR.Network;
+﻿using KASIR.Model;
 using Newtonsoft.Json;
 using System.Data;
 using Serilog;
 using KASIR.Printer;
 using Newtonsoft.Json.Linq;
-using System.Transactions;
-using SharpCompress.Common;
 using KASIR.OfflineMode;
 using System.Globalization;
 namespace KASIR.OffineMode
@@ -118,26 +110,34 @@ namespace KASIR.OffineMode
             }
         }
 
+        // Solusi untuk error pada btnSimpan_Click di Offline_saveBill.cs
+
         private async void btnSimpan_Click(object sender, EventArgs e)
         {
             try
             {
                 int seat = 0;
-                if (txtNama.Text.ToString() == "" || txtNama.Text == null)
+                if (string.IsNullOrEmpty(txtNama.Text))
                 {
                     MessageBox.Show("Masukan nama pelanggan", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
-                if (txtSeat.Text.ToString() == "" || txtSeat.Text == null)
-                {
 
+                if (string.IsNullOrEmpty(txtSeat.Text))
+                {
                     MessageBox.Show("Masukan seat pelanggan", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
                 else
                 {
-                    seat = int.Parse(txtSeat.Text.ToString());
+                    // Tambahkan validasi format untuk txtSeat
+                    if (!int.TryParse(txtSeat.Text.Trim(), out seat))
+                    {
+                        MessageBox.Show("Seat harus berupa angka", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
                 }
+
                 // Read cart.data to extract cart details and transaction id
                 string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
                 if (!File.Exists(cartDataPath))
@@ -146,12 +146,45 @@ namespace KASIR.OffineMode
                     ResetButtonState();
                     return;
                 }
+
                 loadCountingStruct();
                 string cartDataJson = File.ReadAllText(cartDataPath);
-                var cartData = JsonConvert.DeserializeObject<JObject>(cartDataJson);
+
+                // Tambahkan validasi untuk JSON yang tidak valid
+                if (string.IsNullOrEmpty(cartDataJson))
+                {
+                    MessageBox.Show("Data keranjang kosong atau tidak valid", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ResetButtonState();
+                    return;
+                }
+
+                JObject cartData;
+                try
+                {
+                    cartData = JsonConvert.DeserializeObject<JObject>(cartDataJson);
+                    if (cartData == null)
+                    {
+                        MessageBox.Show("Format data keranjang tidak valid", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ResetButtonState();
+                        return;
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    LoggerUtil.LogError(ex, "JSON parsing error: {ErrorMessage}", ex.Message);
+                    MessageBox.Show("Format data keranjang tidak valid: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ResetButtonState();
+                    return;
+                }
 
                 // Get the first cart_detail_id to set as transaction_id
                 var cartDetails = cartData["cart_details"] as JArray;
+                if (cartDetails == null || cartDetails.Count == 0)
+                {
+                    MessageBox.Show("Tidak ada item dalam keranjang", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ResetButtonState();
+                    return;
+                }
 
                 // Check if canceled_items exists, if not create it
                 if (cartData["canceled_items"] == null)
@@ -160,7 +193,6 @@ namespace KASIR.OffineMode
                 }
                 var cancelDetails = cartData["canceled_items"] as JArray;
 
-
                 // Iterasi setiap transaksi dan hanya perbarui yang statusnya is_sent_sync = 0
                 foreach (var items in cartDetails)
                 {
@@ -168,41 +200,70 @@ namespace KASIR.OffineMode
                     {
                         // Update status menjadi 1 jika transaksi berhasil
                         items["is_ordered"] = 1;
-                        // Simpan perubahan hanya untuk transaksi yang berhasil disinkronkan
                     }
                 }
-                string firstCartDetailId = cartDetails?.FirstOrDefault()?["cart_detail_id"].ToString();
+
+                // Validasi cart_detail_id
+                string firstCartDetailId = cartDetails?.FirstOrDefault()?["cart_detail_id"]?.ToString();
+                if (string.IsNullOrEmpty(firstCartDetailId))
+                {
+                    MessageBox.Show("ID detail keranjang tidak valid", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ResetButtonState();
+                    return;
+                }
+
                 transactionId = firstCartDetailId;
-                int totalCartAmount = int.Parse(cartData["total"].ToString());
-                int subtotalcart = int.Parse(cartData["subtotal"].ToString());
-                string receiptMaker = cartDetails?.FirstOrDefault()?["created_at"].ToString();
+
+                // Validasi total dan subtotal
+                int totalCartAmount = 0;
+                if (!int.TryParse(cartData["total"]?.ToString() ?? "0", out totalCartAmount))
+                {
+                    totalCartAmount = 0; // Default jika konversi gagal
+                }
+
+                int subtotalcart = 0;
+                if (!int.TryParse(cartData["subtotal"]?.ToString() ?? "0", out subtotalcart))
+                {
+                    subtotalcart = 0; // Default jika konversi gagal
+                }
+
+                string receiptMaker = cartDetails?.FirstOrDefault()?["created_at"]?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 string invoiceMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                 string formattedreceiptMaker;
+
                 DateTime invoiceDate;
                 if (DateTime.TryParse(receiptMaker, out invoiceDate))
                 {
-                    // Jika berhasil, format tanggal invoice sesuai kebutuhan
                     formattedreceiptMaker = invoiceDate.ToString("yyyyMMdd-HHmmss");
                 }
                 else
                 {
-                    // Jika parsing gagal, berikan nilai default atau tampilkan error
                     formattedreceiptMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                 }
+
                 string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{formattedreceiptMaker}";
                 string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-                string transaction_ref_sent = cartData["transaction_ref"].ToString();
-                string transaction_ref_splitted = (string)null;
 
-                if (!string.IsNullOrEmpty(cartData["transaction_ref_split"]?.ToString()))
+                // Validasi transaction_ref
+                string transaction_ref_sent = cartData["transaction_ref"]?.ToString() ?? "";
+                string transaction_ref_splitted = cartData["transaction_ref_split"]?.ToString();
+
+                // Validasi discount fields
+                int discount_idc = 0;
+                if (!int.TryParse(cartData["discount_id"]?.ToString() ?? "0", out discount_idc))
                 {
-                    transaction_ref_splitted = cartData["transaction_ref_split"]?.ToString();
+                    discount_idc = 0;
                 }
-                int discount_idc = int.Parse(cartData["discount_id"]?.ToString() ?? "0");  // If null, set to 0
-                string discount_codec = cartData["discount_code"]?.ToString() ?? "";  // If null, set to empty string
-                string discounts_valuec = cartData["discounts_value"]?.ToString() ?? "0";  // If null, set to "0"
-                string discounts_is_percentc = cartData["discounts_is_percent"]?.ToString() ?? "0";  // If null, set to "0"
-                int discounted_pricec = int.TryParse(cartData["discounted_price"]?.ToString(), out int result) ? result : 0;  // If null, set to 0
+
+                string discount_codec = cartData["discount_code"]?.ToString() ?? "";
+                string discounts_valuec = cartData["discounts_value"]?.ToString() ?? "0";
+                string discounts_is_percentc = cartData["discounts_is_percent"]?.ToString() ?? "0";
+
+                int discounted_pricec = 0;
+                if (!int.TryParse(cartData["discounted_price"]?.ToString() ?? "0", out discounted_pricec))
+                {
+                    discounted_pricec = 0;
+                }
 
                 // Prepare transaction data
                 var transactionData = new
@@ -211,30 +272,30 @@ namespace KASIR.OffineMode
                     receipt_number = receipt_numberfix,
                     transaction_ref = transaction_ref_sent,
                     transaction_ref_split = transaction_ref_splitted,
-                    invoice_number = (string)null,  // Custom invoice number with formatted date
-                    invoice_due_date = (string)null, // Adjust due date as needed
+                    invoice_number = (string)null,
+                    invoice_due_date = (string)null,
                     payment_type_id = 0,
-                    payment_type_name = (string)null, // No need for .ToString() if paymentTypeName is already a string
+                    payment_type_name = (string)null,
                     customer_name = txtNama.Text,
-                    customer_seat = int.Parse(txtSeat.Text),
+                    customer_seat = seat,
                     customer_cash = 0,
                     customer_change = 0,
                     total = totalCartAmount,
-                    subtotal = subtotalcart, // You can replace this with actual subtotal if available
+                    subtotal = subtotalcart,
                     created_at = receiptMaker,
                     updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
-                    deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
+                    deleted_at = (string)null,
                     is_refund = 0,
-                    refund_reason = (string)null, // Null if no refund reason
-                    delivery_type = (string)null, // Null value for delivery_type
-                    delivery_note = (string)null, // Null value for delivery_note
+                    refund_reason = (string)null,
+                    delivery_type = (string)null,
+                    delivery_note = (string)null,
                     discount_id = discount_idc,
                     discount_code = discount_codec,
                     discounts_value = discounts_valuec,
                     discounts_is_percent = discounts_is_percentc,
                     discounted_price = discounted_pricec,
-                    member_name = (string)null, // Null if no member name
-                    member_phone_number = (string)null, // Null if no member phone number
+                    member_name = (string)null,
+                    member_phone_number = (string)null,
                     is_refund_all = 0,
                     refund_reason_all = (string)null,
                     refund_payment_id_all = 0,
@@ -245,19 +306,29 @@ namespace KASIR.OffineMode
                     is_edited_sync = 0,
                     is_sent_sync = 0,
                     cart_details = cartDetails,
-                    refund_details = new JArray(), // Empty array for refund_details
-                    canceled_items = cancelDetails // Empty array for canceled_items
+                    refund_details = new JArray(),
+                    canceled_items = cancelDetails
                 };
 
                 // Save transaction data to transaction.data
                 string saveBillPath = "DT-Cache\\Transaction\\saveBill.data";
                 JArray saveBillDataArray = new JArray();
+
                 if (File.Exists(saveBillPath))
                 {
-                    // If the transaction file exists, read and append the new transaction
-                    string existingData = File.ReadAllText(saveBillPath);
-                    var existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
-                    saveBillDataArray = existingTransactions["data"] as JArray ?? new JArray();
+                    try
+                    {
+                        // If the transaction file exists, read and append the new transaction
+                        string existingData = File.ReadAllText(saveBillPath);
+                        var existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
+                        saveBillDataArray = existingTransactions["data"] as JArray ?? new JArray();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Jika file ada tapi tidak bisa dibaca/diparse, buat array baru
+                        LoggerUtil.LogError(ex, "Error reading saveBill.data: {ErrorMessage}", ex.Message);
+                        saveBillDataArray = new JArray();
+                    }
                 }
 
                 // Add new transaction
@@ -266,12 +337,19 @@ namespace KASIR.OffineMode
                 // Serialize and save back to transaction.data
                 var newTransactionData = new JObject { { "data", saveBillDataArray } };
                 File.WriteAllText(saveBillPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
-                convertData(receipt_numberfix, invoiceDue);
+
+                await convertData(receipt_numberfix, invoiceDue);
+            }
+            catch (FormatException ex)
+            {
+                LoggerUtil.LogError(ex, "Format error: {ErrorMessage}", ex.Message);
+                MessageBox.Show($"Format data tidak valid. Pastikan semua input angka sudah benar.\nDetail: {ex.Message}", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ResetButtonState();
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show($"Terjadi kesalahan, silakan coba lagi.{ex.ToString()}", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Terjadi kesalahan, silakan coba lagi.\nDetail: {ex.Message}", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 ResetButtonState();
             }
         }
@@ -319,16 +397,16 @@ namespace KASIR.OffineMode
                         invoice_due_date = invoiceDue,
                         customer_name = txtNama.Text,
                         customer_seat = int.Parse(txtSeat.Text),
-                        payment_type = (string)null,
+                        payment_type = null,
                         delivery_type = null,
                         delivery_note = null,
                         cart_id = 0,
-                        subtotal = (int)cartData.subtotal,
-                        total = (int)cartData.total,
+                        subtotal = cartData.subtotal,
+                        total = cartData.total,
                         discount_id = cartData?.discount_id != 0 ? cartData.discount_id : 0, // If discount_id is not 0, use it, else default to 0
-                        discount_code = string.IsNullOrEmpty(cartData?.discount_code) ? (string)null : cartData.discount_code, // Set to null if discount_code is empty or null
-                        discounts_value = string.IsNullOrEmpty(cartData?.discounts_value?.ToString()) ? (int?)null : (int?)int.Parse(cartData?.discounts_value.ToString()), // Set to null if no discount
-                        discounts_is_percent = (cartData?.discounts_is_percent == null) ? (string)null : cartData?.discounts_is_percent.ToString(), // Set to null if no discount
+                        discount_code = string.IsNullOrEmpty(cartData?.discount_code) ? null : cartData.discount_code, // Set to null if discount_code is empty or null
+                        discounts_value = string.IsNullOrEmpty(cartData?.discounts_value?.ToString()) ? null : int.Parse(cartData?.discounts_value.ToString()), // Set to null if no discount
+                        discounts_is_percent = (cartData?.discounts_is_percent == null) ? null : cartData?.discounts_is_percent.ToString(), // Set to null if no discount
                         cart_details = new List<CartDetailStrukCustomerTransaction>(),
                         canceled_items = new List<CanceledItemStrukCustomerTransaction>(),
                         kitchenBarCartDetails = new List<KitchenAndBarCartDetails>(),
@@ -344,7 +422,7 @@ namespace KASIR.OffineMode
                 // Mengisi cart_details dan kitchenBarCartDetails
                 foreach (var item in cartData.cart_details)
                 {
-                    if(item.is_ordered == 1 || item.is_printed == 1)
+                    if (item.is_ordered == 1 || item.is_printed == 1)
                     {
                         continue;
                     }
@@ -402,7 +480,7 @@ namespace KASIR.OffineMode
                     // Menambahkan ke kitchenBarCartDetails
                     strukCustomerTransaction.data.kitchenBarCartDetails.Add(kitchenAndBarCartDetail);
                 }
-                if(cartData.canceled_items != null && cartData.canceled_items.Count > 0)
+                if (cartData.canceled_items != null && cartData.canceled_items.Count > 0)
                 {
                     foreach (var item in cartData.canceled_items)
                     {
@@ -465,7 +543,7 @@ namespace KASIR.OffineMode
                         strukCustomerTransaction.data.kitchenBarCanceledItems.Add(kitchenAndBarCartDetail);
                     }
                 }
-                
+
 
                 // Serialisasi ke JSON
                 string response = JsonConvert.SerializeObject(strukCustomerTransaction);
@@ -512,7 +590,7 @@ namespace KASIR.OffineMode
 
                     // Hapus field yang tidak diperlukan di refund_details jika ada
                     JArray canceledDetails = (JArray)transaction["refund_details"];
-                    if (canceledDetails != null && canceledDetails.Count > 0) 
+                    if (canceledDetails != null && canceledDetails.Count > 0)
                     {
                         foreach (JObject cancelItem in canceledDetails)
                         {
@@ -573,7 +651,6 @@ namespace KASIR.OffineMode
                     {
                         printerModel.PrinterModelSimpan(menuModel, kitchenItems, canceledKitchenItems, barItems, canceledBarItems, AntrianSaveBill);
                     });
-                    //await printerModel.PrinterModelSimpan(menuModel, kitchenItems, canceledKitchenItems, barItems, canceledBarItems, AntrianSaveBill);
                 }
                 else
                 {

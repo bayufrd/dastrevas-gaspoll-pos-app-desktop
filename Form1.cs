@@ -1,25 +1,25 @@
+using System.Diagnostics;
+using System.Globalization;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
+using FontAwesome.Sharp;
 using KASIR.komponen;
 using KASIR.Komponen;
-using FontAwesome.Sharp;
-using System.Runtime.InteropServices;
-using System.Net;
-using System.Diagnostics;
 using KASIR.Model;
-using System.Net.NetworkInformation;
 using KASIR.Network;
+using KASIR.OffineMode;
+using KASIR.OfflineMode;
 using Newtonsoft.Json;
-using Menu = KASIR.Model.Menu;
-using Path = System.IO.Path;
+using Newtonsoft.Json.Linq;
 using SharpCompress.Archives;
 using SharpCompress.Common;
-using DrawingColor = System.Drawing.Color;
 using Color = System.Drawing.Color;
-using KASIR.OfflineMode;
-using Newtonsoft.Json.Linq;
-using System.Text.RegularExpressions;
-using KASIR.OffineMode;
-using System.Globalization;
-using System.Reflection;
+using DrawingColor = System.Drawing.Color;
+using Menu = KASIR.Model.Menu;
+using Path = System.IO.Path;
 
 
 namespace KASIR
@@ -105,6 +105,7 @@ namespace KASIR
                 SetDoubleBufferedForAllControls(c);
             }
         }
+
         private async void ConfigOfflineMode()
         {
             // Mengecek apakah sButtonOffline dalam status checked

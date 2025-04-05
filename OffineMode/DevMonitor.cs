@@ -1,15 +1,15 @@
-﻿using KASIR.Network;
+﻿using System.Data;
+using KASIR.Network;
 using Newtonsoft.Json;
-using Serilog;
-using System.Data;
-using Color = System.Drawing.Color;
 using Newtonsoft.Json.Linq;
+using Serilog;
+using Button = System.Windows.Forms.Button;
+using Color = System.Drawing.Color;
+using Image = System.Drawing.Image;
 using Label = System.Windows.Forms.Label;
-using UserControl = System.Windows.Forms.UserControl;
 using Panel = System.Windows.Forms.Panel;
 using TextBox = System.Windows.Forms.TextBox;
-using Image = System.Drawing.Image;
-using Button = System.Windows.Forms.Button;
+using UserControl = System.Windows.Forms.UserControl;
 
 namespace KASIR.OfflineMode
 {

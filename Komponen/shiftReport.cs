@@ -1,13 +1,13 @@
-﻿using KASIR.Model;
-using KASIR.Network;
-using Newtonsoft.Json;
-using System.Data;
+﻿using System.Data;
 using System.Globalization;
-using System.Text.RegularExpressions;
-using KASIR.Printer;
-using Newtonsoft.Json.Linq;
-using KASIR.OffineMode;
 using System.Text;
+using System.Text.RegularExpressions;
+using KASIR.Model;
+using KASIR.Network;
+using KASIR.OffineMode;
+using KASIR.Printer;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 namespace KASIR.Komponen
 {
     public partial class shiftReport : UserControl

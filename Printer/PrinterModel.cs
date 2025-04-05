@@ -1,24 +1,13 @@
-﻿using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
-using KASIR.Model;
-using System;
-using System.Collections.Generic;
-using System.Drawing.Imaging;
+﻿using System.Drawing.Imaging;
 using System.Drawing.Printing;
-using System.IO;
 using System.Management;
-using System.Text;
-using System.Threading.Tasks;
-using System.Drawing;
-using Polly.Caching;
-using Newtonsoft.Json;
-using KASIR.Komponen;
-using System.Text.RegularExpressions;
-using System.Net.Sockets;
-using System.Printing;
 using System.Net;
-using SharpCompress.Compressors.Xz;
+using System.Text;
+using System.Text.RegularExpressions;
+using InTheHand.Net;
+using InTheHand.Net.Bluetooth;
+using InTheHand.Net.Sockets;
+using KASIR.Model;
 
 namespace KASIR.Printer
 {

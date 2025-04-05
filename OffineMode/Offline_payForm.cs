@@ -1,13 +1,13 @@
-﻿using KASIR.Model;
-using KASIR.Network;
-using Newtonsoft.Json;
-using Serilog;
-using System.Data;
+﻿using System.Data;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using KASIR.Komponen;
-using System.Globalization;
+using KASIR.Model;
+using KASIR.Network;
 using KASIR.Printer;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_payForm : Form

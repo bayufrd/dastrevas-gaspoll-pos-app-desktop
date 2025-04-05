@@ -1,10 +1,10 @@
-﻿using KASIR.Model;
+﻿using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
-using Menu = KASIR.Model.Menu;
 using Image = System.Drawing.Image;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
+using Menu = KASIR.Model.Menu;
 
 namespace KASIR.Komponen
 {

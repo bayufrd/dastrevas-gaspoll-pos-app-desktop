@@ -1,46 +1,15 @@
-﻿
-
-using FontAwesome.Sharp;
+﻿using System.Data;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
+using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
+using KASIR.Printer;
 using Newtonsoft.Json;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Text.RegularExpressions;
-using System.Linq.Expressions;
-using System.Windows.Forms.VisualStyles;
-using System.Windows.Controls;
-using System.Net.NetworkInformation;
-using System.Xaml;
-using InTheHand.Net.Bluetooth.AttributeIds;
-using KASIR.Komponen;
-using System.Globalization;
-using System.Windows.Forms.Design;
-using System.Net.Sockets;
-using System.Net.Sockets;
-using System.Text;
-using System.Net.Mail;
-using KASIR.Printer;
-using System.Windows.Markup;
 namespace KASIR.komponen
 {
     public partial class payForm : Form
@@ -149,7 +118,7 @@ namespace KASIR.komponen
         }
         private async void loadFooterStruct()
         {
-                Kakimu = await File.ReadAllTextAsync("setting\\FooterStruk.data");
+            Kakimu = await File.ReadAllTextAsync("setting\\FooterStruk.data");
         }
         private async void loadCountingStruct()
         {
@@ -622,7 +591,7 @@ namespace KASIR.komponen
             return new string(' ', spaces) + text;
         }
 
-        
+
         // Fungsi untuk memformat baris dengan dua kolom (key, value)
         private string FormatSimpleLine(string left, object right)
         {
@@ -759,7 +728,7 @@ namespace KASIR.komponen
             }
         }
 
-       
+
         private bool IsValidIPAddress(string address)
         {
             // Try to parse the string as an IP address
@@ -800,7 +769,7 @@ namespace KASIR.komponen
             await RetryPolicyAsync(async () =>
             {
                 try
-            {
+                {
                     // Panggil metode ConnectToBluetoothPrinter dengan timeout 10 detik
                     BluetoothClient clientSocket = await ConnectToBluetoothPrinter(macAddress, pinPrinter, 10);
                     System.IO.Stream stream = clientSocket.GetStream();
@@ -911,20 +880,20 @@ namespace KASIR.komponen
                     clientSocket.Close();
                     btnSimpan.Text = "Selesai.";
 
-                
-            }
+
+                }
 
                 catch (TaskCanceledException ex)
                 {
                     throw new Exception("Pairing with the printer timed out.", ex);
                 }
                 catch (Exception ex)
-            {
-                btnSimpan.Text = "Selesai.";
-                //MessageBox.Show("Gagal bayar menu " + ex.Message, "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                {
+                    btnSimpan.Text = "Selesai.";
+                    //MessageBox.Show("Gagal bayar menu " + ex.Message, "Gaspol");
+                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                     throw;
-            }
+                }
             }, maxAttempts: 3, retryDelayMilliseconds: 2000);
         }
 
@@ -1134,7 +1103,7 @@ namespace KASIR.komponen
 
         private void sButton1_CheckedChanged(object sender, EventArgs e)
         {
-            if(sButton1.Checked == true)
+            if (sButton1.Checked == true)
             {
                 panel8.Visible = true;
                 panel13.Visible = true;

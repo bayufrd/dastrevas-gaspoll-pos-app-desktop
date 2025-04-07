@@ -1,16 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using KASIR.Model;
+﻿using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
 using Serilog;
-using Serilog.Events;
-using Serilog.Formatting.Json;
-using Serilog.Sinks.File;
 
 namespace KASIR
 {
@@ -69,10 +60,11 @@ namespace KASIR
 
                     .CreateLogger();
                 //File.Copy(LogCacheData, $"log\\{baseOutlet}_{outletName}_log{formatDate}CloningSent.txt");
-            }catch(Exception ex)
+            }
+            catch (Exception)
             {
                 return;
             }
-            }
+        }
     }
 }

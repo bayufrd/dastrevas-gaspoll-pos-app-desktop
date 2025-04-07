@@ -1,12 +1,4 @@
 ﻿using KASIR.Komponen;
-using System;
-using System.Collections.Generic;
-using System.Drawing.Imaging;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System;
-using System.Configuration;
 using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
@@ -59,55 +51,55 @@ namespace KASIR
         public async void sendLogTelegramBy(Exception ex, string message, params object[] properties)
         {
 
-                IApiService apiService = new ApiService();
+            IApiService apiService = new ApiService();
 
 
-                string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
-                string outletName;
+            string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
+            string outletName;
 
-                // Cek apakah file ada dan baca data dari file atau API
-                if (File.Exists(filePath))
+            // Cek apakah file ada dan baca data dari file atau API
+            if (File.Exists(filePath))
+            {
+                outletName = GetOutletNameFromFile(filePath);
+            }
+            else
+            {
+                outletName = await GetOutletNameFromApi();
+                if (outletName != null)
                 {
-                    outletName = GetOutletNameFromFile(filePath);
+                    // Simpan data ke file jika berhasil mendapatkan nama outlet
+                    File.WriteAllText(filePath, JsonConvert.SerializeObject(new { data = new { name = outletName } }));
                 }
                 else
                 {
-                    outletName = await GetOutletNameFromApi();
-                    if (outletName != null)
-                    {
-                        // Simpan data ke file jika berhasil mendapatkan nama outlet
-                        File.WriteAllText(filePath, JsonConvert.SerializeObject(new { data = new { name = outletName } }));
-                    }
-                    else
-                    {
-                        outletName = Properties.Settings.Default.BaseOutletName.ToString();
-                    }
+                    outletName = Properties.Settings.Default.BaseOutletName.ToString();
                 }
+            }
 
 
-                string outletID = Properties.Settings.Default.BaseOutlet.ToString();
+            string outletID = Properties.Settings.Default.BaseOutlet.ToString();
 
-                using (var client = new HttpClient())
-                {
-                    string botToken = "6909601463:AAHnKWEKqlpL1NGRkzRpXVnDgHoVtJtrqo0";
-                    DateTime currentDateTime = DateTime.Now;
-                    string datetimeStamp = currentDateTime.ToString("yyyy-MM-dd HH:mm:ss");
-                    string messageWithDatetime = $"Error Outlet ID: {outletID}\nOurlet Name: {outletName}\n[{datetimeStamp}] \n{message} \n{properties} \n{ex}";
+            using (var client = new HttpClient())
+            {
+                string botToken = "6909601463:AAHnKWEKqlpL1NGRkzRpXVnDgHoVtJtrqo0";
+                DateTime currentDateTime = DateTime.Now;
+                string datetimeStamp = currentDateTime.ToString("yyyy-MM-dd HH:mm:ss");
+                string messageWithDatetime = $"Error Outlet ID: {outletID}\nOurlet Name: {outletName}\n[{datetimeStamp}] \n{message} \n{properties} \n{ex}";
 
-                    // Replace these with your actual chat IDs
-                    long chatId1 = 6668065856;
-                    long chatId2 = 1546898379;
-                    long chatId3 = 5421340211;
+                // Replace these with your actual chat IDs
+                long chatId1 = 6668065856;
+                long chatId2 = 1546898379;
+                long chatId3 = 5421340211;
 
-                    // Send to the first chat ID
-                    await SendMessageToTelegram(client, botToken, chatId1, messageWithDatetime);
+                // Send to the first chat ID
+                await SendMessageToTelegram(client, botToken, chatId1, messageWithDatetime);
 
-                    // Send to the second chat ID
-                    await SendMessageToTelegram(client, botToken, chatId2, messageWithDatetime);
+                // Send to the second chat ID
+                await SendMessageToTelegram(client, botToken, chatId2, messageWithDatetime);
 
-                    // Send to the third chat ID
-                    await SendMessageToTelegram(client, botToken, chatId3, messageWithDatetime);
-                }
+                // Send to the third chat ID
+                await SendMessageToTelegram(client, botToken, chatId3, messageWithDatetime);
+            }
 
         }/*
         public async void sendLogTelegram(string message)
@@ -172,7 +164,7 @@ namespace KASIR
                 // Print the response content
                 Console.WriteLine(await response.Content.ReadAsStringAsync());
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // kadang ada error di response kalo gada internet/down jadi crash
                 LoggerUtil.LogWarning("bad Connection gagal mengirim data ke telegram, tersimpan dalam log :) ");

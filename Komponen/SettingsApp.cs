@@ -1,30 +1,8 @@
-﻿
-using FontAwesome.Sharp;
-using KASIR.komponen;
+﻿using System.Data;
 using KASIR.Model;
 using KASIR.Network;
-using Microsoft.VisualBasic.ApplicationServices;
 using Newtonsoft.Json;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrayNotify;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Globalization;
-using System.Text.RegularExpressions;
-using static System.Windows.Forms.DataFormats;
-using System.Windows.Media;
 using Color = System.Drawing.Color;
 namespace KASIR.Komponen
 {

@@ -1,22 +1,5 @@
-﻿using KASIR.Model;
+﻿using System.Xml;
 using KASIR.Network;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Forms;
-using Menu = KASIR.Model.Menu;
-using Image = System.Drawing.Image;
-using System.Net;
-using System.IO;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-using System.Windows.Shapes;
-using System.Xml;
 
 namespace KASIR.Komponen
 {

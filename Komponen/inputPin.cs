@@ -1,31 +1,10 @@
-﻿
-using FontAwesome.Sharp;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
+﻿using System.Data;
+using System.Net.NetworkInformation;
 using KASIR.Model;
 using KASIR.Network;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Serilog;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Globalization;
-using System.Windows.Markup;
-using System.Text.RegularExpressions;
-using System.Net.NetworkInformation;
 using KASIR.Printer;
+using Newtonsoft.Json;
+using Serilog;
 namespace KASIR.Komponen
 {
     public partial class inputPin : Form
@@ -64,7 +43,7 @@ namespace KASIR.Komponen
             BaseOutletName = Properties.Settings.Default.BaseOutletName;
             InitializeComponent();
 
-       
+
 
             LoadData();
             dataGridView1.CellFormatting += DataGridView1_CellFormatting;
@@ -165,7 +144,7 @@ namespace KASIR.Komponen
                         else
                         {
                             MessageBox.Show($"Terjadi kesalahan: {response.ReasonPhrase}", "Kesalahan", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                return;
+                            return;
                         }
                     }
                 }
@@ -256,7 +235,6 @@ namespace KASIR.Komponen
                         dataTable.Columns.Add("Menu", typeof(string));
                         dataTable.Columns.Add("Total Harga", typeof(string));
                         dataTable.Columns.Add("Note", typeof(string));
-                        string currentJenis = null;
                         //dataTable.Rows.Clear();
                         dataTable.Rows.Add(null, null, null, "Sold items: -", null, null); // Add a separator row
 
@@ -425,7 +403,7 @@ namespace KASIR.Komponen
             }
         }
 
-       
+
 
         private async Task HandlePrint(DataRestruk data, List<CartDetailRestruk> cartDetails, List<RefundDetailRestruk> cartRefundDetails, List<CanceledItemStrukCustomerRestruk> canceledItems)
         {

@@ -1,41 +1,15 @@
-﻿using KASIR.Komponen;
+﻿using System.Data;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.Net.NetworkInformation;
+using System.Timers;
+using FontAwesome.Sharp;
+using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using Menu = KASIR.Model.Menu;
-using FontAwesome.Sharp;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-
-using System.IO;
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using Serilog.Context;
-using System.Net.NetworkInformation;
-using System.Timers;
-using System.Text.RegularExpressions;
-using System.Windows.Markup;
-using System.Security.Cryptography;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.DirectoryServices.ActiveDirectory;
-using Button = System.Windows.Forms.Button;
-using SharpCompress.Common;
-using KASIR.DualScreen;
 
 
 namespace KASIR.komponen
@@ -1466,7 +1440,7 @@ namespace KASIR.komponen
 
                     try //just add try for error except
                     {
-                      
+
                         using (Graphics graphics = Graphics.FromHwnd(pictureBox.Handle))
                         {
                             Rectangle rect = new Rectangle(0, 0, pictureBox.Width, pictureBox.Height);
@@ -1988,7 +1962,7 @@ namespace KASIR.komponen
             iconButtonGet.Enabled = false;
             iconButton2.Enabled = false;
             button7.Enabled = false;
-            await LoadCartData(); 
+            await LoadCartData();
             iconButton1.Enabled = true;
             iconButtonHps.Enabled = true;
             iconButtonGet.Enabled = true;
@@ -2076,7 +2050,7 @@ namespace KASIR.komponen
                         {
                             if (menu.is_ordered == "1")
                             {
-                       
+
                                 dataTable.Rows.Add(
                                 menu.menu_id ?? 0,  // Ensure menu_id is always non-null
                                 menu.cart_detail_id,
@@ -2090,11 +2064,11 @@ namespace KASIR.komponen
                             else
                             {
                                 dataTable.Rows.Add(
-                                    menu.menu_id, 
-                                    menu.cart_detail_id, 
-                                    menu.serving_type_name, 
-                                    menu.qty + "X " + menu.menu_name + " " + menu.varian, 
-                                    string.Format("Rp. {0:n0},-", menu.total_price), 
+                                    menu.menu_id,
+                                    menu.cart_detail_id,
+                                    menu.serving_type_name,
+                                    menu.qty + "X " + menu.menu_name + " " + menu.varian,
+                                    string.Format("Rp. {0:n0},-", menu.total_price),
                                     null);
                             }
                             if (menu.discounted_price != 0)
@@ -2102,21 +2076,21 @@ namespace KASIR.komponen
                                 if (!string.IsNullOrEmpty(menu.note_item))
                                 {
                                     dataTable.Rows.Add(
-                                        null, 
-                                        null, 
-                                        null, 
-                                        "  *catatan : " + (menu.note_item ?? ""), 
-                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code), 
+                                        null,
+                                        null,
+                                        null,
+                                        "  *catatan : " + (menu.note_item ?? ""),
+                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code),
                                         null);
                                 }
                                 else
                                 {
                                     dataTable.Rows.Add(
-                                        null, 
-                                        null, 
-                                        null, 
-                                        null, 
-                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code), 
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code),
                                         null);
                                 }
                             }
@@ -2125,11 +2099,11 @@ namespace KASIR.komponen
                                 if (!string.IsNullOrEmpty(menu.note_item))
                                 {
                                     dataTable.Rows.Add(
-                                        null, 
-                                        null, 
-                                        null, 
-                                        "  *catatan : " + (menu.note_item ?? ""), 
-                                        null, 
+                                        null,
+                                        null,
+                                        null,
+                                        "  *catatan : " + (menu.note_item ?? ""),
+                                        null,
                                         null);
                                 }
                             }
@@ -2260,7 +2234,7 @@ namespace KASIR.komponen
         {
 
         }
-        
+
         //reload dual monitor pembayaran
         public void SignalReloadPayform()
         {
@@ -2698,7 +2672,7 @@ namespace KASIR.komponen
                 //if (cmbFilter.SelectedItem != null)
                 //{
                 string selectedFilter = cmbFilter.SelectedItem.ToString();
-               
+
                 //LoadFlowLayoutPanelBasedOnLabelType(cmbFilter.SelectedItem.ToString());
                 items = 0;
                 string config = File.ReadAllText(configFilePath);
@@ -2770,7 +2744,7 @@ namespace KASIR.komponen
                 items = dataGridView2.RowCount;
                 lblCountingItems.Text = items + " items";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // MessageBox.Show($"Tidak ada pilihan {selectedFilter}");
             }
@@ -2997,7 +2971,7 @@ namespace KASIR.komponen
             {
                 MessageBox.Show("Demo ListView/1jam off. Contact PM");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
             }

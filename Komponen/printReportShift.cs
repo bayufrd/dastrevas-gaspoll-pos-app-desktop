@@ -1,13 +1,9 @@
 ﻿using System.Data;
 using System.Globalization;
-using InTheHand.Net;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
 using KASIR.Model;
 using KASIR.Network;
 using KASIR.Printer;
 using Newtonsoft.Json;
-using Serilog;
 
 namespace KASIR.Komponen
 {

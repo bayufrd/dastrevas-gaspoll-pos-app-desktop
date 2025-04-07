@@ -1,23 +1,10 @@
-﻿using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
+﻿using System.Data;
+using System.Net.NetworkInformation;
+using KASIR.komponen;
 using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using KASIR.komponen;
 using Serilog;
-using FontAwesome.Sharp;
-using System.Net.NetworkInformation;
-using System.Xaml;
 
 
 namespace KASIR.Komponen

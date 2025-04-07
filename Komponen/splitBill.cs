@@ -1,29 +1,8 @@
-﻿
-using FontAwesome.Sharp;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
+﻿using System.Data;
 using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Windows.Forms.Design;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Button;
-using KASIR.komponen;
 using Serilog;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
 namespace KASIR.Komponen
 {
     public partial class splitBill : Form
@@ -248,7 +227,7 @@ namespace KASIR.Komponen
                 catch (Exception ex)
                 {
                     retryCount++;
-                   
+
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
@@ -287,17 +266,16 @@ namespace KASIR.Komponen
                     dataTable.Columns.Add("Minus", typeof(string));
                     dataTable.Columns.Add("Hasil", typeof(string));
                     dataTable.Columns.Add("Plus", typeof(string));
-                    string currentJenis = null;
 
                     foreach (var group in menuGroups)
                     {
-                        dataTable.Rows.Add(null, null, null, group.Key + "s", null, null, null, null,null,null); // Add a separator row
+                        dataTable.Rows.Add(null, null, null, group.Key + "s", null, null, null, null, null, null); // Add a separator row
                         foreach (DetailCart menu in group.Value)
                         {
-                            dataTable.Rows.Add(menu.menu_id, menu.cart_detail_id, menu.serving_type_name, menu.menu_name + " " + menu.varian, "x" + menu.qty, "Rp " + menu.total_price, null, "-","0","+");
+                            dataTable.Rows.Add(menu.menu_id, menu.cart_detail_id, menu.serving_type_name, menu.menu_name + " " + menu.varian, "x" + menu.qty, "Rp " + menu.total_price, null, "-", "0", "+");
                             if (!string.IsNullOrEmpty(menu.note_item))
                             {
-                                dataTable.Rows.Add(null, null, null, "*catatan : " + menu.note_item, null, null, null, null,null,null);
+                                dataTable.Rows.Add(null, null, null, "*catatan : " + menu.note_item, null, null, null, null, null, null);
                             }
                         }
                     }
@@ -370,7 +348,7 @@ namespace KASIR.Komponen
             catch (Exception ex)
             {
                 Console.WriteLine("Gagal tampil data " + ex.Message);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);   
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
 
@@ -458,25 +436,25 @@ namespace KASIR.Komponen
 
         private async void btnSimpanSplit_ClickAsync(object sender, EventArgs e)
         {
-                if (cartDetails.Count == 0)
-                {
-                    MessageBox.Show("Kuantitas item yang ingin di split masih nol", "Split Bill", MessageBoxButtons.OK);
-                    return;
-                }
+            if (cartDetails.Count == 0)
+            {
+                MessageBox.Show("Kuantitas item yang ingin di split masih nol", "Split Bill", MessageBoxButtons.OK);
+                return;
+            }
 
-                ////LoggerUtil.LogPrivateMethod(nameof(btnSimpanSplit_ClickAsync));
+            ////LoggerUtil.LogPrivateMethod(nameof(btnSimpanSplit_ClickAsync));
 
-                Dictionary<string, object> json = new Dictionary<string, object>
+            Dictionary<string, object> json = new Dictionary<string, object>
                 {
                     { "outlet_id", baseOutlet.ToString() },
                     { "cart_id", cart_id },
                     { "cart_details", cartDetails },
                 };
-                string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
-                IApiService apiService = new ApiService();
-                string response = await apiService.SplitBill(jsonString, "/split-cart");
-                if (response != null)
-                {
+            string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
+            IApiService apiService = new ApiService();
+            string response = await apiService.SplitBill(jsonString, "/split-cart");
+            if (response != null)
+            {
                 DialogResult = DialogResult.OK;
                 Close();
                 /*
@@ -501,18 +479,18 @@ namespace KASIR.Komponen
                         }
                         this.DialogResult = result;
                         */
-                    }
-                    else
-                    {
+            }
+            else
+            {
                 DialogResult = DialogResult.Cancel;
                 Close();
                 MessageBox.Show("Split Bill Gagal", "Split Bill", MessageBoxButtons.OK);
-                    }
+            }
 
 
 
-                
-  
+
+
         }
     }
 }

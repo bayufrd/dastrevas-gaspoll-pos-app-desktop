@@ -1,11 +1,4 @@
 ﻿using Serilog;
-using Serilog.Context;
-using Serilog.Core;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KASIR
 {
@@ -15,7 +8,7 @@ namespace KASIR
         private static readonly ILogger _log = LoggerService.Instance._log;
         public static void LogError(Exception ex, string message, params object[] properties)
         {
-            
+
             //MessageBox.Show(ex+message+properties);
             if (ex is System.Net.Sockets.SocketException socketEx)
             {
@@ -26,7 +19,7 @@ namespace KASIR
                     _log.Error($"Ignored SocketException(Bluetooth Connection) ({socketEx.ErrorCode}): {ex}", message, properties);
                     return;
                 }
-                
+
             }
             util.sendLogTelegramBy(ex, message, properties);
             if (_log == null)

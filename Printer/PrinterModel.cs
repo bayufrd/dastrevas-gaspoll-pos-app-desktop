@@ -53,11 +53,10 @@ namespace KASIR.Printer
                 await SaveSettingsToFile("printerSettings.data", SerializePrinterSettings());
             }
         }
-
-        public async Task<string> LoadPrinterSettingsAsync(string comboBoxName)
+        public async Task<string?> LoadPrinterSettingsAsync(string comboBoxName)
         {
             await LoadAllPrinterSettings();
-            if (printerSettings.TryGetValue(comboBoxName, out string printerId))
+            if (printerSettings.TryGetValue(comboBoxName, out string? printerId))
             {
                 return printerId;
             }
@@ -1074,7 +1073,7 @@ namespace KASIR.Printer
                     }
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        System.IO.Stream stream = null;
+                        System.IO.Stream stream = Stream.Null; //Gunakan Stream.Null sebagai default
 
                         try
                         {
@@ -1320,105 +1319,6 @@ namespace KASIR.Printer
             return strukText;
         }
 
-        // Fungsi untuk memformat baris dengan tiga kolom (Item, Kuantitas, Harga)
-        private string FormatItemLine(string item, object quantity, object price)
-        {
-            int column1Width = 20; // Adjust as needed
-            int column2Width = 6;  // Adjust as needed
-
-            string quantityString = quantity.ToString() + "x ";
-            string priceString = price.ToString();
-
-            // Format the line with padding and alignment
-            string formattedLine = "\x1B\x45\x01" + item.PadRight(column1Width) + "\x1B\x45\x00" +
-                                   quantityString.PadLeft(column2Width) +
-                                   priceString.PadLeft(priceString.Length);
-            return formattedLine;
-        }
-
-        // Fungsi untuk memformat baris dengan dua kolom detail item
-        private string FormatDetailItemLine(string column1, object column2)
-        {
-            // Gabungkan kolom menjadi satu string dengan format "column1: column2"
-            string combinedColumns = column1 + ": " + column2.ToString();
-
-            // Jika panjang kombinasi kolom lebih dari 32 karakter
-            if (combinedColumns.Length > 32)
-            {
-                // Inisialisasi string untuk menyimpan hasil yang akan dikembalikan
-                string formattedLine = "";
-
-                // Hitung berapa karakter yang masih dapat dimasukkan ke baris ini
-                int charactersToFitInLine = 32;
-
-                // Indeks untuk memulai bagian berikutnya dari teks yang akan diproses
-                int startIndex = 0;
-
-                while (startIndex < combinedColumns.Length)
-                {
-                    // Bagian berikutnya dari teks yang akan diproses
-                    string nextPart = combinedColumns.Substring(startIndex, Math.Min(charactersToFitInLine, combinedColumns.Length - startIndex));
-
-                    // Tambahkan ke baris yang akan dikembalikan
-                    formattedLine += nextPart;
-
-                    // Periksa apakah masih ada lebih banyak teks yang harus diproses
-                    if (startIndex + nextPart.Length < combinedColumns.Length)
-                    {
-                        // Tambahkan newline (\n) jika masih ada teks yang harus diproses
-                        formattedLine += "\n";
-
-                        // Sisakan karakter yang dapat dimasukkan ke baris berikutnya
-                        charactersToFitInLine = 32;
-                    }
-
-                    // Perbarui indeks untuk memulai bagian berikutnya
-                    startIndex += nextPart.Length;
-                }
-
-                return formattedLine;
-            }
-            else
-            {
-                // Jika panjang tidak melebihi 32 karakter, langsung lakukan padding
-                int paddingSpaces = 32 - combinedColumns.Length;
-                string formattedLine = "".PadLeft(paddingSpaces) + combinedColumns;
-                return formattedLine;
-            }
-        }
-
-        private string Ex_CenterText(string text)
-        {
-            if (text == null)
-            {
-                LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
-                return string.Empty; // or return new string(' ', 32); to keep the same line length
-            }
-
-            int maxLength = 32; // Maximum length of a line on the receipt
-            StringBuilder centeredText = new StringBuilder();
-            string[] words = text.Split(' ');
-
-            StringBuilder currentLine = new StringBuilder();
-            foreach (var word in words)
-            {
-                if (currentLine.Length + word.Length + 1 > maxLength)
-                {
-                    int spaces = (maxLength - currentLine.Length) / 2;
-                    centeredText.AppendLine(new string(' ', spaces) + currentLine.ToString().TrimEnd());
-                    currentLine.Clear();
-                }
-                currentLine.Append(word + " ");
-            }
-
-            if (currentLine.Length > 0)
-            {
-                int spaces = (maxLength - currentLine.Length) / 2;
-                centeredText.AppendLine(new string(' ', spaces) + currentLine.ToString().TrimEnd());
-            }
-
-            return centeredText.ToString();
-        }
 
         private string CenterText(string text)
         {
@@ -1498,58 +1398,6 @@ namespace KASIR.Printer
 
             return formattedLine;
         }
-        /*
-                private string FormatSimpleLine(string left, string right)
-                {
-                    if (left == null)
-                    {
-                        left = string.Empty;
-                    }
-                    if (right == null)
-                    {
-                        right = string.Empty;
-                    }
-
-                    int maxLength = 32; // Maximum length of a line on the receipt
-                    StringBuilder formattedText = new StringBuilder();
-                    string[] leftWords = left.Split(' ');
-
-                    StringBuilder currentLine = new StringBuilder();
-                    int currentLineLength = 0;
-
-                    // Add left words to the line, ensuring no word is cut off
-                    foreach (var word in leftWords)
-                    {
-                        if (currentLineLength + word.Length + 1 > maxLength - right.Length - 1)
-                        {
-                            formattedText.Append(currentLine.ToString().TrimEnd() + "\n");
-                            currentLine.Clear();
-                            currentLineLength = 0;
-                        }
-                        currentLine.Append(word + " ");
-                        currentLineLength += word.Length + 1;
-                    }
-
-                    // Ensure the current line is added if there's remaining text
-                    if (currentLine.Length > 0)
-                    {
-                        // Calculate remaining spaces after left text
-                        int spaces = maxLength - currentLine.Length - right.Length;
-                        spaces = spaces < 0 ? 0 : spaces;
-
-                        formattedText.Append(currentLine.ToString().TrimEnd() + new string(' ', spaces) + right);
-                    }
-                    else
-                    {
-                        // If current line is empty, add the right text directly
-                        formattedText.Append(new string(' ', maxLength - right.Length) + right);
-                    }
-
-                    return formattedText.ToString();
-                }
-        */
-
-
         private string FormatDetailItemLine(string label, string value)
         {
             return "  @" + label + ": " + value;
@@ -1585,7 +1433,7 @@ namespace KASIR.Printer
                         PrintDocument printDocument = new PrintDocument();
                         printDocument.PrintPage += (sender, e) =>
                         {
-                            Graphics graphics = e.Graphics;
+                            Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                             // Mengatur font normal dan tebal
                             Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
@@ -1916,7 +1764,7 @@ namespace KASIR.Printer
                     }
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        System.IO.Stream stream = null;
+                        System.IO.Stream stream = Stream.Null;
 
                         try
                         {
@@ -2181,7 +2029,7 @@ namespace KASIR.Printer
                         PrintDocument printDocument = new PrintDocument();
                         printDocument.PrintPage += (sender, e) =>
                         {
-                            Graphics graphics = e.Graphics;
+                            Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                             // Mengatur font normal dan tebal
                             Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
@@ -2504,7 +2352,7 @@ namespace KASIR.Printer
                     }
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        System.IO.Stream stream = null;
+                        System.IO.Stream stream = Stream.Null;
 
                         try
                         {
@@ -2670,7 +2518,7 @@ namespace KASIR.Printer
                         PrintDocument printDocument = new PrintDocument();
                         printDocument.PrintPage += (sender, e) =>
                         {
-                            Graphics graphics = e.Graphics;
+                            Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                             // Mengatur font normal dan tebal
                             Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
@@ -2983,7 +2831,7 @@ namespace KASIR.Printer
                     }
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        System.IO.Stream stream = null;
+                        System.IO.Stream stream = Stream.Null;
 
                         try
                         {
@@ -3354,7 +3202,7 @@ namespace KASIR.Printer
                         PrintDocument printDocument = new PrintDocument();
                         printDocument.PrintPage += (sender, e) =>
                         {
-                            Graphics graphics = e.Graphics;
+                            Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                             // Mengatur font normal dan tebal
                             Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
@@ -3744,7 +3592,7 @@ namespace KASIR.Printer
                     }
                     if (ShouldPrint(printerId, "Checker"))
                     {
-                        System.IO.Stream stream = null;
+                        System.IO.Stream stream = Stream.Null;
 
                         try
                         {
@@ -3978,7 +3826,7 @@ namespace KASIR.Printer
                         PrintDocument printDocument = new PrintDocument();
                         printDocument.PrintPage += (sender, e) =>
                         {
-                            Graphics graphics = e.Graphics;
+                            Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                             // Mengatur font normal dan tebal
                             Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
@@ -4246,7 +4094,7 @@ namespace KASIR.Printer
                     {
                         if (ShouldPrint(printerId, "Makanan"))
                         {
-                            System.IO.Stream stream = null;
+                            System.IO.Stream stream = Stream.Null;
 
                             try
                             {
@@ -4304,7 +4152,7 @@ namespace KASIR.Printer
                     {
                         if (ShouldPrint(printerId, "Minuman"))
                         {
-                            System.IO.Stream stream = null;
+                            System.IO.Stream stream = Stream.Null;
 
                             try
                             {
@@ -4574,7 +4422,7 @@ namespace KASIR.Printer
                             PrintDocument printDocument = new PrintDocument();
                             printDocument.PrintPage += (sender, e) =>
                             {
-                                Graphics graphics = e.Graphics;
+                                Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                                 // Mengatur font normal dan tebal
                                 Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
@@ -4781,7 +4629,7 @@ namespace KASIR.Printer
                             PrintDocument printDocument = new PrintDocument();
                             printDocument.PrintPage += (sender, e) =>
                             {
-                                Graphics graphics = e.Graphics;
+                                Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                                 // Mengatur font normal dan tebal
                                 Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
@@ -5030,7 +4878,7 @@ namespace KASIR.Printer
                     // Struct Customer ====
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        System.IO.Stream stream = null;
+                        System.IO.Stream stream = Stream.Null;
 
                         try
                         {
@@ -5154,7 +5002,7 @@ namespace KASIR.Printer
                     {
                         if (ShouldPrint(printerId, "Makanan"))
                         {
-                            System.IO.Stream stream = null;
+                            System.IO.Stream stream = Stream.Null;
 
                             try
                             {
@@ -5221,7 +5069,7 @@ namespace KASIR.Printer
                     {
                         if (ShouldPrint(printerId, "Minuman"))
                         {
-                            System.IO.Stream stream = null;
+                            System.IO.Stream stream = Stream.Null;
 
                             try
                             {
@@ -5601,7 +5449,7 @@ namespace KASIR.Printer
                     PrintDocument printDocument = new PrintDocument();
                     printDocument.PrintPage += (sender, e) =>
                     {
-                        Graphics graphics = e.Graphics;
+                        Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                         // Mengatur font normal dan tebal
                         Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
@@ -5868,7 +5716,7 @@ namespace KASIR.Printer
                     PrintDocument printDocument = new PrintDocument();
                     printDocument.PrintPage += (sender, e) =>
                     {
-                        Graphics graphics = e.Graphics;
+                        Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                         // Mengatur font normal dan tebal
                         Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
@@ -6038,7 +5886,7 @@ namespace KASIR.Printer
                         PrintDocument printDocument = new PrintDocument();
                         printDocument.PrintPage += (sender, e) =>
                         {
-                            Graphics graphics = e.Graphics;
+                            Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                             // Mengatur font normal dan tebal
                             Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
@@ -6240,7 +6088,7 @@ namespace KASIR.Printer
                         PrintDocument printDocument = new PrintDocument();
                         printDocument.PrintPage += (sender, e) =>
                         {
-                            Graphics graphics = e.Graphics;
+                            Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                             // Mengatur font normal dan tebal
                             Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
@@ -6433,7 +6281,7 @@ namespace KASIR.Printer
         public async Task<bool> RetryPolicyAsync(Func<Task<bool>> action, int maxRetries)
         {
             int attempt = 2;
-            Exception lastException = null; // Simpan pengecualian terakhir jika terjadi error
+            Exception? lastException = null;// Simpan pengecualian terakhir jika terjadi error
 
             while (attempt < maxRetries)
             {

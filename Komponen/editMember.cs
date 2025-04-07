@@ -40,21 +40,9 @@ namespace KASIR.komponen
         public string btnPayType;
         string outletID, cartID, totalCart, ttl2;
         private readonly string baseOutlet;
-        private readonly string MacAddressKasir;
-        private readonly string MacAddressKitchen;
-        private readonly string MacAddressBar;
-        private readonly string PinPrinterKasir;
-        private readonly string PinPrinterKitchen;
-        private readonly string PinPrinterBar;
-        private readonly string BaseOutletName;
-        private readonly string Kakimu;
-        private readonly ILogger _log = LoggerService.Instance._log;
         public bool KeluarButtonClicked { get; private set; }
 
         public bool ReloadDataInBaseForm { get; private set; }
-        private DataTable originalDataTable, listDataTable;
-        int items = 0;
-        int customePrice = 0;
 
 
         public editMember()
@@ -63,14 +51,6 @@ namespace KASIR.komponen
 
             btnSimpan.Enabled = false;
             baseOutlet = Properties.Settings.Default.BaseOutlet;
-            MacAddressKasir = Properties.Settings.Default.MacAddressKasir;
-            MacAddressKitchen = Properties.Settings.Default.MacAddressKitchen;
-            MacAddressBar = Properties.Settings.Default.MacAddressBar;
-            PinPrinterKasir = Properties.Settings.Default.PinPrinterKasir;
-            PinPrinterKitchen = Properties.Settings.Default.PinPrinterKitchen;
-            PinPrinterBar = Properties.Settings.Default.PinPrinterBar;
-            BaseOutletName = Properties.Settings.Default.BaseOutletName;
-            Kakimu = Properties.Settings.Default.FooterStruk;
            
         }
 

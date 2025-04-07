@@ -1,80 +1,17 @@
-﻿
-using FontAwesome.Sharp;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Newtonsoft.Json;
-using Color = System.Drawing.Color;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrayNotify;
-using System.Runtime.InteropServices;
-using System.Net;
-using System.Windows.Shapes;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Linq.Expressions;
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Windows;
-using Newtonsoft.Json.Linq;
-using System.Configuration;
-using System.Xml;
-using System.Reflection;
-using System.Windows.Controls;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Net.NetworkInformation;
-using System.Net;
-using System.Printing;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Management;
-using System.Windows.Forms;
-using System.IO.Ports;
-using KASIR.Model;
-using System.Windows.Markup;
-using System.Net.Sockets;
-using System.Drawing.Printing;
-using System.Windows.Media;
-using static System.Net.Mime.MediaTypeNames;
+using System.Text.RegularExpressions;
 using System.Timers;
-using KASIR.komponen;
-using static System.Windows.Forms.DataFormats;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolBar;
-using Brushes = System.Drawing.Brushes;
-using FontStyle = System.Drawing.FontStyle;
+using System.Windows;
+using KASIR.Network;
 using KASIR.Printer;
-using ComboBox = System.Windows.Forms.ComboBox;
-using System.Drawing.Imaging;
-using System.Drawing.Printing;
-using System.Management;
-using Image = System.Drawing.Image;
-using System.Drawing.Imaging;
-using MessageBox = System.Windows.MessageBox;
-using Rectangle = System.Drawing.Rectangle;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using CheckBox = System.Windows.Forms.CheckBox;
-using Control = System.Windows.Forms.Control;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Button;
+using Color = System.Drawing.Color;
+using ComboBox = System.Windows.Forms.ComboBox;
+using MessageBox = System.Windows.MessageBox;
 using TextBox = System.Windows.Forms.TextBox;
-using SharpCompress.Common;
-using SharpCompress.Compressors.Xz;
-using KASIR.OfflineMode;
-using System.Security.Cryptography.Xml;
 
 namespace KASIR.Komponen
 {
@@ -83,22 +20,8 @@ namespace KASIR.Komponen
         public Form1 MainForm { get; set; }
         private PrinterItem selectedPrinterItem;
         //private IPrinterModel printerModel;
-        private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
-        string macKitchen, macKasir, macBar;
-        string pinKitchen, pinKasir, pinBar, struk;
-        //private readonly PrinterModel printerModel = new PrinterModel();
+        private PrinterModel printerModel;
         private readonly string baseOutlet;
-        private readonly string MacAddressKasir;
-        private readonly string MacAddressKitchen;
-        private readonly string MacAddressBar;
-        private readonly string PinPrinterKasir;
-        private readonly string PinPrinterKitchen;
-        private readonly string PinPrinterBar;
-        private readonly string BaseOutletName;
-
-        int maxAttempts = 4;
-        int currentAttempt = 1;
-        int retryDelayMilliseconds = 10000;
         private string configFolderPath = "setting";
         public SettingsForm(Form1 mainForm)
         {
@@ -111,13 +34,6 @@ namespace KASIR.Komponen
             btnUpdate.Text = "Repair";
             lblVersion.Text = Properties.Settings.Default.Version.ToString();
             baseOutlet = Properties.Settings.Default.BaseOutlet;
-            MacAddressKasir = Properties.Settings.Default.MacAddressKasir;
-            MacAddressKitchen = Properties.Settings.Default.MacAddressKitchen;
-            MacAddressBar = Properties.Settings.Default.MacAddressBar;
-            PinPrinterKasir = Properties.Settings.Default.PinPrinterKasir;
-            PinPrinterKitchen = Properties.Settings.Default.PinPrinterKitchen;
-            PinPrinterBar = Properties.Settings.Default.PinPrinterBar;
-            BaseOutletName = Properties.Settings.Default.BaseOutletName;
 
 
             // test printer melalui pencarian. ( untuk check list )
@@ -483,11 +399,51 @@ namespace KASIR.Komponen
             await cekUpdateAsync();
         }
 
-        public void btnUpdate_Click(object sender, EventArgs e)
+        public string GetOutletNameFromFile(string filePath)
         {
+            string fileContent = File.ReadAllText(filePath);
+            var outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
+            return outletData["data"]?["name"]?.ToString();
+        }
+        public async Task<string> GetOutletNameFromApi()
+        {
+            IApiService apiService = new ApiService();
+            string response = await apiService.CekShift("/outlet/" + baseOutlet);
+            if (response != null)
+            {
+                var apiResponse = JsonConvert.DeserializeObject<JObject>(response);
+                File.WriteAllText($"DT-Cache\\DataOutlet{baseOutlet}.data", JsonConvert.SerializeObject(response));
+
+                return apiResponse["data"]?["name"]?.ToString();
+            }
+            return null;
+        }
+        public async void btnUpdate_Click(object sender, EventArgs e)
+        {
+            string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
+            string outletName;
+
+            // Cek apakah file ada dan baca data dari file atau API
+            if (File.Exists(filePath))
+            {
+                outletName = GetOutletNameFromFile(filePath);
+            }
+            else
+            {
+                outletName = await GetOutletNameFromApi();
+                if (outletName != null)
+                {
+                    // Simpan data ke file jika berhasil mendapatkan nama outlet
+                    File.WriteAllText(filePath, JsonConvert.SerializeObject(new { data = new { name = outletName } }));
+                }
+                else
+                {
+                    outletName = " (Hybrid)";
+                }
+            }
             ////LoggerUtil.LogPrivateMethod(nameof(btnUpdate_Click));
             Util n = new Util();
-            n.sendLogTelegramNetworkError("Open Updater Manual" + BaseOutletName);
+            n.sendLogTelegramNetworkError("Open Updater Manual" + outletName);
             btnUpdate.Enabled = false;
 
             try
@@ -613,7 +569,7 @@ namespace KASIR.Komponen
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
             }
@@ -849,7 +805,7 @@ namespace KASIR.Komponen
 
         private void iconDual_Click(object sender, EventArgs e)
         {
-            
+
             SettingsDual u = new SettingsDual();
 
             this.Close();

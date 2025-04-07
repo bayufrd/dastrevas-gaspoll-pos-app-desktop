@@ -1,25 +1,8 @@
-﻿using FontAwesome.Sharp;
+﻿using System.Data;
 using KASIR.komponen;
 using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Windows.Markup;
-using static System.Windows.Forms.Design.AxImporter;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Windows.Forms.Design;
 namespace KASIR.Komponen
 {
     public partial class updateCartForm : Form
@@ -505,7 +488,6 @@ namespace KASIR.Komponen
                 int serving_type = int.Parse(comboBox1.SelectedValue.ToString());
                 var quantity = int.Parse(txtKuantitas.Text.ToString());
                 var notes = txtNotes.Text.ToString();
-                int? menuDetailIdValue = null;
                 string pricefix = "0";
 
                 if (selectedVarian == null || selectedVarian == -1)

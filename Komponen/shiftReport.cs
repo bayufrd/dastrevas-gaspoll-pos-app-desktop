@@ -43,7 +43,6 @@ namespace KASIR.Komponen
         private Label loadingLabel;
         private ProgressBar progressBar;
         private CancellationTokenSource cts;
-        private int currentProgress = 0;
 
         // Flag to track if this is a background operation
         public bool IsBackgroundOperation { get; set; } = false;

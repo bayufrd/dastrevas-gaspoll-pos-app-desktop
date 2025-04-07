@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Net;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -1077,19 +1076,6 @@ namespace KASIR
 
         private void button2_Click_1(object sender, EventArgs e)
         {
-            Color randomColor = PickRandomColor();
-            ActivateButton(sender, randomColor);
-
-            masterMenu c = new masterMenu();
-
-            panel3.Height = button2.Height;
-            panel3.Top = button2.Top;
-            c.Dock = DockStyle.Fill;
-            panel1.Controls.Add(c);
-            c.BringToFront();
-            c.Show();
-            lblTitleChildForm.Text = "Home";
-
         }
 
         private void panel1_Paint(object sender, PaintEventArgs e)

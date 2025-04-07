@@ -9,8 +9,6 @@ namespace KASIR.OfflineMode
 {
     public partial class Offline_updateCartForm : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
-        private int numericValue = 0;
         private List<Button> radioButtonsList = new List<Button>();
         string idmenu;
         private DataMenuDetail datas;

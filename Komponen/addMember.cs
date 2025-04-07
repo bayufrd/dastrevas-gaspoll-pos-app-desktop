@@ -1,5 +1,4 @@
-﻿using System.Data;
-using KASIR.Network;
+﻿using KASIR.Network;
 using Newtonsoft.Json;
 using Serilog;
 namespace KASIR.komponen

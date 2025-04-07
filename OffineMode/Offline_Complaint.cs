@@ -1,30 +1,8 @@
-﻿
-using FontAwesome.Sharp;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
-using KASIR.komponen;
+﻿using System.Globalization;
 using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using System.Globalization;
-
 using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Text.RegularExpressions;
-using System.Windows.Markup;
 namespace KASIR.OffineMode
 {
     public partial class Offline_Complaint : Form
@@ -126,11 +104,11 @@ namespace KASIR.OffineMode
                 string FolderLogCache_history_transaction = Path.Combine(FolderCache, "HistoryTransaction", $"History_transaction_DT-{baseOutlet}_{previousDayString}.data");
 
                 // Membaca isi file log cache atau mengembalikan "{}" jika file tidak ada
-                
+
                 string LogCacheData =
                 ReadFileContentAsPlainText(FolderLogCacheData) != "{}"
                 ? ReadFileContentAsPlainText(FolderLogCacheData)
-                : ReadFileContentAsPlainText($"log\\{baseOutlet}_unknown_log{formatDate}.txt"); 
+                : ReadFileContentAsPlainText($"log\\{baseOutlet}_unknown_log{formatDate}.txt");
                 string Cache_transaction = ReadFileContentWithRetry(FolderLogCache_transaction);
                 string Cache_failed_transaction = ReadFileContentWithRetry(FolderLogCache_failed_transaction);
                 string Cache_success_transaction = ReadFileContentWithRetry(FolderLogCache_success_transaction);
@@ -140,15 +118,15 @@ namespace KASIR.OffineMode
 
                 var json = new
                 {
-                     name = nameID,
-                     title =  "ada ada aja",
-                     message =  txtNotes.Text.ToString(),
-                     sent_at =  DateTime.Now.ToString("yyyy-MM-dd HH=mm=ss", CultureInfo.InvariantCulture) ,
-                     log_last_outlet = LogCacheData,
-                     cache_transaction = Cache_transaction,
-                     cache_failed_transaction = Cache_failed_transaction,
-                     cache_success_transaction = Cache_success_transaction,
-                     cache_history_transaction = Cache_history_transaction
+                    name = nameID,
+                    title = "ada ada aja",
+                    message = txtNotes.Text.ToString(),
+                    sent_at = DateTime.Now.ToString("yyyy-MM-dd HH=mm=ss", CultureInfo.InvariantCulture),
+                    log_last_outlet = LogCacheData,
+                    cache_transaction = Cache_transaction,
+                    cache_failed_transaction = Cache_failed_transaction,
+                    cache_success_transaction = Cache_success_transaction,
+                    cache_history_transaction = Cache_history_transaction
                 };
                 //string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
 
@@ -172,7 +150,7 @@ namespace KASIR.OffineMode
                     else
                     {
                         MessageBox.Show("Gagal dikirim, Coba cek koneksi internet ulang " + response.StatusCode);
-                        _log.Error("Gagal dikirim, Coba cek koneksi internet ulang "+response.ToString());
+                        _log.Error("Gagal dikirim, Coba cek koneksi internet ulang " + response.ToString());
                     }
                 }
             }

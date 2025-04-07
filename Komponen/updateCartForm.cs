@@ -24,8 +24,6 @@ namespace KASIR.Komponen
 {
     public partial class updateCartForm : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
-        private int numericValue = 0;
         private List<Button> radioButtonsList = new List<Button>();
         string idmenu;
         private DataMenuDetail datas;

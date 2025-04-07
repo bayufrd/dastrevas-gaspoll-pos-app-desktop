@@ -29,9 +29,13 @@ namespace KASIR.Komponen
             progressBar.Minimum = 0;
             progressBar.Maximum = 100;
             choice = TypeCacheEksekusi.ToString();
-            LoadData(choice);
+            openForm(choice);
         }
 
+        public async void openForm(string choice)
+        {
+            await LoadData(choice);
+        }
         public async Task LoadData(string TypeCacheEksekusi)
         {
             if (TypeCacheEksekusi == "Sync")
@@ -903,7 +907,7 @@ namespace KASIR.Komponen
                     progressBar.Value = x * items;
 
                 }
-                LoadServingTypeItems();
+                await LoadServingTypeItems();
 
             }
             catch (TaskCanceledException ex)
@@ -947,7 +951,7 @@ namespace KASIR.Komponen
                     int x = 100 / count;
                     progressBar.Value = x * items;
                 }
-                LoadDataVarianItems();
+                await LoadDataVarianItems();
 
             }
             catch (TaskCanceledException ex)
@@ -989,7 +993,7 @@ namespace KASIR.Komponen
                     int x = 100 / count;
                     progressBar.Value = x * items;
                 }
-                LoadDiscountPeritems();
+                await LoadDiscountPeritems();
 
             }
             catch (TaskCanceledException ex)
@@ -1022,7 +1026,7 @@ namespace KASIR.Komponen
                 DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(response);
                 File.WriteAllText(folderAddCartForm + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data", JsonConvert.SerializeObject(menuModel));
                 progressBar.Value = 100;
-                LoadPayform();
+                await LoadPayform();
 
             }
             catch (TaskCanceledException ex)
@@ -1056,7 +1060,7 @@ namespace KASIR.Komponen
                 File.WriteAllText("DT-Cache" + "\\LoadDataPayment_" + "Outlet_" + baseOutlet + ".data", JsonConvert.SerializeObject(payment));
 
                 progressBar.Value = 100;
-                LoadDiscountPerCart();
+                await LoadDiscountPerCart();
 
             }
             catch (TaskCanceledException ex)

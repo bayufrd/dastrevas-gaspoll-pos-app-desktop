@@ -352,7 +352,7 @@ namespace KASIR
         }
         private async void StarterApp()
         {
-            headerOutletName("");
+            await headerOutletName("");
             ConfigOfflineMode();
 
             await Task.Run(async () =>
@@ -386,7 +386,7 @@ namespace KASIR
             {
                 Offline_masterPos cache = new Offline_masterPos();
                 //await refreshCacheTransaction();
-                cache.refreshCacheTransaction();
+                await cache.refreshCacheTransaction();
 
             }
 
@@ -488,83 +488,92 @@ namespace KASIR
             try
             {
                 await headerOutletName("Checking New Updater...");
-                string changeVersion;
-                var urlVersion = "https://raw.githubusercontent.com/bayufrd/update/main/updaterVersionApp.txt";
-                var newVersion = (new WebClient().DownloadString(urlVersion));
-                string fileUrl2 = "https://raw.githubusercontent.com/bayufrd/update/main/Dastrevas.rar";
-                changeVersion = newVersion.ToString();
-                await headerOutletName($"New Version Updater is {changeVersion}");
 
-                newVersion = newVersion.Replace(".", "");
-                VersionUpdaterApp = VersionUpdaterApp.Replace(".", "");
-
-                if (Convert.ToInt32(newVersion) > Convert.ToInt32(VersionUpdaterApp))
+                using (var httpClient = new HttpClient())
                 {
-                    await headerOutletName("Downloading New Updater...");
+                    // Fetch version
+                    string urlVersion = "https://raw.githubusercontent.com/bayufrd/update/main/updaterVersionApp.txt";
+                    string newVersion = await httpClient.GetStringAsync(urlVersion);
+                    string changeVersion = newVersion.Trim();
 
-                    string destinationPath2 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), $"{DownloadPath}\\Dastrevas.rar");
-                    using (WebClient wb = new WebClient())
+                    await headerOutletName($"New Version Updater is {changeVersion}");
+
+                    // Version comparison
+                    newVersion = newVersion.Replace(".", "");
+                    VersionUpdaterApp = VersionUpdaterApp.Replace(".", "");
+
+                    if (Convert.ToInt32(newVersion) > Convert.ToInt32(VersionUpdaterApp))
                     {
+                        await headerOutletName("Downloading New Updater...");
 
-                        // Start the download
-                        byte[] fileData2 = wb.DownloadData(fileUrl2);
-                        // //MessageBox.Show($"Downloaded {(fileData.Length) / 100000} MB.");
-                        System.IO.File.WriteAllBytes(destinationPath2, fileData2);
-                    }
-                    string rarFilePath = $"{DownloadPath}\\Dastrevas.rar";
-                    string extractDirectory = $"{PathKasir}\\update";
+                        // Prepare download paths
+                        string fileUrl = "https://raw.githubusercontent.com/bayufrd/update/main/Dastrevas.rar";
+                        string destinationPath = Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                            $"{DownloadPath}\\Dastrevas.rar"
+                        );
 
-                    try
-                    {
-                        await headerOutletName("Extracting New Updater...");
+                        // Download file
+                        await DownloadFileAsync(httpClient, fileUrl, destinationPath);
 
-                        // Ensure the extraction directory exists
-                        if (!Directory.Exists(extractDirectory))
-                        {
-                            Directory.CreateDirectory(extractDirectory);
-                        }
-
-                        // Log the start of the extraction process
-
-                        using (var archive = ArchiveFactory.Open(rarFilePath))
-                        {
-                            foreach (var entry in archive.Entries)
-                            {
-                                // Extract each entry in the RAR file to the specified directory
-                                if (!entry.IsDirectory)
-                                {
-                                    entry.WriteToDirectory(extractDirectory, new ExtractionOptions()
-                                    {
-                                        ExtractFullPath = true,
-                                        Overwrite = true // Set to true to overwrite existing files
-                                    });
-                                }
-                            }
-                        }
-                        // Path ke file .txt yang akan diubah
-                        string filePath = $"{PathKasir}\\update\\versionUpdater.txt";
-
-                        // Konten baru yang akan ditulis ke file
-                        string contentToWrite = changeVersion.ToString();
-                        await headerOutletName("Installing New Updater...");
-
-                        // Menulis konten baru ke file
-                        File.WriteAllText(filePath, contentToWrite);
-                        Thread.Sleep(3000);
-                        OpenUpdaterExe();
-
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Error" + ex.Message, "Gaspol");
-                        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                        // Extract and update
+                        await ExtractAndUpdateAsync(destinationPath, changeVersion);
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error" + ex.Message, "Gaspol");
+                MessageBox.Show($"Error: {ex.Message}", "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private async Task DownloadFileAsync(HttpClient httpClient, string fileUrl, string destinationPath)
+        {
+            // Ensure directory exists
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+
+            // Download file
+            byte[] fileData = await httpClient.GetByteArrayAsync(fileUrl);
+            await File.WriteAllBytesAsync(destinationPath, fileData);
+        }
+
+        private async Task ExtractAndUpdateAsync(string rarFilePath, string changeVersion)
+        {
+            try
+            {
+                await headerOutletName("Extracting New Updater...");
+
+                string extractDirectory = $"{PathKasir}\\update";
+
+                // Ensure the extraction directory exists
+                Directory.CreateDirectory(extractDirectory);
+
+                // Extract RAR file
+                using (var archive = ArchiveFactory.Open(rarFilePath))
+                {
+                    foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
+                    {
+                        entry.WriteToDirectory(extractDirectory, new ExtractionOptions
+                        {
+                            ExtractFullPath = true,
+                            Overwrite = true
+                        });
+                    }
+                }
+
+                // Update version file
+                string versionFilePath = $"{PathKasir}\\update\\versionUpdater.txt";
+                await File.WriteAllTextAsync(versionFilePath, changeVersion);
+
+                // Small delay and open updater
+                await Task.Delay(3000);
+                OpenUpdaterExe();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Extraction Error: {ex.Message}", "Gaspol");
+                LoggerUtil.LogError(ex, "Extraction failed: {ErrorMessage}", ex.Message);
             }
         }
 
@@ -752,55 +761,56 @@ namespace KASIR
             try
             {
                 await headerOutletName("Checking Kasir Version...");
-
                 if (!NetworkInterface.GetIsNetworkAvailable())
                 {
                     return;
                 }
-                var urlVersion = Properties.Settings.Default.BaseAddressVersion.ToString();
-                var newVersion = (new WebClient().DownloadString(urlVersion));
-                string currentVersion = Properties.Settings.Default.Version.ToString();
-                await headerOutletName($"Current Version is {currentVersion}, New is {newVersion}");
 
-                await ConfirmUpdate(newVersion.ToString(), currentVersion);
-
-                newVersion = newVersion.Replace(".", "");
-                currentVersion = currentVersion.Replace(".", "");
-
-                // Validasi input
-                if (!IsValidVersion(currentVersion))
+                using (var httpClient = new HttpClient())
                 {
-                    currentVersion = "1080"; // Set default version jika tidak valid
-                }
+                    var urlVersion = Properties.Settings.Default.BaseAddressVersion.ToString();
+                    var newVersion = await httpClient.GetStringAsync(urlVersion);
+                    string currentVersion = Properties.Settings.Default.Version.ToString();
 
-                bool shouldUpdate = false;
+                    await headerOutletName($"Current Version is {currentVersion}, New is {newVersion}");
+                    await ConfirmUpdate(newVersion.ToString(), currentVersion);
 
-                if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
-                {
-                    // Ambil data focus outlet
-                    string originalUrl = Properties.Settings.Default.BaseAddressDev.ToString();
-                    var urlOutletFocus = RemoveApiPrefix(originalUrl);
-                    var focusOutletData = (new WebClient().DownloadString($"{urlOutletFocus}/update/outletUpdate.txt"));
+                    newVersion = newVersion.Replace(".", "");
+                    currentVersion = currentVersion.Replace(".", "");
 
-                    // Parsing data focus outlet
-                    var focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
-                                                       .Split(',')
-                                                       .Select(s => s.Trim()) // Menghapus spasi di sekitar
-                                                       .ToArray();
-
-                    // Cek apakah baseOutlet ada dalam focusOutlets
-                    if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
+                    // Validasi input
+                    if (!IsValidVersion(currentVersion))
                     {
-                        shouldUpdate = true;
+                        currentVersion = "1080"; // Set default version jika tidak valid
                     }
 
-                    if (shouldUpdate)
+                    bool shouldUpdate = false;
+                    if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
                     {
-                        Util n = new Util();
-                        n.sendLogTelegramNetworkError("Open Updater");
-                        await headerOutletName("Opening Kasir Updater...");
+                        // Ambil data focus outlet
+                        string originalUrl = Properties.Settings.Default.BaseAddressDev.ToString();
+                        var urlOutletFocus = RemoveApiPrefix(originalUrl);
+                        var focusOutletData = await httpClient.GetStringAsync($"{urlOutletFocus}/update/outletUpdate.txt");
 
-                        OpenUpdaterExe();
+                        // Parsing data focus outlet
+                        var focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
+                                                           .Split(',')
+                                                           .Select(s => s.Trim()) // Menghapus spasi di sekitar
+                                                           .ToArray();
+
+                        // Cek apakah baseOutlet ada dalam focusOutlets
+                        if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
+                        {
+                            shouldUpdate = true;
+                        }
+
+                        if (shouldUpdate)
+                        {
+                            Util n = new Util();
+                            n.sendLogTelegramNetworkError("Open Updater");
+                            await headerOutletName("Opening Kasir Updater...");
+                            OpenUpdaterExe();
+                        }
                     }
                 }
             }
@@ -843,7 +853,7 @@ namespace KASIR
             }
             else
             {
-                DownloadUpdaterApp();
+                await DownloadUpdaterApp();
             }
         }
 

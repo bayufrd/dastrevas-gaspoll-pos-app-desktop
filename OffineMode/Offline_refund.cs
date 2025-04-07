@@ -1,39 +1,14 @@
-﻿
-using FontAwesome.Sharp;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
+﻿using System.Globalization;
 using KASIR.komponen;
-using KASIR.Model;
-using KASIR.Network;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Serilog;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using KASIR.Printer;
 using KASIR.Komponen;
-using System.Transactions;
+using KASIR.Model;
+using KASIR.Printer;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Windows.Markup;
-using System.Diagnostics;
-using System.Globalization;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_refund : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
         public event EventHandler RefundSuccessful;
         private List<CartDetailTransaction> item = new List<CartDetailTransaction>();
         private List<RefundModel> refundItems = new List<RefundModel>();
@@ -41,22 +16,16 @@ namespace KASIR.OfflineMode
 
         // Menyimpan data refund ke model sementara
         List<RefundDetailStruk> refundDetailStruks = new List<RefundDetailStruk>();
-        private readonly string MacAddressKasir;
-        private readonly string PinPrinterKasir;
-        private readonly string BaseOutletName;
         public bool ReloadDataInBaseForm { get; private set; }
         string idTransaksi, cartId, paymentodNgentod = "", transactionDataPath, updatedJson;
 
         private readonly string baseOutlet;
         GetTransactionDetail dataTransaction;
-        int urutanRiwayat, Nomortransaks,isrefundall;
+        int urutanRiwayat, Nomortransaks, isrefundall;
         int tempTotalRefund = 0, TotalRefunded = 0;
         public Offline_refund(string transaksiId, int urutanRiwayat)
         {
-            PinPrinterKasir = Properties.Settings.Default.PinPrinterKasir;
-            MacAddressKasir = Properties.Settings.Default.MacAddressKasir;
             baseOutlet = Properties.Settings.Default.BaseOutlet;
-            BaseOutletName = Properties.Settings.Default.BaseOutletName;
             InitializeComponent();
             btnRefund.Visible = true;
             cartId = transaksiId;
@@ -302,7 +271,7 @@ namespace KASIR.OfflineMode
                                 }
 
                             }
-                         
+
                         };
 
                         // Update the UI with the item panel
@@ -338,7 +307,7 @@ namespace KASIR.OfflineMode
 
 
         }
-   
+
         private void panel4_Paint(object sender, PaintEventArgs e)
         {
 
@@ -427,10 +396,10 @@ namespace KASIR.OfflineMode
                                 menu_name = cartItem["menu_name"]?.ToString() ?? "",
                                 varian = cartItem["menu_detail_name"]?.ToString() ?? "",
                                 serving_type_name = cartItem["serving_type_name"]?.ToString() ?? "",
-                                discount_code = (string)null,
+                                discount_code = null,
                                 discounts_value = 0,
                                 discounted_price = 0,
-                                discounts_is_percent = (string)null,
+                                discounts_is_percent = null,
                                 menu_price = int.Parse(cartItem["price"]?.ToString() ?? "0"),
                                 note_item = cartItem["note_item"]?.ToString() ?? ""
                             });
@@ -442,7 +411,7 @@ namespace KASIR.OfflineMode
                         filteredTransaction["refund_payment_name_all"] = refund_payment_name_all;
                         filteredTransaction["refund_payment_id_all"] = refund_payment_id_all;
                         filteredTransaction["refund_created_at_all"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-                       
+
                     }
                     else
                     {
@@ -464,24 +433,24 @@ namespace KASIR.OfflineMode
                             //jika peritem
                             if (!string.IsNullOrEmpty(cartItem["discount_id"].ToString()) && cartItem["discount_id"].ToString() != "0")
                             {
-                               
+
                                 int tempTotal;
 
                                 if (discountPercent != 0) // Jika diskon berupa persentase
-                                    {
-                                        // Menghitung nilai diskon berdasarkan persentase
-                                        tempTotal = subtotal_item * discountValue / 100;
-                                        
-                                        discountedPrice = tempTotal; // Potongan diskon sesuai persen
-                                        discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
-                                    }
-                                    else // Jika diskon berupa nilai tetap
-                                    {
-                                        // Mengurangi subtotal dengan diskon nilai tetap
-                                        tempTotal = subtotal_item - discountValue;
-                                        discountedPrice = subtotal_item - tempTotal;
-                                        discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
-                                    }
+                                {
+                                    // Menghitung nilai diskon berdasarkan persentase
+                                    tempTotal = subtotal_item * discountValue / 100;
+
+                                    discountedPrice = tempTotal; // Potongan diskon sesuai persen
+                                    discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
+                                }
+                                else // Jika diskon berupa nilai tetap
+                                {
+                                    // Mengurangi subtotal dengan diskon nilai tetap
+                                    tempTotal = subtotal_item - discountValue;
+                                    discountedPrice = subtotal_item - tempTotal;
+                                    discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
+                                }
                             }
                             if (!string.IsNullOrEmpty(filteredTransaction["subtotal"].ToString()) && filteredTransaction["discount_id"].ToString() != "0" && filteredTransaction["discounted_price"].ToString() != "0")
                             {
@@ -668,9 +637,6 @@ namespace KASIR.OfflineMode
         }
         private void UpdateTransactionTotals(JArray cartDetails, JArray refundDetails, JObject filteredTransaction, int discountedPrice)
         {
-            // Initialize variables for subtotal and total refund
-            int updatedSubtotal = 0;
-            int updatedTotal = 0;
             int totalRefund = 0;
             int cartTotal = 0;
             int cartsubTotal = 0;
@@ -773,20 +739,20 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                
-                    // PrinterModel untuk mencetak data refund
-                    PrinterModel printerModel = new PrinterModel();
-                    await Task.Run(() =>
-                    {
-                        // Mencetak hanya data refund
 
-                         printerModel.PrintModelRefund(refundData, refundDetailStruks, Nomortransaks);
-                      });
+                // PrinterModel untuk mencetak data refund
+                PrinterModel printerModel = new PrinterModel();
+                await Task.Run(() =>
+                {
+                    // Mencetak hanya data refund
 
-                    btnRefund.Text = "Selesai.";
-                    btnRefund.Enabled = true;
-                    DialogResult = DialogResult.OK;
-                    Close();
+                    printerModel.PrintModelRefund(refundData, refundDetailStruks, Nomortransaks);
+                });
+
+                btnRefund.Text = "Selesai.";
+                btnRefund.Enabled = true;
+                DialogResult = DialogResult.OK;
+                Close();
             }
             catch (Exception ex)
             {
@@ -809,7 +775,7 @@ namespace KASIR.OfflineMode
         private void cmbRefundType_SelectedIndexChanged(object sender, EventArgs e)
         {
             string selectedRefundType = cmbRefundType.SelectedItem.ToString();
-            if(selectedRefundType == "Semua")
+            if (selectedRefundType == "Semua")
             {
                 panel13.Enabled = false;
                 isrefundall = 1;

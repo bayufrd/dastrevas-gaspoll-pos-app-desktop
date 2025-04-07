@@ -1,11 +1,11 @@
-﻿using KASIR.Model;
-using Newtonsoft.Json;
-using System.Data;
-using Serilog;
-using KASIR.Printer;
-using Newtonsoft.Json.Linq;
-using KASIR.OfflineMode;
+﻿using System.Data;
 using System.Globalization;
+using KASIR.Model;
+using KASIR.OfflineMode;
+using KASIR.Printer;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Serilog;
 namespace KASIR.OffineMode
 {
     public partial class Offline_saveBill : Form

@@ -100,7 +100,6 @@ namespace KASIR.Komponen
         int currentAttempt = 1;
         int retryDelayMilliseconds = 10000;
         private string configFolderPath = "setting";
-        private string configFilePath = "setting\\configListMenu.txt";
         public SettingsForm(Form1 mainForm)
         {
             this.ControlBox = false;
@@ -438,37 +437,50 @@ namespace KASIR.Komponen
             }
         }
 
-        private async void cekUpdate()
+        private async Task cekUpdateAsync()
         {
             try
             {
-                var urlVersion = Properties.Settings.Default.BaseAddressVersion.ToString();
-                var newVersion = (new WebClient().DownloadString(urlVersion));
-                string currentVersion = Properties.Settings.Default.Version.ToString();
-                newVersion = newVersion.Replace(".", "");
-                currentVersion = currentVersion.Replace(".", "");
-
-                if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
+                using (var httpClient = new HttpClient())
                 {
-                    lblNewVersion.Visible = true;
-                    lblNewVersionNow.Visible = true;
-                    lblNewVersionNow.Text = (new WebClient().DownloadString(urlVersion));
-                    btnUpdate.Text = "Update";
-                }
-                else
-                {
-                    lblNewVersion.Visible = true;
-                    lblNewVersionNow.Visible = true;
-                    lblNewVersionNow.Text = (new WebClient().DownloadString(urlVersion));
+                    var urlVersion = Properties.Settings.Default.BaseAddressVersion.ToString();
+                    var newVersion = await httpClient.GetStringAsync(urlVersion);
+                    string currentVersion = Properties.Settings.Default.Version.ToString();
 
-                    btnUpdate.Text = "Fix";
+                    newVersion = newVersion.Replace(".", "");
+                    currentVersion = currentVersion.Replace(".", "");
+
+                    // Fetch the version string for display
+                    var displayVersion = await httpClient.GetStringAsync(urlVersion);
+
+                    if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
+                    {
+                        UpdateUIForNewVersion(displayVersion, "Update");
+                    }
+                    else
+                    {
+                        UpdateUIForNewVersion(displayVersion, "Fix");
+                    }
                 }
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
             }
+        }
+
+        private void UpdateUIForNewVersion(string versionText, string buttonText)
+        {
+            lblNewVersion.Visible = true;
+            lblNewVersionNow.Visible = true;
+            lblNewVersionNow.Text = versionText;
+            btnUpdate.Text = buttonText;
+        }
+
+        // If you need to call this from an event handler that expects void
+        private async void cekUpdate()
+        {
+            await cekUpdateAsync();
         }
 
         public void btnUpdate_Click(object sender, EventArgs e)

@@ -44,8 +44,6 @@ namespace KASIR.komponen
     {
         private readonly ILogger _log = LoggerService.Instance._log;
 
-        private payForm _payForm;
-        int jenisColumnIndex = -1;
         private ApiService apiService;
         private DataTable originalDataTable, listDataTable;
         string totalCart;
@@ -452,7 +450,7 @@ namespace KASIR.komponen
             txtCariMenuList.Enabled = false;
             txtCariMenu.Visible = true;
             txtCariMenu.Enabled = true;
-            LoadDataListby();
+            await LoadDataListby();
             dataGridView2.CellFormatting += DataGridView2_CellFormatting;
         }
 
@@ -467,7 +465,7 @@ namespace KASIR.komponen
             txtCariMenuList.Visible = false;
             txtCariMenuList.Enabled = false;
             //loadDataAsync();
-            LoadDataWithPagingAsync();
+            await LoadDataWithPagingAsync();
         }
         private void DataGridView2_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
@@ -1449,32 +1447,6 @@ namespace KASIR.komponen
 
             }
 
-        }
-
-        // Method to save FlowLayoutPanel data to a local binary file
-        public async void SaveFlowLayoutPanelToBinFile()
-        {
-            try
-            {
-                BinaryFormatter formatter = new BinaryFormatter();
-                FileStream stream = new FileStream("Menu.bin", FileMode.Create, FileAccess.Write, FileShare.None);
-
-                List<SerializablePanel> panelControls = new List<SerializablePanel>();
-                foreach (Control control in dataGridView3.Controls)
-                {
-                    if (control is SerializablePanel panel)
-                    {
-                        panelControls.Add(panel);
-                    }
-                }
-
-                formatter.Serialize(stream, panelControls);
-                stream.Close();
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
         }
 
 

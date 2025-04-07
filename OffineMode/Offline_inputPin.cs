@@ -1,47 +1,14 @@
-﻿
-using FontAwesome.Sharp;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
+﻿using System.Data;
 using KASIR.Model;
-using KASIR.Network;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Serilog;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Globalization;
-using System.Windows.Markup;
-using System.Text.RegularExpressions;
-using System.Net.NetworkInformation;
 using KASIR.Printer;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Transactions;
-using KASIR.Komponen;
-using System.Windows.Forms.VisualStyles;
+using Serilog;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_inputPin : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
         private readonly string baseOutlet;
-        private readonly string MacAddressKasir;
-        private readonly string MacAddressKitchen;
-        private readonly string MacAddressBar;
-        private readonly string PinPrinterKasir;
-        private readonly string PinPrinterKitchen;
-        private readonly string PinPrinterBar;
         private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
 
         private readonly string BaseOutletName;
@@ -60,15 +27,7 @@ namespace KASIR.OfflineMode
             transactionId = id.ToString();
             totalTransactions = urutanRiwayat;
             baseOutlet = Properties.Settings.Default.BaseOutlet;
-            MacAddressKasir = Properties.Settings.Default.MacAddressKasir;
-            MacAddressKitchen = Properties.Settings.Default.MacAddressKitchen;
-            MacAddressBar = Properties.Settings.Default.MacAddressBar;
-            PinPrinterKasir = Properties.Settings.Default.PinPrinterKasir;
-            PinPrinterKitchen = Properties.Settings.Default.PinPrinterKitchen;
-            PinPrinterBar = Properties.Settings.Default.PinPrinterBar;
-            BaseOutletName = Properties.Settings.Default.BaseOutletName;
             InitializeComponent();
-            urutanRiwayat = urutanRiwayat;
 
 
 
@@ -119,40 +78,40 @@ namespace KASIR.OfflineMode
 
                 if (textPin.Text.ToString() == dataOutlet.data.pin.ToString())
                 {
-                       
-                        this.Close();
-                        Form background = new Form
+
+                    this.Close();
+                    Form background = new Form
+                    {
+                        StartPosition = FormStartPosition.CenterScreen,
+                        FormBorderStyle = FormBorderStyle.None,
+                        Opacity = 0.7d,
+                        BackColor = Color.Black,
+                        WindowState = FormWindowState.Maximized,
+                        TopMost = true,
+                        Location = this.Location,
+                        ShowInTaskbar = false,
+                    };
+                    using (Offline_refund Offline_refund = new Offline_refund(transactionId.ToString(), urutanRiwayat))
+                    {
+
+                        Offline_refund.Owner = background;
+
+                        background.Show();
+
+                        DialogResult dialogResult = Offline_refund.ShowDialog();
+
+                        background.Dispose();
+
+                        if (dialogResult == DialogResult.OK)
                         {
-                            StartPosition = FormStartPosition.CenterScreen,
-                            FormBorderStyle = FormBorderStyle.None,
-                            Opacity = 0.7d,
-                            BackColor = Color.Black,
-                            WindowState = FormWindowState.Maximized,
-                            TopMost = true,
-                            Location = this.Location,
-                            ShowInTaskbar = false,
-                        };
-                        using (Offline_refund Offline_refund = new Offline_refund(transactionId.ToString(), urutanRiwayat))
-                        {
-
-                            Offline_refund.Owner = background;
-                            
-                            background.Show();
-
-                            DialogResult dialogResult = Offline_refund.ShowDialog();
-
-                            background.Dispose();
-
-                            if (dialogResult == DialogResult.OK)
-                            {
-                                this.Close();
-                            }
-                            else
-                            {
-                                this.Close();
-                            }
+                            this.Close();
                         }
-                    
+                        else
+                        {
+                            this.Close();
+                        }
+                    }
+
                 }
                 else
                 {
@@ -342,7 +301,7 @@ namespace KASIR.OfflineMode
                 MessageBox.Show("Gagal load Cart " + ex.ToString());
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
-            
+
         }
         private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
         {
@@ -356,7 +315,7 @@ namespace KASIR.OfflineMode
             dataGridView.DataSource = dataTable;
 
             // Mengatur gaya sel untuk kolom tertentu
-            int[] cellIndexesToStyle = { 1,2,3,4 }; // Indeks kolom yang ingin diatur
+            int[] cellIndexesToStyle = { 1, 2, 3, 4 }; // Indeks kolom yang ingin diatur
             SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
         }
         private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)

@@ -1,32 +1,7 @@
-﻿
-using FontAwesome.Sharp;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
-using KASIR.komponen;
+﻿using System.Globalization;
 using KASIR.Model;
-using KASIR.Network;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using System.Globalization;
-using Serilog;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
 using Newtonsoft.Json.Linq;
-using System.Windows.Markup;
-using KASIR.Komponen;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_deletePerItemForm : Form
@@ -101,7 +76,7 @@ namespace KASIR.OfflineMode
 
                     if (itemToRemove != null)
                     {
-                        
+
                         itemToRemove["edited_reason"] = txtReason.Text.ToString() ?? "";
 
                         // Check if canceled_items exists, if not create it
@@ -132,7 +107,7 @@ namespace KASIR.OfflineMode
                             ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                             ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                             ["discount_id"] = int.Parse(itemToRemove["discount_id"]?.ToString()),
-                            ["discount_code"] = itemToRemove["discount_code"]?.ToString() ?? (string)null,
+                            ["discount_code"] = itemToRemove["discount_code"]?.ToString() ?? null,
                             ["discounts_value"] = int.Parse(itemToRemove["discounts_value"]?.ToString()),
                             ["discounted_price"] = int.Parse(itemToRemove["discounted_price"]?.ToString()),
                             ["discounts_is_percent"] = int.Parse(itemToRemove["discounts_is_percent"]?.ToString()),

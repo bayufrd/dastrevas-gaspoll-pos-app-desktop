@@ -1,38 +1,7 @@
-﻿
-
-using FontAwesome.Sharp;
-using InTheHand.Net;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using KASIR.Model;
+﻿using System.Data;
 using KASIR.Network;
 using Newtonsoft.Json;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Text.RegularExpressions;
-using System.Linq.Expressions;
-using System.Windows.Forms.VisualStyles;
-using System.Windows.Controls;
-using System.Net.NetworkInformation;
-using System.Windows.Markup;
-using System.Windows.Forms.Design;
-using System.Xaml;
 namespace KASIR.komponen
 {
     public partial class addMember : Form
@@ -47,14 +16,11 @@ namespace KASIR.komponen
         public bool KeluarButtonClicked { get; private set; }
 
         public bool ReloadDataInBaseForm { get; private set; }
-        private DataTable originalDataTable, listDataTable;
-        int items = 0;
-        int customePrice = 0;
         string Options;
         int idid;
 
 
-        public addMember(string customMember,int idMember,string namaMember,string hpMember,string emailMember)
+        public addMember(string customMember, int idMember, string namaMember, string hpMember, string emailMember)
         {
             InitializeComponent();
             btnSimpan.Enabled = false;
@@ -89,7 +55,7 @@ namespace KASIR.komponen
             }
             if (Options == "Tambah")
             {
-               
+
                 Dictionary<string, object> json = new Dictionary<string, object>
                 {
                 { "name", txtNama.Text },

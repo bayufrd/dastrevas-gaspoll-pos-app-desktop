@@ -6419,19 +6419,6 @@ namespace KASIR.Printer
                             DrawSpace();
                             DrawCenterText(nomorMeja, NomorAntrian);
                         };
-                        /*
-                        if (IsBluetoothPrinter(printerName))
-                        {
-                            printerName = ConvertMacAddressFormat(printerName);
-                            PrintViaBluetooth(printerName, printDocument);
-                        }
-                        else
-                        {
-                            printDocument.PrinterSettings.PrinterName = printerName;
-                            printDocument.Print();
-                        }
-                        */
-
                     }
                 }
 

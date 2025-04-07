@@ -1,10 +1,10 @@
 ﻿
 
+using System.Data;
+using System.Globalization;
 using KASIR.Model;
 using Newtonsoft.Json;
-using System.Data;
 using Newtonsoft.Json.Linq;
-using System.Globalization;
 namespace KASIR.OffineMode
 {
     public partial class Offline_splitBill : Form
@@ -41,153 +41,153 @@ namespace KASIR.OffineMode
         }
         public async Task LoadCart()
         {
-                try
+            try
+            {
+                string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
+
+
+                // Check if the response is not empty or null
+                if (File.Exists(cacheFilePath))
                 {
-                    string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
+                    string cartJson = File.ReadAllText(cacheFilePath);
+                    var cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
 
-
-                    // Check if the response is not empty or null
-                    if (File.Exists(cacheFilePath))
+                    // Ensure dataModel and its properties are not null
+                    if (cartData["cart_details"] != null || cartData["cart_details"].Count() != 0)
                     {
-                            string cartJson = File.ReadAllText(cacheFilePath);
-                            var cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
+                        var cartDetails = cartData["cart_details"] as JArray;
+                        // Set the first cart_detail_id as cart_id
+                        var cartDetail = cartDetails.FirstOrDefault();
+                        cart_id = cartDetail?["cart_detail_id"].ToString() ?? "null"; // Get first cart_detail_id for cart_id
 
-                            // Ensure dataModel and its properties are not null
-                            if (cartData["cart_details"] != null || cartData["cart_details"].Count() != 0)
+                        // Initialize the DataTable for the DataGridView
+                        DataTable dataTable = new DataTable();
+                        dataTable.Columns.Add("MenuID", typeof(string));
+                        dataTable.Columns.Add("CartDetailID", typeof(int));
+                        dataTable.Columns.Add("Jenis", typeof(string));
+                        dataTable.Columns.Add("Menu", typeof(string));
+                        dataTable.Columns.Add("Jumlah", typeof(string));
+                        dataTable.Columns.Add("Total Harga", typeof(string));
+                        dataTable.Columns.Add("Note", typeof(string));
+                        dataTable.Columns.Add("Minus", typeof(string));
+                        dataTable.Columns.Add("Hasil", typeof(string));
+                        dataTable.Columns.Add("Plus", typeof(string));
+
+                        foreach (var menu in cartDetails)
+                        {
+                            int quantity = menu["qty"] != null ? (int)menu["qty"] : 0;
+                            decimal price = menu["price"] != null ? decimal.Parse(menu["price"].ToString()) : 0;
+                            string noteItem = menu["note_item"]?.ToString() ?? "";
+                            decimal totalPrice = price * quantity;
+                            string totprice = string.Format("{0:n0},-", totalPrice);
+
+                            dataTable.Rows.Add(
+                                menu["menu_id"].ToString(),
+                                menu["cart_detail_id"],
+                                menu["serving_type_name"].ToString(),
+                                menu["menu_name"].ToString() + " " + menu["cart_detail_name"],
+                                "x" + menu["qty"] != null ? (int)menu["qty"] : 0,
+                                "Rp " + totprice,
+                                null,
+                                "-",
+                                "0",
+                                "+");
+
+                            if (!string.IsNullOrEmpty(noteItem))
                             {
-                                var cartDetails = cartData["cart_details"] as JArray;
-                                // Set the first cart_detail_id as cart_id
-                                var cartDetail = cartDetails.FirstOrDefault();
-                                cart_id = cartDetail?["cart_detail_id"].ToString() ?? "null"; // Get first cart_detail_id for cart_id
+                                dataTable.Rows.Add(null, null, null, "*catatan : " + noteItem, null, null, null, null, null, null);
+                            }
+                        }
 
-                                // Initialize the DataTable for the DataGridView
-                                DataTable dataTable = new DataTable();
-                                dataTable.Columns.Add("MenuID", typeof(string));
-                                dataTable.Columns.Add("CartDetailID", typeof(int));
-                                dataTable.Columns.Add("Jenis", typeof(string));
-                                dataTable.Columns.Add("Menu", typeof(string));
-                                dataTable.Columns.Add("Jumlah", typeof(string));
-                                dataTable.Columns.Add("Total Harga", typeof(string));
-                                dataTable.Columns.Add("Note", typeof(string));
-                                dataTable.Columns.Add("Minus", typeof(string));
-                                dataTable.Columns.Add("Hasil", typeof(string));
-                                dataTable.Columns.Add("Plus", typeof(string));
-                                
-                                foreach (var menu in cartDetails)
+                        // Check if dataGridView1 is initialized
+                        if (dataGridView1 != null)
+                        {
+                            dataGridView1.DataSource = dataTable;
+                            dataTable2 = dataTable.Copy();
+
+                            // Check if the columns exist before trying to access them
+                            if (dataGridView1.Columns.Contains("MenuID"))
+                            {
+                                dataGridView1.Columns["MenuID"].Visible = false;
+                            }
+                            if (dataGridView1.Columns.Contains("CartDetailID"))
+                            {
+                                dataGridView1.Columns["CartDetailID"].Visible = false;
+                            }
+                            if (dataGridView1.Columns.Contains("Jenis"))
+                            {
+                                dataGridView1.Columns["Jenis"].Visible = false;
+                            }
+                            if (dataGridView1.Columns.Contains("Note"))
+                            {
+                                dataGridView1.Columns["Note"].Visible = false;
+                            }
+
+                            int minusColumn = dataGridView1.Columns["Minus"].Index;
+                            int plusColumn = dataGridView1.Columns["Plus"].Index;
+
+                            foreach (DataGridViewRow row in dataGridView1.Rows)
+                            {
+                                if (row.Cells["Jenis"].Value != null) // Check if the row is not a separator row
                                 {
-                                    int quantity = menu["qty"] != null ? (int)menu["qty"] : 0;
-                                    decimal price = menu["price"] != null ? decimal.Parse(menu["price"].ToString()) : 0;
-                                    string noteItem = menu["note_item"]?.ToString() ?? "";
-                                    decimal totalPrice = price * quantity;
-                                    string totprice = string.Format("{0:n0},-", totalPrice);
+                                    DataGridViewTextBoxCell minusButtonCell = new DataGridViewTextBoxCell();
+                                    minusButtonCell.Value = "-";
+                                    minusButtonCell.Style.Font = new Font("Arial", 10, FontStyle.Bold);
+                                    minusButtonCell.Style.ForeColor = Color.Red;
 
-                                    dataTable.Rows.Add(
-                                        menu["menu_id"].ToString(),
-                                        menu["cart_detail_id"],
-                                        menu["serving_type_name"].ToString(),
-                                        menu["menu_name"].ToString() + " " + menu["cart_detail_name"],
-                                        "x" + menu["qty"] != null ? (int)menu["qty"] : 0,
-                                        "Rp " + totprice,
-                                        null,
-                                        "-",
-                                        "0",
-                                        "+");
+                                    row.Cells[minusColumn] = minusButtonCell;
 
-                                    if (!string.IsNullOrEmpty(noteItem))
-                                    {
-                                        dataTable.Rows.Add(null, null, null, "*catatan : " + noteItem, null, null, null, null, null, null);
-                                    }
-                                }
+                                    DataGridViewTextBoxCell plusButtonCell = new DataGridViewTextBoxCell();
+                                    plusButtonCell.Value = "+";
+                                    plusButtonCell.Style.Font = new Font("Arial", 10, FontStyle.Bold);
+                                    plusButtonCell.Style.ForeColor = Color.Green;
 
-                                // Check if dataGridView1 is initialized
-                                if (dataGridView1 != null)
-                                {
-                                    dataGridView1.DataSource = dataTable;
-                                    dataTable2 = dataTable.Copy();
-
-                                    // Check if the columns exist before trying to access them
-                                    if (dataGridView1.Columns.Contains("MenuID"))
-                                    {
-                                        dataGridView1.Columns["MenuID"].Visible = false;
-                                    }
-                                    if (dataGridView1.Columns.Contains("CartDetailID"))
-                                    {
-                                        dataGridView1.Columns["CartDetailID"].Visible = false;
-                                    }
-                                    if (dataGridView1.Columns.Contains("Jenis"))
-                                    {
-                                        dataGridView1.Columns["Jenis"].Visible = false;
-                                    }
-                                    if (dataGridView1.Columns.Contains("Note"))
-                                    {
-                                        dataGridView1.Columns["Note"].Visible = false;
-                                    }
-
-                                    int minusColumn = dataGridView1.Columns["Minus"].Index;
-                                    int plusColumn = dataGridView1.Columns["Plus"].Index;
-
-                                    foreach (DataGridViewRow row in dataGridView1.Rows)
-                                    {
-                                        if (row.Cells["Jenis"].Value != null) // Check if the row is not a separator row
-                                        {
-                                            DataGridViewTextBoxCell minusButtonCell = new DataGridViewTextBoxCell();
-                                            minusButtonCell.Value = "-";
-                                            minusButtonCell.Style.Font = new Font("Arial", 10, FontStyle.Bold);
-                                            minusButtonCell.Style.ForeColor = Color.Red;
-
-                                            row.Cells[minusColumn] = minusButtonCell;
-
-                                            DataGridViewTextBoxCell plusButtonCell = new DataGridViewTextBoxCell();
-                                            plusButtonCell.Value = "+";
-                                            plusButtonCell.Style.Font = new Font("Arial", 10, FontStyle.Bold);
-                                            plusButtonCell.Style.ForeColor = Color.Green;
-
-                                            row.Cells[plusColumn] = plusButtonCell;
-                                        }
-                                    }
-
-                                    for (int rowIndex = 0; rowIndex < dataGridView1.Rows.Count; rowIndex++)
-                                    {
-                                        var menuValue = dataGridView1.Rows[rowIndex].Cells[3].Value?.ToString();
-
-                                        if (menuValue != null && (menuValue.EndsWith("s") || menuValue.StartsWith("*")))
-                                        {
-                                            dataGridView1.Rows[rowIndex].Cells[minusColumn].Value = "";
-                                            dataGridView1.Rows[rowIndex].Cells[plusColumn].Value = "";
-                                        }
-                                    }
-
-                                    dataGridView1.ColumnHeadersVisible = false;
-
-                                    dataGridView1.Columns["Minus"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-                                    dataGridView1.Columns["Minus"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-
-                                    dataGridView1.Columns["Plus"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-                                    dataGridView1.Columns["Plus"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-
-                                    dataGridView1.Columns["Hasil"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-                                    dataGridView1.Columns["Hasil"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+                                    row.Cells[plusColumn] = plusButtonCell;
                                 }
                             }
-                            else
-                            {
 
-                                // Log or handle the case where cart_details is null or dataModel is invalid
-                                /*MessageBox.Show("Data not found or in unexpected format.");*/
-                                return; // Exit the function as the data format is incorrect
+                            for (int rowIndex = 0; rowIndex < dataGridView1.Rows.Count; rowIndex++)
+                            {
+                                var menuValue = dataGridView1.Rows[rowIndex].Cells[3].Value?.ToString();
+
+                                if (menuValue != null && (menuValue.EndsWith("s") || menuValue.StartsWith("*")))
+                                {
+                                    dataGridView1.Rows[rowIndex].Cells[minusColumn].Value = "";
+                                    dataGridView1.Rows[rowIndex].Cells[plusColumn].Value = "";
+                                }
                             }
-                        
+
+                            dataGridView1.ColumnHeadersVisible = false;
+
+                            dataGridView1.Columns["Minus"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+                            dataGridView1.Columns["Minus"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+
+                            dataGridView1.Columns["Plus"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+                            dataGridView1.Columns["Plus"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+
+                            dataGridView1.Columns["Hasil"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+                            dataGridView1.Columns["Hasil"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+                        }
                     }
                     else
                     {
-                        MessageBox.Show("No data 2received from the server.");
+
+                        // Log or handle the case where cart_details is null or dataModel is invalid
+                        /*MessageBox.Show("Data not found or in unexpected format.");*/
+                        return; // Exit the function as the data format is incorrect
                     }
+
                 }
-                catch (Exception ex)
+                else
                 {
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                    MessageBox.Show("No data 2received from the server.");
                 }
-            
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+
         }
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)

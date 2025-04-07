@@ -1,30 +1,9 @@
-﻿using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
-using KASIR.Model;
-using KASIR.Network;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using KASIR.komponen;
-using Serilog;
-using FontAwesome.Sharp;
-using System.Net.NetworkInformation;
-using KASIR.Printer;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
-using static System.Windows.Forms.DataFormats;
+﻿using System.Data;
 using System.Text.RegularExpressions;
+using KASIR.Model;
+using KASIR.Printer;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using KASIR.OfflineMode;
-using System.Transactions;
-using System.Security.Cryptography.Xml;
 
 
 namespace KASIR.OffineMode
@@ -87,12 +66,12 @@ namespace KASIR.OffineMode
                 // Begin Counting Transaction Queue
                 int numberQueue = transactionDetails.Count + 1; // Start queue number
                 var reversedTransactionDetails = transactionDetails.Reverse().ToList();
-/*
-                IApiService apiService = new ApiService();
-                string response = await apiService.GetListBill("/transaction?outlet_id=", baseOutlet);
+                /*
+                                IApiService apiService = new ApiService();
+                                string response = await apiService.GetListBill("/transaction?outlet_id=", baseOutlet);
 
-                ListBillModel menuModel = JsonConvert.DeserializeObject<ListBillModel>(response);
-                List<ListBill> menuList = menuModel.data.ToList();*/
+                                ListBillModel menuModel = JsonConvert.DeserializeObject<ListBillModel>(response);
+                                List<ListBill> menuList = menuModel.data.ToList();*/
                 DataTable dataTable = new DataTable();
                 dataTable.Columns.Add("ID", typeof(int));
                 dataTable.Columns.Add("Nama", typeof(string));
@@ -116,7 +95,7 @@ namespace KASIR.OffineMode
                         string formattedDate = updatedAt.ToString("dd MMM yyyy, HH:mm");
                         dataTable.Rows.Add(
                             transaction["transaction_id"]?.ToString(),
-                            numberQueue.ToString() + "." + transaction["customer_name"].ToString() , 
+                            numberQueue.ToString() + "." + transaction["customer_name"].ToString(),
                             transaction["customer_seat"].ToString().ToString(),
                             formattedDate);
                     }
@@ -165,7 +144,7 @@ namespace KASIR.OffineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data bill  " + ex.Message,"Gaspol");
+                MessageBox.Show("Gagal tampil data bill  " + ex.Message, "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -306,61 +285,61 @@ namespace KASIR.OffineMode
                         // Cast the JToken to JObject
                         var cartDetailObject = item as JObject;
 
-                        
-                            // Membuat objek CartDetailStrukCustomerTransaction
-                            var cartDetail = new CartDetailStrukCustomerTransaction
-                            {
-                                cart_detail_id = int.Parse(cartDetailObject["cart_detail_id"].ToString()), // Mengonversi string ke int
-                                menu_id = int.Parse(cartDetailObject["menu_id"].ToString()), // Mengonversi string ke int
-                                menu_name = cartDetailObject["menu_name"]?.ToString(),
-                                menu_type = cartDetailObject["menu_type"]?.ToString(),
-                                menu_detail_id = int.Parse(cartDetailObject["menu_detail_id"]?.ToString() ?? "0"),
-                                varian = cartDetailObject["menu_detail_name"]?.ToString(), // Tidak ada data varian
-                                serving_type_id = int.Parse(cartDetailObject["serving_type_id"]?.ToString() ?? "0"),
-                                serving_type_name = cartDetailObject["serving_type_name"]?.ToString(),
-                                discount_id = null, // Tidak ada data discount
-                                discount_code = cartDetailObject["discount_code"]?.ToString(),
-                                discounts_value = null,
-                                discounted_price = 0,
-                                discounts_is_percent = null,
-                                price = int.Parse(cartDetailObject["price"]?.ToString() ?? "0"), // Mengonversi string ke int
-                                total_price = int.Parse(cartDetailObject["price"]?.ToString() ?? "0") * int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
-                                subtotal = int.Parse(cartDetailObject["price"]?.ToString() ?? "0") * int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
-                                subtotal_price = int.Parse(cartDetailObject["price"]?.ToString() ?? "0") * int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
-                                qty = int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
-                                note_item = string.IsNullOrEmpty(cartDetailObject["note_item"]?.ToString()) ? "" : cartDetailObject["note_item"].ToString(),
-                                is_ordered = int.Parse(cartDetailObject["is_ordered"]?.ToString() ?? "0")
-                            };
 
-                            // Menambahkan ke cart_details
-                            strukCustomerTransaction.data.cart_details.Add(cartDetail);
+                        // Membuat objek CartDetailStrukCustomerTransaction
+                        var cartDetail = new CartDetailStrukCustomerTransaction
+                        {
+                            cart_detail_id = int.Parse(cartDetailObject["cart_detail_id"].ToString()), // Mengonversi string ke int
+                            menu_id = int.Parse(cartDetailObject["menu_id"].ToString()), // Mengonversi string ke int
+                            menu_name = cartDetailObject["menu_name"]?.ToString(),
+                            menu_type = cartDetailObject["menu_type"]?.ToString(),
+                            menu_detail_id = int.Parse(cartDetailObject["menu_detail_id"]?.ToString() ?? "0"),
+                            varian = cartDetailObject["menu_detail_name"]?.ToString(), // Tidak ada data varian
+                            serving_type_id = int.Parse(cartDetailObject["serving_type_id"]?.ToString() ?? "0"),
+                            serving_type_name = cartDetailObject["serving_type_name"]?.ToString(),
+                            discount_id = null, // Tidak ada data discount
+                            discount_code = cartDetailObject["discount_code"]?.ToString(),
+                            discounts_value = null,
+                            discounted_price = 0,
+                            discounts_is_percent = null,
+                            price = int.Parse(cartDetailObject["price"]?.ToString() ?? "0"), // Mengonversi string ke int
+                            total_price = int.Parse(cartDetailObject["price"]?.ToString() ?? "0") * int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
+                            subtotal = int.Parse(cartDetailObject["price"]?.ToString() ?? "0") * int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
+                            subtotal_price = int.Parse(cartDetailObject["price"]?.ToString() ?? "0") * int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
+                            qty = int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
+                            note_item = string.IsNullOrEmpty(cartDetailObject["note_item"]?.ToString()) ? "" : cartDetailObject["note_item"].ToString(),
+                            is_ordered = int.Parse(cartDetailObject["is_ordered"]?.ToString() ?? "0")
+                        };
 
-                            // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
-                            var kitchenAndBarCartDetail = new KitchenAndBarCartDetails
-                            {
-                                cart_detail_id = cartDetail.cart_detail_id,
-                                menu_id = cartDetail.menu_id,
-                                menu_name = cartDetail.menu_name,
-                                menu_type = cartDetail.menu_type,
-                                menu_detail_id = cartDetail.menu_detail_id,
-                                varian = cartDetail.varian,
-                                serving_type_id = cartDetail.serving_type_id,
-                                serving_type_name = cartDetail.serving_type_name,
-                                discount_id = cartDetail.discount_id,
-                                discount_code = cartDetail.discount_code,
-                                discounts_value = cartDetail.discounts_value,
-                                discounted_price = cartDetail.discounted_price,
-                                discounts_is_percent = cartDetail.discounts_is_percent,
-                                price = cartDetail.price,
-                                total_price = cartDetail.total_price,
-                                qty = cartDetail.qty,
-                                note_item = cartDetail.note_item,
-                                is_ordered = cartDetail.is_ordered
-                            };
+                        // Menambahkan ke cart_details
+                        strukCustomerTransaction.data.cart_details.Add(cartDetail);
 
-                            // Menambahkan ke kitchenBarCartDetails
-                            strukCustomerTransaction.data.kitchenBarCartDetails.Add(kitchenAndBarCartDetail);
-                        }
+                        // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
+                        var kitchenAndBarCartDetail = new KitchenAndBarCartDetails
+                        {
+                            cart_detail_id = cartDetail.cart_detail_id,
+                            menu_id = cartDetail.menu_id,
+                            menu_name = cartDetail.menu_name,
+                            menu_type = cartDetail.menu_type,
+                            menu_detail_id = cartDetail.menu_detail_id,
+                            varian = cartDetail.varian,
+                            serving_type_id = cartDetail.serving_type_id,
+                            serving_type_name = cartDetail.serving_type_name,
+                            discount_id = cartDetail.discount_id,
+                            discount_code = cartDetail.discount_code,
+                            discounts_value = cartDetail.discounts_value,
+                            discounted_price = cartDetail.discounted_price,
+                            discounts_is_percent = cartDetail.discounts_is_percent,
+                            price = cartDetail.price,
+                            total_price = cartDetail.total_price,
+                            qty = cartDetail.qty,
+                            note_item = cartDetail.note_item,
+                            is_ordered = cartDetail.is_ordered
+                        };
+
+                        // Menambahkan ke kitchenBarCartDetails
+                        strukCustomerTransaction.data.kitchenBarCartDetails.Add(kitchenAndBarCartDetail);
+                    }
 
                     // Serialisasi ke JSON
                     string response = JsonConvert.SerializeObject(strukCustomerTransaction);
@@ -556,5 +535,5 @@ namespace KASIR.OffineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-}
+    }
 }

@@ -1,12 +1,12 @@
-﻿using KASIR.Model;
-using Newtonsoft.Json;
-using Serilog;
-using System.Data;
-using FontAwesome.Sharp;
-using Newtonsoft.Json.Linq;
-using KASIR.Komponen;
+﻿using System.Data;
 using System.Globalization;
 using System.Reflection;
+using FontAwesome.Sharp;
+using KASIR.Komponen;
+using KASIR.Model;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Serilog;
 
 
 namespace KASIR.OfflineMode
@@ -101,10 +101,7 @@ namespace KASIR.OfflineMode
             {
                 PropertyInfo prop = c.GetType().GetProperty("DoubleBuffered",
                     BindingFlags.Instance | BindingFlags.NonPublic);
-                if (prop != null)
-                {
-                    prop.SetValue(c, true, null);
-                }
+                prop?.SetValue(c, true, null);
 
                 SetDoubleBufferedForAllControls(c);
             }

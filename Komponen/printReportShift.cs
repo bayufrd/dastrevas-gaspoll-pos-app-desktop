@@ -1,38 +1,13 @@
-﻿
-using FontAwesome.Sharp;
+﻿using System.Data;
+using System.Globalization;
+using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
-using InTheHand.Net;
-using KASIR.komponen;
 using KASIR.Model;
 using KASIR.Network;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using System.Globalization;
-using Serilog;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Text.RegularExpressions;
-using System.Windows.Controls;
-using System.Windows.Markup;
-using Microsoft.Win32;
-using System.Drawing.Printing;
-using System.Management;
-using Image = System.Drawing.Image;
-using System.Drawing.Imaging;
-using KASIR.Model;
 using KASIR.Printer;
+using Newtonsoft.Json;
+using Serilog;
 
 namespace KASIR.Komponen
 {
@@ -182,7 +157,7 @@ namespace KASIR.Komponen
                             lblCashierName.Text = $"Cashier Name : {datas.casher_name}";
 
                             lblRiwayatShift.Text += " | Shift: " + datas.shift_number.ToString();
-                            
+
 
                             var sortedcartDetailSuccess = cartDetailsSuccess.OrderBy(x =>
                             {
@@ -211,7 +186,7 @@ namespace KASIR.Komponen
 
                             if (cartDetailsPending.Count != 0)
                             {
-                                
+
                                 var sortedcartDetailPendings = cartDetailsPending.OrderBy(x =>
                                 {
                                     if (x.menu_type.Contains("Minuman")) return 1;
@@ -240,7 +215,7 @@ namespace KASIR.Komponen
 
                             if (cartDetailsCanceled.Count != 0)
                             {
-                               
+
                                 var sortedcartDetailCanceled = cartDetailsCanceled.OrderBy(x =>
                                 {
                                     if (x.menu_type.Contains("Minuman")) return 1;
@@ -268,7 +243,7 @@ namespace KASIR.Komponen
                             }
                             if (refundDetails.Count != 0)
                             {
-                               
+
                                 var sortedrefoundDetails = refundDetails.OrderBy(x =>
                                 {
                                     if (x.menu_type.Contains("Minuman")) return 1;

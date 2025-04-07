@@ -1,26 +1,10 @@
-﻿using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
+﻿using System.Data;
+using System.Text.RegularExpressions;
 using KASIR.Model;
 using KASIR.Network;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using KASIR.komponen;
-using Serilog;
-using FontAwesome.Sharp;
-using System.Net.NetworkInformation;
 using KASIR.Printer;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
-using static System.Windows.Forms.DataFormats;
-using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using Serilog;
 
 
 namespace KASIR.Komponen
@@ -100,12 +84,12 @@ namespace KASIR.Komponen
                     {
                         // Format ulang menjadi lebih singkat, misalnya "19 Oct 2024, 10:38"
                         string formattedDate = updatedAt.ToString("dd MMM yyyy, HH:mm");
-                        dataTable.Rows.Add(menu.id, nomor.ToString() + "." + menu.customer_name , formattedDate, menu.customer_seat.ToString());
+                        dataTable.Rows.Add(menu.id, nomor.ToString() + "." + menu.customer_name, formattedDate, menu.customer_seat.ToString());
                     }
                     else
                     {
                         // Jika parsing gagal, tampilkan seperti apa adanya
-                        dataTable.Rows.Add(menu.id, nomor.ToString() + "." + menu.customer_name , menu.updated_at, menu.customer_seat.ToString());
+                        dataTable.Rows.Add(menu.id, nomor.ToString() + "." + menu.customer_name, menu.updated_at, menu.customer_seat.ToString());
                     }
                 }
 
@@ -138,7 +122,7 @@ namespace KASIR.Komponen
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data bill  " + ex.Message,"Gaspol");
+                MessageBox.Show("Gagal tampil data bill  " + ex.Message, "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -287,97 +271,5 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
-        /*
-        private async void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-            if (dataGridView1.Columns[e.ColumnIndex].HeaderText == "Pilih Bill" && e.RowIndex >= 0)
-
-            {
-
-                int selectedId = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["ID"].Value);
-                try
-                {
-
-
-                    IApiService apiService = new ApiService();
-                    string response = await apiService.GetActiveCart("/transaction/" + selectedId + "?outlet_id=" + baseOutlet);
-                    if (response != null)
-                    {
-                        DialogResult = DialogResult.OK;
-
-                        Close();
-                        
-
-                    }
-                }
-                catch (Exception ex)
-                {
-                    DialogResult = DialogResult.Cancel;
-                    MessageBox.Show("Gagal load keranjang " + ex.Message,"Gaspol");
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                    Close();
-                }
-
-
-
-            }
-            if (dataGridView1.Columns[e.ColumnIndex].HeaderText == "Struk" && e.RowIndex >= 0)
-
-            {
-
-                int selectedId = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["ID"].Value);
-                try
-                {
-                    IApiService apiService = new ApiService();
-                    string response = await apiService.Restruk("/transaction/" + selectedId + "?outlet_id=" + baseOutlet + "&is_struct=1");
-                    if (response != null)
-                    {
-                        
-                        RestrukModel restrukModel = JsonConvert.DeserializeObject<RestrukModel>(response);
-                        DataRestruk data = restrukModel.data;
-                        List<CartDetailRestruk> listCart = data.cart_details;
-                        List<CanceledItemStrukCustomerRestruk> listCancel = data.canceled_items;
-                        try
-                        {
-                            DataRestruk datas = restrukModel.data;
-                            List<CartDetailRestruk> cartDetails = datas.cart_details;
-                            List<CanceledItemStrukCustomerRestruk> canceledItems = datas.canceled_items;
-                            await Task.Run(async () =>
-                            {
-                                PrintPurchaseReceipt(datas, cartDetails, canceledItems);
-                            });
-                            DialogResult = DialogResult.OK;
-
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Gagal cetak ulang struk " + ex.Message);
-                            LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                        }
-
-
-                    }else
-                        {
-                           MessageBox.Show("Gagal cetak ulang struk " + response.ToString());
-                        }
-                }
-                catch (TaskCanceledException ex)
-                {
-                    MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                }
-                catch (Exception ex)
-                {
-                   // MessageBox.Show("Gagal cetak ulang struk " + ex.Message, "Gaspol");
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                }
-
-
-
-            }
-        
     }
-        */
-}
 }

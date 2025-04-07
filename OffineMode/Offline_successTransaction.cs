@@ -1,31 +1,9 @@
-﻿
-using FontAwesome.Sharp;
-using KASIR.komponen;
-using KASIR.Model;
+﻿using System.Data;
 using KASIR.Network;
 using Newtonsoft.Json;
-using Serilog;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrayNotify;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Globalization;
-using System.Text.RegularExpressions;
-using static System.Windows.Forms.DataFormats;
-using System.Windows.Media;
-using Color = System.Drawing.Color;
 using Newtonsoft.Json.Linq;
+using Serilog;
+using Color = System.Drawing.Color;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_successTransaction : UserControl
@@ -121,7 +99,7 @@ namespace KASIR.OfflineMode
                             string formattedDate = transactionTime.ToString("dd MMM yyyy, HH:mm");
                             dataTable.Rows.Add(
                                 transaction["transaction_id"]?.ToString(), numberQueue,
-                                numberQueue + ". " +transaction["receipt_number"]?.ToString(),
+                                numberQueue + ". " + transaction["receipt_number"]?.ToString(),
                                 customerName,
                                 customerSeat,
                                 string.Format("Rp. {0:n0},-", total),
@@ -134,7 +112,7 @@ namespace KASIR.OfflineMode
                             // If parsing fails, show original date
                             dataTable.Rows.Add(
                                 transaction["transaction_id"]?.ToString(), numberQueue,
-                                numberQueue + ". " +transaction["receipt_number"]?.ToString(),
+                                numberQueue + ". " + transaction["receipt_number"]?.ToString(),
                                 customerName,
                                 customerSeat,
                                 string.Format("Rp. {0:n0},-", total),
@@ -154,7 +132,7 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                   /* MessageBox.Show("File transaction.data tidak ditemukan.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
+                    /* MessageBox.Show("File transaction.data tidak ditemukan.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
                 }
             }
             catch (Exception ex)
@@ -231,9 +209,9 @@ namespace KASIR.OfflineMode
             LoadData();
         }
 
-        
-        
 
-        
+
+
+
     }
 }

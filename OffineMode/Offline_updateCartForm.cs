@@ -1,28 +1,10 @@
-﻿using FontAwesome.Sharp;
-using KASIR.komponen;
-using KASIR.Model;
-using KASIR.Network;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Windows.Markup;
-using static System.Windows.Forms.Design.AxImporter;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Windows.Forms.Design;
-using KASIR.Komponen;
-using Newtonsoft.Json.Linq;
+﻿using System.Data;
 using System.Globalization;
+using KASIR.Komponen;
+using KASIR.Model;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Serilog;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_updateCartForm : Form
@@ -79,42 +61,7 @@ namespace KASIR.OfflineMode
             /*int newHeight = Screen.PrimaryScreen.WorkingArea.Height - 100;
             Height = newHeight;*/
         }
-        /*    private async void LoadDataDiscount()
-            {
-                if (!Directory.Exists(folder)) { Directory.CreateDirectory(folder); }
-
-                // Load menu data from local file if available
-                if (File.Exists(folder + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data"))
-                {
-                    try
-                    {
-                        string json = File.ReadAllText(folder + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data");
-                        DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(json);
-                        List<DataDiscountCart> data = menuModel.data;
-                        var options = data;
-                        dataDiskonList = data;
-                        options.Insert(0, new DataDiscountCart { id = -1, code = "Pilih Diskon" });
-                        cmbDiskon.DataSource = options;
-                        cmbDiskon.DisplayMember = "code";
-                        cmbDiskon.ValueMember = "id";
-
-                    }
-                    catch (Exception ex)
-                    {
-                        //MessageBox.Show("Gagal tambah data " + ex.Message, "Gaspol");
-                        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
-                    CacheDataApp form3 = new CacheDataApp("Sync");
-                    DialogResult = DialogResult.Cancel;
-                    this.Close();
-                    form3.Show();
-                }
-
-            }*/
+        
         private async void LoadDataVarianAsync()
         {
             try
@@ -670,11 +617,10 @@ namespace KASIR.OfflineMode
                     {
                         int selectedVarian = int.TryParse(cmbVarian.SelectedValue?.ToString(), out var varianResult) ? varianResult : -1;
                         string VarianName = cmbVarian.Text.ToString();
-                        if (VarianName == "Normal") VarianName = (string)null;
+                        if (VarianName == "Normal") VarianName = null;
                         int serving_type = int.Parse(comboBox1.SelectedValue.ToString());
                         int quantity = int.Parse(txtKuantitas.Text.ToString());
                         string notes = txtNotes.Text.ToString();
-                        int? menuDetailIdValue = null;
                         string pricefix = "0", servingTypeName = comboBox1.Text.ToString();
                         //int selectedDiskon = int.Parse(cmbDiskon.SelectedValue.ToString());
                         int diskon = 0;
@@ -688,7 +634,7 @@ namespace KASIR.OfflineMode
                             MessageBox.Show("Masukan jumlah kuantitas!", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             return;
                         }
-                        
+
 
                         if (selectedVarian == -1)
                         {
@@ -705,7 +651,7 @@ namespace KASIR.OfflineMode
                             int priceafterDisc = int.Parse(itemToUpdate["price"]?.ToString()) - int.Parse(itemToUpdate["discounted_item_price"]?.ToString());
                             int total_priceCanceled = QtyCancelled * priceafterDisc;
 
-                        var newItem = new JObject
+                            var newItem = new JObject
                             {
                                 { "cart_detail_id", cartDetailId },  // Unique ID based on timestamp
                                 { "menu_id", int.Parse(itemToUpdate["menu_id"].ToString()) },
@@ -761,7 +707,7 @@ namespace KASIR.OfflineMode
                         int total_item_withDiscount = subtotal_item;
                         int discountPercent = 0;
                         int discountValue = 0;
-                        string? discountCode = (string)null;
+                        string? discountCode = null;
                         int discountId = 0;
                         int discountedPrice = 0;
                         int discounted_peritemPrice = 0;
@@ -886,7 +832,7 @@ namespace KASIR.OfflineMode
                         cartData["discounts_is_percent"] = (string)null;
                         cartData["total"] = cartDetails.Sum(item => (int)item["price"] * (int)item["qty"]);
                     }
-                    
+
                     // Menyimpan kembali data cart yang telah diperbarui ke file cache
                     File.WriteAllText(cacheFilePath, cartData.ToString());
                 }

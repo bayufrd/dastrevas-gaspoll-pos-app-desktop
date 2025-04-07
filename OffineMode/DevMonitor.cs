@@ -235,6 +235,7 @@ namespace KASIR.OfflineMode
                     {
                         Text = outlet["outlet_name"]?.ToString(),
                         Width = totalWidth,
+                        ForeColor = Color.Black,
                         TextAlign = ContentAlignment.MiddleLeft,
                     };
 
@@ -243,6 +244,7 @@ namespace KASIR.OfflineMode
                     {
                         Text = "Version: " + outlet["version"]?.ToString(),
                         Width = totalWidth,
+                        ForeColor = Color.Black,
                         TextAlign = ContentAlignment.MiddleLeft,
                         Top = 30,
                     };
@@ -253,6 +255,7 @@ namespace KASIR.OfflineMode
                         Text = "New Version: " + outlet["new_version"]?.ToString()?.Trim(),
                         Width = totalWidth,
                         TextAlign = ContentAlignment.MiddleLeft,
+                        ForeColor = Color.Black,
                         Top = 50,
                     };
 
@@ -262,6 +265,7 @@ namespace KASIR.OfflineMode
                         Text = "Last Updated: " + outlet["last_updated"]?.ToString(),
                         Width = totalWidth,
                         TextAlign = ContentAlignment.MiddleLeft,
+                        ForeColor = Color.Black,
                         Top = 70,
                     };
 
@@ -381,6 +385,7 @@ namespace KASIR.OfflineMode
                     {
                         Text = outlet["name"]?.ToString() + " || " + outlet["sent_at"]?.ToString(),
                         Width = totalWidth,
+                        ForeColor = Color.Black,
                         Height = 40,
                         FlatStyle = FlatStyle.Flat,
                         TextAlign = ContentAlignment.MiddleLeft

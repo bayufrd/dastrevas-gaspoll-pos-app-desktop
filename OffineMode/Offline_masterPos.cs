@@ -1,31 +1,25 @@
-﻿using KASIR.Model;
-using KASIR.Network;
-using Newtonsoft.Json;
-using Serilog;
-using System.Data;
-using Menu = KASIR.Model.Menu;
-using FontAwesome.Sharp;
+﻿using System.Data;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Net.NetworkInformation;
-using System.Timers;
-using System.Runtime.Serialization.Formatters.Binary;
-using Newtonsoft.Json.Linq;
-using KASIR.Komponen;
-using System.IO;
-using KASIR.OffineMode;
-using SharpCompress.Common;
 using System.Globalization;
-using System.Text.RegularExpressions;
-using System.Windows.Documents;
-using MessageBox = System.Windows.Forms.MessageBox;
-using FontStyle = System.Drawing.FontStyle;
-using Point = System.Drawing.Point;
-using SystemFonts = System.Drawing.SystemFonts;
-using Size = System.Drawing.Size;
-using System.Windows;
-using Polly.Caching;
+using System.Net.NetworkInformation;
 using System.Reflection;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Text.RegularExpressions;
+using System.Timers;
+using FontAwesome.Sharp;
+using KASIR.Komponen;
+using KASIR.Model;
+using KASIR.Network;
+using KASIR.OffineMode;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using FontStyle = System.Drawing.FontStyle;
+using Menu = KASIR.Model.Menu;
+using MessageBox = System.Windows.Forms.MessageBox;
+using Point = System.Drawing.Point;
+using Size = System.Drawing.Size;
+using SystemFonts = System.Drawing.SystemFonts;
 
 
 namespace KASIR.OfflineMode
@@ -147,10 +141,7 @@ namespace KASIR.OfflineMode
             {
                 PropertyInfo prop = c.GetType().GetProperty("DoubleBuffered",
                     BindingFlags.Instance | BindingFlags.NonPublic);
-                if (prop != null)
-                {
-                    prop.SetValue(c, true, null);
-                }
+                prop?.SetValue(c, true, null);
 
                 SetDoubleBufferedForAllControls(c);
             }
@@ -1558,34 +1549,6 @@ namespace KASIR.OfflineMode
 
         }
 
-        // Method to save FlowLayoutPanel data to a local binary file
-        public async void SaveFlowLayoutPanelToBinFile()
-        {
-            try
-            {
-                BinaryFormatter formatter = new BinaryFormatter();
-                FileStream stream = new FileStream("Menu.bin", FileMode.Create, FileAccess.Write, FileShare.None);
-
-                List<SerializablePanel> panelControls = new List<SerializablePanel>();
-                foreach (Control control in dataGridView3.Controls)
-                {
-                    if (control is SerializablePanel panel)
-                    {
-                        panelControls.Add(panel);
-                    }
-                }
-
-                formatter.Serialize(stream, panelControls);
-                stream.Close();
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
-
-
-
         // Fungsi untuk memuat gambar ke PictureBox dengan mengambil dari cache atau unduh jika tidak ada di cache
         private async Task LoadImageToPictureBox(PictureBox pictureBox, Menu menu)
         {
@@ -2032,11 +1995,11 @@ namespace KASIR.OfflineMode
 
                         }
 
-                        customer_name = (string)null;
-                        customer_seat = (string)null;
+                        customer_name = null;
+                        customer_seat = null;
                         // Set customer information
-                        customer_name = cartData["customer_name"]?.ToString() ?? (string)null;
-                        customer_seat = cartData["customer_seat"]?.ToString() ?? (string)null;
+                        customer_name = cartData["customer_name"]?.ToString() ?? null;
+                        customer_seat = cartData["customer_seat"]?.ToString() ?? null;
                         if (!string.IsNullOrEmpty(customer_name) && !string.IsNullOrEmpty(customer_seat))
                         {
                             lblDetailKeranjang.Text = $"Keranjang: Nama : {customer_name} Seat : {customer_seat}";
@@ -2569,7 +2532,7 @@ namespace KASIR.OfflineMode
                 int discountMax = 0;
                 int tempTotal = 0;
 
-                string discountCode = (string)null;
+                string discountCode = null;
 
                 if (selectedDiskon != 0) // Jika diskon yang dipilih bukan 0, proses diskon
                 {

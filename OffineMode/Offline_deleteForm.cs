@@ -1,26 +1,8 @@
-﻿
-using FontAwesome.Sharp;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
-using InTheHand.Net;
-using KASIR.komponen;
+﻿using System.Globalization;
 using KASIR.Model;
-using KASIR.Network;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using System.Globalization;
-using Serilog;
 using Newtonsoft.Json.Linq;
-using System.Transactions;
+using Serilog;
 
 namespace KASIR.OfflineMode
 {
@@ -151,7 +133,7 @@ namespace KASIR.OfflineMode
                         ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         ["discount_id"] = int.Parse(item["discount_id"]?.ToString()),
-                        ["discount_code"] = item["discount_code"]?.ToString() ?? (string)null,
+                        ["discount_code"] = item["discount_code"]?.ToString() ?? null,
                         ["discounts_value"] = int.Parse(item["discounts_value"]?.ToString()),
                         ["discounted_price"] = int.Parse(item["discounted_price"]?.ToString()),
                         ["discounts_is_percent"] = int.Parse(item["discounts_is_percent"]?.ToString()),
@@ -181,7 +163,7 @@ namespace KASIR.OfflineMode
                 cartData["is_canceled"] = 1;
 
                 int edited_sync = 0;
-                if(int.Parse(cartData["discount_id"]?.ToString()) == 1) { edited_sync = 1; }
+                if (int.Parse(cartData["discount_id"]?.ToString()) == 1) { edited_sync = 1; }
                 // Prepare transaction data
                 var transactionData = new
                 {

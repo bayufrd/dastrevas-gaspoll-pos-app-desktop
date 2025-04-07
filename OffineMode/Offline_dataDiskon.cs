@@ -1,24 +1,8 @@
-﻿
-using FontAwesome.Sharp;
+﻿using System.Data;
 using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
-using System.Windows.Markup;
 namespace KASIR.OfflineMode
 {
     public partial class Offline_dataDiskon : Form
@@ -145,15 +129,15 @@ namespace KASIR.OfflineMode
             dataGridView1.DataSource = dataTable;
             dataGridView1.Columns["ID"].Visible = false;
         }
-    
 
 
 
-    private void btnKeluar_Click(object sender, EventArgs e)
+
+        private void btnKeluar_Click(object sender, EventArgs e)
         {
             this.Close();
         }
 
-       
+
     }
 }

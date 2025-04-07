@@ -1,39 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Net;
-using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Forms;
-
-namespace KASIR.Komponen
+﻿namespace KASIR.Komponen
 {
     public partial class UpdateInformation : Form
     {
         public UpdateInformation()
         {
             InitializeComponent();
-            string info;
-            string fileUrl = "https://raw.githubusercontent.com/bayufrd/update/main/update.txt"; // replace with the URL of your file
+            LoadInfoAsync();
+        }
 
-            using (WebClient client = new WebClient())
+        private async void LoadInfoAsync()
+        {
+            try
             {
-                string fileContent = client.DownloadString(fileUrl);
-                info = fileContent;
+                string fileUrl = "https://raw.githubusercontent.com/bayufrd/update/main/update.txt";
+                using (var httpClient = new HttpClient())
+                {
+                    string info = await httpClient.GetStringAsync(fileUrl);
+                    // Create and configure the label on the UI thread
+                    CreateInfoLabel(info);
+                }
             }
-            System.Windows.Forms.Label strukLabel = new System.Windows.Forms.Label();
-            strukLabel.Text = info;
-            strukLabel.BackColor = Color.Transparent;
-            strukLabel.ForeColor = Color.Black;
-            strukLabel.TextAlign = System.Drawing.ContentAlignment.TopLeft;
-            strukLabel.AutoSize = true;
-            strukLabel.Font = new System.Drawing.Font(strukLabel.Font.FontFamily, strukLabel.Font.Size, System.Drawing.FontStyle.Bold);
+            catch (Exception ex)
+            {
+                // Optional: Log the error or show a user-friendly message
+                LoggerUtil.LogError(ex, "Error fetching info: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private void CreateInfoLabel(string info)
+        {
+            // Ensure UI updates happen on the UI thread
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => CreateInfoLabel(info)));
+                return;
+            }
+
+            var strukLabel = new Label
+            {
+                Text = info,
+                BackColor = Color.Transparent,
+                ForeColor = Color.Black,
+                TextAlign = ContentAlignment.TopLeft,
+                AutoSize = true,
+                Font = new Font(Font.FontFamily, Font.Size, FontStyle.Bold)
+            };
+
             gradientPanel2.AutoScroll = true;
             gradientPanel2.Controls.Add(strukLabel);
         }

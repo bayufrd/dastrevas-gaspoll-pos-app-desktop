@@ -1,10 +1,9 @@
-﻿using KASIR.Model;
+﻿using System.Data;
+using System.Text.RegularExpressions;
+using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
-using System.Data;
-
 using Serilog;
-using System.Text.RegularExpressions;
 namespace KASIR.Komponen
 {
     public partial class notifikasiPengeluaran : Form

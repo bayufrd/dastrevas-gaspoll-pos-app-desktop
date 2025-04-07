@@ -982,7 +982,6 @@ namespace KASIR.Komponen
             IApiService apiService = new ApiService();
             return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
         }
-        private static bool isSyncing = false;  // Static flag to track sync status
         public async Task LoadData(bool isBackground = false)
         {
             // Set background operation flag

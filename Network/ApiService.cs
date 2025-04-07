@@ -23,7 +23,10 @@ namespace KASIR.Network
         public ApiService()
         {
             baseAddress = Properties.Settings.Default.BaseAddress;
-            httpClient = new HttpClient();
+            httpClient = new HttpClient()
+            {
+                Timeout = TimeSpan.FromSeconds(300) // 5 menit = 300 detik
+            };
             httpClient.BaseAddress = new Uri(baseAddress); // Replace with your API base URL
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -85,7 +88,6 @@ namespace KASIR.Network
                         }
                         catch (Exception retryEx)
                         {
-                            //MessageBox.Show("Percobaan ulang gagal. Silakan coba lagi nanti.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             throw retryEx;
                         }
                     }

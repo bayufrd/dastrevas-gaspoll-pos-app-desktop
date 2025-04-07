@@ -1,28 +1,12 @@
-﻿
-using FontAwesome.Sharp;
+﻿using System.Data;
+using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
-using InTheHand.Net;
-using KASIR.komponen;
 using KASIR.Model;
 using KASIR.Network;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Serilog;
-
-using Serilog;
-using Serilog.Events;
-using Serilog.Core;
-using Serilog.Sinks.File;
 using KASIR.Printer;
+using Newtonsoft.Json;
+using Serilog;
 namespace KASIR.Komponen
 {
     public partial class refund : Form
@@ -168,7 +152,7 @@ namespace KASIR.Komponen
                     DataTransaction data = transactionDetail.data;
                     dataTransaction = transactionDetail;
                     cartId = data.cart_id.ToString();
-                    lblDetailPayment.Text = "Payment Sebelumnya : "+ data.payment_type.ToString();
+                    lblDetailPayment.Text = "Payment Sebelumnya : " + data.payment_type.ToString();
                     lblCustomerName.Text = data.customer_name;
                     item = data.cart_details;
                     PopulateDynamicList();
@@ -719,10 +703,6 @@ namespace KASIR.Komponen
         }
         private void btnCicil_Click(object sender, EventArgs e)
         {
-            ////LoggerUtil.LogPrivateMethod(nameof(btnCicil_Click));
-
-            cicilRefund cicilRefund = new cicilRefund(cartId);
-            cicilRefund.Show();
         }
 
         private void panel7_Paint(object sender, PaintEventArgs e)
@@ -733,7 +713,7 @@ namespace KASIR.Komponen
         private void cmbRefundType_SelectedIndexChanged(object sender, EventArgs e)
         {
             string selectedRefundType = cmbRefundType.SelectedItem.ToString();
-            if(selectedRefundType == "Semua")
+            if (selectedRefundType == "Semua")
             {
                 panel13.Enabled = false;
             }

@@ -1,14 +1,9 @@
-﻿using System;
-using System.Net.Http;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
-using Polly;
-using Polly.Retry;
-using Polly.Timeout;
 using System.Windows;
+using Polly;
 using MessageBox = System.Windows.MessageBox;
-using System.Net;
 
 namespace KASIR.Network
 {

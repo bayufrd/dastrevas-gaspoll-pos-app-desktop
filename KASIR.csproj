@@ -94,9 +94,6 @@
     <Compile Update="Komponen\dataDiskon.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="Komponen\cicilRefund.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Update="Komponen\deleteForm.cs">
       <SubType>Form</SubType>
     </Compile>

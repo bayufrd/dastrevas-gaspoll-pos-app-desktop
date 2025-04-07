@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using KASIR.komponen;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Printer;
@@ -763,8 +762,6 @@ namespace KASIR.OfflineMode
 
         private void btnCicil_Click(object sender, EventArgs e)
         {
-            cicilRefund cicilRefund = new cicilRefund(cartId);
-            cicilRefund.Show();
         }
 
         private void panel7_Paint(object sender, PaintEventArgs e)

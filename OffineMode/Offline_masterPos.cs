@@ -2076,15 +2076,17 @@ namespace KASIR.OfflineMode
                                             "  *catatan : " + (noteItem),
                                             "  *discounted ",
                                             null);
-                                        return;
                                     }
-                                    dataTable.Rows.Add(
-                                        null,
-                                        null,
-                                        null,
-                                        "  *catatan : " + (noteItem),
-                                        null,
-                                        null);
+                                    else
+                                    {
+                                        dataTable.Rows.Add(
+                                            null,
+                                            null,
+                                            null,
+                                            "  *catatan : " + (noteItem),
+                                            null,
+                                            null);
+                                    }
                                 }
                                 else
                                 {
@@ -2207,24 +2209,6 @@ namespace KASIR.OfflineMode
             // For example: Hide columns 1, 2, 3, 6 only for this row
             // This is handled by applying the height to the row, not changing cell visibility.
         }
-
-
-        /*
-                private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
-                {
-                    // Tambahkan separator row ke DataTable
-                    dataTable.Rows.Add(null, null, null, groupKey + "s\n", null, null); // Add a separator row
-
-                    // Ambil indeks baris terakhir yang baru saja ditambahkan
-                    int lastRowIndex = dataTable.Rows.Count - 1;
-
-                    // Menambahkan row ke DataGridView
-                    dataGridView.DataSource = dataTable;
-
-                    // Mengatur gaya sel untuk kolom tertentu
-                    int[] cellIndexesToStyle = { 3, 4, 5 }; // Indeks kolom yang ingin diatur
-                    SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
-                }*/
         private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)
         {
             foreach (int index in cellIndexes)

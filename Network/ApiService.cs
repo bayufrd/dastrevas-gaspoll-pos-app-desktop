@@ -20,7 +20,7 @@ namespace KASIR.Network
             baseAddress = Properties.Settings.Default.BaseAddress;
             httpClient = new HttpClient()
             {
-                Timeout = TimeSpan.FromSeconds(300) // 5 menit = 300 detik
+                Timeout = TimeSpan.FromSeconds(30) // 5 menit = 300 detik
             };
             httpClient.BaseAddress = new Uri(baseAddress); // Replace with your API base URL
             httpClient.DefaultRequestHeaders.Accept.Clear();
@@ -31,7 +31,7 @@ namespace KASIR.Network
                 .RetryAsync(3);
 
             timeoutPolicy = Policy
-                .TimeoutAsync<HttpResponseMessage>(10); // Set the timeout duration to 10 seconds, adjust as needed
+                .TimeoutAsync<HttpResponseMessage>(30); // Set the timeout duration to 10 seconds, adjust as needed
 
             combinedPolicy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
         }
@@ -47,9 +47,7 @@ namespace KASIR.Network
             }
             catch (HttpRequestException ex)
             {
-                // Handle HttpRequestException, e.g., notify the user
-                //MessageBox.Show("Terjadi kesalahan jaringan. Silakan periksa koneksi internet Anda dan coba lagi.", "Network Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                LoggerUtil.LogError(ex, "Terjadi kesalahan jaringan: {ErrorMessage}", ex.Message);
                 throw; // rethrow the exception to maintain the original behavior
             }
             catch (TaskCanceledException ex)
@@ -58,13 +56,12 @@ namespace KASIR.Network
 
                 if (ex.CancellationToken.IsCancellationRequested)
                 {
-                    //MessageBox.Show("Operasi dibatalkan, ada yang salah saat penginputan .", "Task Canceled", MessageBoxButton.OK, MessageBoxImage.Error);
-                    LoggerUtil.LogError(ex, "TaskCanceledException: {ErrorMessage} - Canceled", ex.Message);
+                    LoggerUtil.LogError(ex, "Operasi dibatalkan, ada yang salah saat penginputan: {ErrorMessage} - Canceled", ex.Message);
                 }
                 else
                 {
                     //MessageBox.Show("Waktu koneksi berakhir, telah dicoba sebanyak 3x. Silakan periksa koneksi internet Anda dan coba lagi.", "Timeout Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    LoggerUtil.LogError(ex, "TaskCanceledException: {ErrorMessage} - Timeout", ex.Message);
+                    LoggerUtil.LogError(ex, "Waktu koneksi berakhir, telah dicoba sebanyak 3x: {ErrorMessage} - Timeout", ex.Message);
                 }
                 throw; // rethrow the exception to maintain the original behavior
             }

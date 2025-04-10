@@ -41,7 +41,7 @@
             gradientPanel2.Dock = DockStyle.Fill;
             gradientPanel2.Location = new Point(0, 0);
             gradientPanel2.Name = "gradientPanel2";
-            gradientPanel2.Size = new Size(220, 210);
+            gradientPanel2.Size = new Size(584, 227);
             gradientPanel2.TabIndex = 2;
             gradientPanel2.TopColor = Color.Gainsboro;
             // 
@@ -60,7 +60,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(220, 210);
+            ClientSize = new Size(584, 227);
             Controls.Add(gradientPanel2);
             MaximizeBox = false;
             MinimizeBox = false;

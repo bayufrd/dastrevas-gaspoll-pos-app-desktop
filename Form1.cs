@@ -625,105 +625,6 @@ namespace KASIR
         }
 
 
-        private async Task cekCacheData()
-        {
-            await CompareDataAsync();
-        }
-
-        static async Task CompareDataAsync()
-        {
-            try
-            {
-                IApiService apiService = new ApiService();
-
-                // Memuat data dari API
-                string baseOutlet = Properties.Settings.Default.BaseOutlet.ToString();
-                string apiResponse = await apiService.Get("/menu?outlet_id=" + baseOutlet);
-                GetMenuModel apiMenuModel = JsonConvert.DeserializeObject<GetMenuModel>(apiResponse);
-                List<Menu> apiMenuList = apiMenuModel.data.ToList();
-
-                // Memuat data dari file .data
-                string filePath = $"DT-Cache\\menu_outlet_id_{baseOutlet}.data";
-                List<Menu> fileMenuList = LoadMenuFromFile(filePath);
-
-                // Membandingkan data
-                CompareMenuData(apiMenuList, fileMenuList);
-            }
-            catch (TaskCanceledException ex)
-            {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error" + ex.Message, "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
-
-        static List<Menu> LoadMenuFromFile(string filePath)
-        {
-            List<Menu> menuList = new List<Menu>();
-            try
-            {
-                string json = File.ReadAllText(filePath);
-                GetMenuModel fileMenuModel = JsonConvert.DeserializeObject<GetMenuModel>(json);
-                menuList = fileMenuModel.data.ToList();
-            }
-            catch (FileNotFoundException)
-            {
-                MessageBox.Show("File not found: " + filePath);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error reading file: " + ex.Message);
-            }
-            return menuList;
-        }
-
-        static void CompareMenuData(List<Menu> apiMenuList, List<Menu> fileMenuList)
-        {
-            // Membandingkan data antara API dan file
-            foreach (Menu apiMenu in apiMenuList)
-            {
-                bool found = false;
-                bool notequal = false;
-                foreach (Menu fileMenu in fileMenuList)
-                {
-                    if (apiMenu.id == fileMenu.id)
-                    {
-                        // Memeriksa apakah ada perbedaan data
-                        if (!AreMenusEqual(apiMenu, fileMenu))
-                        {
-
-                            notequal = true;
-                        }
-                        found = true;
-                        break;
-                    }
-                }
-                // Menjalankan fungsi jika ID baru ditemukan di API
-                if (!found || notequal)
-                {
-                    YourFunctionToHandleChanges();
-                    //YourFunctionToAddNewID();
-                    break;
-                }
-            }
-        }
-
-        static bool AreMenusEqual(Menu menu1, Menu menu2)
-        {
-            return menu1.name == menu2.name && menu1.price == menu2.price && menu1.menu_type == menu2.menu_type;
-        }
-
-        static void YourFunctionToHandleChanges()
-        {
-            // Fungsi Anda untuk menangani perbedaan antara data dari API dan file
-            // Anda bisa menambahkan log, pembaruan, atau tindakan lain sesuai kebutuhan
-            MessageBox.Show("Terdapat Perubahan Item Menu!\nSilahkan Sinkronisasi ulang pada setting bawah kiri\nLalu jalankan tombol Sync!");
-
-        }
         static bool IsValidVersion(string version)
         {
             // Memastikan hanya angka dan maksimal 5 digit
@@ -801,14 +702,15 @@ namespace KASIR
                         if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
                         {
                             shouldUpdate = true;
-                        }
+                            await headerOutletName("Opening Kasir Updater...");
 
+                        }
                         if (shouldUpdate)
                         {
-                            Util n = new Util();
-                            n.sendLogTelegramNetworkError("Open Updater");
-                            await headerOutletName("Opening Kasir Updater...");
-                            OpenUpdaterExe();
+                            LoggerUtil.LogNetwork("Open Updater");
+                            await OpenUpdaterExe();
+
+                            return; // Keluar dari method setelah membuka updater
                         }
                     }
                 }
@@ -828,34 +730,48 @@ namespace KASIR
             }
             return url; // Kembalikan URL asli jika tidak ada "api."
         }
-
-        private async void OpenUpdaterExe()
+        private async Task OpenUpdaterExe()
         {
-            if (File.Exists(System.Windows.Forms.Application.StartupPath + "update\\update.exe"))
+            try
             {
-                LoggerUtil.LogWarning("Open Update.exe");
+                string updatePath = Path.Combine(
+                    Application.StartupPath,
+                    "update",
+                    "update.exe"
+                );
 
+                if (!File.Exists(updatePath))
+                {
+                    LoggerUtil.LogWarning($"Update file not found: {updatePath}");
+                    return;
+                }
 
-                string path = System.Windows.Forms.Application.StartupPath + "update\\update.exe";
+                if (!NetworkInterface.GetIsNetworkAvailable())
+                {
+                    LoggerUtil.LogWarning("No internet connection");
+                    return;
+                }
 
-                Process p = new Process();
-                p.StartInfo.FileName = path;
-                p.StartInfo.Arguments = "";
-                p.StartInfo.UseShellExecute = false;
-                p.StartInfo.CreateNoWindow = false;
-                p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.Verb = "runas";
-                p.Start();
-                Thread.Sleep(3000);
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = updatePath,
+                    Arguments = "",
+                    UseShellExecute = true,
+                    Verb = "runas"
+                };
 
-                System.Windows.Forms.Application.Exit();
+                Process.Start(startInfo);
+
+                await Task.Delay(1000);
+
+                Application.Exit();
             }
-            else
+            catch (Exception ex)
             {
-                await DownloadUpdaterApp();
+                LoggerUtil.LogError(ex, "Failed to open updater");
+                MessageBox.Show($"Error opening updater: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
         public async Task headerName()
         {
             try

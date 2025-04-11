@@ -646,11 +646,12 @@ namespace KASIR.OffineMode
                     throw new InvalidOperationException("btnSimpan is null");
                 }
                 if (printerModel != null)
-                {
+                {/*
                     await Task.Run(() =>
                     {
                         printerModel.PrinterModelSimpan(menuModel, kitchenItems, canceledKitchenItems, barItems, canceledBarItems, AntrianSaveBill);
-                    });
+                    });*/
+                    await printerModel.PrinterModelSimpan(menuModel, kitchenItems, canceledKitchenItems, barItems, canceledBarItems, AntrianSaveBill);
                 }
                 else
                 {

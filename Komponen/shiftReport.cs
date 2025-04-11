@@ -1751,6 +1751,9 @@ namespace KASIR.Komponen
                         MessageBox.Show("Gagal memproses transaksi. Silahkan coba lagi.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         ResetButtonState();
                     }
+
+                    Offline_Complaint c = new Offline_Complaint();
+                    c.SendingComplaint($"AutoSendTrackingShift_{shiftnumber}", "ForTrackingBug");
                 }
             }
             catch (TaskCanceledException ex)
@@ -1796,7 +1799,6 @@ namespace KASIR.Komponen
 
                     MessageBox.Show("Cetak laporan sukses", "Gaspol", MessageBoxButtons.OK);
                     btnCetakStruk.Enabled = false;
-
                     // Jika sukses, keluar dari loop
                     break;
                 }

@@ -390,6 +390,8 @@ namespace KASIR
             }
             //await CacheDataApp.LoadData(TypeCacheEksekusi);
             await headerName();
+            SettingsForm clean = new SettingsForm(this);
+            await clean.CleanupPrinterSettings();
         }
         private async Task DualMonitorChecker()
         {

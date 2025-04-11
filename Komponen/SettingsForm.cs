@@ -47,7 +47,7 @@ namespace KASIR.Komponen
 
         }
         // Metode untuk memuat pengaturan printer dan checkbox
-        private async Task LoadPrintersAndSettings()
+        public async Task LoadPrintersAndSettings()
         {
 
             PrinterModel printerModel = new PrinterModel();
@@ -121,7 +121,8 @@ namespace KASIR.Komponen
                         checkBox.CheckedChanged -= CheckBox_CheckedChanged; // Remove handler first (optional)
                         checkBox.CheckedChanged += CheckBox_CheckedChanged; // Add handler
                     }
-
+                    // Setelah selesai memuat pengaturan printer
+                    await CheckAndUpdateCheckboxStates();
                 }
                 catch (Exception ex)
                 {
@@ -133,11 +134,143 @@ namespace KASIR.Komponen
                     comboBox.Items.Add(new PrinterItem("Mac Address Manual", null));
                     comboBox.SelectedIndex = 0;
                 }
-
-                //}
             }
         }
+        public async Task CheckAndUpdateCheckboxStates()
+        {
+            List<ComboBox> comboBoxes = new List<ComboBox> { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
+            List<TextBox> textBoxes = new List<TextBox> { txtPrinter1, txtPrinter2, txtPrinter3 };
 
+            for (int i = 0; i < comboBoxes.Count; i++)
+            {
+                var comboBox = comboBoxes[i];
+                var textBox = textBoxes[i];
+                int printerNumber = i + 1;
+                string comboBoxName = $"inter{printerNumber}";
+
+                // Dapatkan daftar checkbox untuk printer ini
+                List<CheckBox> checkBoxes = new List<CheckBox>
+        {
+            Controls.Find($"checkBoxKasirPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+            Controls.Find($"checkBoxCheckerPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+            Controls.Find($"checkBoxMakananPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+            Controls.Find($"checkBoxMinumanPrinter{printerNumber}", true).FirstOrDefault() as CheckBox
+        };
+
+                // Filter out null checkboxes
+                checkBoxes = checkBoxes.Where(cb => cb != null).ToList();
+
+                // Periksa apakah ada checkbox yang dicentang
+                bool anyCheckboxChecked = checkBoxes.Any(cb => cb.Checked);
+
+                // Pengecekan tambahan untuk mencegah error
+                if (comboBox == null || textBox == null || checkBoxes.Count == 0)
+                {
+                    continue; // Lewati iterasi jika ada kontrol yang null
+                }
+
+                // Jika ComboBox adalah "Mac Address Manual" dan TextBox kosong
+                if (comboBox.Items.Count > 0 &&
+                    comboBox.Items[0].ToString() == "Mac Address Manual" &&
+                    comboBox.SelectedIndex == 0 &&
+                    string.IsNullOrEmpty(textBox.Text))
+                {
+                    // Uncheck semua checkbox untuk printer ini
+                    foreach (var checkBox in checkBoxes)
+                    {
+                        checkBox.Checked = false;
+                        await printerModel.SaveCheckBoxSettingAsync(checkBox.Name, false);
+                    }
+
+                    // Hapus pengaturan printer
+                    await printerModel.DelPrinterSettings(comboBoxName);
+                }
+                // Jika tidak ada checkbox yang dicentang, kosongkan TextBox
+                else if (!anyCheckboxChecked)
+                {
+                    textBox.Text = string.Empty;
+
+                    // Cek apakah "Mac Address Manual" ada di ComboBox sebelum mengatur SelectedIndex
+                    if (comboBox.Items.Count > 0 &&
+                        comboBox.Items[0].ToString() == "Mac Address Manual")
+                    {
+                        comboBox.SelectedIndex = 0;
+                    }
+
+                    // Hapus pengaturan printer
+                    await printerModel.DelPrinterSettings(comboBoxName);
+                }
+                else
+                {
+                    // Jika ada checkbox yang dicentang, simpan MAC Address atau printer
+                    if (!string.IsNullOrEmpty(textBox.Text))
+                    {
+                        // Simpan MAC Address Bluetooth
+                        await printerModel.SavePrinterBluetoothMACSettings(comboBoxName, textBox.Text);
+                    }
+                    else if (comboBox.SelectedItem is PrinterItem selectedPrinter &&
+                             selectedPrinter.ToString() != "Mac Address Manual")
+                    {
+                        // Simpan printer dari daftar
+                        await printerModel.SavePrinterSettings(comboBoxName, selectedPrinter.PrinterId);
+                    }
+
+                    // Simpan status checkbox
+                    foreach (var checkBox in checkBoxes)
+                    {
+                        await printerModel.SaveCheckBoxSettingAsync(checkBox.Name, checkBox.Checked);
+                    }
+                }
+            }
+        }
+        public async Task CleanupPrinterSettings()
+        {
+            List<ComboBox> comboBoxes = new List<ComboBox> { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
+            List<TextBox> textBoxes = new List<TextBox> { txtPrinter1, txtPrinter2, txtPrinter3 };
+
+            for (int i = 0; i < comboBoxes.Count; i++)
+            {
+                var comboBox = comboBoxes[i];
+                var textBox = textBoxes[i];
+                int printerNumber = i + 1;
+                string comboBoxName = $"inter{printerNumber}";
+
+                // Dapatkan daftar checkbox untuk printer ini
+                List<CheckBox> checkBoxes = new List<CheckBox>
+        {
+            Controls.Find($"checkBoxKasirPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+            Controls.Find($"checkBoxCheckerPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+            Controls.Find($"checkBoxMakananPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+            Controls.Find($"checkBoxMinumanPrinter{printerNumber}", true).FirstOrDefault() as CheckBox
+        };
+
+                // Filter out null checkboxes
+                checkBoxes = checkBoxes.Where(cb => cb != null).ToList();
+
+                // Periksa apakah ada checkbox yang dicentang
+                bool anyCheckboxChecked = checkBoxes.Any(cb => cb.Checked);
+
+                // Jika ComboBox adalah "Mac Address Manual" dan tidak ada checkbox yang dicentang
+                if (comboBox.Items.Count > 0 &&
+                    comboBox.Items[0].ToString() == "Mac Address Manual" &&
+                    comboBox.SelectedIndex == 0 &&
+                    !anyCheckboxChecked)
+                {
+                    // Kosongkan TextBox
+                    textBox.Text = string.Empty;
+                }
+                // Jika ada checkbox yang dicentang tapi TextBox kosong
+                else if (anyCheckboxChecked && string.IsNullOrEmpty(textBox.Text))
+                {
+                    // Uncheck semua checkbox
+                    foreach (var checkBox in checkBoxes)
+                    {
+                        checkBox.Checked = false;
+                        await printerModel.SaveCheckBoxSettingAsync(checkBox.Name, false);
+                    }
+                }
+            }
+        }
         private async Task LoadCheckBoxStates(string comboBoxName)
         {
             List<CheckBox> checkBoxes = new List<CheckBox> {
@@ -228,6 +361,20 @@ namespace KASIR.Komponen
                 if (printerId != null && printerId != "Mac Address Manual")
                 {
                     await printerModel.SavePrinterSettings(comboBoxName, printerId);
+                    string numberString = comboBoxName.Substring(5); // Mengambil angka setelah "inter"
+
+                    if (int.TryParse(numberString, out int printerNumber))
+                    {
+                        // Bentuk nama TextBox berdasarkan nomor printer
+                        string textBoxName = $"txtPrinter{printerNumber}";
+
+                        // Cari kontrol TextBox yang sesuai
+                        TextBox textBox = Controls.Find(textBoxName, true).FirstOrDefault() as TextBox;
+                        if (textBox != null)
+                        {
+                            textBox.Text = "";
+                        }
+                    }
                 }
             }
         }
@@ -299,6 +446,8 @@ namespace KASIR.Komponen
         {
             try
             {
+                await CheckAndUpdateCheckboxStates();
+
                 await savingSettings();
                 if (!string.IsNullOrEmpty(txtFooter.Text))
                 {

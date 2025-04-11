@@ -20,7 +20,7 @@ namespace KASIR.Network
             baseAddress = Properties.Settings.Default.BaseAddress;
             httpClient = new HttpClient()
             {
-                Timeout = TimeSpan.FromSeconds(120) // 5 menit = 300 detik
+                Timeout = TimeSpan.FromSeconds(300) // 5 menit = 300 detik
             };
             httpClient.BaseAddress = new Uri(baseAddress); // Replace with your API base URL
             httpClient.DefaultRequestHeaders.Accept.Clear();
@@ -31,7 +31,7 @@ namespace KASIR.Network
                 .RetryAsync(3);
 
             timeoutPolicy = Policy
-                .TimeoutAsync<HttpResponseMessage>(120); // Set the timeout duration to 10 seconds, adjust as needed
+                .TimeoutAsync<HttpResponseMessage>(300); // Set the timeout duration to 10 seconds, adjust as needed
 
             combinedPolicy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
         }

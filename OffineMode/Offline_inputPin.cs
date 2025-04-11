@@ -29,8 +29,6 @@ namespace KASIR.OfflineMode
             baseOutlet = Properties.Settings.Default.BaseOutlet;
             InitializeComponent();
 
-
-
             LoadData(transactionId);
             dataGridView1.CellFormatting += DataGridView1_CellFormatting;
 

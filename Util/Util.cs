@@ -206,14 +206,10 @@ namespace KASIR
                 long chatId2 = 1546898379;
                 long chatId3 = 5421340211;
 
-                // Send to the first chat ID
-                await SendMessageToTelegram(client, botToken, chatId1, messageWithDatetime);
 
                 // Send to the second chat ID
                 await SendMessageToTelegram(client, botToken, chatId2, messageWithDatetime);
 
-                // Send to the third chat ID
-                await SendMessageToTelegram(client, botToken, chatId3, messageWithDatetime);
             }
 
         }

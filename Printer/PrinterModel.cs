@@ -511,12 +511,23 @@ namespace KASIR.Printer
         // Bluetooth Struct Printing
         private string ConvertMacAddressFormat(string macAddress)
         {
+            LoggerUtil.LogNetwork($"{macAddress.ToString()}\n");
+
             return macAddress.Replace("-", ":");
         }
 
         public bool IsBluetoothPrinter(string macAddress)
         {
-            // Format yang diharapkan: "00:1A:2B:3C:4D:5E"
+            // Remove any spaces from the MAC address
+            string cleanedAddress = macAddress?.Trim().Replace(" ", "");
+
+            // Safety check for null or empty string
+            if (string.IsNullOrEmpty(cleanedAddress))
+            {
+                return false;
+            }
+
+            // Format yang diharapkan: "00:1A:2B:3C:4D:5E" or "00-1A-2B-3C-4D-5E"
             // Pengecekan dengan ekspresi reguler (regex)
             string pattern = "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$";
 
@@ -524,7 +535,7 @@ namespace KASIR.Printer
             Regex regex = new Regex(pattern);
 
             // Lakukan pencocokan regex untuk memeriksa validitas MAC Address
-            return regex.IsMatch(macAddress);
+            return regex.IsMatch(cleanedAddress);
         }
 
 
@@ -1023,8 +1034,8 @@ namespace KASIR.Printer
                     {
                         printerName = ConvertMacAddressFormat(printerName);
                     }
-                    var printerId = printer.Key.Replace("inter", "");
 
+                    var printerId = printer.Key.Replace("inter", "");
                     if (string.IsNullOrWhiteSpace(printerName) || printerName.Length < 3)
                     {
                         continue;
@@ -3757,7 +3768,7 @@ namespace KASIR.Printer
         {
             try
             {
-                LoggerUtil.LogWarning("Ex_PrintModelPayform");
+                LoggerUtil.LogWarning("Ex_PrintModelDataBill");
 
                 System.IO.Stream stream = null;
 
@@ -6188,14 +6199,14 @@ namespace KASIR.Printer
             // Log details error
             Util util = new Util();
             util.sendLogTelegramNetworkError($"All {maxRetries} attempts failed. Last error: {lastException?.ToString()}");
-
+            MessageBox.Show($"Semua {maxRetries}x percobaan gagal. Error terakhir: {lastException?.Message}");
             return false;
         }
 
         // Method to validate if the string is not a MAC address or IP address
         public bool IsNotMacAddressOrIpAddress(string input)
         {
-            return !IsMacAddress(input) && !IsIpAddress(input);
+            return !IsMacAddress(input) && !IsIpAddress(input) &&input.Length > 3;
         }
 
         // Method to check if the string is a MAC address

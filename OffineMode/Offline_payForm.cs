@@ -640,12 +640,12 @@ namespace KASIR.OfflineMode
                     }
                     if (printerModel != null)
                     {
-                        // Run the print method in a background task
+                        /*// Run the print method in a background task
                         await Task.Run(() =>
                         {
                             printerModel.PrintModelPayform(menuModel, cartDetails, kitchenItems, barItems, canceledKitchenItems, canceledBarItems, totalTransactions, Kakimu);
-                        });
-                        //await printerModel.PrintModelPayform(menuModel, cartDetails, kitchenItems, barItems, canceledKitchenItems, canceledBarItems, totalTransactions, Kakimu);
+                        });*/
+                        await printerModel.PrintModelPayform(menuModel, cartDetails, kitchenItems, barItems, canceledKitchenItems, canceledBarItems, totalTransactions, Kakimu);
                     }
                     else
                     {

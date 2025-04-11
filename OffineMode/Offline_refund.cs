@@ -741,12 +741,13 @@ namespace KASIR.OfflineMode
 
                 // PrinterModel untuk mencetak data refund
                 PrinterModel printerModel = new PrinterModel();
-                await Task.Run(() =>
+                /*await Task.Run(() =>
                 {
                     // Mencetak hanya data refund
 
                     printerModel.PrintModelRefund(refundData, refundDetailStruks, Nomortransaks);
-                });
+                });*/
+                await printerModel.PrintModelRefund(refundData, refundDetailStruks, Nomortransaks);
 
                 btnRefund.Text = "Selesai.";
                 btnRefund.Enabled = true;

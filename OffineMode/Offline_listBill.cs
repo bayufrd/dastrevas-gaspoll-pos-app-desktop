@@ -514,11 +514,11 @@ namespace KASIR.OffineMode
 
                 if (printerModel != null)
                 {
-                    await Task.Run(() =>
+                    /*await Task.Run(() =>
                     {
                         printerModel.PrintModelDataBill(datas, cartDetails, canceledItems, AntrianSaveBill);
-                    });
-                    //await printerModel.PrintModelDataBill(datas, cartDetails, canceledItems, AntrianSaveBill);
+                    });*/
+                    await printerModel.PrintModelDataBill(datas, cartDetails, canceledItems, AntrianSaveBill);
                 }
                 else
                 {

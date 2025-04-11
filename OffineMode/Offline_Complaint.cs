@@ -74,8 +74,33 @@ namespace KASIR.OffineMode
                     MessageBox.Show("Format notes kurang tepat", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
+                string NameKasir = lblNama.Text;
+                string messagesKasir = txtNotes.Text;
+                SendingComplaint(NameKasir, messagesKasir);
+            }
+            catch (TaskCanceledException ex)
+            {
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                btnSimpan.Enabled = true;
 
+            }
+            finally
+            {
+                btnSimpan.Enabled = true;
 
+            }
+
+        }
+
+        public async void SendingComplaint(string NameKasir, string messagesKasir)
+        {
+            try
+            {
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
 
                 // Deserialize JSON ke object CartDataCache
@@ -114,13 +139,13 @@ namespace KASIR.OffineMode
                 string Cache_success_transaction = ReadFileContentWithRetry(FolderLogCache_success_transaction);
                 string Cache_history_transaction = ReadFileContentWithRetry(FolderLogCache_history_transaction);
 
-                string nameID = $"{baseOutlet}_{DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}_{BaseOutletNameID}_{Version}_{lblNama.Text.ToString()}";
+                string nameID = $"{baseOutlet}_{DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}_{BaseOutletNameID}_{Version}_{NameKasir.ToString()}";
 
                 var json = new
                 {
                     name = nameID,
                     title = "ada ada aja",
-                    message = txtNotes.Text.ToString(),
+                    message = messagesKasir,
                     sent_at = DateTime.Now.ToString("yyyy-MM-dd HH=mm=ss", CultureInfo.InvariantCulture),
                     log_last_outlet = LogCacheData,
                     cache_transaction = Cache_transaction,
@@ -140,7 +165,7 @@ namespace KASIR.OffineMode
                 {
                     if (response.IsSuccessStatusCode)
                     {
-                        DialogResult result = MessageBox.Show("Berhasil dikirim, Terimakasih", "Gaspol", MessageBoxButtons.OK);
+                        DialogResult result = MessageBox.Show("Berhasil dikirim", "Gaspol", MessageBoxButtons.OK);
                         if (result == DialogResult.OK)
                         {
                             this.Close(); // Close the payForm
@@ -154,23 +179,10 @@ namespace KASIR.OffineMode
                     }
                 }
             }
-            catch (TaskCanceledException ex)
-            {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                btnSimpan.Enabled = true;
-
             }
-            finally
-            {
-                btnSimpan.Enabled = true;
-
-            }
-
         }
         private static string ReadFileContentAsPlainText(string filePath)
         {

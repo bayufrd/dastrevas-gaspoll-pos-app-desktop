@@ -490,19 +490,124 @@ namespace KASIR.OfflineMode
 
         private async Task HandlePrint(DataRestruk data, List<CartDetailRestruk> cartDetails, List<RefundDetailRestruk> cartRefundDetails, List<CanceledItemStrukCustomerRestruk> canceledItems)
         {
-            PrinterModel printerModel = new PrinterModel();
-
-            if (printerModel != null)
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30))) // 30-second timeout
             {
-                await Task.Run(() =>
+                try
                 {
-                    printerModel.PrintModelInputPin(data, cartDetails, cartRefundDetails, canceledItems, totalTransactions);
-                });
+                    PrinterModel printerModel = new PrinterModel();
+                    if (printerModel == null)
+                    {
+                        throw new InvalidOperationException("printerModel is null");
+                    }
+
+                    // Save print job details for potential recovery
+                    SaveInputPinPrintJobForRecovery(data, cartDetails, cartRefundDetails, canceledItems, totalTransactions);
+
+                    try
+                    {
+                        // Execute print operation with timeout
+                        await Task.Run(async () =>
+                        {
+                            await printerModel.PrintModelInputPin(data, cartDetails, cartRefundDetails, canceledItems, totalTransactions);
+                        }, cts.Token);
+
+                        // If successful, remove the saved print job
+                        RemoveSavedInputPinPrintJob(totalTransactions);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // The operation timed out
+                        LoggerUtil.LogWarning("Input pin print operation timed out, will retry in background");
+
+                        // Continue printing in background
+                        ThreadPool.QueueUserWorkItem(async _ =>
+                        {
+                            try
+                            {
+                                // Use a new instance to avoid any shared state issues
+                                PrinterModel backgroundPrinterModel = new PrinterModel();
+
+                                await backgroundPrinterModel.PrintModelInputPin(data, cartDetails, cartRefundDetails, canceledItems, totalTransactions);
+
+                                // If successful, remove the saved print job
+                                RemoveSavedInputPinPrintJob(totalTransactions);
+                            }
+                            catch (Exception ex)
+                            {
+                                LoggerUtil.LogError(ex, "Background input pin printing failed: {ErrorMessage}", ex.Message);
+                            }
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LoggerUtil.LogError(ex, "An error occurred during input pin printing: {ErrorMessage}", ex.Message);
+                    throw; // Rethrow to allow calling code to handle the error
+                }
             }
-            else
+        }
+
+        // Helper methods for input pin print job persistence
+        private void SaveInputPinPrintJobForRecovery(
+            DataRestruk data,
+            List<CartDetailRestruk> cartDetails,
+            List<RefundDetailRestruk> cartRefundDetails,
+            List<CanceledItemStrukCustomerRestruk> canceledItems,
+            int transactionNumber)
+        {
+            try
             {
-                throw new InvalidOperationException("printerModel is null");
+                string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs", "InputPin");
+                Directory.CreateDirectory(printJobsDir);
+
+                var inputPinPrintJob = new InputPinPrintJob
+                {
+                    Data = data,
+                    CartDetails = cartDetails,
+                    CartRefundDetails = cartRefundDetails,
+                    CanceledItems = canceledItems,
+                    TransactionNumber = transactionNumber,
+                    Timestamp = DateTime.Now
+                };
+
+                string filename = Path.Combine(printJobsDir, $"InputPinPrintJob_{transactionNumber}_{DateTime.Now.Ticks}.json");
+                File.WriteAllText(filename, JsonConvert.SerializeObject(inputPinPrintJob, Formatting.Indented));
             }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to save input pin print job for recovery");
+            }
+        }
+
+        private void RemoveSavedInputPinPrintJob(int transactionNumber)
+        {
+            try
+            {
+                string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs", "InputPin");
+                if (Directory.Exists(printJobsDir))
+                {
+                    string pattern = $"InputPinPrintJob_{transactionNumber}_*.json";
+                    foreach (var file in Directory.GetFiles(printJobsDir, pattern))
+                    {
+                        File.Delete(file);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to remove saved input pin print job");
+            }
+        }
+
+        // Class to store input pin print job information
+        private class InputPinPrintJob
+        {
+            public DataRestruk Data { get; set; }
+            public List<CartDetailRestruk> CartDetails { get; set; }
+            public List<RefundDetailRestruk> CartRefundDetails { get; set; }
+            public List<CanceledItemStrukCustomerRestruk> CanceledItems { get; set; }
+            public int TransactionNumber { get; set; }
+            public DateTime Timestamp { get; set; }
         }
 
 

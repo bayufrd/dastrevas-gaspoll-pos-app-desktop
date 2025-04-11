@@ -51,7 +51,7 @@ namespace KASIR.OffineMode
 
                 newname = char.ToUpper(newname[0]) + newname.Substring(1);
 
-                txtNama.Text = newname + " (DT)";
+                txtNama.Text = newname + "(Auto)";
                 txtSeat.Text = "0";
             }
             else
@@ -609,10 +609,11 @@ namespace KASIR.OffineMode
         }
         private async Task HandleSuccessfulTransaction(string response, int AntrianSaveBill)
         {
+            CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)); // 30-second timeout
+
             try
             {
                 PrinterModel printerModel = new PrinterModel();
-
                 GetStrukCustomerTransaction menuModel = JsonConvert.DeserializeObject<GetStrukCustomerTransaction>(response);
 
                 if (menuModel == null)
@@ -626,16 +627,20 @@ namespace KASIR.OffineMode
                     throw new InvalidOperationException("Deserialization failed: data is null");
                 }
 
-
                 List<CartDetailStrukCustomerTransaction> listCart = data.cart_details;
                 List<CanceledItemStrukCustomerTransaction> listCanceled = data.canceled_items;
 
-                List<CartDetailStrukCustomerTransaction> kitchenItems = listCart?.Where(cd => cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList();
-                List<CartDetailStrukCustomerTransaction> barItems = listCart?.Where(cd => cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList();
+                List<CartDetailStrukCustomerTransaction> kitchenItems = listCart?.Where(cd =>
+                    cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList() ?? new List<CartDetailStrukCustomerTransaction>();
 
-                List<CanceledItemStrukCustomerTransaction> canceledKitchenItems = listCanceled?.Where(cd => cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList();
-                List<CanceledItemStrukCustomerTransaction> canceledBarItems = listCanceled?.Where(cd => cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList();
+                List<CartDetailStrukCustomerTransaction> barItems = listCart?.Where(cd =>
+                    cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList() ?? new List<CartDetailStrukCustomerTransaction>();
 
+                List<CanceledItemStrukCustomerTransaction> canceledKitchenItems = listCanceled?.Where(cd =>
+                    cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList() ?? new List<CanceledItemStrukCustomerTransaction>();
+
+                List<CanceledItemStrukCustomerTransaction> canceledBarItems = listCanceled?.Where(cd =>
+                    cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList() ?? new List<CanceledItemStrukCustomerTransaction>();
 
                 if (btnSimpan != null)
                 {
@@ -645,13 +650,53 @@ namespace KASIR.OffineMode
                 {
                     throw new InvalidOperationException("btnSimpan is null");
                 }
+
                 if (printerModel != null)
-                {/*
-                    await Task.Run(() =>
+                {
+                    // Save print job for potential recovery
+                    SaveSaveBillPrintJobForRecovery(menuModel, kitchenItems, canceledKitchenItems, barItems, canceledBarItems, AntrianSaveBill);
+
+                    try
                     {
-                        printerModel.PrinterModelSimpan(menuModel, kitchenItems, canceledKitchenItems, barItems, canceledBarItems, AntrianSaveBill);
-                    });*/
-                    await printerModel.PrinterModelSimpan(menuModel, kitchenItems, canceledKitchenItems, barItems, canceledBarItems, AntrianSaveBill);
+                        await Task.Run(async () =>
+                        {
+                            await printerModel.PrinterModelSimpan(menuModel, kitchenItems, canceledKitchenItems, barItems, canceledBarItems, AntrianSaveBill);
+                        }, cts.Token);
+
+                        // If successful, remove the saved print job
+                        RemoveSavedSaveBillPrintJob(AntrianSaveBill);
+
+                        btnSimpan.Text = "Selesai.";
+                        btnSimpan.Enabled = true;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // The operation timed out
+                        LoggerUtil.LogWarning("Save bill print operation timed out, will retry in background");
+
+                        btnSimpan.Text = "Selesai (Print di background)";
+                        btnSimpan.Enabled = true;
+
+                        // Continue printing in background without blocking UI
+                        ThreadPool.QueueUserWorkItem(async _ =>
+                        {
+                            try
+                            {
+                                // Use a new instance to avoid any shared state issues
+                                PrinterModel backgroundPrinterModel = new PrinterModel();
+
+                                // Retry the print operation in background
+                                await backgroundPrinterModel.PrinterModelSimpan(menuModel, kitchenItems, canceledKitchenItems, barItems, canceledBarItems, AntrianSaveBill);
+
+                                // If successful, remove the saved print job
+                                RemoveSavedSaveBillPrintJob(AntrianSaveBill);
+                            }
+                            catch (Exception ex)
+                            {
+                                LoggerUtil.LogError(ex, "Background save bill printing failed: {ErrorMessage}", ex.Message);
+                            }
+                        });
+                    }
                 }
                 else
                 {
@@ -660,11 +705,85 @@ namespace KASIR.OffineMode
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                LoggerUtil.LogError(ex, "An error occurred during save bill printing: {ErrorMessage}", ex.Message);
 
+                if (btnSimpan != null)
+                {
+                    btnSimpan.Text = "Print Ulang";
+                    btnSimpan.Enabled = true;
+                }
+            }
+            finally
+            {
+                cts.Dispose();
             }
         }
 
+        // Helper methods for save bill print job persistence
+        private void SaveSaveBillPrintJobForRecovery(
+            GetStrukCustomerTransaction menuModel,
+            List<CartDetailStrukCustomerTransaction> kitchenItems,
+            List<CanceledItemStrukCustomerTransaction> canceledKitchenItems,
+            List<CartDetailStrukCustomerTransaction> barItems,
+            List<CanceledItemStrukCustomerTransaction> canceledBarItems,
+            int antrianNumber)
+        {
+            try
+            {
+                string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs", "SaveBills");
+                Directory.CreateDirectory(printJobsDir);
+
+                var saveBillPrintJob = new SaveBillPrintJob
+                {
+                    MenuModel = menuModel,
+                    KitchenItems = kitchenItems,
+                    CanceledKitchenItems = canceledKitchenItems,
+                    BarItems = barItems,
+                    CanceledBarItems = canceledBarItems,
+                    AntrianNumber = antrianNumber,
+                    Timestamp = DateTime.Now
+                };
+
+                string filename = Path.Combine(printJobsDir, $"SaveBillPrintJob_{antrianNumber}_{DateTime.Now.Ticks}.json");
+                File.WriteAllText(filename, JsonConvert.SerializeObject(saveBillPrintJob, Formatting.Indented));
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to save save bill print job for recovery");
+            }
+        }
+
+        private void RemoveSavedSaveBillPrintJob(int antrianNumber)
+        {
+            try
+            {
+                string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs", "SaveBills");
+                if (Directory.Exists(printJobsDir))
+                {
+                    string pattern = $"SaveBillPrintJob_{antrianNumber}_*.json";
+                    foreach (var file in Directory.GetFiles(printJobsDir, pattern))
+                    {
+                        File.Delete(file);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to remove saved save bill print job");
+            }
+        }
+
+        // Class to store save bill print job information
+        public class SaveBillPrintJob
+        {
+            public GetStrukCustomerTransaction MenuModel { get; set; }
+            public List<CartDetailStrukCustomerTransaction> KitchenItems { get; set; }
+            public List<CanceledItemStrukCustomerTransaction> CanceledKitchenItems { get; set; }
+            public List<CartDetailStrukCustomerTransaction> BarItems { get; set; }
+            public List<CanceledItemStrukCustomerTransaction> CanceledBarItems { get; set; }
+            public int AntrianNumber { get; set; }
+            public DateTime Timestamp { get; set; }
+        }
         private void saveBill_Load(object sender, EventArgs e)
         {
 

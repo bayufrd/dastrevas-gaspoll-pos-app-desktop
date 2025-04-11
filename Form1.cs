@@ -142,7 +142,7 @@ namespace KASIR
                 offlineMasterPos.BringToFront();
                 offlineMasterPos.Show();
                 await offlineMasterPos.LoadCart();
-                await sendDataSyncPerHours(allSettingsData);
+
             }
             else
             {
@@ -226,73 +226,6 @@ namespace KASIR
             // Gunakan Replace untuk mengganti semua ":" dengan "-"
             return mac.Replace(":", "-");
         }
-        private async Task checkCacheData()
-        {
-            try
-            {
-                await headerOutletName("Checking cache data...");
-                // Pastikan folder 'setting' ada
-                string settingsFolder = "setting";
-                if (!Directory.Exists(settingsFolder))
-                {
-                    Directory.CreateDirectory(settingsFolder);
-                }
-                if (!File.Exists("setting\\printerSettings.data"))
-                {
-                    //settingPrinter
-                    string filePath = "setting\\printerSettings.data";
-                    string kasir = ReplaceColonWithDash(macKasir);
-                    string bar = ReplaceColonWithDash(macBar);
-                    string kitchen = ReplaceColonWithDash(macKitchen);
-                    // Konten yang ingin ditulis ke file
-                    string[] lines = {
-                    $"inter1:{kasir}",
-                    $"inter2:{bar}",
-                    $"inter3:{kitchen}"
-                     };
-
-                    // Menulis semua konten ke file
-                    File.WriteAllLines(filePath, lines);
-
-                    //settingComboboxPrinter
-                    filePath = "setting\\checkBoxSettings.data";
-                    // Konten yang ingin ditulis ke file
-                    string[] lines2 = {
-                    "checkBoxMakananPrinter1:False",
-                    "checkBoxKasirPrinter2:False",
-                    "checkBoxMakananPrinter3:True",
-                    "checkBoxKasirPrinter1:True",
-                    "checkBoxKasirPrinter3:False",
-                    "checkBoxMinumanPrinter1:False",
-                    "checkBoxMakananPrinter2:False",
-                    "checkBoxMinumanPrinter3:False",
-                    "checkBoxCheckerPrinter1:True",
-                    "checkBoxMinumanPrinter2:True",
-                    "checkBoxCheckerPrinter2:False"
-                     };
-
-                    // Menulis semua konten ke file
-                    File.WriteAllLines(filePath, lines2);
-                }
-                if (!File.Exists("setting\\FooterStruk.data"))
-                {
-                    string data = footerStruk;
-                    await File.WriteAllTextAsync("setting\\FooterStruk.data", data);
-                }
-                if (!File.Exists("setting\\RunningText.data"))
-                {
-                    string data = footerStruk;
-                    await File.WriteAllTextAsync("setting\\RunningText.data", data);
-                }
-                //DuplicateTemp();
-
-                //CacheDataApp.Show();
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "Terjadi kesalahan:", ex.Message);
-            }
-        }
 
         public static void DuplicateTemp()
         {
@@ -352,18 +285,9 @@ namespace KASIR
         private async void StarterApp()
         {
             await headerOutletName("");
-            ConfigOfflineMode();
-
-            await Task.Run(async () =>
-            {
-                await DualMonitorChecker();
-                await cekLastUpdaterApp();
-                await cekVersionAndData();
-                await checkCacheData();
-
-            });
             initPingTest();
 
+            ConfigOfflineMode();
             // Mengecek apakah sButtonOffline dalam status checked
             string Config = "setting\\OfflineMode.data";
             // Ensure the directory exists
@@ -376,9 +300,17 @@ namespace KASIR
             if (!File.Exists(Config))
             {
                 // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
-                File.WriteAllText(Config, "OFF");
+                File.WriteAllText(Config, "ON");
             }
             string allSettingsData = File.ReadAllText(Config); // Ambil status offline
+
+            await Task.Run(async () =>
+            {
+                await DualMonitorChecker();
+                await cekLastUpdaterApp();
+                await cekVersionAndData();
+            });
+            LoadingAllSetting(allSettingsData);
 
             // Jika status offline ON, tampilkan Offline_masterPos
             if (NetworkInterface.GetIsNetworkAvailable())
@@ -388,11 +320,26 @@ namespace KASIR
                 CacheDataApp CacheDataApp = new CacheDataApp(TypeCacheEksekusi);
                 CacheDataApp.Show();
             }
-            //await CacheDataApp.LoadData(TypeCacheEksekusi);
+
+
             await headerName();
+        }
+        private async void LoadingAllSetting(string allSettingsData)
+        {
+            await sendDataSyncPerHours(allSettingsData);
+            if (allSettingsData == "ON")
+            {
+
+                // Create an instance of transactionFileMover and then call the method
+                var fileMover = new transactionFileMover();
+                await fileMover.refreshCacheTransaction();
+            }
+
             SettingsForm clean = new SettingsForm(this);
             await clean.CleanupPrinterSettings();
+
         }
+
         private async Task DualMonitorChecker()
         {
             try
@@ -417,7 +364,7 @@ namespace KASIR
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        private async Task headerOutletName(string text)
+        public async Task headerOutletName(string text)
         {
             if (lblNamaOutlet.InvokeRequired)
             {
@@ -1230,20 +1177,11 @@ namespace KASIR
 
                 try
                 {
-                    lblPing.ForeColor = Color.LightGreen;
-                    lblPing.Text = "Sync...";
-                    SignalPing.ForeColor = Color.LightGreen;
-                    SignalPing.Text = "Sync...";
-                    SignalPing.IconColor = Color.LightGreen;
+                    UpdateSyncStatus(Color.LightGreen, "Sync...");
 
-                    // Properly await the sync operation
                     await sendDataSyncPerHours(allSettingsData);
 
-                    lblPing.ForeColor = Color.White;
-                    lblPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
-                    SignalPing.ForeColor = Color.White;
-                    SignalPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
-                    SignalPing.IconColor = Color.White;
+                    UpdateSyncStatus(Color.White, $"Last Sync \n{DateTime.Now:HH:mm}");
 
                     await Task.Run(async () =>
                     {
@@ -1270,20 +1208,33 @@ namespace KASIR
             // Check if OfflineMode is ON
             if (allSettingsData == "ON")
             {
-                using (shiftReport c = new shiftReport())
+                try
                 {
-                    // Set background operation flag to true since we're not displaying the form
-                    c.IsBackgroundOperation = true;
+                    using (shiftReport c = new shiftReport())
+                    {
+                        // Set background operation flag to true 
+                        // karena tidak menampilkan form
+                        c.IsBackgroundOperation = true;
 
-                    // Call the sync method which will respect the background flag
-                    await c.SyncDataTransactions();
+                        // Sinkronisasi transaksi
+                        await c.SyncDataTransactions();
+                    }
                 }
-
-                // Create an instance of transactionFileMover and then call the method
-                var fileMover = new transactionFileMover();
-                await fileMover.refreshCacheTransaction();
-
+                catch (Exception ex)
+                {
+                    // Logging error yang detail
+                    LoggerUtil.LogError(ex, "Gagal sinkronisasi data: {ErrorMessage}", ex.Message);
+                }
             }
+        }
+
+        private void UpdateSyncStatus(Color color, string text)
+        {
+            lblPing.ForeColor = color;
+            lblPing.Text = text;
+            SignalPing.ForeColor = color;
+            SignalPing.Text = text;
+            SignalPing.IconColor = color;
         }
         public static readonly object FileLock = new object();
         private async void btnTestSpeed_Click(object sender, EventArgs e)

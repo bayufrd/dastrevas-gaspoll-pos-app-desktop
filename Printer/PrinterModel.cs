@@ -511,8 +511,6 @@ namespace KASIR.Printer
         // Bluetooth Struct Printing
         private string ConvertMacAddressFormat(string macAddress)
         {
-            LoggerUtil.LogNetwork($"{macAddress.ToString()}\n");
-
             return macAddress.Replace("-", ":");
         }
 
@@ -3622,8 +3620,6 @@ namespace KASIR.Printer
             string kodeHeksadesimalBold = "\x1B\x45\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
 
-            byte[] NewLine = new byte[] { 0x0A }; // New line
-
             // Construct receipt text
             string strukText = kodeHeksadesimalNormal;
             strukText += kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions.ToString());
@@ -3691,10 +3687,6 @@ namespace KASIR.Printer
                             strukText += "   Discount Code: " + cartDetail.discount_code + "\n";
                         if (cartDetail.discounts_value != null && Convert.ToDecimal(cartDetail.discounts_value) != 0)
                             strukText += "   Discount Value: " + (cartDetail.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", cartDetail.discounts_value.ToString()) : cartDetail.discounts_value.ToString() + " %") + "\n";
-                        //if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
-                        //    strukText += "   Total Discount: " + string.Format("{0:n0}", cartDetail.discounted_price) + "\n";
-                        //strukText += "   Total Price: " + string.Format("{0:n0}", cartDetail.total_price) + "\n";
-                        //strukText += "\n";
                     }
                 }
             }
@@ -3751,7 +3743,6 @@ namespace KASIR.Printer
             // Convert the final string to bytes and send to the printer
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
             stream.Write(buffer, 0, buffer.Length);
-            stream.Write(NewLine, 0, NewLine.Length);
 
             // Flush the stream to ensure everything is sent
             stream.Flush();
@@ -4014,7 +4005,7 @@ namespace KASIR.Printer
             }
         }
 
-        // Struct Simpan bill / save bill
+        // Struct Simpan bill / save bill / savebill
         public async Task PrinterModelSimpan(
         GetStrukCustomerTransaction datas,
         List<CartDetailStrukCustomerTransaction> KitchenCartDetails,
@@ -4169,6 +4160,63 @@ namespace KASIR.Printer
                             }
                         }
                     }
+                    if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
+                    {
+                        if (ShouldPrint(printerId, "Checker"))
+                        {
+                            System.IO.Stream stream = Stream.Null;
+
+                            try
+                            {
+                                if (System.Net.IPAddress.TryParse(printerName, out _))
+                                {
+                                    // Connect via LAN
+                                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                    stream = client.GetStream();
+                                }
+                                else
+                                {
+                                    // Connect via Bluetooth dengan retry policy
+                                    if (!await RetryPolicyAsync(async () =>
+                                    {
+                                        // Connect via Bluetooth
+                                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                        if (printerDevice == null)
+                                        {
+                                            //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                                            return false;
+                                        }
+
+                                        BluetoothClient client = new BluetoothClient();
+                                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                        {
+                                            //MessageBox.Show("Pairing failed to " + printerName, "Error");
+                                            return false;
+                                        }
+
+                                        client.Connect(endpoint);
+                                        stream = client.GetStream();
+
+                                        return true;
+                                    }, maxRetries: 3))
+                                    {
+                                        continue;
+                                    }
+                                }
+
+                                PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails, BarCancelItems, totalTransactions, "Checker");
+                            }
+                            finally
+                            {
+                                if (stream != null)
+                                {
+                                    stream.Close();
+                                }
+                            }
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -4187,12 +4235,6 @@ namespace KASIR.Printer
             string kodeHeksadesimalBold = "\x1B\x45\x01";
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-
-            byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
-            byte[] NewLine = new byte[] { 0x0A }; // New line
-
-            // Write initialization bytes
-            stream.Write(InitPrinter, 0, InitPrinter.Length);
 
             // Print logo (assuming logo is already in a proper format for the printer)
             //PrintLogo(stream, "icon\\OutletLogo.bmp", 50); // Larger logo size
@@ -4335,7 +4377,118 @@ namespace KASIR.Printer
                     }
                 }
             }
+            if (type == "Checker")
+            {
+                // Get all unique serving types from both food and beverage items
+                var allServingTypes = new HashSet<string>();
 
+                foreach (var item in KitchenCartDetails)
+                    if (!string.IsNullOrEmpty(item.serving_type_name))
+                        allServingTypes.Add(item.serving_type_name);
+
+                foreach (var item in BarCartDetails)
+                    if (!string.IsNullOrEmpty(item.serving_type_name))
+                        allServingTypes.Add(item.serving_type_name);
+
+                if (KitchenCartDetails.Count > 0 || BarCartDetails.Count > 0)
+                {
+                    strukText += "--------------------------------\n";
+                    strukText += CenterText("ORDER");
+
+                    // Process each serving type
+                    foreach (var servingType in allServingTypes)
+                    {
+                        strukText += "--------------------------------\n";
+                        strukText += CenterText(servingType);
+                        strukText += "\n";
+
+                        // Process food items for this serving type
+                        var foodItems = KitchenCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                        foreach (var cartDetail in foodItems)
+                        {
+                            strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
+                            strukText += FormatSimpleLine(cartDetail.menu_name, cartDetail.qty) + "\n";
+                            if (!string.IsNullOrEmpty(cartDetail.varian))
+                                strukText += "Varian: " + cartDetail.varian + "\n";
+                            if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                strukText += "Note: " + cartDetail.note_item + "\n";
+                            strukText += kodeHeksadesimalNormal;
+                            strukText += "\n";
+                        }
+
+                        // Process beverage items for this serving type
+                        var beverageItems = BarCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                        foreach (var cartDetail in beverageItems)
+                        {
+                            strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
+                            strukText += FormatSimpleLine(cartDetail.menu_name, cartDetail.qty) + "\n";
+                            if (!string.IsNullOrEmpty(cartDetail.varian))
+                                strukText += "Varian: " + cartDetail.varian + "\n";
+                            if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                strukText += "Note: " + cartDetail.note_item + "\n";
+                            strukText += kodeHeksadesimalNormal;
+                            strukText += "\n";
+                        }
+                    }
+                }
+
+                // Now handle all canceled items in a separate section
+                var canceledServingTypes = new HashSet<string>();
+
+                foreach (var item in KitchenCancelItems)
+                    if (!string.IsNullOrEmpty(item.serving_type_name))
+                        canceledServingTypes.Add(item.serving_type_name);
+
+                foreach (var item in BarCancelItems)
+                    if (!string.IsNullOrEmpty(item.serving_type_name))
+                        canceledServingTypes.Add(item.serving_type_name);
+
+                if (KitchenCancelItems.Count > 0 || BarCancelItems.Count > 0)
+                {
+                    strukText += "--------------------------------\n";
+                    strukText += CenterText("CANCELED");
+
+                    // Process each serving type for canceled items
+                    foreach (var servingType in canceledServingTypes)
+                    {
+                        strukText += "--------------------------------\n";
+                        strukText += CenterText(servingType);
+                        strukText += "\n";
+
+                        // Process canceled food items for this serving type
+                        var canceledFoodItems = KitchenCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                        foreach (var cancelItem in canceledFoodItems)
+                        {
+                            strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
+                            strukText += FormatSimpleLine(cancelItem.menu_name, cancelItem.qty) + "\n";
+                            if (!string.IsNullOrEmpty(cancelItem.varian))
+                                strukText += "Varian: " + cancelItem.varian + "\n";
+                            if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                                strukText += "Note: " + cancelItem.note_item + "\n";
+                            if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                                strukText += "Canceled Reason: " + cancelItem.cancel_reason + "\n";
+                            strukText += kodeHeksadesimalNormal;
+                            strukText += "\n";
+                        }
+
+                        // Process canceled beverage items for this serving type
+                        var canceledBeverageItems = BarCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                        foreach (var cancelItem in canceledBeverageItems)
+                        {
+                            strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
+                            strukText += FormatSimpleLine(cancelItem.menu_name, cancelItem.qty) + "\n";
+                            if (!string.IsNullOrEmpty(cancelItem.varian))
+                                strukText += "Varian: " + cancelItem.varian + "\n";
+                            if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                                strukText += "Note: " + cancelItem.note_item + "\n";
+                            if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                                strukText += "Canceled Reason: " + cancelItem.cancel_reason + "\n";
+                            strukText += kodeHeksadesimalNormal;
+                            strukText += "\n";
+                        }
+                    }
+                }
+            }
             strukText += "--------------------------------\n\n\n\n\n";
 
             // Encode your text into bytes (you might need to adjust the encoding)

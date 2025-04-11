@@ -1447,39 +1447,6 @@ namespace KASIR.Komponen
         }
 
 
-        // Method to asynchronously load the image
-        /*
-        private Image LoadPlaceholderImage(int width, int height)
-        {
-            // Replace this with your placeholder image logic
-            // For example:
-
-            string ex = "error download image";
-            Bitmap placeholder = new Bitmap(width, height);
-            using (Graphics graphics = Graphics.FromImage(placeholder))
-            {
-                // Generate a random pastel color
-                Random Rand = new Random();
-                int r = Rand.Next(128, 255); // Random red value between 128 and 255
-                int g = Rand.Next(128, 255); // Random green value between 128 and 255
-                int b = Rand.Next(128, 255); // Random blue value between 128 and 255
-                Color pastelColor = Color.FromArgb(r, g, b);
-
-                graphics.FillRectangle(new SolidBrush(pastelColor), 0, 0, width, height);
-
-                // Calculate the center point of the image
-                int x = (width - 70) / 2;
-                int y = (height - 35) / 2;
-
-                // Draw the placeholder text at the center point
-                // Draw the placeholder text at the center point
-                graphics.DrawString("Image\nTidak\nDiUpload", SystemFonts.DefaultFont, new SolidBrush(Color.FromArgb(30, 31, 68)), new PointF(x, y));
-            }
-            return placeholder;
-        }
-        */
-
-
 
     }
 

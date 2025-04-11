@@ -489,51 +489,151 @@ namespace KASIR.OffineMode
 
         private async Task HandleSuccessfulTransaction(string response, int AntrianSaveBill)
         {
+            CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)); // 30-second timeout
+
             try
             {
                 PrinterModel printerModel = new PrinterModel();
-
                 RestrukModel restrukModel = JsonConvert.DeserializeObject<RestrukModel>(response);
 
                 if (restrukModel == null)
                 {
                     throw new InvalidOperationException("Deserialization failed: restrukModel is null");
                 }
-                DataRestruk data = restrukModel.data;
 
+                DataRestruk data = restrukModel.data;
                 if (data == null)
                 {
                     throw new InvalidOperationException("Deserialization failed: data is null");
                 }
-                List<CartDetailRestruk> listCart = data.cart_details;
-                List<CanceledItemStrukCustomerRestruk> listCancel = data.canceled_items;
 
-                DataRestruk datas = restrukModel.data;
-                List<CartDetailRestruk> cartDetails = datas.cart_details;
-                List<CanceledItemStrukCustomerRestruk> canceledItems = datas.canceled_items;
+                List<CartDetailRestruk> cartDetails = data.cart_details ?? new List<CartDetailRestruk>();
+                List<CanceledItemStrukCustomerRestruk> canceledItems = data.canceled_items ?? new List<CanceledItemStrukCustomerRestruk>();
 
                 if (printerModel != null)
                 {
-                    /*await Task.Run(() =>
+                    // Save print job for potential recovery
+                    SaveDataBillPrintJobForRecovery(data, cartDetails, canceledItems, AntrianSaveBill);
+
+                    try
                     {
-                        printerModel.PrintModelDataBill(datas, cartDetails, canceledItems, AntrianSaveBill);
-                    });*/
-                    await printerModel.PrintModelDataBill(datas, cartDetails, canceledItems, AntrianSaveBill);
+                        // Execute the print with timeout
+                        await Task.Run(async () =>
+                        {
+                            await printerModel.PrintModelDataBill(data, cartDetails, canceledItems, AntrianSaveBill);
+                        }, cts.Token);
+
+                        // If successful, remove the saved print job
+                        RemoveSavedDataBillPrintJob(AntrianSaveBill);
+
+                        DialogResult = DialogResult.OK;
+                        Close();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // The operation timed out
+                        LoggerUtil.LogWarning("Data bill print operation timed out, will retry in background");
+
+                        // Allow form to close but continue printing in background
+                        DialogResult = DialogResult.OK;
+
+                        // Start background processing
+                        ThreadPool.QueueUserWorkItem(async _ =>
+                        {
+                            try
+                            {
+                                // Use a new printer model instance to avoid shared state issues
+                                PrinterModel backgroundPrinterModel = new PrinterModel();
+
+                                // Retry the print operation in background
+                                await backgroundPrinterModel.PrintModelDataBill(data, cartDetails, canceledItems, AntrianSaveBill);
+
+                                // If successful, remove the saved print job
+                                RemoveSavedDataBillPrintJob(AntrianSaveBill);
+                            }
+                            catch (Exception ex)
+                            {
+                                LoggerUtil.LogError(ex, "Background data bill printing failed: {ErrorMessage}", ex.Message);
+                            }
+                        });
+
+                        Close();
+                    }
                 }
                 else
                 {
                     throw new InvalidOperationException("printerModel is null");
                 }
-                DialogResult = DialogResult.OK;
-
-                Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
-
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                LoggerUtil.LogError(ex, "An error occurred during data bill printing: {ErrorMessage}", ex.Message);
+                MessageBox.Show($"Terjadi kesalahan saat mencetak: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            finally
+            {
+                cts.Dispose();
+            }
+        }
+
+        // Helper methods for data bill print job persistence
+        private void SaveDataBillPrintJobForRecovery(
+            DataRestruk data,
+            List<CartDetailRestruk> cartDetails,
+            List<CanceledItemStrukCustomerRestruk> canceledItems,
+            int antrianNumber)
+        {
+            try
+            {
+                string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs", "DataBills");
+                Directory.CreateDirectory(printJobsDir);
+
+                var dataBillPrintJob = new DataBillPrintJob
+                {
+                    Data = data,
+                    CartDetails = cartDetails,
+                    CanceledItems = canceledItems,
+                    AntrianNumber = antrianNumber,
+                    Timestamp = DateTime.Now
+                };
+
+                string filename = Path.Combine(printJobsDir, $"DataBillPrintJob_{antrianNumber}_{DateTime.Now.Ticks}.json");
+                File.WriteAllText(filename, JsonConvert.SerializeObject(dataBillPrintJob, Formatting.Indented));
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to save data bill print job for recovery");
+            }
+        }
+
+        private void RemoveSavedDataBillPrintJob(int antrianNumber)
+        {
+            try
+            {
+                string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs", "DataBills");
+                if (Directory.Exists(printJobsDir))
+                {
+                    string pattern = $"DataBillPrintJob_{antrianNumber}_*.json";
+                    foreach (var file in Directory.GetFiles(printJobsDir, pattern))
+                    {
+                        File.Delete(file);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to remove saved data bill print job");
+            }
+        }
+
+        // Class to store data bill print job information
+        public class DataBillPrintJob
+        {
+            public DataRestruk Data { get; set; }
+            public List<CartDetailRestruk> CartDetails { get; set; }
+            public List<CanceledItemStrukCustomerRestruk> CanceledItems { get; set; }
+            public int AntrianNumber { get; set; }
+            public DateTime Timestamp { get; set; }
         }
     }
 }

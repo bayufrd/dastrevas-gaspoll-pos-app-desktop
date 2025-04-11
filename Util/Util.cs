@@ -101,50 +101,7 @@ namespace KASIR
                 await SendMessageToTelegram(client, botToken, chatId3, messageWithDatetime);
             }
 
-        }/*
-        public async void sendLogTelegram(string message)
-        {
-            IApiService apiService = new ApiService();
-
-            string response = await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-            if (response != null)
-            {
-
-
-                GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
-
-                DataShift datas = cekShift.data;
-                outletName = datas.outlet_name.ToString();
-
-
-            }
-            else
-            {
-                outletName = Properties.Settings.Default.BaseOutlet.ToString();
-            }
-            using (var client = new HttpClient())
-            {
-                string botToken = "6909601463:AAHnKWEKqlpL1NGRkzRpXVnDgHoVtJtrqo0";
-                DateTime currentDateTime = DateTime.Now;
-                string datetimeStamp = currentDateTime.ToString("yyyy-MM-dd HH:mm:ss");
-                string messageWithDatetime = $"OUTLET : {outletName}\n[{datetimeStamp}] {message}";
-
-                // Replace these with your actual chat IDs
-                long chatId1 = 6668065856;
-                long chatId2 = 1546898379;
-                long chatId3 = 5421340211;
-
-                // Send to the first chat ID
-                await SendMessageToTelegram(client, botToken, chatId1, messageWithDatetime);
-
-                // Send to the second chat ID
-                await SendMessageToTelegram(client, botToken, chatId2, messageWithDatetime);
-
-                // Send to the second chat ID
-                await SendMessageToTelegram(client, botToken, chatId3, messageWithDatetime);
-            }
-        }*/
-
+        }
         private async Task SendMessageToTelegram(HttpClient client, string botToken, long chatId, string message)
         {
             try

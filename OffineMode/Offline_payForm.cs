@@ -183,7 +183,7 @@ namespace KASIR.OfflineMode
                 }
 
                 name = char.ToUpper(name[0]) + name.Substring(1);
-                txtNama.Text = name + " (DT)";
+                txtNama.Text = name + "(Auto)";
                 txtSeat.Text = "0";
             }
 
@@ -638,14 +638,69 @@ namespace KASIR.OfflineMode
                     {
                         throw new InvalidOperationException("btnSimpan is null");
                     }
+
                     if (printerModel != null)
                     {
-                        /*// Run the print method in a background task
-                        await Task.Run(() =>
+                        // Create a CancellationTokenSource with timeout
+                        using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30))) // 30-second timeout
                         {
-                            printerModel.PrintModelPayform(menuModel, cartDetails, kitchenItems, barItems, canceledKitchenItems, canceledBarItems, totalTransactions, Kakimu);
-                        });*/
-                        await printerModel.PrintModelPayform(menuModel, cartDetails, kitchenItems, barItems, canceledKitchenItems, canceledBarItems, totalTransactions, Kakimu);
+                            try
+                            {
+                                // Run the print operation with cancellation support
+                                await Task.Run(async () =>
+                                {
+                                    // Store print job details in case we need to retry later
+                                    var printJob = new PrintJob
+                                    {
+                                        MenuModel = menuModel,
+                                        CartDetails = cartDetails,
+                                        KitchenItems = kitchenItems,
+                                        BarItems = barItems,
+                                        CanceledKitchenItems = canceledKitchenItems,
+                                        CanceledBarItems = canceledBarItems,
+                                        TransactionNumber = totalTransactions,
+                                        FooterText = Kakimu
+                                    };
+
+                                    // Serialize and save the print job for recovery if needed
+                                    SavePrintJobForRecovery(printJob);
+
+                                    // Perform the actual printing with advanced retry logic
+                                    await printerModel.PrintModelPayform(
+                                        menuModel, cartDetails, kitchenItems, barItems,
+                                        canceledKitchenItems, canceledBarItems,
+                                        totalTransactions, Kakimu);
+
+                                    // If successful, remove the saved print job
+                                    RemoveSavedPrintJob(printJob);
+                                }, cts.Token);
+
+                                btnSimpan.Text = "Selesai.";
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                // The operation timed out
+                                LoggerUtil.LogWarning("Print operation timed out, will retry in background");
+                                btnSimpan.Text = "Selesai, print akan dilanjutkan di background.";
+
+                                // Start a background thread that won't block UI
+                                ThreadPool.QueueUserWorkItem(async _ =>
+                                {
+                                    try
+                                    {
+                                        // Retry the print operation in background with max retries
+                                        await printerModel.PrintModelPayform(
+                                            menuModel, cartDetails, kitchenItems, barItems,
+                                            canceledKitchenItems, canceledBarItems,
+                                            totalTransactions, Kakimu);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        LoggerUtil.LogError(ex, "Background printing failed after timeout");
+                                    }
+                                });
+                            }
+                        }
                     }
                     else
                     {
@@ -663,6 +718,56 @@ namespace KASIR.OfflineMode
                     btnSimpan.Enabled = true;
                 }
             }
+        }
+
+        // Helper methods for print job persistence
+        private void SavePrintJobForRecovery(PrintJob job)
+        {
+            try
+            {
+                string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs");
+                Directory.CreateDirectory(printJobsDir);
+
+                string filename = Path.Combine(printJobsDir, $"PrintJob_{job.TransactionNumber}_{DateTime.Now.Ticks}.json");
+                File.WriteAllText(filename, JsonConvert.SerializeObject(job));
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to save print job for recovery");
+            }
+        }
+
+        private void RemoveSavedPrintJob(PrintJob job)
+        {
+            try
+            {
+                string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs");
+                if (Directory.Exists(printJobsDir))
+                {
+                    string pattern = $"PrintJob_{job.TransactionNumber}_*.json";
+                    foreach (var file in Directory.GetFiles(printJobsDir, pattern))
+                    {
+                        File.Delete(file);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to remove saved print job");
+            }
+        }
+
+        // Add this class to store print job information
+        public class PrintJob
+        {
+            public GetStrukCustomerTransaction MenuModel { get; set; }
+            public List<CartDetailStrukCustomerTransaction> CartDetails { get; set; }
+            public List<KitchenAndBarCartDetails> KitchenItems { get; set; }
+            public List<KitchenAndBarCartDetails> BarItems { get; set; }
+            public List<KitchenAndBarCanceledItems> CanceledKitchenItems { get; set; }
+            public List<KitchenAndBarCanceledItems> CanceledBarItems { get; set; }
+            public int TransactionNumber { get; set; }
+            public string FooterText { get; set; }
         }
 
         private void ResetButtonState()

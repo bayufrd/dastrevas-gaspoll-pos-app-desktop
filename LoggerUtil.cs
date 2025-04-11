@@ -8,7 +8,11 @@ namespace KASIR
         private static readonly ILogger _log = LoggerService.Instance._log;
         public static void LogError(Exception ex, string message, params object[] properties)
         {
-
+            if (_log == null)
+            {
+                return;
+            }
+            _log.Error(ex, message, properties);
             //MessageBox.Show(ex+message+properties);
             if (ex is System.Net.Sockets.SocketException socketEx)
             {
@@ -22,11 +26,7 @@ namespace KASIR
 
             }
             util.sendLogTelegramBy(ex, message, properties);
-            if (_log == null)
-            {
-                return;
-            }
-            _log.Error(ex, message, properties);
+
         }
         public static void LogPrivateMethod(string methodName)
         {

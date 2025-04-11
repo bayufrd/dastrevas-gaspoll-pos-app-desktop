@@ -343,8 +343,18 @@ namespace KASIR.Komponen
                         File.WriteAllText(destinationPath, "{\"data\":[]}");
                         transactions = new JArray();
                         data["data"] = transactions;
+                        return;
                     }
 
+                    // When preparing data for sync, create a copy of transaction IDs being synced
+                    List<string> transactionIdsBeingSynced = new List<string>();
+
+                    // After parsing the transactions from the JSON file
+                    foreach (var transaction in transactions)
+                    {
+                        // Track which transactions we're syncing
+                        transactionIdsBeingSynced.Add(transaction["transaction_ref"].ToString());
+                    }
                     // Sync with API
                     UpdateProgress(70, "Mengirim data ke server...");
                     HttpResponseMessage response = await apiService.SyncTransaction(data.ToString(), apiUrl);
@@ -358,13 +368,16 @@ namespace KASIR.Komponen
                         {
                             UpdateProgress(85, "Sinkronisasi berhasil, menyimpan data...");
                         }
-                        SyncSuccess(destinationPath);
+                        //SyncSuccess(destinationPath);
+                        SyncSpecificTransactions(destinationPath, transactionIdsBeingSynced);
 
                         ProcessSuccessfulSync(destinationPath, folderCombine);
 
                         // Notify main form that sync was successful
                         SyncCompleted?.Invoke();
-                        SyncSuccess(filePath);
+                        // Update only the transactions we tracked for this sync operation
+                        SyncSpecificTransactions(filePath, transactionIdsBeingSynced);
+                        //SyncSuccess(filePath);
                         NewDataChecker = 1;
 
                         if (ShouldShowProgress())
@@ -405,7 +418,37 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+        private void SyncSpecificTransactions(string filePath, List<string> transactionIds)
+        {
+            try
+            {
+                lock (FileLock)
+                {
+                    // Read file JSON
+                    string jsonData = File.ReadAllText(filePath);
+                    JObject data = JObject.Parse(jsonData);
 
+                    // Get "data" array
+                    JArray transactions = (JArray)data["data"];
+
+                    // Only mark transactions in our tracked list as synced
+                    foreach (JObject transaction in transactions)
+                    {
+                        if (transaction["transaction_ref"] != null && transactionIds.Contains(transaction["transaction_ref"].ToString()))
+                        {
+                            transaction["is_sent_sync"] = 1;
+                        }
+                    }
+
+                    // Save changes
+                    File.WriteAllText(filePath, data.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error updating specific transactions: {ErrorMessage}", ex.Message);
+            }
+        }
         private JObject ParseAndRepairJsonFile(string filePath)
         {
             string jsonData = File.ReadAllText(filePath);
@@ -831,11 +874,21 @@ namespace KASIR.Komponen
                     File.Delete(saveBillDataPathClone);
                     return;
                 }
+                // When preparing data for sync, create a copy of transaction IDs being synced
+                List<string> transactionIdsBeingSynced = new List<string>();
 
+                // After parsing the transactions from the JSON file
+                foreach (var transaction in transactionsSaveBill)
+                {
+                    // Track which transactions we're syncing
+                    transactionIdsBeingSynced.Add(transaction["transaction_ref"].ToString());
+                }
                 HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonSavwDataSync, apiUrl);
                 if (savebillSync.IsSuccessStatusCode)
                 {
-                    SyncSuccess(saveBillDataPath);
+                    SyncSpecificTransactions(saveBillDataPath, transactionIdsBeingSynced);
+
+                    //SyncSuccess(saveBillDataPath);
                 }
                 else
                 {

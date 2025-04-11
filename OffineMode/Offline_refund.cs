@@ -734,31 +734,153 @@ namespace KASIR.OfflineMode
             return outletData;
         }
 
+        // Method to handle successful transaction
         private async Task HandleSuccessfulTransaction(List<RefundDetailStruk> refundDetailStruks)
         {
+            CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)); // 30-second timeout
+
             try
             {
-
-                // PrinterModel untuk mencetak data refund
                 PrinterModel printerModel = new PrinterModel();
-                /*await Task.Run(() =>
+
+                if (btnRefund != null)
                 {
-                    // Mencetak hanya data refund
+                    btnRefund.Text = "Mencetak...";
+                }
+                else
+                {
+                    throw new InvalidOperationException("btnRefund is null");
+                }
 
-                    printerModel.PrintModelRefund(refundData, refundDetailStruks, Nomortransaks);
-                });*/
-                await printerModel.PrintModelRefund(refundData, refundDetailStruks, Nomortransaks);
+                if (printerModel != null)
+                {
+                    // Save print job for potential recovery
+                    SaveRefundPrintJobForRecovery(refundData, refundDetailStruks, Nomortransaks);
 
-                btnRefund.Text = "Selesai.";
-                btnRefund.Enabled = true;
-                DialogResult = DialogResult.OK;
-                Close();
+                    try
+                    {
+                        await Task.Run(async () =>
+                        {
+                            await printerModel.PrintModelRefund(refundData, refundDetailStruks, Nomortransaks);
+                        }, cts.Token);
+
+                        // If successful, remove the saved print job
+                        RemoveSavedRefundPrintJob(Nomortransaks);
+
+                        btnRefund.Text = "Selesai.";
+                        btnRefund.Enabled = true;
+                        DialogResult = DialogResult.OK;
+                        Close();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // The operation timed out
+                        LoggerUtil.LogWarning("Refund print operation timed out, will retry in background");
+
+                        btnRefund.Text = "Selesai (Print di background)";
+                        btnRefund.Enabled = true;
+                        DialogResult = DialogResult.OK;
+                        Close();
+
+                        // Continue printing in background without blocking UI
+                        ThreadPool.QueueUserWorkItem(async _ =>
+                        {
+                            try
+                            {
+                                // Use a new instance to avoid any shared state issues
+                                PrinterModel backgroundPrinterModel = new PrinterModel();
+
+                                // Retry the print operation in background
+                                await backgroundPrinterModel.PrintModelRefund(refundData, refundDetailStruks, Nomortransaks);
+
+                                // If successful, remove the saved print job
+                                RemoveSavedRefundPrintJob(Nomortransaks);
+                            }
+                            catch (Exception ex)
+                            {
+                                LoggerUtil.LogError(ex, "Background refund printing failed: {ErrorMessage}", ex.Message);
+                            }
+                        });
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException("printerModel is null");
+                }
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                LoggerUtil.LogError(ex, "An error occurred during refund printing: {ErrorMessage}", ex.Message);
 
+                if (btnRefund != null)
+                {
+                    btnRefund.Text = "Print Ulang";
+                    btnRefund.Enabled = true;
+                }
             }
+            finally
+            {
+                cts.Dispose();
+            }
+        }
+
+        // Helper methods for refund print job persistence
+        private void SaveRefundPrintJobForRecovery(
+            DataRefundStruk refundData,
+            List<RefundDetailStruk> refundDetailStruks,
+            int transactionNumber)
+        {
+            try
+            {
+                string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs", "Refunds");
+                Directory.CreateDirectory(printJobsDir);
+
+                var refundPrintJob = new RefundPrintJob
+                {
+                    RefundData = refundData,
+                    RefundDetails = refundDetailStruks,
+                    TransactionNumber = transactionNumber,
+                    OutletId = Properties.Settings.Default.BaseOutlet,
+                    Timestamp = DateTime.Now
+                };
+
+                string filename = Path.Combine(printJobsDir, $"RefundPrintJob_{transactionNumber}_{DateTime.Now.Ticks}.json");
+                File.WriteAllText(filename, JsonConvert.SerializeObject(refundPrintJob, Formatting.Indented));
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to save refund print job for recovery");
+            }
+        }
+
+        private void RemoveSavedRefundPrintJob(int transactionNumber)
+        {
+            try
+            {
+                string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs", "Refunds");
+                if (Directory.Exists(printJobsDir))
+                {
+                    string pattern = $"RefundPrintJob_{transactionNumber}_*.json";
+                    foreach (var file in Directory.GetFiles(printJobsDir, pattern))
+                    {
+                        File.Delete(file);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Failed to remove saved refund print job");
+            }
+        }
+
+        // Class to store refund print job information
+        public class RefundPrintJob
+        {
+            public DataRefundStruk RefundData { get; set; }
+            public List<RefundDetailStruk> RefundDetails { get; set; }
+            public int TransactionNumber { get; set; }
+            public string OutletId { get; set; }
+            public DateTime Timestamp { get; set; }
         }
 
         private void btnCicil_Click(object sender, EventArgs e)

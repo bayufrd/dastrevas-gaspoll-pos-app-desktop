@@ -3757,6 +3757,8 @@ namespace KASIR.Printer
         {
             try
             {
+                LoggerUtil.LogWarning("Ex_PrintModelPayform");
+
                 System.IO.Stream stream = null;
 
                 // Koneksi printer langsung di sini
@@ -5094,15 +5096,6 @@ namespace KASIR.Printer
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
 
-            byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
-            byte[] NewLine = new byte[] { 0x0A }; // New line
-            /*
-                        // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
-                        byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
-                        stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
-            */
-            // Write initialization bytes
-            stream.Write(InitPrinter, 0, InitPrinter.Length);
 
             string strukText = kodeHeksadesimalNormal;
             strukText += kodeHeksadesimalBold + CenterText(datas.data?.outlet_name);
@@ -5110,7 +5103,8 @@ namespace KASIR.Printer
             strukText += CenterText(datas.data?.outlet_address);
             strukText += CenterText(datas.data?.outlet_phone_number);
             //strukText += "--------------------------------\n";
-            strukText += CenterText("Receipt No.: " + datas.data?.receipt_number);
+            strukText += kodeHeksadesimalBold + CenterText("Receipt No.: " + datas.data?.receipt_number);
+            strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
             strukText += CenterText(datas.data?.invoice_due_date);
             strukText += "\nName: " + datas.data?.customer_name + "\n";
@@ -5175,7 +5169,6 @@ namespace KASIR.Printer
             stream.Write(buffer, 0, buffer.Length);
             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
             //strukText = "\n\n\n\n\n";
-            stream.Write(NewLine, 0, NewLine.Length);
             strukText = "--------------------------------";
 
             buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
@@ -5193,22 +5186,13 @@ namespace KASIR.Printer
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
 
-            byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
-            byte[] NewLine = new byte[] { 0x0A }; // New line
-
-            /*// Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
-            byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
-            stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing*/
-            // Write initialization bytes
-            stream.Write(InitPrinter, 0, InitPrinter.Length);
-            stream.Write(NewLine, 0, NewLine.Length);
-
             //string strukText = kodeHeksadesimalNormal + "--------------------------------\n";
             string strukText = kodeHeksadesimalNormal;
             strukText += kodeHeksadesimalBold + CenterText("CHECKER No. " + totalTransactions.ToString());
             strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
-            strukText += CenterText("Receipt No.: " + datas.data?.receipt_number);
+            strukText += kodeHeksadesimalBold + CenterText("Receipt No.: " + datas.data?.receipt_number);
+            strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
             strukText += CenterText(datas.data?.invoice_due_date);
             strukText += "Name: " + datas.data?.customer_name + "\n";
@@ -5260,17 +5244,11 @@ namespace KASIR.Printer
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
 
-            byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
-            byte[] NewLine = new byte[] { 0x0A }; // New line
-
-            // Write initialization bytes
-            stream.Write(InitPrinter, 0, InitPrinter.Length);
-
             //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
             string strukText = kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + CenterText(type.ToUpper() + " No. " + totalTransactions.ToString());
-            strukText += CenterText("Receipt No.: " + datas.data?.receipt_number);
+            strukText += kodeHeksadesimalBold + CenterText("Receipt No.: " + datas.data?.receipt_number);
             strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
             strukText += CenterText(datas.data?.invoice_due_date);
@@ -5360,6 +5338,7 @@ namespace KASIR.Printer
         {
             try
             {
+                LoggerUtil.LogWarning("Ex_PrintModelPayform");
 
                 System.IO.Stream stream = null;
                 if (System.Net.IPAddress.TryParse(printerName, out _))
@@ -6186,43 +6165,32 @@ namespace KASIR.Printer
 
         public async Task<bool> RetryPolicyAsync(Func<Task<bool>> action, int maxRetries)
         {
-            int attempt = 2;
-            Exception? lastException = null;// Simpan pengecualian terakhir jika terjadi error
+            int attempt = 0;
+            Exception? lastException = null;
 
             while (attempt < maxRetries)
             {
                 attempt++;
                 try
                 {
-                    // Lakukan action dan cek apakah berhasil
                     if (await action())
                     {
-                        return true; // Berhasil pada percobaan attempt
+                        return true;
                     }
                 }
                 catch (Exception ex)
                 {
-                    // Simpan exception terakhir untuk dilaporkan nanti jika semua percobaan gagal
                     lastException = ex;
+                    LoggerUtil.LogError(ex, $"Attempt {attempt} failed: {ex.Message}");
                 }
             }
 
-            // Jika mencapai percobaan maksimal dan semua percobaan gagal
+            // Log details error
             Util util = new Util();
-            if (lastException != null)
-            {
-                // Jika gagal karena exception
-                util.sendLogTelegramNetworkError($"Semua percobaan ({maxRetries}x) gagal dengan error: {lastException.Message}.");
-            }
-            else
-            {
-                // Jika gagal tanpa exception, hanya action() yang mengembalikan false
-                util.sendLogTelegramNetworkError($"Semua percobaan ({maxRetries}x) gagal.");
-            }
+            util.sendLogTelegramNetworkError($"All {maxRetries} attempts failed. Last error: {lastException?.ToString()}");
 
             return false;
         }
-
 
         // Method to validate if the string is not a MAC address or IP address
         public bool IsNotMacAddressOrIpAddress(string input)

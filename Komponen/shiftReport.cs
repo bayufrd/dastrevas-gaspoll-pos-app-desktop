@@ -358,6 +358,7 @@ namespace KASIR.Komponen
                         {
                             UpdateProgress(85, "Sinkronisasi berhasil, menyimpan data...");
                         }
+                        SyncSuccess(destinationPath);
 
                         ProcessSuccessfulSync(destinationPath, folderCombine);
 
@@ -370,6 +371,10 @@ namespace KASIR.Komponen
                         {
                             UpdateProgress(100, "Sinkronisasi selesai!");
                             await Task.Delay(500); // Short delay to show completion
+                        }
+                        if (File.Exists(destinationPath))
+                        {
+                            File.Delete(destinationPath);
                         }
                     }
                     else

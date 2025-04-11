@@ -68,19 +68,6 @@ namespace KASIR.Komponen
         {
             lblStatus.ForeColor = Color.LightGreen;
 
-            //PASSWORD CHECKER
-            if (string.IsNullOrEmpty(lblPassword.Text))
-            {
-                lblStatus.Text = "Silahkan masukkan Password Konfirmasi.";
-                lblStatus.ForeColor = Color.Red;
-                return;
-            }
-            if (lblPassword.Text != "GMC1234")
-            {
-                lblStatus.Text = "Password salah.";
-                lblStatus.ForeColor = Color.Red;
-                return;
-            }
             if (status != 1)
             {
                 lblStatus.Text = "Masukkan logo yang valid dahulu.";
@@ -176,7 +163,6 @@ namespace KASIR.Komponen
                     doc2.Save(kasirConfigPath);
                 }
 
-                MessageBox.Show("Berhasil Di Ubah, aplikasi akan dijalankan ulang");
                 Application.Restart();
                 Environment.Exit(0);
 

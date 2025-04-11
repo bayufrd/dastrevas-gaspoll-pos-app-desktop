@@ -30,9 +30,6 @@
         {
             gradientPanel2 = new Model.GradientPanel();
             lblStatus = new Label();
-            panel6 = new Panel();
-            lblPassword = new TextBox();
-            label5 = new Label();
             panel5 = new Panel();
             picThumbnail = new PictureBox();
             btnUpload = new FontAwesome.Sharp.IconButton();
@@ -52,7 +49,6 @@
             Button2 = new FontAwesome.Sharp.IconButton();
             Button1 = new FontAwesome.Sharp.IconButton();
             gradientPanel2.SuspendLayout();
-            panel6.SuspendLayout();
             panel5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)picThumbnail).BeginInit();
             panel4.SuspendLayout();
@@ -66,7 +62,6 @@
             gradientPanel2.Angle = 90F;
             gradientPanel2.BottomColor = Color.White;
             gradientPanel2.Controls.Add(lblStatus);
-            gradientPanel2.Controls.Add(panel6);
             gradientPanel2.Controls.Add(panel5);
             gradientPanel2.Controls.Add(panel4);
             gradientPanel2.Controls.Add(panel3);
@@ -86,42 +81,11 @@
             lblStatus.AutoSize = true;
             lblStatus.BackColor = Color.Transparent;
             lblStatus.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            lblStatus.Location = new Point(18, 343);
+            lblStatus.Location = new Point(18, 304);
             lblStatus.Name = "lblStatus";
             lblStatus.Size = new Size(40, 15);
             lblStatus.TabIndex = 48;
             lblStatus.Text = "Status";
-            // 
-            // panel6
-            // 
-            panel6.BackColor = Color.White;
-            panel6.BorderStyle = BorderStyle.FixedSingle;
-            panel6.Controls.Add(lblPassword);
-            panel6.Controls.Add(label5);
-            panel6.Location = new Point(12, 307);
-            panel6.Name = "panel6";
-            panel6.Size = new Size(404, 33);
-            panel6.TabIndex = 48;
-            // 
-            // lblPassword
-            // 
-            lblPassword.Location = new Point(108, 3);
-            lblPassword.MaxLength = 10;
-            lblPassword.Name = "lblPassword";
-            lblPassword.Size = new Size(291, 23);
-            lblPassword.TabIndex = 47;
-            lblPassword.UseSystemPasswordChar = true;
-            // 
-            // label5
-            // 
-            label5.AutoSize = true;
-            label5.BackColor = Color.Transparent;
-            label5.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            label5.Location = new Point(5, 8);
-            label5.Name = "label5";
-            label5.Size = new Size(80, 15);
-            label5.TabIndex = 46;
-            label5.Text = "Confirmation:";
             // 
             // panel5
             // 
@@ -351,8 +315,6 @@
             Text = "DT-SettingsConfig";
             gradientPanel2.ResumeLayout(false);
             gradientPanel2.PerformLayout();
-            panel6.ResumeLayout(false);
-            panel6.PerformLayout();
             panel5.ResumeLayout(false);
             panel5.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)picThumbnail).EndInit();
@@ -389,8 +351,5 @@
         private Label label4;
         private PictureBox picThumbnail;
         private Label lblStatus;
-        private Panel panel6;
-        private TextBox lblPassword;
-        private Label label5;
     }
 }

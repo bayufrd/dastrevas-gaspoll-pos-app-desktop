@@ -17,7 +17,6 @@ using SharpCompress.Archives;
 using SharpCompress.Common;
 using Color = System.Drawing.Color;
 using DrawingColor = System.Drawing.Color;
-using Menu = KASIR.Model.Menu;
 using Path = System.IO.Path;
 
 
@@ -143,6 +142,7 @@ namespace KASIR
                 offlineMasterPos.BringToFront();
                 offlineMasterPos.Show();
                 await offlineMasterPos.LoadCart();
+                await sendDataSyncPerHours(allSettingsData);
             }
             else
             {
@@ -381,14 +381,6 @@ namespace KASIR
             string allSettingsData = File.ReadAllText(Config); // Ambil status offline
 
             // Jika status offline ON, tampilkan Offline_masterPos
-            if (allSettingsData == "ON")
-            {
-                Offline_masterPos cache = new Offline_masterPos();
-                //await refreshCacheTransaction();
-                await cache.refreshCacheTransaction();
-
-            }
-
             if (NetworkInterface.GetIsNetworkAvailable())
             {
                 string TypeCacheEksekusi = "Sync";
@@ -643,18 +635,24 @@ namespace KASIR
                     outlet_name = dataOutlet.data.name,
                     version = currentVersion + " UpdaterVer: " + VersionUpdaterApp,
                     new_version = newVersion,
-                    last_updated = DateTime.Now.ToString("yyyy-MM-dd HH=mm=ss", CultureInfo.InvariantCulture)
+                    last_updated = GetCurrentTimeInIndonesianFormat()
                 };
                 // Mengubah objek menjadi string JSON
                 string jsonString = JsonConvert.SerializeObject(json, Newtonsoft.Json.Formatting.Indented); // Tidak ada indentasi
                 IApiService apiService = new ApiService();
-
                 HttpResponseMessage response = await apiService.notifikasiPengeluaran(jsonString, $"/update-confirm?outlet_id={baseOutlet}");
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
+        }
+
+        private string GetCurrentTimeInIndonesianFormat()
+        {
+            TimeZoneInfo indonesiaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            DateTime localTime = TimeZoneInfo.ConvertTime(DateTime.UtcNow, indonesiaTimeZone);
+            return localTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         }
         private async Task cekVersionAndData()
         {
@@ -1244,6 +1242,12 @@ namespace KASIR
                     SignalPing.ForeColor = Color.White;
                     SignalPing.Text = $"Last Sync \n{DateTime.Now:HH:mm}";
                     SignalPing.IconColor = Color.White;
+
+                    await Task.Run(async () =>
+                    {
+                        await cekVersionAndData();
+                        await headerName();
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -1272,42 +1276,14 @@ namespace KASIR
                     // Call the sync method which will respect the background flag
                     await c.SyncDataTransactions();
                 }
+
+                // Create an instance of transactionFileMover and then call the method
+                var fileMover = new transactionFileMover();
+                await fileMover.refreshCacheTransaction();
+
             }
         }
         public static readonly object FileLock = new object();
-        public static void SyncSuccess(string filePath)
-        {
-            try
-            {
-                lock (FileLock) // Pastikan hanya satu thread yang menulis ke file
-                {
-                    // Baca file JSON
-                    string jsonData = File.ReadAllText(filePath);
-                    JObject data = JObject.Parse(jsonData);
-
-                    // Dapatkan array "data"
-                    JArray transactions = (JArray)data["data"];
-
-                    // Iterasi setiap transaksi dan hanya perbarui yang statusnya is_sent_sync = 0
-                    foreach (JObject transaction in transactions)
-                    {
-                        if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 0)
-                        {
-                            // Update status menjadi 1 jika transaksi berhasil
-                            transaction["is_sent_sync"] = 1;
-
-                            // Simpan perubahan hanya untuk transaksi yang berhasil disinkronkan
-                        }
-                    }
-                    File.WriteAllText(filePath, data.ToString());
-
-                }
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "An error occurred during SyncSuccess: {ErrorMessage}", ex.Message);
-            }
-        }
         private async void btnTestSpeed_Click(object sender, EventArgs e)
         {
             SignalPing.Text = "Testing...";
@@ -1331,7 +1307,6 @@ namespace KASIR
                 UpdatePingLabel(Color.Red, $"Error: {ex.Message}");
             }
         }
-
         private async Task<int> TestPing(string host)
         {
             Ping pingSender = new Ping();
@@ -1371,8 +1346,6 @@ namespace KASIR
                 UpdatePingLabel(Color.Red, $"{ping} ms - Poor");
             }
         }
-
-
         public static void OpenApplicationOnSecondMonitor(string path)
         {
             // Get the screen dimensions

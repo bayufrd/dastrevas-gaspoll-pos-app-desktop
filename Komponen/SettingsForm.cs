@@ -11,6 +11,7 @@ using CheckBox = System.Windows.Forms.CheckBox;
 using Color = System.Drawing.Color;
 using ComboBox = System.Windows.Forms.ComboBox;
 using MessageBox = System.Windows.MessageBox;
+using Point = System.Drawing.Point;
 using TextBox = System.Windows.Forms.TextBox;
 
 namespace KASIR.Komponen
@@ -827,71 +828,79 @@ namespace KASIR.Komponen
                 Verb = "open"
             });
         }
-
         private void iconButton1_Click(object sender, EventArgs e)
         {
-            SettingsConfig u = new SettingsConfig();
-            this.Close();
-
-            u.Show();
-            /* iconButton1.Click += (sender, e) =>
-             {
-                 this.Close();
-
-                 // Open a new form with details when clicked
-                 ShowOutletDetailsForm();
-             };*/
-        }
-        private void ShowOutletDetailsForm()
-        {
-            Form detailsForm = new Form
+            Form passwordForm = new Form
             {
-                Text = "GMC - Config",
-                Width = 600,  // Mengatur lebar form ke lebar layar
-                Height = 200,  // Mengatur tinggi form ke tinggi layar
-                StartPosition = FormStartPosition.CenterScreen,  // Menampilkan form di tengah layar
-                MaximizeBox = false,  // Menonaktifkan tombol maximize untuk menghindari form lebih besar dari layar
-                FormBorderStyle = FormBorderStyle.FixedDialog  // Mengatur border agar tidak bisa diubah-ubah ukuran
+                Text = "Autentikasi",
+                Width = 300,
+                Height = 200,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                StartPosition = FormStartPosition.CenterParent, // Center relative to parent
+                MaximizeBox = false,
+                TopMost = true,
+                Owner = this // Set the owner to establish parent-child relationship
             };
-            int totalWidth = detailsForm.ClientSize.Width;
-            System.Windows.Forms.Label status = new System.Windows.Forms.Label
+
+            Label lblStatus = new Label
             {
-                Text = "Masukkan Password: :",
-                Width = (int)(totalWidth * 0.9),
-                TextAlign = ContentAlignment.MiddleLeft,
-                Top = 30
+                Text = "Masukkan Password:",
+                Location = new Point(20, 20), // Sekarang menggunakan System.Drawing.Point
+                Width = 260,
+                TextAlign = ContentAlignment.MiddleLeft
             };
-            TextBox password = new TextBox
+
+            TextBox txtPassword = new TextBox
+            {
+                Location = new Point(20, 50), // Sekarang menggunakan System.Drawing.Point
+                Width = 260,
+                UseSystemPasswordChar = true
+            };
+
+            Button btnSubmit = new Button
+            {
+                Text = "Submit",
+                Location = new Point(100, 100),
+                DialogResult = DialogResult.OK
+            };
+
+            Label lblError = new Label
             {
                 Text = "",
-                PlaceholderText = "****",
-                Width = (int)(totalWidth * 0.9),
-                Height = 50,
-                UseSystemPasswordChar = true,
-                Top = 60
+                Location = new Point(20, 130),
+                Width = 260,
+                ForeColor = Color.Red,
+                TextAlign = ContentAlignment.MiddleCenter
             };
-            // Add controls to the details form
-            detailsForm.Controls.Add(status);
-            detailsForm.Controls.Add(password);
 
-            // Show the details form
-            detailsForm.ShowDialog();
-            password.TextChanged += (sender, e) =>
+            this.Close();
+            //this.Hide(); // Hide rather than close immediately
+            btnSubmit.Click += (s, ev) =>
             {
-                if (password.Text != "GMC1234")
+                if (txtPassword.Text == "GMC1234")
                 {
-                    status.Text = "Password Salah!";
-                    status.ForeColor = Color.Red;
-
+                    passwordForm.DialogResult = DialogResult.OK;
+                    passwordForm.Close();
                 }
                 else
                 {
-                    SettingsConfig u = new SettingsConfig();
-                    this.Close();
-
-                    u.Show();
+                    lblError.Text = "Password Salah!";
+                    txtPassword.Clear();
+                    txtPassword.Focus();
                 }
             };
+
+            passwordForm.Controls.Add(lblStatus);
+            passwordForm.Controls.Add(txtPassword);
+            passwordForm.Controls.Add(btnSubmit);
+            passwordForm.Controls.Add(lblError);
+            passwordForm.AcceptButton = btnSubmit;
+
+            if (passwordForm.ShowDialog() == DialogResult.OK)
+            {
+                SettingsConfig u = new SettingsConfig();
+                u.Show();
+            }
         }
 
         private async void sButtonOffline_CheckedChanged(object sender, EventArgs e)

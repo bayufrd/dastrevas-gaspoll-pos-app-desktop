@@ -2329,49 +2329,28 @@ namespace KASIR.Printer
                     printerId, printerName);
                         continue;
                     }
-                    if (ShouldPrint(printerId, "Kasir"))
+                    // Tambahkan metode TryBluetoothConnection untuk mencoba koneksi
+                    var connectionResult = await TryBluetoothConnection(printerName);
+
+                    if (!connectionResult.IsSuccess)
                     {
-                        System.IO.Stream stream = Stream.Null;
-
-                        try
+                        LoggerUtil.LogWarning($"Bluetooth connection failed for printer: {printerName}. Reason: {connectionResult.ErrorMessage}");
+                        continue;
+                    }
+                    // Gunakan stream dari connectionResult
+                    System.IO.Stream stream = connectionResult.Stream;
+                    try
+                    {
+                        if (ShouldPrint(printerId, "Kasir"))
                         {
-                            if (System.Net.IPAddress.TryParse(printerName, out _))
-                            {
-                                // Connect via LAN
-                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
-                                stream = client.GetStream();
-                            }
-                            else
-                            {
-                                // Connect via Bluetooth
-                                BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                if (printerDevice == null)
-                                {
-                                    //.Show("Printer " + printerName + " not found", "Error");
-                                    continue;
-                                }
-
-                                BluetoothClient client = new BluetoothClient();
-                                BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                {
-                                    //MessageBox.Show("Pairing failed to " + printerName, "Error");
-                                    continue;
-                                }
-
-                                client.Connect(endpoint);
-                                stream = client.GetStream();
-                            }
-
                             PrintRefundReceipt(stream, datas, refundDetailStruks, totalTransactions);
                         }
-                        finally
+                    }
+                    finally
+                    {
+                        if (stream != null)
                         {
-                            if (stream != null)
-                            {
-                                stream.Close();
-                            }
+                            stream.Close();
                         }
                     }
                 }
@@ -2388,14 +2367,6 @@ namespace KASIR.Printer
             string kodeHeksadesimalBold = "\x1B\x45\x01";
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-
-            byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
-            byte[] NewLine = new byte[] { 0x0A }; // New line
-
-            // Write initialization bytes
-            stream.Write(InitPrinter, 0, InitPrinter.Length);
-
-            // Print logo (assuming logo is already in a proper format for the printer)
 
             // Print the rest of the receipt
             //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
@@ -2465,7 +2436,6 @@ namespace KASIR.Printer
             PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
             stream.Write(buffer, 0, buffer.Length);
             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
-            stream.Write(NewLine, 0, NewLine.Length);
 
             stream.Flush();
         }
@@ -2807,55 +2777,34 @@ namespace KASIR.Printer
                     {
 
                         Ex_PrintModelInputPin(datas, cartDetails, cartRefundDetails, canceledItems, totalTransactions,
-                    printerId, printerName
-                );
+                            printerId, printerName
+                        );
                         continue;
                     }
-                    if (ShouldPrint(printerId, "Kasir"))
+
+                    // Tambahkan metode TryBluetoothConnection untuk mencoba koneksi
+                    var connectionResult = await TryBluetoothConnection(printerName);
+
+                    if (!connectionResult.IsSuccess)
                     {
-                        System.IO.Stream stream = Stream.Null;
+                        LoggerUtil.LogWarning($"Bluetooth connection failed for printer: {printerName}. Reason: {connectionResult.ErrorMessage}");
+                        continue;
+                    }
+                    // Gunakan stream dari connectionResult
+                    System.IO.Stream stream = connectionResult.Stream;
 
-                        try
+                    try
+                    {
+                        if (ShouldPrint(printerId, "Kasir"))
                         {
-                            if (System.Net.IPAddress.TryParse(printerName, out _))
-                            {
-
-                                // Connect via LAN
-                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
-                                stream = client.GetStream();
-                            }
-                            else
-                            {
-
-                                // Connect via Bluetooth
-                                BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                if (printerDevice == null)
-                                {
-                                    //MessageBox.Show("Printer " + printerName + " not found", "Error");
-                                    continue;
-                                }
-
-                                BluetoothClient client = new BluetoothClient();
-                                BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                {
-                                    //MessageBox.Show("Pairing failed to " + printerName, "Error");
-                                    continue;
-                                }
-
-                                client.Connect(endpoint);
-                                stream = client.GetStream();
-                            }
-
                             PrintInputPinReceipt(stream, datas, cartDetails, cartRefundDetails, canceledItems, totalTransactions);
                         }
-                        finally
+                    }
+                    finally
+                    {
+                        if (stream != null)
                         {
-                            if (stream != null)
-                            {
-                                stream.Close();
-                            }
+                            stream.Close();
                         }
                     }
                 }
@@ -2875,17 +2824,6 @@ namespace KASIR.Printer
             string kodeHeksadesimalBold = "\x1B\x45\x01";
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-
-            byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
-            byte[] NewLine = new byte[] { 0x0A }; // New line
-            /*
-                        // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
-                        byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
-                        stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
-            */
-            // Write initialization bytes
-            stream.Write(InitPrinter, 0, InitPrinter.Length);
-
             // Print logo (assuming logo is already in a proper format for the printer)
 
             // Print the rest of the receipt
@@ -3043,7 +2981,6 @@ namespace KASIR.Printer
             strukText = "\n\n\n\n\n";
             buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
             stream.Write(buffer, 0, buffer.Length);
-            stream.Write(NewLine, 0, NewLine.Length);
 
             stream.Flush();
         }

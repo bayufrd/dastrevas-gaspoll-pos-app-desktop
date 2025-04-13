@@ -420,34 +420,72 @@ namespace KASIR.Komponen
         }
         private void SyncSpecificTransactions(string filePath, List<string> transactionIds)
         {
-            try
+            const int maxRetries = 5;
+            const int retryDelayMs = 1000; // 1 second delay between retries
+            int attemptCount = 0;
+            bool success = false;
+
+            while (!success && attemptCount < maxRetries)
             {
-                lock (FileLock)
+                try
                 {
-                    // Read file JSON
-                    string jsonData = File.ReadAllText(filePath);
-                    JObject data = JObject.Parse(jsonData);
-
-                    // Get "data" array
-                    JArray transactions = (JArray)data["data"];
-
-                    // Only mark transactions in our tracked list as synced
-                    foreach (JObject transaction in transactions)
+                    if (attemptCount > 0)
                     {
-                        if (transaction["transaction_ref"] != null && transactionIds.Contains(transaction["transaction_ref"].ToString()))
-                        {
-                            transaction["is_sent_sync"] = 1;
-                        }
+                        // Wait before retrying
+                        Thread.Sleep(retryDelayMs);
                     }
 
-                    // Save changes
-                    File.WriteAllText(filePath, data.ToString());
+                    lock (FileLock)
+                    {
+                        // Read file JSON
+                        string jsonData = File.ReadAllText(filePath);
+                        JObject data = JObject.Parse(jsonData);
+                        // Get "data" array
+                        JArray transactions = (JArray)data["data"];
+                        // Only mark transactions in our tracked list as synced
+                        foreach (JObject transaction in transactions)
+                        {
+                            if (transaction["transaction_ref"] != null && transactionIds.Contains(transaction["transaction_ref"].ToString()))
+                            {
+                                transaction["is_sent_sync"] = 1;
+                            }
+                        }
+                        // Save changes
+                        File.WriteAllText(filePath, data.ToString());
+                    }
+
+                    // If we got here without exception, operation was successful
+                    success = true;
+                }
+                catch (IOException ex) when (IsFileLockException(ex))
+                {
+                    // Specific handling for file lock issues
+                    attemptCount++;
+                    LoggerUtil.LogWarning($"File is in use, waiting to retry ({attemptCount}/{maxRetries}): {ex.Message}");
+
+                    // If we've reached max retries, log an error
+                    if (attemptCount >= maxRetries)
+                    {
+                        LoggerUtil.LogWarning(ex + "Maximum retries reached. Failed to sync specific transactions due to file access issues: {ErrorMessage}" + ex.Message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // For other exceptions, log and break the retry loop
+                    LoggerUtil.LogWarning(ex + "Error updating specific transactions: {ErrorMessage}" + ex.Message);
+                    break; // Don't retry on non-file-lock exceptions
                 }
             }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "Error updating specific transactions: {ErrorMessage}", ex.Message);
-            }
+        }
+
+        // Helper method to determine if an exception is related to file locking
+        private bool IsFileLockException(Exception ex)
+        {
+            // Common error messages or HResults that indicate file is locked or in use
+            return ex.Message.Contains("being used by another process") ||
+                   ex.Message.Contains("access is denied") ||
+                   ex.HResult == -2147024864 || // 0x80070020 - ERROR_SHARING_VIOLATION
+                   ex.HResult == -2147024891;   // 0x80070005 - ERROR_ACCESS_DENIED
         }
         private JObject ParseAndRepairJsonFile(string filePath)
         {

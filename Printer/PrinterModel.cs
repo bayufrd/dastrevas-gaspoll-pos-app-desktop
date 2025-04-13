@@ -5030,7 +5030,7 @@ namespace KASIR.Printer
                                     return true;
                                 }, maxRetries: 3))
                                 {
-                                    continue;
+                                    return;
                                 }
                             }
 
@@ -5093,7 +5093,7 @@ namespace KASIR.Printer
                                         return true;
                                     }, maxRetries: 3))
                                     {
-                                        continue;
+                                        return;
                                     }
                                 }
 
@@ -5159,7 +5159,7 @@ namespace KASIR.Printer
                                             return true;
                                         }, maxRetries: 3))
                                         {
-                                            continue;
+                                            return;
                                         }
                                     }
 
@@ -5226,7 +5226,7 @@ namespace KASIR.Printer
                                             return true;
                                         }, maxRetries: 3))
                                         {
-                                            continue;
+                                            return;
                                         }
                                     }
 
@@ -6351,8 +6351,13 @@ namespace KASIR.Printer
 
             // Log details error
             Util util = new Util();
-            util.sendLogTelegramNetworkError($"All {maxRetries} attempts failed. Last error: {lastException?.ToString()}");
-            MessageBox.Show($"Semua {maxRetries}x percobaan gagal. Error terakhir: {lastException?.Message}");
+            // More detailed error message
+            string errorDetails = lastException != null
+                ? $"Error Type: {lastException.GetType().Name}, Message: {lastException.Message}"
+                : "Tidak diketahui penyebab kegagalan bluetooth";
+
+            MessageBox.Show($"Semua {maxRetries}x percobaan gagal. Error terakhir: {errorDetails}", "Bluetooth Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            util.sendLogTelegramNetworkError($"Semua {maxRetries}x percobaan gagal. Error terakhir: {errorDetails}");
             return false;
         }
 

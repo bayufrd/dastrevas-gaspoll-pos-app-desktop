@@ -27,10 +27,6 @@ namespace KASIR
         private IconButton currentBtn;
         private Panel leftBorderBtn;
         private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet.ToString();
-        private readonly string macKasir = Properties.Settings.Default.MacAddressKasir.ToString();
-        private readonly string macBar = Properties.Settings.Default.MacAddressBar.ToString();
-        private readonly string macKitchen = Properties.Settings.Default.MacAddressKitchen.ToString();
-        private readonly string footerStruk = Properties.Settings.Default.FooterStruk.ToString();
 
         string DownloadPath, VersionUpdaterApp, PathKasir, baseOutletName;
         private static Random random = new Random();
@@ -1208,22 +1204,14 @@ namespace KASIR
             // Check if OfflineMode is ON
             if (allSettingsData == "ON")
             {
-                try
+                using (shiftReport c = new shiftReport())
                 {
-                    using (shiftReport c = new shiftReport())
-                    {
-                        // Set background operation flag to true 
-                        // karena tidak menampilkan form
-                        c.IsBackgroundOperation = true;
+                    // Set background operation flag to true 
+                    // karena tidak menampilkan form
+                    c.IsBackgroundOperation = true;
 
-                        // Sinkronisasi transaksi
-                        await c.SyncDataTransactions();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Logging error yang detail
-                    LoggerUtil.LogError(ex, "Gagal sinkronisasi data: {ErrorMessage}", ex.Message);
+                    // Sinkronisasi transaksi
+                    await c.SyncDataTransactions();
                 }
             }
         }

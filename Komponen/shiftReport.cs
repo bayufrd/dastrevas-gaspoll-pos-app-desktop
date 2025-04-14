@@ -385,10 +385,6 @@ namespace KASIR.Komponen
                             UpdateProgress(100, "Sinkronisasi selesai!");
                             await Task.Delay(500); // Short delay to show completion
                         }
-                        if (File.Exists(destinationPath))
-                        {
-                            File.Delete(destinationPath);
-                        }
                     }
                     else
                     {
@@ -788,31 +784,53 @@ namespace KASIR.Komponen
 
         private void ProcessSuccessfulSync(string sourcePath, string destinationPath)
         {
-            if (File.Exists(destinationPath))
+            try
             {
-                // Read existing data and add new transactions
-                string existingData = File.ReadAllText(destinationPath);
-                JObject existingDataJson = JObject.Parse(existingData);
-                JArray existingTransactions = (JArray)existingDataJson["data"];
-
-                // Read source file
-                string jsonData = File.ReadAllText(sourcePath);
-                JObject data = JObject.Parse(jsonData);
-                JArray transactions = (JArray)data["data"];
-
-                // Add new transactions to existing data
-                foreach (var transaction in transactions)
+                // Check if source file exists before attempting to read/copy it
+                if (!File.Exists(sourcePath))
                 {
-                    existingTransactions.Add(transaction);
+                    LoggerUtil.LogWarning($"Source file not found: {sourcePath}");
+                    return;
                 }
 
-                // Save updated file
-                File.WriteAllText(destinationPath, existingDataJson.ToString());
+                if (File.Exists(destinationPath))
+                {
+                    // Read existing data and add new transactions
+                    string existingData = File.ReadAllText(destinationPath);
+                    JObject existingDataJson = JObject.Parse(existingData);
+                    JArray existingTransactions = (JArray)existingDataJson["data"];
+
+                    // Read source file
+                    string jsonData = File.ReadAllText(sourcePath);
+                    JObject data = JObject.Parse(jsonData);
+                    JArray transactions = (JArray)data["data"];
+
+                    // Add new transactions to existing data
+                    foreach (var transaction in transactions)
+                    {
+                        existingTransactions.Add(transaction);
+                    }
+
+                    // Save updated file
+                    File.WriteAllText(destinationPath, existingDataJson.ToString());
+                }
+                else
+                {
+                    // Create directory if it doesn't exist
+                    string directoryPath = Path.GetDirectoryName(destinationPath);
+                    if (!Directory.Exists(directoryPath))
+                    {
+                        Directory.CreateDirectory(directoryPath);
+                    }
+
+                    // Copy file using streams
+                    CopyFileWithStreams(sourcePath, destinationPath);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Copy file using streams
-                CopyFileWithStreams(sourcePath, destinationPath);
+                // Log the error but don't crash the application
+                LoggerUtil.LogError(ex, "Error in ProcessSuccessfulSync: {ErrorMessage}", ex.Message);
             }
         }
 
@@ -979,97 +997,142 @@ namespace KASIR.Komponen
 
         public static void SimplifyAndSaveData(string filePath)
         {
-            try
+            int maxRetries = 3;
+            int delayBetweenRetries = 500; // milliseconds
+
+            for (int attempt = 0; attempt < maxRetries; attempt++)
             {
-                // 1. Baca file JSON
-                string jsonData = File.ReadAllText(filePath);
-                JObject data = JObject.Parse(jsonData);
-                // 2. Dapatkan array "data"
-                JArray transactions = (JArray)data["data"];
-                // 3. Iterasi setiap transaksi dan hapus elemen yang tidak diperlukan
-                for (int i = transactions.Count - 1; i >= 0; i--) // Iterasi mundur untuk menghindari masalah saat menghapus
+                try
                 {
-                    JObject transaction = (JObject)transactions[i];
-                    // Hapus transaksi jika is_sent_sync = 1
-                    if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 1)
+                    // Use FileShare to allow other processes to read the file
+                    using (FileStream fileStream = new FileStream(
+                        filePath,
+                        FileMode.Open,
+                        FileAccess.ReadWrite,
+                        FileShare.ReadWrite))
                     {
-                        transactions.RemoveAt(i);
-                        continue; // Lewati sisa proses untuk transaksi ini
-                    }
-                    // Hapus field yang tidak dibutuhkan di level transaksi
-                    transaction.Remove("transaction_id");
-                    transaction.Remove("payment_type_name");
-
-                    // Proses untuk menangani canceled_items dan cart_details
-                    JArray cartDetails = (JArray)transaction["cart_details"];
-                    JArray canceledItems = (JArray)transaction["canceled_items"];
-
-                    // Periksa apakah canceled_items tidak kosong
-                    if (canceledItems != null && canceledItems.Count > 0)
-                    {
-                        foreach (JObject canceledItem in canceledItems)
+                        // 1. Baca file JSON
+                        using (StreamReader reader = new StreamReader(fileStream))
                         {
-                            long canceledCartDetailId = (long)canceledItem["cart_detail_id"];
-                            string cancelReason = (string)canceledItem["cancel_reason"];
+                            string jsonData = reader.ReadToEnd();
+                            JObject data = JObject.Parse(jsonData);
 
-                            // Cari item di cart_details dengan cart_detail_id yang sama
-                            for (int j = 0; j < cartDetails.Count; j++)
+                            // 2. Dapatkan array "data"
+                            JArray transactions = (JArray)data["data"];
+
+                            // 3. Iterasi setiap transaksi dan hapus elemen yang tidak diperlukan
+                            for (int i = transactions.Count - 1; i >= 0; i--) // Iterasi mundur untuk menghindari masalah saat menghapus
                             {
-                                JObject cartItem = (JObject)cartDetails[j];
-                                long cartDetailId = (long)cartItem["cart_detail_id"];
+                                JObject transaction = (JObject)transactions[i];
 
-                                if (cartDetailId == canceledCartDetailId)
+                                // Hapus transaksi jika is_sent_sync = 1
+                                if (transaction["is_sent_sync"] != null && (int)transaction["is_sent_sync"] == 1)
                                 {
-                                    // Periksa jika qty pada cart_details tidak sama dengan 0
-                                    if ((int)cartItem["qty"] != 0)
-                                    {
-                                        // Duplikasi item dan tambahkan is_canceled=1 dan cancel_reason
-                                        JObject duplicateItem = (JObject)cartItem.DeepClone();
-
-                                        // Modifikasi cart_detail_id dengan menambahkan 1 di awal
-                                        string originalDetailId = cartDetailId.ToString();
-                                        string newDetailId = "1" + originalDetailId;
-                                        duplicateItem["cart_detail_id"] = long.Parse(newDetailId);
-
-                                        // Tambahkan is_canceled dan cancel_reason
-                                        duplicateItem["is_canceled"] = 1;
-                                        duplicateItem["cancel_reason"] = cancelReason;
-
-                                        // Tambahkan item yang sudah diduplikasi ke cartDetails
-                                        cartDetails.Add(duplicateItem);
-                                    }
-                                    else // Jika qty = 0 
-                                    {
-                                        // Modifikasi item yang ada alih-alih menduplikasi
-                                        cartItem["qty"] = (int)canceledItem["qty"];
-                                        cartItem["is_canceled"] = 1;
-                                        cartItem["cancel_reason"] = cancelReason;
-                                        cartItem["total_price"] = (int)canceledItem["total_price"];
-                                        cartItem["subtotal_price"] = (int)canceledItem["subtotal_price"];
-                                    }
-
-                                    break; // Keluar dari loop setelah menemukan dan memproses item
+                                    transactions.RemoveAt(i);
+                                    continue; // Lewati sisa proses untuk transaksi ini
                                 }
+
+                                // Hapus field yang tidak dibutuhkan di level transaksi
+                                transaction.Remove("transaction_id");
+                                transaction.Remove("payment_type_name");
+
+                                // Proses untuk menangani canceled_items dan cart_details
+                                JArray cartDetails = (JArray)transaction["cart_details"];
+                                JArray canceledItems = (JArray)transaction["canceled_items"];
+
+                                // Periksa apakah canceled_items tidak kosong
+                                if (canceledItems != null && canceledItems.Count > 0)
+                                {
+                                    foreach (JObject canceledItem in canceledItems)
+                                    {
+                                        long canceledCartDetailId = (long)canceledItem["cart_detail_id"];
+                                        string cancelReason = (string)canceledItem["cancel_reason"];
+
+                                        // Cari item di cart_details dengan cart_detail_id yang sama
+                                        for (int j = 0; j < cartDetails.Count; j++)
+                                        {
+                                            JObject cartItem = (JObject)cartDetails[j];
+                                            long cartDetailId = (long)cartItem["cart_detail_id"];
+
+                                            if (cartDetailId == canceledCartDetailId)
+                                            {
+                                                // Periksa jika qty pada cart_details tidak sama dengan 0
+                                                if ((int)cartItem["qty"] != 0)
+                                                {
+                                                    // Duplikasi item dan tambahkan is_canceled=1 dan cancel_reason
+                                                    JObject duplicateItem = (JObject)cartItem.DeepClone();
+
+                                                    // Modifikasi cart_detail_id dengan menambahkan 1 di awal
+                                                    string originalDetailId = cartDetailId.ToString();
+                                                    string newDetailId = "1" + originalDetailId;
+                                                    duplicateItem["cart_detail_id"] = long.Parse(newDetailId);
+
+                                                    // Tambahkan is_canceled dan cancel_reason
+                                                    duplicateItem["is_canceled"] = 1;
+                                                    duplicateItem["cancel_reason"] = cancelReason;
+
+                                                    // Tambahkan item yang sudah diduplikasi ke cartDetails
+                                                    cartDetails.Add(duplicateItem);
+                                                }
+                                                else // Jika qty = 0 
+                                                {
+                                                    // Modifikasi item yang ada alih-alih menduplikasi
+                                                    cartItem["qty"] = (int)canceledItem["qty"];
+                                                    cartItem["is_canceled"] = 1;
+                                                    cartItem["cancel_reason"] = cancelReason;
+                                                    cartItem["total_price"] = (int)canceledItem["total_price"];
+                                                    cartItem["subtotal_price"] = (int)canceledItem["subtotal_price"];
+                                                }
+
+                                                break; // Keluar dari loop setelah menemukan dan memproses item
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Iterasi ke cart_details untuk menghapus field yang tidak dibutuhkan
+                                foreach (JObject cartItem in cartDetails)
+                                {
+                                    cartItem.Remove("menu_name"); // Hapus serving_type_name dari cart detail
+                                    cartItem.Remove("menu_type");  // Hapus menu_detail_name jika tidak diperlukan
+                                    cartItem.Remove("menu_detail_name");  // Hapus varian jika tidak diperluka
+                                }
+                            }
+
+                            // 4. Simpan data yang sudah disederhanakan
+                            fileStream.SetLength(0); // Truncate the file
+                            fileStream.Position = 0;
+
+                            using (StreamWriter writer = new StreamWriter(fileStream))
+                            {
+                                writer.Write(data.ToString());
                             }
                         }
                     }
 
-                    // Iterasi ke cart_details untuk menghapus field yang tidak dibutuhkan
-                    foreach (JObject cartItem in cartDetails)
-                    {
-                        cartItem.Remove("menu_name"); // Hapus serving_type_name dari cart detail
-                        cartItem.Remove("menu_type");  // Hapus menu_detail_name jika tidak diperlukan
-                        cartItem.Remove("menu_detail_name");  // Hapus varian jika tidak diperluka
-                    }
+                    // If successful, break out of retry loop
+                    break;
                 }
+                catch (IOException ex)
+                {
+                    // Log the specific attempt failure
+                    LoggerUtil.LogError(ex, $"File access attempt {attempt + 1} failed: {ex.Message}");
 
-                // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama
-                // MessageBox.Show(data.ToString());
-                File.WriteAllText(filePath, data.ToString());
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                    // If it's the last attempt, rethrow the exception
+                    if (attempt == maxRetries - 1)
+                    {
+                        throw;
+                    }
+
+                    // Wait before retrying
+                    System.Threading.Thread.Sleep(delayBetweenRetries);
+                }
+                catch (Exception ex)
+                {
+                    // For non-IO exceptions, log and rethrow immediately
+                    LoggerUtil.LogError(ex, "An unexpected error occurred: {ErrorMessage}", ex.Message);
+                    throw;
+                }
             }
         }
         private async Task<string> GetShiftData(string configOfflineMode)

@@ -27,7 +27,7 @@
       <Value Profile="(Default)">https://api.gaspollmanagementcenter.com</Value>
     </Setting>
     <Setting Name="BaseAddress" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">http://62.72.59.78:8080</Value>
+      <Value Profile="(Default)">http://localhost:8081</Value>
     </Setting>
     <Setting Name="BaseAddressVersion" Type="System.String" Scope="Application">
       <Value Profile="(Default)">https://gaspollmanagementcenter.com/update/version.txt</Value>

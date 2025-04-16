@@ -97,7 +97,7 @@ namespace KASIR.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://localhost:8081")]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://62.72.59.78:8080")]
         public string BaseAddress {
             get {
                 return ((string)(this["BaseAddress"]));
@@ -142,7 +142,7 @@ namespace KASIR.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1.2.22")]
+        [global::System.Configuration.DefaultSettingValueAttribute("5.2.22")]
         public string Version {
             get {
                 return ((string)(this["Version"]));

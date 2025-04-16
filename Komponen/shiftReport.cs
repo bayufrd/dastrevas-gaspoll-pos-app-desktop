@@ -329,6 +329,47 @@ namespace KASIR.Komponen
                     UpdateProgress(55, "Menyederhanakan data...");
                     SimplifyAndSaveData(destinationPath);
 
+                    // When preparing data for sync, create a copy of transaction IDs being synced
+                    List<string> transactionIdsBeingSynced = new List<string>();
+/*
+                    if (File.Exists(saveBillDataPath))
+                    {
+                        try
+                        {
+                            UpdateProgress(25, "Sinkronisasi data SaveBill...");
+
+                            // Baca data SaveBill
+                            string saveBillJsonData = File.ReadAllText(saveBillDataPath);
+                            JObject saveBillData = JObject.Parse(saveBillJsonData);
+                            JArray saveBillTransactions = (JArray)saveBillData["data"];
+
+                            // Baca data transaksi existing
+                            string existingJsonData = File.ReadAllText(destinationPath);
+                            JObject existingData = JObject.Parse(existingJsonData);
+
+                            // Tambahkan transaksi SaveBill ke transaksi existing
+                            if (saveBillTransactions != null && saveBillTransactions.Any())
+                            {
+                                // After parsing the transactions from the JSON file
+                                foreach (var transaction in saveBillTransactions)
+                                {
+                                    // Track which transactions we're syncing
+                                    transactionIdsBeingSynced.Add(transaction["transaction_ref"].ToString());
+                                }
+
+                                // Simpan kembali ke file destinationPath
+                                File.WriteAllText(destinationPath, existingData.ToString());
+
+                            }
+                            UpdateProgress(35, "Selesai sinkronisasi SaveBill");
+
+                        }
+                        catch (Exception ex)
+                        {
+                            LoggerUtil.LogError(ex, "Gagal menggabungkan transaksi SaveBill: {ErrorMessage}", ex.Message);
+                        }
+                    }*/
+
                     // Process the transactions
                     UpdateProgress(60, "Memproses data transaksi...");
                     JObject data = ParseAndRepairJsonFile(destinationPath);
@@ -346,8 +387,6 @@ namespace KASIR.Komponen
                         return;
                     }
 
-                    // When preparing data for sync, create a copy of transaction IDs being synced
-                    List<string> transactionIdsBeingSynced = new List<string>();
 
                     // After parsing the transactions from the JSON file
                     foreach (var transaction in transactions)
@@ -921,40 +960,83 @@ namespace KASIR.Komponen
                 }
                 SimplifyAndSaveData(saveBillDataPathClone);
 
-                string jsonSavwDataSync = File.ReadAllText(saveBillDataPathClone);
-                JObject dataSave = JObject.Parse(jsonSavwDataSync);
+                // Parse dan perbaiki file JSON
+                JObject data = ParseAndRepairJsonFile(saveBillDataPathClone);
+                JArray transactions = GetTransactionsFromData(data);
 
-                JArray transactionsSaveBill = (JArray)dataSave["data"];
-                if (transactionsSaveBill == null || !transactionsSaveBill.Any())
+                // Cek apakah transaksi kosong
+                if (transactions == null || !transactions.Any())
                 {
-                    File.Delete(saveBillDataPathClone);
+                    // Hapus file jika data kosong
+                    try
+                    {
+                        File.Delete(saveBillDataPathClone);
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggerUtil.LogError(ex, "Failed to delete empty SaveBill file: {ErrorMessage}", ex.Message);
+                    }
+
+                    // Tulis file kosong
+                    File.WriteAllText(saveBillDataPathClone, "{\"data\":[]}");
+                    transactions = new JArray();
+                    data["data"] = transactions;
                     return;
                 }
-                // When preparing data for sync, create a copy of transaction IDs being synced
-                List<string> transactionIdsBeingSynced = new List<string>();
 
-                // After parsing the transactions from the JSON file
-                foreach (var transaction in transactionsSaveBill)
-                {
-                    // Track which transactions we're syncing
-                    transactionIdsBeingSynced.Add(transaction["transaction_ref"].ToString());
-                }
-                HttpResponseMessage savebillSync = await apiService.SyncTransaction(jsonSavwDataSync, apiUrl);
+                // When preparing data for sync, create a copy of transaction IDs being synced
+                List<string> transactionIdsBeingSynced = transactions
+                    .Select(t => t["transaction_ref"]?.ToString())
+                    .Where(tr => !string.IsNullOrEmpty(tr))
+                    .ToList();
+
+                HttpResponseMessage savebillSync = await apiService.SyncTransaction(data.ToString(), apiUrl);
+
                 if (savebillSync.IsSuccessStatusCode)
                 {
                     SyncSpecificTransactions(saveBillDataPath, transactionIdsBeingSynced);
 
-                    //SyncSuccess(saveBillDataPath);
+                    // Hapus file SaveBill setelah sinkronisasi berhasil
+                    try
+                    {
+                        File.Delete(saveBillDataPathClone);
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggerUtil.LogError(ex, "Failed to delete SaveBill files after sync: {ErrorMessage}", ex.Message);
+                    }
                 }
                 else
                 {
-                    //MessageBox.Show("Gagal mengirim data SaveBill.");
-                    throw new Exception("Gagal mengirim data SaveBill." + savebillSync.ToString());
+                    // Log detailed error information without throwing an exception
+                    var responseBody = await savebillSync.Content.ReadAsStringAsync();
+                    LoggerUtil.LogWarning($"SaveBill Sync Failed. " +
+                        $"Status: {savebillSync.StatusCode}, " +
+                        $"Reason: {savebillSync.ReasonPhrase}, " +
+                        $"Response Body: {responseBody}");
                 }
+            }
+            catch (HttpRequestException ex)
+            {
+                // Log network-related errors
+                LoggerUtil.LogError(ex,
+                    $"Network error during SaveBill sync: {ex.Message}",
+                    new
+                    {
+                        SaveBillDataPath = saveBillDataPath,
+                        ApiUrl = apiUrl
+                    });
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                // Log any other unexpected errors
+                LoggerUtil.LogError(ex,
+                    $"Unexpected error during SaveBill sync: {ex.Message}",
+                    new
+                    {
+                        SaveBillDataPath = saveBillDataPath,
+                        ApiUrl = apiUrl
+                    });
             }
         }
 
@@ -1507,6 +1589,7 @@ namespace KASIR.Komponen
                             }
                             else
                             {
+                                if(baseOutlet == "4") { return; }
                                 lblNotifikasi.Visible = true;
                                 lblNotifikasi.Text = $"Tidak dapat akhiri laporan karena belum ada jarak 1 jam dari mulai shift.\nUntuk Cetak Ulang Laporan Shift [{datas.shift_number}] Tersedia.";
                                 btnCetakStruk.Enabled = false;
@@ -1905,9 +1988,9 @@ namespace KASIR.Komponen
                         MessageBox.Show("Gagal memproses transaksi. Silahkan coba lagi.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         ResetButtonState();
                     }
-
+/*
                     Offline_Complaint c = new Offline_Complaint();
-                    c.SendingComplaint($"AutoSendTrackingShift_{shiftnumber}", "ForTrackingBug");
+                    c.SendingComplaint($"AutoSendTrackingShift_{shiftnumber}", "ForTrackingBug");*/
                 }
             }
             catch (TaskCanceledException ex)

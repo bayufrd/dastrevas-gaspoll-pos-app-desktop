@@ -2155,7 +2155,7 @@ namespace KASIR.komponen
                 }
             }
         }
-        private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
+        private void Ex_AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
         {
             // Tambahkan separator row ke DataTable
             dataTable.Rows.Add(null, null, null, groupKey + "s\n", null, null); // Add a separator row
@@ -2169,6 +2169,29 @@ namespace KASIR.komponen
             // Mengatur gaya sel untuk kolom tertentu
             int[] cellIndexesToStyle = { 3, 4, 5 }; // Indeks kolom yang ingin diatur
             SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
+        }
+        private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
+        {
+            // Add separator row to DataTable
+            dataTable.Rows.Add(null, null, null, groupKey + "s\n", null, null);
+
+            // Don't immediately try to style the row here
+            // Instead, style all rows after the DataGridView has been fully populated
+        }
+
+        // Then, after all data is loaded and the DataGridView's DataSource is set:
+        private void StyleSeparatorRows()
+        {
+            for (int i = 0; i < dataGridView1.Rows.Count; i++)
+            {
+                DataGridViewRow row = dataGridView1.Rows[i];
+                // Check if this is a separator row (perhaps by checking if certain cells are null)
+                if (row.Cells["MenuID"].Value == null && row.Cells["CartDetailID"].Value == null)
+                {
+                    int[] cellIndexesToStyle = { 3, 4, 5 };
+                    SetCellStyle(row, cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
+                }
+            }
         }
         private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)
         {

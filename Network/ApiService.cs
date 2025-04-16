@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Windows;
+using Newtonsoft.Json;
 using Polly;
 using MessageBox = System.Windows.MessageBox;
 
@@ -339,9 +340,30 @@ namespace KASIR.Network
         }
         public async Task<HttpResponseMessage> SyncTransaction(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
-            return response;
+            try
+            {
+                // Log detail payload
+                LoggerUtil.LogWarning($"Sync Transaction Payload Size: {jsonString.Length} bytes, Timestamp: {DateTime.Now}");
+
+                StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
+
+                // Log response details
+                LoggerUtil.LogWarning($"Sync Transaction Response Status: {response.StatusCode}, Reason: {response.ReasonPhrase}");
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                // Log comprehensive error details
+                LoggerUtil.LogError(ex, $"Sync Transaction Error: {ex.Message}", new
+                {
+                    ExceptionType = ex.GetType().Name,
+                    InnerExceptionMessage = ex.InnerException?.Message
+                });
+
+                throw;
+            }
         }
     }
 }

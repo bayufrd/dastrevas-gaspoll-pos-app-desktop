@@ -21,22 +21,51 @@ namespace KASIR.OffineMode
         }
 
         // Method untuk memulai sinkronisasi - mengembalikan true jika berhasil mendapatkan lock
-        public static bool BeginSync()
+        public static async Task<bool> BeginSyncAsync(int maxRetries = 3, int delayBetweenRetries = 1000)
         {
-            // Coba mendapatkan semaphore tanpa menunggu
-            return syncSemaphore.Wait(0);
-        }
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                try
+                {
+                    // Tunggu dengan timeout untuk mendapatkan lock
+                    bool lockAcquired = await syncSemaphore.WaitAsync(TimeSpan.FromSeconds(5));
+                    if (lockAcquired)
+                    {
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LoggerUtil.LogWarning($"Sync attempt {attempt + 1} failed: {ex.Message}");
+                }
 
+                // Jeda antara percobaan
+                await Task.Delay(delayBetweenRetries);
+            }
+
+            LoggerUtil.LogWarning("Failed to acquire sync lock after multiple attempts");
+            return false;
+        }
         // Method untuk menyelesaikan sinkronisasi
         public static void EndSync()
         {
             try
             {
-                syncSemaphore.Release();
+                // Hanya release jika semaphore sedang dikunci
+                if (syncSemaphore.CurrentCount == 0)
+                {
+                    syncSemaphore.Release();
+                }
             }
             catch (SemaphoreFullException)
             {
                 // Abaikan jika semaphore sudah di-release sebelumnya
+                LoggerUtil.LogWarning("Attempted to release already released semaphore");
+            }
+            catch (Exception ex)
+            {
+                // Log exception lain yang mungkin terjadi
+                LoggerUtil.LogError(ex, "Unexpected error releasing sync lock: {ErrorMessage}", ex.Message);
             }
         }
 

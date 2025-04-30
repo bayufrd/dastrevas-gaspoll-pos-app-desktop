@@ -8,6 +8,7 @@ using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
 using KASIR.Model;
+using Serilog.Core;
 
 namespace KASIR.Printer
 {
@@ -4760,7 +4761,6 @@ namespace KASIR.Printer
             try
             {
                 System.IO.Stream stream = null;
-
                 if (System.Net.IPAddress.TryParse(printerName, out _))
                 {
                     // Koneksi via LAN dengan retry policy
@@ -4790,44 +4790,15 @@ namespace KASIR.Printer
                 }
                 else
                 {
-                    // Koneksi via Bluetooth dengan retry policy
-                    bool bluetoothConnectionSuccess = await RetryPolicyAsync(async () =>
+                    // Koneksi via Bluetooth dengan strategi bertingkat
+                    ConnectionResult bluetoothResult = await TryBluetoothConnectionWithFallback(printerName);
+
+                    if (!bluetoothResult.IsSuccess)
                     {
-                        try
-                        {
-                            BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                            if (printerDevice == null)
-                            {
-                                return false;
-                            }
-
-                            BluetoothClient client = new BluetoothClient();
-                            BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                            {
-                                return false;
-                            }
-
-                            client.Connect(endpoint);
-                            stream = client.GetStream();
-                            return true;
-                        }
-                        catch (Exception)
-                        {
-                            stream = null;
-                            return false;
-                        }
-                    }, maxRetries: 3);
-
-                    if (!bluetoothConnectionSuccess)
-                    {
-                        return new ConnectionResult
-                        {
-                            IsSuccess = false,
-                            ErrorMessage = $"Bluetooth connection failed for printer: {printerName}"
-                        };
+                        return bluetoothResult;
                     }
+
+                    stream = bluetoothResult.Stream;
                 }
 
                 return new ConnectionResult
@@ -4845,6 +4816,101 @@ namespace KASIR.Printer
                 };
             }
         }
+
+        private async Task<ConnectionResult> TryBluetoothConnectionWithFallback(string printerName)
+        {
+            // Strategi pertama: Koneksi standar dengan 3x retry
+            bool standardConnectionSuccess = await RetryPolicyAsync(async () =>
+            {
+                try
+                {
+                    BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                    if (printerDevice == null)
+                    {
+                        return false;
+                    }
+
+                    BluetoothClient client = new BluetoothClient();
+                    BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                    {
+                        return false;
+                    }
+
+                    client.Connect(endpoint);
+                    return true;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }, maxRetries: 3);
+
+            // Jika koneksi standar gagal, gunakan strategi alternatif
+            if (!standardConnectionSuccess)
+            {
+                return await TryAlternativeBluetoothConnection(printerName);
+            }
+
+            // Jika berhasil, kembalikan hasil koneksi
+            return new ConnectionResult
+            {
+                IsSuccess = true
+            };
+        }
+
+        private async Task<ConnectionResult> TryAlternativeBluetoothConnection(string printerName)
+        {
+            try
+            {
+                // Strategi alternatif 1: Hapus dan pasang ulang perangkat
+                BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+
+                // Hapus perangkat sebelumnya
+                BluetoothSecurity.RemoveDevice(printerDevice.DeviceAddress);
+
+                // Coba pasangkan ulang dengan metode berbeda
+                bool pairingResult = BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "");
+                if (!pairingResult)
+                {
+                    pairingResult = BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, null);
+                }
+
+                if (!pairingResult)
+                {
+                    return new ConnectionResult
+                    {
+                        IsSuccess = false,
+                        ErrorMessage = $"Alternative Bluetooth pairing failed for printer: {printerName}"
+                    };
+                }
+
+                // Strategi alternatif 2: Coba koneksi dengan pengaturan berbeda
+                BluetoothClient client = new BluetoothClient();
+                BluetoothEndPoint endpoint = new BluetoothEndPoint(
+                    printerDevice.DeviceAddress,
+                    BluetoothService.SerialPort
+                );
+
+                client.Connect(endpoint);
+
+                return new ConnectionResult
+                {
+                    IsSuccess = true,
+                    Stream = client.GetStream()
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ConnectionResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = $"Alternative Bluetooth connection failed: {ex.Message}"
+                };
+            }
+        }
+
         // Kelas untuk hasil koneksi
         private class ConnectionResult
         {
@@ -6075,7 +6141,9 @@ namespace KASIR.Printer
                 ? $"Error Type: {lastException.GetType().Name}, Message: {lastException.Message}"
                 : "Tidak diketahui penyebab kegagalan bluetooth";
 
-            MessageBox.Show($"Semua {maxRetries}x percobaan gagal. Error terakhir: {errorDetails}", "Bluetooth Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            //MessageBox.Show($"Semua {maxRetries}x percobaan gagal. Error terakhir: {errorDetails}", "Bluetooth Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            LoggerUtil.LogWarning($"Semua {maxRetries}x percobaan gagal. Error terakhir: {errorDetails}");
+
             util.sendLogTelegramNetworkError($"Semua {maxRetries}x percobaan gagal. Error terakhir: {errorDetails}");
             return false;
         }

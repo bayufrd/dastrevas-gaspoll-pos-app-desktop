@@ -2069,8 +2069,21 @@ namespace KASIR.OfflineMode
                     }
                 }
                 ReloadDisc();
-
-                await SignalReload(); // Ensure the UI is updated
+                // Setelah load berhasil, kirim sinyal reload
+                if (!File.Exists("setting\\configDualMonitor.data"))
+                {
+                    string data = "OFF";
+                    await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
+                }
+                else
+                {
+                    string allSettingsData = await File.ReadAllTextAsync("setting\\configDualMonitor.data");
+                    if (allSettingsData == "ON")
+                    {
+                        CartSyncClient.SendReloadSignal();
+                    }
+                }
+                //await SignalReload(); // Ensure the UI is updated
             }
             catch (TaskCanceledException ex)
             {

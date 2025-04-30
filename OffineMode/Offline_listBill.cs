@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using KASIR.Model;
 using KASIR.Printer;
@@ -415,7 +416,7 @@ namespace KASIR.OffineMode
                         ["customer_change"] = int.Parse(filteredTransaction["customer_change"]?.ToString()),
                         ["subtotal"] = cartDetails.Sum(cart => (int)cart["subtotal_price"]),
                         ["total"] = int.Parse(filteredTransaction["total"]?.ToString()),
-                        ["created_at"] = filteredTransaction["created_at"]?.ToString(),
+                        ["created_at"] = filteredTransaction["created_at"]?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         ["updated_at"] = filteredTransaction["updated_at"]?.ToString(),
                         ["deleted_at"] = filteredTransaction["deleted_at"]?.ToString(),
                         ["is_refund"] = filteredTransaction["is_refund"]?.ToString(),

@@ -1312,6 +1312,7 @@ namespace KASIR
 
         private async void btnShiftLaporan_Click(object sender, EventArgs e)
         {
+            SyncTimer.Enabled = false;
 
             //====by
             ActivateButton(sender, RGBColors.color4);
@@ -1361,6 +1362,10 @@ namespace KASIR
 
                 MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 // Log error jika diperlukan
+            }
+            finally
+            {
+                SyncTimer.Enabled = true;
             }
         }
 

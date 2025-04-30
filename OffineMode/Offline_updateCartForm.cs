@@ -664,7 +664,7 @@ namespace KASIR.OfflineMode
                                 { "price", int.Parse(itemToUpdate["price"]?.ToString()) },
                                 { "qty", QtyCancelled },
                                 { "note_item", itemToUpdate["note_item"]?.ToString() },
-                                { "created_at", itemToUpdate["created_at"]?.ToString()  },
+                                { "created_at", itemToUpdate["created_at"]?.ToString()  ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) },
                                 { "updated_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) },
                                 { "discount_id", int.TryParse(itemToUpdate["discount_id"]?.ToString(), out int discount_id) ? discount_id : 0},
                                 { "discount_code", itemToUpdate["discount_code"]?.ToString() ?? null },

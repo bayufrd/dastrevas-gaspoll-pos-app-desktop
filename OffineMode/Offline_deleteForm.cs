@@ -181,7 +181,7 @@ namespace KASIR.OfflineMode
                     customer_change = 0,
                     total = 0,
                     subtotal = 0, // You can replace this with actual subtotal if available
-                    created_at = cartData["created_at"]?.ToString(),
+                    created_at = cartData["created_at"]?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                     updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                     deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
                     is_refund = 0,

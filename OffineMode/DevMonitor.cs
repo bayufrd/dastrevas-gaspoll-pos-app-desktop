@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Diagnostics;
 using KASIR.Network;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -41,22 +42,28 @@ namespace KASIR.OfflineMode
 
             LoadData();
         }
+        // Timer untuk mengukur waktu loading
+        private Stopwatch loadingTimer;
+
+        // Label untuk menampilkan waktu loading dan ukuran data
+        private Label timerLabel;
+        private Label dataSizeLabel;
 
         private void InitializeLoadingUI()
         {
             try
             {
-                // Create panel for loading
+                // Modifikasi existing loading panel setup
                 loadingPanel = new Panel
                 {
-                    BackColor = Color.White,
+                    BackColor = Color.FromArgb(30, 31, 68), // Dark blue background
                     BorderStyle = BorderStyle.Fixed3D,
-                    Size = new Size(300, 120),
+                    Size = new Size(400, 180), // Increased size to accommodate new labels
                     Location = new Point((this.ClientSize.Width - 400) / 2, (this.ClientSize.Height - 200) / 2),
                     Visible = false
                 };
 
-                // Add label for loading text
+                // Label untuk loading text
                 loadingLabel = new Label
                 {
                     Text = "Mengambil data dari server...",
@@ -64,35 +71,60 @@ namespace KASIR.OfflineMode
                     ForeColor = Color.White,
                     AutoSize = false,
                     TextAlign = ContentAlignment.MiddleLeft,
-                    Size = new Size(280, 30),
+                    Size = new Size(380, 30),
                     Location = new Point(10, 20)
                 };
 
-                // Add progress bar
+                // Label untuk timer
+                timerLabel = new Label
+                {
+                    Text = "Waktu: 0.00 detik",
+                    Font = new Font("Segoe UI", 9, FontStyle.Regular),
+                    ForeColor = Color.White,
+                    AutoSize = false,
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    Size = new Size(380, 25),
+                    Location = new Point(10, 55)
+                };
+
+                // Label untuk ukuran data
+                dataSizeLabel = new Label
+                {
+                    Text = "Ukuran data: 0.00 MB",
+                    Font = new Font("Segoe UI", 9, FontStyle.Regular),
+                    ForeColor = Color.White,
+                    AutoSize = false,
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    Size = new Size(380, 25),
+                    Location = new Point(10, 85)
+                };
+
+                // Progress bar
                 progressBar = new ProgressBar
                 {
                     Style = ProgressBarStyle.Continuous,
-                    Size = new Size(280, 25),
-                    Location = new Point(10, 60),
+                    Size = new Size(380, 25),
+                    Location = new Point(10, 120),
                     Minimum = 0,
                     Maximum = 100,
                     Value = 0
                 };
 
-                // Modify panel background to match the image
-                loadingPanel.BackColor = Color.FromArgb(30, 31, 68); // Light blue background
-
                 // Add components to panel
                 loadingPanel.Controls.Add(loadingLabel);
+                loadingPanel.Controls.Add(timerLabel);
+                loadingPanel.Controls.Add(dataSizeLabel);
                 loadingPanel.Controls.Add(progressBar);
 
                 // Add panel to form
                 this.Controls.Add(loadingPanel);
                 loadingPanel.BringToFront();
+
+                // Initialize stopwatch
+                loadingTimer = new Stopwatch();
             }
             catch (Exception ex)
             {
-                // Log error but don't crash if UI initialization fails
                 LoggerUtil.LogError(ex, "Error initializing loading UI: {ErrorMessage}", ex.Message);
             }
         }
@@ -140,6 +172,40 @@ namespace KASIR.OfflineMode
             }
         }
 
+        private void StartLoadingTimer()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(StartLoadingTimer));
+                return;
+            }
+
+            // Reset dan mulai timer
+            loadingTimer.Restart();
+        }
+
+        private void StopLoadingTimer(int dataLength)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action<int>(StopLoadingTimer), dataLength);
+                return;
+            }
+
+            // Hentikan timer
+            loadingTimer.Stop();
+
+            // Hitung waktu dalam detik
+            double seconds = loadingTimer.ElapsedMilliseconds / 1000.0;
+
+            // Hitung ukuran data dalam MB
+            double dataSizeMB = dataLength / (1024.0 * 1024.0);
+
+            // Update label-label
+            timerLabel.Text = $"Waktu: {seconds:F2} detik";
+            dataSizeLabel.Text = $"Ukuran data: {dataSizeMB:F2} MB";
+        }
+
         private async Task LoadData()
         {
             if (cts != null)
@@ -156,8 +222,9 @@ namespace KASIR.OfflineMode
                 // Hapus kontrol retry button jika ada
                 RemoveRetryControls();
 
-                // Tampilkan loading
+                // Tampilkan loading dan mulai timer
                 ShowLoading();
+                StartLoadingTimer();
                 UpdateProgress(10, "Menghubungi server...");
 
                 // Menggunakan Task.Run untuk simulasi progress
@@ -176,6 +243,8 @@ namespace KASIR.OfflineMode
                 IApiService apiService = new ApiService();
                 string response = await apiService.GetActiveCart("/update-confirm");
 
+                // Hentikan timer dan update UI
+                StopLoadingTimer(response.Length);
                 // Log response untuk debugging
                 Console.WriteLine(response);
 
@@ -292,23 +361,31 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
+                // Hentikan timer jika terjadi error
+                StopLoadingTimer(0);
+
                 LoggerUtil.LogError(ex, "Unexpected error: {ErrorMessage}", ex.Message);
                 HideLoading();
                 CleanFormAndAddRetryButton("Terjadi kesalahan: " + ex.Message);
             }
         }
-
+        // Perbarui LoadDataComplaint untuk menggunakan metode baru
         private async Task LoadDataComplaint()
         {
             try
             {
-                // Update progress untuk API kedua
+                // Pastikan token masih valid sebelum memulai
+                if (cts.Token.IsCancellationRequested)
+                    return;
+
+                // Update progress untuk API komplain
                 currentProgress = 10;
                 UpdateProgress(currentProgress, "Mengambil data komplain...");
 
-                // Pastikan token masih valid sebelum membuat task baru
-                if (cts.Token.IsCancellationRequested)
-                    return;
+                // Restart timer untuk mengukur waktu loading
+                if (loadingTimer == null)
+                    loadingTimer = new Stopwatch();
+                loadingTimer.Restart();
 
                 // Task untuk simulasi progress API kedua
                 var progressTask = Task.Run(async () =>
@@ -321,12 +398,24 @@ namespace KASIR.OfflineMode
                     }
                 }, cts.Token);
 
-                // Panggil API untuk mendapatkan data
-                IApiService apiService = new ApiService();
-                string response = await apiService.GetActiveCart("/complaint");
+                // Panggil API untuk mendapatkan data komplain dengan ukuran
+                var (response, dataSize) = await GetActiveCartWithSize("/complaint");
 
-                // Log response untuk debugging
-                Console.WriteLine(response);
+                // Log raw response size for debugging
+                Console.WriteLine($"Raw Response Length: {response?.Length ?? 0}, Data Size: {dataSize:F4} MB");
+
+                // Hentikan timer dan dapatkan ukuran data
+                if (this.InvokeRequired)
+                {
+                    // Jika metode dipanggil dari thread yang berbeda, gunakan Invoke
+                    this.Invoke(new Action(() => UpdateTimerAndDataSize(response)));
+                }
+                else
+                {
+                    // Jika sudah di UI thread, panggil langsung
+                    UpdateTimerAndDataSize(response);
+                }
+
 
                 UpdateProgress(95, "Memproses data komplain...");
 
@@ -359,16 +448,17 @@ namespace KASIR.OfflineMode
                 await Task.Delay(300);
                 HideLoading();
 
+                // Bersihkan dan persiapkan panel untuk menampilkan data
                 panelComplaint.Controls.Clear();
-                panelComplaint.AutoScroll = true; // Membuat panel scrollable
+                panelComplaint.AutoScroll = true;
 
                 // Use FlowLayoutPanel for automatic control arrangement
                 FlowLayoutPanel flowPanel = new FlowLayoutPanel
                 {
                     Dock = DockStyle.Fill,
-                    AutoScroll = true,  // Enables scrolling
-                    FlowDirection = FlowDirection.TopDown,  // Items arranged vertically
-                    WrapContents = false  // Prevent wrapping, making sure items stay in the same column
+                    AutoScroll = true,
+                    FlowDirection = FlowDirection.TopDown,
+                    WrapContents = false
                 };
 
                 panelComplaint.Controls.Add(flowPanel);
@@ -403,20 +493,114 @@ namespace KASIR.OfflineMode
             {
                 LoggerUtil.LogError(ex, "TaskCanceledException in LoadDataComplaint: {ErrorMessage}", ex.Message);
                 HideLoading();
+                UpdateTimerAndDataSize(null); // Reset timer jika terjadi cancel
                 CleanFormAndAddRetryButton("Koneksi terputus atau timeout saat memuat data complaint. Detail: " + ex.Message);
             }
             catch (JsonReaderException ex)
             {
                 LoggerUtil.LogError(ex, "JsonReaderException in LoadDataComplaint: {ErrorMessage}", ex.Message);
                 HideLoading();
+                UpdateTimerAndDataSize(null); // Reset timer jika terjadi error parsing
                 CleanFormAndAddRetryButton("Error parsing JSON in complaint data: " + ex.Message);
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "Unexpected error in LoadDataComplaint: {ErrorMessage}", ex.Message);
                 HideLoading();
+                UpdateTimerAndDataSize(null); // Reset timer jika terjadi error
                 CleanFormAndAddRetryButton("Terjadi kesalahan saat memuat data complaint: " + ex.Message);
             }
+        }
+
+        private void UpdateTimerAndDataSize(string response)
+        {
+            // Pastikan method dipanggil di UI thread
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action<string>(UpdateTimerAndDataSize), response);
+                return;
+            }
+
+            // Hentikan timer
+            loadingTimer.Stop();
+
+            // Hitung waktu dalam detik
+            double seconds = loadingTimer.ElapsedMilliseconds / 1000.0;
+
+            // Hitung ukuran data dalam MB
+            double dataSizeMB = 0;
+            if (response != null)
+            {
+                // Konversi string ke byte array untuk mendapatkan ukuran yang akurat
+                byte[] byteArray = System.Text.Encoding.UTF8.GetBytes(response);
+                dataSizeMB = byteArray.Length / (1024.0 * 1024.0);
+            }
+
+            // Coba alternatif lain jika masih 0
+            if (dataSizeMB == 0)
+            {
+                try
+                {
+                    // Jika response adalah string JSON, coba parse dan dapatkan ukuran
+                    if (!string.IsNullOrEmpty(response))
+                    {
+                        var jsonObject = Newtonsoft.Json.Linq.JObject.Parse(response);
+                        string jsonString = jsonObject.ToString(Newtonsoft.Json.Formatting.None);
+                        byte[] jsonByteArray = System.Text.Encoding.UTF8.GetBytes(jsonString);
+                        dataSizeMB = jsonByteArray.Length / (1024.0 * 1024.0);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log error jika parsing gagal
+                    Console.WriteLine($"Error parsing JSON for size calculation: {ex.Message}");
+                }
+            }
+
+            // Update label-label dengan format yang lebih presisi
+            timerLabel.Text = $"Waktu: {seconds:F2} detik";
+            dataSizeLabel.Text = $"Ukuran data: {dataSizeMB:F4} MB";
+
+            // Debug logging dengan informasi tambahan
+            Console.WriteLine($"Debug - Response Length: {response?.Length ?? 0}, " +
+                              $"Byte Array Size: {dataSizeMB:F4} MB, " +
+                              $"Raw Response: {response?.Substring(0, Math.Min(response?.Length ?? 0, 100))}...");
+        }
+
+        // Tambahkan metode bantuan untuk mendapatkan ukuran data dari response HTTP
+        private double GetResponseDataSize(HttpResponseMessage response)
+        {
+            try
+            {
+                // Coba dapatkan Content-Length header
+                var contentLength = response.Content.Headers.ContentLength;
+                if (contentLength.HasValue)
+                {
+                    return contentLength.Value / (1024.0 * 1024.0);
+                }
+
+                // Jika Content-Length tidak tersedia, baca konten
+                var content = response.Content.ReadAsByteArrayAsync().Result;
+                return content.Length / (1024.0 * 1024.0);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting response size: {ex.Message}");
+                return 0;
+            }
+        }
+
+        // Modifikasi metode API untuk mengembalikan ukuran data
+        private async Task<(string response, double dataSize)> GetActiveCartWithSize(string endpoint)
+        {
+            IApiService apiService = new ApiService();
+            string response = await apiService.GetActiveCart(endpoint);
+
+            // Hitung ukuran data
+            byte[] byteArray = System.Text.Encoding.UTF8.GetBytes(response);
+            double dataSizeMB = byteArray.Length / (1024.0 * 1024.0);
+
+            return (response, dataSizeMB);
         }
         private void ShowOutletDetailsForm(JToken outlet)
         {

@@ -282,7 +282,7 @@ namespace KASIR.OffineMode
                     customer_change = 0,
                     total = totalCartAmount,
                     subtotal = subtotalcart,
-                    created_at = receiptMaker,
+                    created_at = receiptMaker ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                     updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                     deleted_at = (string)null,
                     is_refund = 0,

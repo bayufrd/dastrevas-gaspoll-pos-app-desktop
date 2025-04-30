@@ -402,7 +402,7 @@ namespace KASIR.OfflineMode
                         customer_change = change,
                         total = totalCartAmount,
                         subtotal = subtotalCart, // You can replace this with actual subtotal if available
-                        created_at = receiptMaker,
+                        created_at = receiptMaker ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
                         is_refund = 0,

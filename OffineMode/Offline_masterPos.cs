@@ -2095,6 +2095,7 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
         {
             // Add separator row to DataTable

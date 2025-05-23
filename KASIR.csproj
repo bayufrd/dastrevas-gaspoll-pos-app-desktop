@@ -9,7 +9,7 @@
     <StartupObject></StartupObject>
     <ApplicationIcon>0fa224138685e.png.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

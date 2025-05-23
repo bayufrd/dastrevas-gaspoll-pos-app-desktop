@@ -116,6 +116,8 @@ namespace KASIR
                 // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
                 File.WriteAllText(Config, "ON");
             }
+            File.WriteAllText(Config, "ON");
+
             string allSettingsData = File.ReadAllText(Config); // Ambil status offline
 
             // Jika status offline ON, tampilkan Offline_masterPos

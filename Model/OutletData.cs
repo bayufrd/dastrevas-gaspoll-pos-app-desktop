@@ -18,6 +18,8 @@ namespace KASIR.Model
         public string Name { get; set; }
         public string Address { get; set; }
         public string Pin { get; set; }
+        // Use JsonProperty to map the correct JSON property name to the class property
+        [JsonProperty("phone_number")]
         public string PhoneNumber { get; set; }
         public bool IsKitchenBarMerged { get; set; }
         public string Footer { get; set; }

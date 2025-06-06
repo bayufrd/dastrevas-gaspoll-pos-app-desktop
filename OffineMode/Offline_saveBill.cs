@@ -552,7 +552,8 @@ namespace KASIR.OffineMode
                 DialogResult = DialogResult.OK;
 
                 Offline_masterPos offline_MasterPos = new Offline_masterPos();
-                offline_MasterPos.DeleteCartFile();
+                //offline_MasterPos.DeleteCartFile();
+                offline_MasterPos.ClearCartFile();
 
                 string saveBillPath = "DT-Cache\\Transaction\\saveBill.data";
 

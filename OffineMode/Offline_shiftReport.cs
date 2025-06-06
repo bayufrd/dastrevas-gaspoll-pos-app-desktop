@@ -181,6 +181,17 @@ namespace KASIR.Komponen
                 string startAt = GetStartAt();
                 DateTime akhirshift = DateTime.Now;  // Use DateTime directly for current time
 
+                // Convert startAt to DateTime, assuming startAt is in a valid DateTime format (parse if necessary)
+                DateTime startAtDateTime = DateTime.Parse(startAt);
+
+                // Calculate the time difference
+                TimeSpan timeDifference = akhirshift - startAtDateTime;
+                /*if (timeDifference.TotalHours < 1)
+                {
+                    MessageBox.Show($"Jarak Cetak Laporan Terlalu dekat\n\nStart : {startAt.ToString()}\nEnd : {akhirshift.ToString("yyyy-MM-dd HH:mm:ss")}", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }*/
+
                 DialogResult yakin = MessageBox.Show($"Melakukan End Shift {shiftNumber.ToString()} pada waktu \n{startAt.ToString()} sampai {akhirshift.ToString("yyyy-MM-dd HH:mm:ss")}\nNama Kasir : {txtNamaKasir.Text}\nActual Cash : Rp.{txtActualCash.Text},- \nCash Different : {string.Format("{0:n0}", Convert.ToInt32(fulus) - bedaCash)}?", "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (yakin != DialogResult.Yes)
                 {
@@ -194,6 +205,7 @@ namespace KASIR.Komponen
 
                     var casherName = string.IsNullOrEmpty(txtNamaKasir.Text) ? "" : txtNamaKasir.Text;
                     var actualCash = string.IsNullOrEmpty(fulus) ? "0" : fulus;
+                    var generateIDshift = $"{baseOutlet.ToString()}{startAtDateTime.ToString("yyyyMMddHHmmss")}";
 
                     var json = new
                     {
@@ -202,6 +214,7 @@ namespace KASIR.Komponen
                         actual_ending_cash = actualCash,
 
                         //adding for cache
+                        id = generateIDshift,
                         shift_number = shiftNumber.ToString(),
                         created_at = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         start_at = startAt,  // Set the start_at value
@@ -228,6 +241,7 @@ namespace KASIR.Komponen
                     var newTransactionData = new JObject { { "data", shiftDataArray } };
                     File.WriteAllText(shiftPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
 
+                    GenerateShiftReport();
                     //await HandleSuccessfulPrint(response);
                 }
             }
@@ -241,7 +255,218 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 ResetButtonState();
             }
+            finally
+            {
+                ResetButtonState();
+            }
         }
+        public async Task GenerateShiftReport()
+        {
+            // File paths for input data
+            string transactionFilePath = @"DT-Cache\Transaction\transaction.data";
+            string expenditureFilePath = @"DT-Cache\Transaction\expenditure.data";
+            string outletFilePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
+
+            // Read and deserialize input files
+            string transactionJson = await File.ReadAllTextAsync(transactionFilePath);
+            string expenditureJson = await File.ReadAllTextAsync(expenditureFilePath);
+            string outletJson = await File.ReadAllTextAsync(outletFilePath);
+
+            // Deserialize the JSON data
+            TransactionData transactionData = JsonConvert.DeserializeObject<TransactionData>(transactionJson);
+            ExpenditureData expenditureData = JsonConvert.DeserializeObject<ExpenditureData>(expenditureJson);
+            OutletData outletData = JsonConvert.DeserializeObject<OutletData>(outletJson);
+
+            // Extract necessary details from outlet data
+            string outletName = outletData?.Data.Name ?? "Unknown Outlet";
+            string outletAddress = outletData?.Data.Address ?? "Unknown Address";
+            string outletPhoneNumber = outletData?.Data.PhoneNumber ?? "Unknown Phone";
+
+            // Extract shift number and other transaction data
+            int shiftNumber = GetShiftNumber(); // Implement this method to get the current shift number
+            string startDate = "2025-06-01 06:30:31"; // Example, get this dynamically if needed
+            string endDate = "2025-06-06 23:10:44"; // Example, get this dynamically if needed
+
+            // Prepare expenditures
+            var expenditures = expenditureData.data.Select(e => new
+            {
+                description = e.description,
+                nominal = e.nominal
+            }).ToList();
+
+            decimal totalExpenditure = expenditures.Sum(e => e.nominal);
+
+            // Prepare cart details (success, pending, canceled)
+            var successfulCartDetails = transactionData.data.SelectMany(t => t.cart_details)
+                .Where(cd => cd.qty > 0).Select(cd => new
+                {
+                    menu_id = cd.menu_id,
+                    menu_name = cd.menu_name,
+                    menu_type = cd.menu_type,
+                    qty = cd.qty,
+                    total_price = cd.total_price
+                }).ToList();
+
+            decimal totalSuccessfulAmount = successfulCartDetails.Sum(cd => cd.total_price);
+
+            var pendingCartDetails = transactionData.data.SelectMany(t => t.cart_details)
+                .Where(cd => cd.qty == 0).Select(cd => new
+                {
+                    menu_id = cd.menu_id,
+                    menu_name = cd.menu_name,
+                    menu_type = cd.menu_type,
+                    qty = cd.qty,
+                    total_price = cd.total_price
+                }).ToList();
+
+            decimal totalPendingAmount = pendingCartDetails.Sum(cd => cd.total_price);
+
+            var canceledCartDetails = transactionData.data.SelectMany(t => t.cart_details)
+                .Where(cd => cd.is_ordered == 0).Select(cd => new
+                {
+                    menu_id = cd.menu_id,
+                    menu_name = cd.menu_name,
+                    menu_type = cd.menu_type,
+                    qty = cd.qty,
+                    total_price = cd.total_price
+                }).ToList();
+
+            decimal totalCanceledAmount = canceledCartDetails.Sum(cd => cd.total_price);
+
+            // Prepare refund details
+            var refundDetails = transactionData.data.SelectMany(t => t.refund_details)
+                .Select(rd => new
+                {
+                    menu_id = rd.menu_id,
+                    menu_name = rd.menu_name,
+                    varian = rd.menu_detail_name,
+                    qty_refund_item = rd.refund_qty,
+                    total_refund_price = rd.refund_total
+                }).ToList();
+
+            decimal totalRefundAmount = refundDetails.Sum(rd => rd.total_refund_price);
+
+            // Load payment types from the external file
+            var paymentTypes = LoadPaymentTypes();
+
+            // Group payments by payment_type_id and calculate the total amount for each payment type
+            var groupedPayments = transactionData.data
+                .GroupBy(t => t.payment_type_id)
+                .Select(g => new
+                {
+                    PaymentTypeId = g.Key,
+                    PaymentTypeName = paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ?? "Unknown",  // Match payment type ID to name
+                    TotalAmount = g.Sum(x => x.total)  // Sum the total amount for each payment type
+                }).ToList();
+
+            // Group refunds by transaction-level refund_payment_id_all
+            var groupedRefunds = transactionData.data
+                .Where(t => t.is_refund_all == 1) // Consider only transactions marked as "all refunded"
+                .Select(t => new
+                {
+                    PaymentTypeId = t.refund_payment_id_all,  // Refund ID is on the transaction level
+                    TotalRefund = t.total_refund  // Use total_refund for the entire transaction
+                })
+                .ToList();
+
+            // Iterate over each payment type and subtract corresponding refunds
+            var paymentDetails = new List<dynamic>();
+            var ending_cash = 0;
+            var actual_cash = Regex.Replace(txtActualCash.Text, "[^0-9]", "");
+
+            // Iterasi melalui setiap kategori pembayaran dan kurangi dengan refund yang sesuai
+            foreach (var payment in groupedPayments)
+            {
+                // Cari refund untuk kategori pembayaran ini
+                var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
+                decimal totalRefund = refund?.TotalRefund ?? 0;  // Gunakan 0 jika tidak ada refund yang ditemukan
+
+                // Hitung nilai bersih dengan mengurangi refund dari total pembayaran
+                decimal netAmount = payment.TotalAmount - totalRefund;
+                if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
+                {
+                    ending_cash = int.Parse(netAmount.ToString());
+                }
+                // Masukkan hasil ke dalam list paymentDetails
+                paymentDetails.Add(new
+                {
+                    PaymentCategory = payment.PaymentTypeName,
+                    NetAmount = netAmount
+                });
+            }
+
+            // Counting Discounts
+
+            // Sum up the discounted_price from the transaction level (if applicable)
+            decimal discountsCarts = transactionData.data
+                .Where(t => t.discounted_price > 0) // Filter transactions with discounted_price > 0
+                .Sum(t => t.discounted_price); // Sum the discounted_price of each transaction
+
+
+            // Now sum the discounted_price from the cart_details nested within each transaction
+            decimal discountsDetails = transactionData.data
+                .SelectMany(t => t.cart_details) // Flatten the cart details
+                .Where(cd => cd.discounted_price > 0) // Filter only items with discounted_price > 0
+                .Sum(cd => cd.discounted_price); // Sum the discounted_price of each cart detail
+
+            // Calculate the total discounts by summing both
+            decimal totalDiscounts = discountsCarts + discountsDetails;
+
+            decimal grandTotal = transactionData.data
+            .SelectMany(t => t.cart_details) // Meratakan list cart_details dari setiap Transaction
+            .Sum(cd => cd.total_price); // Menjumlahkan total_price untuk setiap CartDetails
+
+            grandTotal -= totalRefundAmount;
+            decimal totalTransaction = grandTotal;
+
+            int cash_difference = int.Parse(actual_cash.ToString()) - int.Parse(ending_cash.ToString());
+
+            // Construct the final JSON response
+            var finalReport = new
+            {
+                code = 200,
+                message = "Struk shift berhasil ditampilkan!",
+                data = new
+                {
+                    outlet_name = outletName,
+                    outlet_address = outletAddress,
+                    outlet_phone_number = outletPhoneNumber,
+                    casher_name = txtNamaKasir.Text.ToString(), // This should be dynamically fetched if available
+                    shift_number = shiftNumber,
+                    start_date = startDate,
+                    end_date = endDate,
+                    expenditures = expenditures,
+                    expenditures_total = totalExpenditure,
+                    ending_cash_expected = ending_cash, // Example value
+                    ending_cash_actual = actual_cash,    // Example value
+                    cash_difference = cash_difference.ToString(),     // Example value
+                    discount_amount_transactions = discountsCarts, // Example value
+                    discount_amount_per_items = discountsDetails, // Example value
+                    discount_total_amount = totalDiscounts, // Example value
+                    cart_details_success = successfulCartDetails,
+                    totalSuccessQty = successfulCartDetails.Sum(cd => cd.qty),
+                    totalCartSuccessAmount = totalSuccessfulAmount,
+                    cart_details_pending = pendingCartDetails,
+                    totalPendingQty = pendingCartDetails.Sum(cd => cd.qty),
+                    totalCartPendingAmount = totalPendingAmount,
+                    cart_details_canceled = canceledCartDetails,
+                    totalCanceledQty = canceledCartDetails.Sum(cd => cd.qty),
+                    totalCartCanceledAmount = totalCanceledAmount,
+                    refund_details = refundDetails,
+                    totalRefundQty = refundDetails.Sum(rd => rd.qty_refund_item),
+                    totalCartRefundAmount = totalRefundAmount,
+                    payment_details = paymentDetails,
+                    total_transaction = totalTransaction
+                }
+            };
+
+            // Serialize the final JSON object
+            string finalJson = JsonConvert.SerializeObject(finalReport, Formatting.Indented);
+
+            // Save or use the final JSON
+            await File.WriteAllTextAsync("DT-Cache\\Transaction\\shiftReport.data", finalJson);
+        }
+
         private void ResetButtonState()
         {
             btnCetakStruk.Enabled = true;
@@ -305,9 +530,14 @@ namespace KASIR.Komponen
             }
             catch (FormatException)
             {
-                // The text could not be parsed as a decimal number.
-                // You can handle this exception in different ways, such as displaying a message to the user.
                 MessageBox.Show("inputan hanya bisa Numeric");
+                // Remove the last character from the input if it's invalid
+                if (txtActualCash.Text.Length > 0)
+                {
+                    txtActualCash.Text = txtActualCash.Text.Substring(0, txtActualCash.Text.Length - 1);
+                    txtActualCash.SelectionStart = txtActualCash.Text.Length; // Move the cursor to the end
+                }
+
                 return;
             }
             txtActualCash.Text = number.ToString("#,#");
@@ -316,17 +546,8 @@ namespace KASIR.Komponen
 
         private void btnPengeluaran_Click(object sender, EventArgs e)
         {
-            Form background = new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
-            };
+            Form background = CreateBackgroundForm();
+
 
             using (Offline_notifikasiPengeluaran notifikasiPengeluaran = new Offline_notifikasiPengeluaran())
             {
@@ -342,7 +563,60 @@ namespace KASIR.Komponen
 
         private void btnRiwayatShift_Click(object sender, EventArgs e)
         {
-            Form background = new Form
+            Form background = CreateBackgroundForm();
+
+            this.Invoke((MethodInvoker)delegate
+            {
+                using (Offline_HistoryShift payForm = new Offline_HistoryShift())
+                {
+                    payForm.Owner = background;
+                    background.Show();
+
+                    DialogResult dialogResult = payForm.ShowDialog();
+
+                    background.Dispose();
+
+                    if (dialogResult == DialogResult.OK)
+                    {
+                        // Option Pilih
+                        MessageBox.Show("Fiture Under Maintanance");
+                        return;
+                        ShiftData selectedShift = payForm.SelectedShift;
+
+                        DirectSwipeShiftData();
+                        ClearSourceFileAsync("DT-Cache\\Transaction\\shiftData.data");
+
+                        DateTime startAtDateTime = DateTime.Parse(selectedShift.StartAt);
+                        string destinationFilePath = $"DT-Cache\\Transaction\\HistoryTransaction\\History_transaction_DT-{baseOutlet}_{startAtDateTime:yyyyMMdd}.data";
+                        CopyShiftDataAsync($"DT-Cache\\Transaction\\shiftData.data", destinationFilePath);
+                        SelectedShiftID(selectedShift.id);
+                        LoadData();
+                    }
+                    else if (dialogResult == DialogResult.Continue)
+                    {
+                        // Option Printing
+                        ShiftData selectedShift = payForm.SelectedShift;
+                        MessageBox.Show($"Printing Shift ID : {selectedShift.id}.\n\nCasher Name : {selectedShift.CasherName}\nShift : {selectedShift.ShiftNumber}\nStart at : {selectedShift.StartAt.ToString()}\nEnd at : {selectedShift.EndAt.ToString()}");
+
+                    }
+                    else
+                    {
+                        MessageBox.Show("No shift selected or action cancelled.");
+                    }
+                }
+            });
+        }
+        private async void SelectedShiftID(string ID)
+        {
+            transactionFileMover c = new transactionFileMover();
+            string destinationFilePath = "DT-Cache\\Transaction\\selectedShiftID.data";
+            string destinationJson = ID.ToString();
+            await c.WriteJsonToFile(destinationFilePath, destinationJson.ToString());
+        }
+
+        private Form CreateBackgroundForm()
+        {
+            return new Form
             {
                 StartPosition = FormStartPosition.Manual,
                 FormBorderStyle = FormBorderStyle.None,
@@ -353,38 +627,97 @@ namespace KASIR.Komponen
                 Location = this.Location,
                 ShowInTaskbar = false,
             };
+        }
 
-            this.Invoke((MethodInvoker)delegate
+        public async Task CopyShiftDataAsync(string sourceFilePath, string destinationFilePath)
+        {
+            transactionFileMover c = new transactionFileMover();
+
+            // Ensure the destination directory exists
+            string directory = Path.GetDirectoryName(destinationFilePath);
+            if (!Directory.Exists(directory))
             {
-                using (Offline_HistoryShift payForm = new Offline_HistoryShift()) // No List<ShiftData> passed
+                Directory.CreateDirectory(directory);
+            }
+
+            string sourceData = await c.ReadJsonFileAsync(sourceFilePath);
+            JObject sourceJson = JObject.Parse(sourceData);
+            JArray sourceDataArray = (JArray)sourceJson["data"];
+
+            if (File.Exists(destinationFilePath))
+            {
+                string existingData = await c.ReadJsonFileAsync(destinationFilePath);
+                JObject destinationJson = JObject.Parse(existingData);
+                JArray destinationData = (JArray)destinationJson["data"];
+
+                foreach (JObject trans in sourceDataArray)
                 {
-                    payForm.Owner = background;
-
-                    background.Show();
-
-                    DialogResult dialogResult = payForm.ShowDialog();
-
-                    background.Dispose();
-
-                    // Check if the user clicked "Pilih" and returned data
-                    if (dialogResult == DialogResult.OK)
-                    {
-                        // Get the selected shift data
-                        ShiftData selectedShift = payForm.SelectedShift;
-
-                        // Process the selected shift data, for example:
-                        MessageBox.Show($"Shift Number: {selectedShift.ShiftNumber}\nStart At: {selectedShift.StartAt}\nEnd At: {selectedShift.EndAt}");
-
-                        // Call a method to load additional data or perform operations
-                        LoadData();
-                    }
-                    else
-                    {
-                        // Handle case where user cancels or closes the dialog
-                        MessageBox.Show("No shift selected or action cancelled.");
-                    }
+                    destinationData.Add(trans);
                 }
-            });
+
+                await c.WriteJsonToFile(destinationFilePath, destinationJson.ToString());
+            }
+            else
+            {
+                await c.WriteJsonToFile(destinationFilePath, sourceJson.ToString());
+            }
+        }
+
+        public async Task ClearSourceFileAsync(string sourcePath)
+        {
+            JObject emptyJson = new JObject { ["data"] = new JArray() };
+            transactionFileMover c = new transactionFileMover();
+
+            try
+            {
+                await c.WriteJsonToFile(sourcePath, emptyJson.ToString());
+            }
+            catch (IOException ex)
+            {
+                LoggerUtil.LogError(ex, $"Could not clear the source file: {ex.Message}");
+            }
+        }
+
+        public async void DirectSwipeShiftData()
+        {
+            await ArchiveDataShiftAsync("DT-Cache\\Transaction\\shiftData.data", "DT-Cache\\Transaction");
+        }
+
+        public async Task ArchiveDataShiftAsync(string sourceFilePath, string archiveDirectory)
+        {
+            // Ensure destination directory exists
+            if (!Directory.Exists(archiveDirectory))
+            {
+                Directory.CreateDirectory(archiveDirectory);
+            }
+
+            transactionFileMover c = new transactionFileMover();
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourceFilePath);
+            string fileExtension = Path.GetExtension(sourceFilePath);
+            string newFileName = $"ShiftSwiperDateTimeNow{fileExtension}";
+            string destinationPath = Path.Combine(archiveDirectory, newFileName);
+
+            string sourceData = await c.ReadJsonFileAsync(sourceFilePath);
+            JObject sourceJson = JObject.Parse(sourceData);
+            JArray sourceDataArray = (JArray)sourceJson["data"];
+
+            if (File.Exists(destinationPath))
+            {
+                string existingData = await c.ReadJsonFileAsync(destinationPath);
+                JObject destinationJson = JObject.Parse(existingData);
+                JArray destinationData = (JArray)destinationJson["data"];
+
+                foreach (JObject trans in sourceDataArray)
+                {
+                    destinationData.Add(trans);
+                }
+
+                await c.WriteJsonToFile(destinationPath, destinationJson.ToString());
+            }
+            else
+            {
+                await c.WriteJsonToFile(destinationPath, sourceJson.ToString());
+            }
         }
 
         private (DateTime startShift, DateTime lastShift) GetStartAndLastShiftOrder(TransactionData transactionData)
@@ -526,9 +859,24 @@ namespace KASIR.Komponen
             // Get the start and last shift based on transaction times
             var (startShift, lastShift) = GetStartAndLastShiftOrder(transactionData);
 
+            string startAt = GetStartAt();
+            DateTime startAtDateTime = DateTime.Parse(startAt);
+            var generateIDshift = $"{baseOutlet.ToString()}{startAtDateTime.ToString("yyyyMMddHHmmss")}";
+            if (!File.Exists("DT-Cache\\Transaction\\selectedShiftID.data"))
+            {
+                SelectedShiftID(generateIDshift.ToString());
+            }
+            else
+            {
+                transactionFileMover c = new transactionFileMover();
+                generateIDshift = File.ReadAllText("DT-Cache\\Transaction\\selectedShiftID.data");
+            }
+            AddSeparatorRowBold(dataTable, "SHIFT ID : " + generateIDshift.ToString(), dataGridView1);
+
             // Add the Start and Last Shift Order to the DataTable
             AddSeparatorRowBold(dataTable, "SHIFT NUMBER " + shiftNumber.ToString(), dataGridView1);
 
+            AddSeparatorRowBold(dataTable, "Start Shift : " + startAtDateTime.ToString(), dataGridView1);
             dataTable.Rows.Add("Start Shift Order", $"{startShift.ToString("yyyy-MM-dd HH:mm:ss")}");
             dataTable.Rows.Add("Last Shift Order", $"{lastShift.ToString("yyyy-MM-dd HH:mm:ss")}");
 

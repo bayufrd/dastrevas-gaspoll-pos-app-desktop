@@ -166,6 +166,7 @@ namespace KASIR.Model
         public decimal ActualEndingCash { get; set; }
         public string StartAt { get; set; }
         public string EndAt { get; set; }
+        public string id { get; set; }
     }
     public class RefundDetailStrukShift
     {
@@ -231,18 +232,21 @@ namespace KASIR.Model
     public class CartDetails
     {
         public int cart_detail_id { get; set; }
+        public int menu_id { get; set; }
         public string menu_name { get; set; }
         public string menu_type { get; set; }
         public string varian { get; set; }
         public string menu_detail_name { get; set; }
         public int qty { get; set; }
         public int price { get; set; }
+        public int is_ordered { get; set; }
         public decimal total_price { get; set; }
         public decimal discounted_price { get; set; }
     }
     public class RefundDetails
     {
         public int cart_detail_id { get; set; }
+        public int menu_id { get; set; }
         public string menu_name { get; set; }
         public string menu_type { get; set; }
         public string menu_detail_name { get; set; }

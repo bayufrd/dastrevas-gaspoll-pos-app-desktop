@@ -322,6 +322,12 @@ namespace KASIR.Komponen
                 // The text could not be parsed as a decimal number.
                 // You can handle this exception in different ways, such as displaying a message to the user.
                 MessageBox.Show("inputan hanya bisa Numeric");
+                if (txtNominal.Text.Length > 0)
+                {
+                    txtNominal.Text = txtNominal.Text.Substring(0, txtNominal.Text.Length - 1);
+                    txtNominal.SelectionStart = txtNominal.Text.Length; // Move the cursor to the end
+                }
+
                 return;
             }
             txtNominal.Text = number.ToString("#,#");

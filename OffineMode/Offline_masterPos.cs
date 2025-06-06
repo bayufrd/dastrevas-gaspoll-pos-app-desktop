@@ -809,7 +809,8 @@ namespace KASIR.OfflineMode
                     if (!isAnyOrdered)
                     {
                         // Jika tidak ada yang dipesan, hapus file Cart.data
-                        await DeleteCartFile();
+                        //await DeleteCartFile();
+                        ClearCartFile(); // save method
                         ReloadCart();
                         return;
                     }
@@ -876,7 +877,7 @@ namespace KASIR.OfflineMode
                 if (File.Exists(filePath))
                 {
                     // Hapus file
-                    File.Delete(filePath);
+                    ClearCartFile();
                 }
                 else
                 {
@@ -1812,6 +1813,44 @@ namespace KASIR.OfflineMode
             buttonDelete.Enabled = true;
             buttonPayment.Enabled = true;
         }
+        public void ClearCartFile()
+        {
+            string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
+
+            // Mengecek apakah file ada
+            if (File.Exists(cacheFilePath))
+            {
+                // Membuat objek JSON kosong yang mencerminkan format yang Anda gunakan
+                JObject emptyCartData = new JObject
+                {
+                    ["cart_details"] = new JArray(),  // Cart kosong
+                    ["subtotal"] = 0,
+                    ["total"] = 0,
+                    ["transaction_ref"] = "",
+                    ["discount_id"] = 0
+                };
+
+                // Menulis objek kosong ke dalam file, mengosongkan isi file
+                File.WriteAllText(cacheFilePath, emptyCartData.ToString());
+            }
+            else
+            {
+                // Jika file belum ada, buat file baru dengan format kosong
+                JObject emptyCartData = new JObject
+                {
+                    ["cart_details"] = new JArray(),
+                    ["subtotal"] = 0,
+                    ["total"] = 0,
+                    ["transaction_ref"] = "",
+                    ["discount_id"] = 0
+                };
+
+                // Menulis file kosong baru
+                File.WriteAllText(cacheFilePath, emptyCartData.ToString());
+            }
+        }
+
+
         public async Task LoadCartData()
         {
             try

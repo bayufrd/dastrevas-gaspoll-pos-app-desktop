@@ -597,8 +597,8 @@ namespace KASIR.OfflineMode
 
                 DialogResult = DialogResult.OK;
 
-                Offline_masterPos offline_MasterPos = new Offline_masterPos();
-                offline_MasterPos.DeleteCartFile();
+                Offline_masterPos del = new Offline_masterPos();
+                del.ClearCartFile();
 
                 Close();
             }
@@ -863,6 +863,12 @@ namespace KASIR.OfflineMode
                 // The text could not be parsed as a decimal number.
                 // You can handle this exception in different ways, such as displaying a message to the user.
                 MessageBox.Show("inputan hanya bisa Numeric");
+                // Remove the last character from the input if it's invalid
+                if (txtCash.Text.Length > 0)
+                {
+                    txtCash.Text = txtCash.Text.Substring(0, txtCash.Text.Length - 1);
+                    txtCash.SelectionStart = txtCash.Text.Length; // Move the cursor to the end
+                }
                 return;
             }
             txtCash.Text = number.ToString("#,#");

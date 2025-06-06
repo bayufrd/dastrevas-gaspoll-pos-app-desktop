@@ -127,6 +127,7 @@ namespace KASIR.Komponen
             // 
             lblShiftSekarang.AutoSize = true;
             lblShiftSekarang.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            lblShiftSekarang.ForeColor = Color.Black;
             lblShiftSekarang.Location = new Point(13, 104);
             lblShiftSekarang.Name = "lblShiftSekarang";
             lblShiftSekarang.Size = new Size(136, 15);
@@ -313,14 +314,14 @@ namespace KASIR.Komponen
             btnAddMenu.Text = "Tambah Menu";
             btnAddMenu.UseVisualStyleBackColor = false;
             // 
-            // shiftReport
+            // Offline_shiftReport
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
             Controls.Add(panel2);
             Controls.Add(panel1);
-            Name = "shiftReport";
+            Name = "Offline_shiftReport";
             Size = new Size(912, 580);
             panel2.ResumeLayout(false);
             panel2.PerformLayout();

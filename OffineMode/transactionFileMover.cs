@@ -64,7 +64,7 @@ namespace KASIR.OffineMode
             }
         }
 
-        private async Task<string> ReadJsonFileAsync(string filePath)
+        public async Task<string> ReadJsonFileAsync(string filePath)
         {
             using (FileStream sourceStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (StreamReader reader = new StreamReader(sourceStream))
@@ -73,7 +73,7 @@ namespace KASIR.OffineMode
             }
         }
 
-        private DateTime? GetFirstTransactionDate(JArray transactions)
+        public DateTime? GetFirstTransactionDate(JArray transactions)
         {
             JObject firstTransaction = (JObject)transactions[0];
             if (firstTransaction["created_at"] != null)
@@ -91,9 +91,11 @@ namespace KASIR.OffineMode
 
         private async Task ArchiveTransactionData(JArray transactions, string historyDirectory, string jsonData)
         {
+            DateTime previousDay = DateTime.Now.AddDays(-1);
+
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension("DT-Cache\\Transaction\\transaction.data");
             string fileExtension = Path.GetExtension("DT-Cache\\Transaction\\transaction.data");
-            string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{DateTime.Now:yyyyMMdd}{fileExtension}";
+            string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{previousDay:yyyyMMdd}{fileExtension}";
             string destinationPath = Path.Combine(historyDirectory, newFileName);
 
             // Ensure destination directory exists
@@ -128,7 +130,7 @@ namespace KASIR.OffineMode
             await WriteJsonToFile(destinationPath, destinationJson.ToString());
         }
 
-        private async Task WriteJsonToFile(string filePath, string jsonData)
+        public async Task WriteJsonToFile(string filePath, string jsonData)
         {
             using (FileStream writeStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
             using (StreamWriter writer = new StreamWriter(writeStream))
@@ -137,7 +139,7 @@ namespace KASIR.OffineMode
             }
         }
 
-        private async Task ClearSourceFile(string sourcePath)
+        public async Task ClearSourceFile(string sourcePath)
         {
             JObject emptyJson = new JObject();
             emptyJson["data"] = new JArray();
@@ -153,17 +155,19 @@ namespace KASIR.OffineMode
             }
         }
 
-        private async Task ArchiveData(string sourceFilePath, string archiveDirectory)
+        public async Task ArchiveData(string sourceFilePath, string archiveDirectory)
         {
             // Ensure destination directory exists
             if (!Directory.Exists(archiveDirectory))
             {
                 Directory.CreateDirectory(archiveDirectory);
             }
+            // Get current date and subtract one day
+            DateTime previousDay = DateTime.Now.AddDays(-1);
 
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourceFilePath);
             string fileExtension = Path.GetExtension(sourceFilePath);
-            string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{DateTime.Now:yyyyMMdd}{fileExtension}";
+            string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{previousDay:yyyyMMdd}{fileExtension}";
             string destinationPath = Path.Combine(archiveDirectory, newFileName);
 
             if (File.Exists(destinationPath))

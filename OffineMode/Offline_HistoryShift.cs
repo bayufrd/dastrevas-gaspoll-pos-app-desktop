@@ -125,7 +125,8 @@ namespace KASIR.OffineMode
                 ShiftNumber = (int)item["shift_number"],
                 ActualEndingCash = decimal.Parse(item["actual_ending_cash"]?.ToString() ?? "0"),
                 StartAt = item["start_at"]?.ToString(),
-                EndAt = item["end_at"]?.ToString()
+                EndAt = item["end_at"]?.ToString(),
+                id = item["id"]?.ToString()
             }).ToList();
 
             return shiftDataList;
@@ -220,8 +221,15 @@ namespace KASIR.OffineMode
                     }
                     else if (e.ColumnIndex == dataGridView.Columns["Print"].Index)
                     {
-                        // Handle the "Print" button click
-                        MessageBox.Show($"Print button clicked for shift {shiftDataList[e.RowIndex].ShiftNumber}");
+                        // Get the shift data directly from the shiftDataList (corresponding to the selected row)
+                        ShiftData selectedShift = shiftDataList[e.RowIndex];
+
+                        // Set the SelectedShift property to the selected ShiftData
+                        SelectedShift = selectedShift;
+
+                        // Close the form and pass back the data
+                        this.DialogResult = DialogResult.Continue;
+                        this.Close();
                     }
                 }
             };

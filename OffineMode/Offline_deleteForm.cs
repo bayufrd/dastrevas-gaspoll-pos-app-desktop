@@ -235,7 +235,9 @@ namespace KASIR.OfflineMode
                 if (File.Exists(filePath))
                 {
                     // Hapus file
-                    File.Delete(filePath);
+                    //File.Delete(filePath);
+                    Offline_masterPos del = new Offline_masterPos();
+                    del.ClearCartFile();
                 }
                 DialogResult = DialogResult.OK;
 

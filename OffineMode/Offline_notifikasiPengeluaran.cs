@@ -1,29 +1,25 @@
 ﻿using System.Data;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Serilog;
 namespace KASIR.Komponen
 {
-    public partial class notifikasiPengeluaran : Form
+    public partial class Offline_notifikasiPengeluaran : Form
     {
-        private successTransaction SuccessTransaction { get; set; }
-        private List<CartDetailTransaction> item = new List<CartDetailTransaction>();
-        private List<RefundModel> refundItems = new List<RefundModel>();
-        public bool ReloadDataInBaseForm { get; private set; }
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
         private readonly ILogger _log = LoggerService.Instance._log;
-        public notifikasiPengeluaran()
+        public Offline_notifikasiPengeluaran()
         {
             baseOutlet = Properties.Settings.Default.BaseOutlet;
-
             InitializeComponent();
             txtNotes.PlaceholderText = "Tujuan Pengeluaran?";
             button2.Enabled = false;
             LoadData();
-
         }
 
         // Modifikasi method LoadData() untuk menambahkan handling error
@@ -31,50 +27,23 @@ namespace KASIR.Komponen
         {
             try
             {
-                IApiService apiService = new ApiService();
-                string response = await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-
-                if (string.IsNullOrEmpty(response))
-                {
-                    CleanFormAndAddRetryButton("Tidak ada respon dari server.");
-                    return;
-                }
-
-                var cekShift = JsonConvert.DeserializeObject<GetShift>(response);
-                if (cekShift?.data == null)
-                {
-                    CleanFormAndAddRetryButton("Data shift tidak tersedia atau tidak valid.");
-                    return;
-                }
-
-                var datas = cekShift.data;
-
-                // Pastikan semua properti diakses dengan aman menggunakan null conditional operator
-                var expenditures = datas?.expenditures ?? new List<ExpenditureStrukShift>();
-                var cartDetailsSuccess = datas?.cart_details_success ?? new List<CartDetailsSuccessStrukShift>();
-                var cartDetailsPending = datas?.cart_details_pending ?? new List<CartDetailsPendingStrukShift>();
-                var cartDetailsCanceled = datas?.cart_details_canceled ?? new List<CartDetailsCanceledStrukShift>();
-                var refundDetails = datas?.refund_details ?? new List<RefundDetailStrukShift>();
-                var paymentDetails = datas?.payment_details ?? new List<PaymentDetailStrukShift>();
+                // Read the expenditure data from the file
+                var expenditures = ReadExpendituresFromFile("DT-Cache\\Transaction\\expenditure.data");
 
                 var dataTable = new DataTable();
                 dataTable.Columns.Add("ID", typeof(string));
                 dataTable.Columns.Add("DATA", typeof(string));
                 dataTable.Columns.Add("Detail", typeof(string));
+                dataTable.Columns.Add("Created", typeof(string));
 
-                // Pastikan datas.outlet_name tidak null
-                dataTable.Rows.Add(null, datas?.outlet_name ?? "Unknown Outlet", null);
-                dataTable.Rows.Add(null, "Start Date :", datas?.start_date);
-                dataTable.Rows.Add(null, "End Date :", datas?.end_date);
-                dataTable.Rows.Add(null, "Shift Number :", datas?.shift_number);
-                dataTable.Rows.Add(null, "--------------------------------", null);
+                // Ensure safe access to outlet_name
 
                 if (expenditures != null && expenditures.Any())
                 {
-                    dataTable.Rows.Add(null, "EXPENSE", null);
+                    dataTable.Rows.Add(null, "EXPENSE", null, null);
                     foreach (var expense in expenditures)
                     {
-                        dataTable.Rows.Add(null, expense?.description ?? "No description", $"Rp. {expense?.nominal:n0},-");
+                        dataTable.Rows.Add(null, expense?.description ?? "No description", $"Rp. {expense?.nominal:n0},-", expense?.created_at.ToString() ?? "NoTime");
                     }
                 }
 
@@ -112,6 +81,23 @@ namespace KASIR.Komponen
                 button2.Enabled = false;
             }
         }
+
+        // Method to read expenditures data from file
+        private List<ExpenditureStrukShift> ReadExpendituresFromFile(string filePath)
+        {
+            try
+            {
+                var fileContent = File.ReadAllText(filePath);
+                var expenditureData = JsonConvert.DeserializeObject<ExpenditureData>(fileContent);
+                return expenditureData?.data ?? new List<ExpenditureStrukShift>();
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error reading or deserializing file: {ErrorMessage}", ex.Message);
+                return new List<ExpenditureStrukShift>();
+            }
+        }
+
 
         // Tambahkan method CleanFormAndAddRetryButton dari contoh yang diberikan
         private void CleanFormAndAddRetryButton(string ex)
@@ -233,12 +219,11 @@ namespace KASIR.Komponen
 
         }
 
-        private async void button2_Click(object sender, EventArgs e)
+        private async void btnSaveExpenditure(object sender, EventArgs e)
         {
             string fulus = Regex.Replace(txtNominal.Text, "[^0-9]", "");
             try
             {
-
                 if (fulus == null || fulus.ToString() == "")
                 {
                     MessageBox.Show("Format nominal kurang tepat", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -257,38 +242,45 @@ namespace KASIR.Komponen
                     return;
                     this.Close();
                 }
-                var json = new
+                var expenditureData = new
                 {
-                    nominal = fulus.ToString(),
+                    nominal = int.Parse(fulus.ToString()),
                     description = txtNotes.Text.ToString(),
-                    outlet_id = baseOutlet
+                    outlet_id = baseOutlet,
+                    
+                    //adding for cache details
+
+                    created_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                    is_sync = 0
                 };
-                string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
-                IApiService apiService = new ApiService();
 
-                HttpResponseMessage response = await apiService.notifikasiPengeluaran(jsonString, "/expenditure");
-
-                if (response != null)
+                // Save transaction data to transaction.data
+                string expenditureDataPath = "DT-Cache\\Transaction\\expenditure.data";
+                JArray expenditureDataArray = new JArray();
+                if (File.Exists(expenditureDataPath))
                 {
-                    if (response.IsSuccessStatusCode)
-                    {
-                        DialogResult result = MessageBox.Show("Input notifikasi pengeluaran berhasil", "Gaspol", MessageBoxButtons.OK);
-                        if (result == DialogResult.OK)
-                        {
-                            this.Close(); // Close the payForm
-                        }
-                        this.DialogResult = result;
-                    }
-                    else
-                    {
-                        MessageBox.Show("Input notifikasi pengeluaran gagal  " + response.StatusCode);
-                        _log.Error("gagal input notifikasi pengeluaran");
-                    }
+                    // If the transaction file exists, read and append the new transaction
+                    string existingData = File.ReadAllText(expenditureDataPath);
+                    var existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
+                    expenditureDataArray = existingTransactions["data"] as JArray ?? new JArray();
                 }
+
+                // Add new transaction
+                expenditureDataArray.Add(JToken.FromObject(expenditureData));
+
+                // Serialize and save back to transaction.data
+                var newTransactionData = new JObject { { "data", expenditureDataArray } };
+                File.WriteAllText(expenditureDataPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
+
+                DialogResult result = MessageBox.Show("Input notifikasi pengeluaran berhasil", "Gaspol", MessageBoxButtons.OK);
+                if (result == DialogResult.OK)
+                {
+                    this.Close(); // Close the payForm
+                }
+                this.DialogResult = result;
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)

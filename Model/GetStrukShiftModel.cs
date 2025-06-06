@@ -133,11 +133,18 @@ namespace KASIR.Model
             return sb.ToString();
         }
     }
-
+    public class ExpenditureData
+    {
+        public List<ExpenditureStrukShift> data { get; set; }
+    }
+    // Model to match the structure of your expenditure data
     public class ExpenditureStrukShift
     {
-        public string description { get; set; }
         public int nominal { get; set; }
+        public string description { get; set; }
+        public string outlet_id { get; set; }
+        public string created_at { get; set; }
+        public int is_sync { get; set; }
     }
 
     public class PaymentDetailStrukShift
@@ -152,7 +159,14 @@ namespace KASIR.Model
         public string payment_type { get; set; }
         public int total_payment { get; set; }
     }
-
+    public class ShiftData
+    {
+        public string CasherName { get; set; }
+        public int ShiftNumber { get; set; }
+        public decimal ActualEndingCash { get; set; }
+        public string StartAt { get; set; }
+        public string EndAt { get; set; }
+    }
     public class RefundDetailStrukShift
     {
         public int qty_refund_item { get; set; }
@@ -213,6 +227,65 @@ namespace KASIR.Model
         public int discount_amount_per_items { get; set; }
         public int discount_total_amount { get; set; }
     }
+
+    public class CartDetails
+    {
+        public int cart_detail_id { get; set; }
+        public string menu_name { get; set; }
+        public string menu_type { get; set; }
+        public string varian { get; set; }
+        public string menu_detail_name { get; set; }
+        public int qty { get; set; }
+        public int price { get; set; }
+        public decimal total_price { get; set; }
+        public decimal discounted_price { get; set; }
+    }
+    public class RefundDetails
+    {
+        public int cart_detail_id { get; set; }
+        public string menu_name { get; set; }
+        public string menu_type { get; set; }
+        public string menu_detail_name { get; set; }
+        public int refund_qty { get; set; }
+        public decimal total_price { get; set; }
+        public int refund_total { get; set; }
+    }
+    public class Transaction
+    {
+        public int transaction_id { get; set; }
+        public int payment_type_id { get; set; }
+        public int refund_payment_id_all { get; set; }  // This belongs to the Transaction class
+        public string created_at { get; set; }
+        public string receipt_number { get; set; }
+        public string transaction_ref { get; set; }
+        public string invoice_number { get; set; }
+        public string invoice_due_date { get; set; }
+        public string payment_type_name { get; set; }
+        public string customer_name { get; set; }
+        public decimal customer_cash { get; set; }
+        public decimal discounted_price { get; set; }
+        public decimal total { get; set; }
+        public decimal total_refund { get; set; }  // Refund for the whole transaction
+        public List<CartDetails> cart_details { get; set; }
+        public List<RefundDetails> refund_details { get; set; }
+        public List<CanceledDetails> canceled_items { get; set; }
+        public int is_refund_all { get; set; }  // Indicating if the transaction is fully refunded
+    }
+    public class CanceledDetails
+    {
+        public int cart_detail_id { get; set; }
+        public string menu_name { get; set; }
+        public string menu_type { get; set; }
+        public string menu_detail_name { get; set; }
+        public int qty { get; set; }
+        public decimal total_price { get; set; }
+    }
+
+    public class TransactionData
+    {
+        public List<Transaction> data { get; set; }
+    }
+
 
 
 }

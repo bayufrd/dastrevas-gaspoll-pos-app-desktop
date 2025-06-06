@@ -1320,17 +1320,13 @@ namespace KASIR
             ActivateButton(sender, RGBColors.color4);
             try
             {
-                shiftReport c = new shiftReport();
+                Offline_shiftReport c = new Offline_shiftReport();
 
                 // Misalkan 'obj' adalah objek yang mungkin null
                 if (c == null)
                 {
-                    MessageBox.Show("Terjadi kesalahan cek koneksi anda", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-                btnShiftLaporan.Enabled = false;
-                iconButton1.Enabled = false;
-                iconButton2.Enabled = false;
                 //panel3.Height = btn1.Height;
                 //panel3.Top = btn1.Top;
                 c.Dock = DockStyle.Fill;
@@ -1338,9 +1334,6 @@ namespace KASIR
                 c.BringToFront();
                 c.Show();
                 await c.LoadData();
-                btnShiftLaporan.Enabled = true;
-                iconButton1.Enabled = true;
-                iconButton2.Enabled = true;
                 lblTitleChildForm.Text = "Shift Report - Report Shift and Shift Transactions, Print Shift and Cash Out";
 
 

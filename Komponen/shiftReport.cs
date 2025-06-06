@@ -312,6 +312,11 @@ namespace KASIR.Komponen
                         SyncSaveBillData(saveBillDataPath, saveBillDataPathClone, apiUrl);
                         UpdateProgress(35, "Selesai sinkronisasi SaveBill");
                     }
+                    string expenditureDataPath = "DT-Cache\\Transaction\\expenditure.data";
+                    if (File.Exists(expenditureDataPath))
+                    {
+                        SyncExpenditureData(expenditureDataPath);
+                    }
 
                     if (!File.Exists(filePath))
                     {
@@ -331,44 +336,6 @@ namespace KASIR.Komponen
 
                     // When preparing data for sync, create a copy of transaction IDs being synced
                     List<string> transactionIdsBeingSynced = new List<string>();
-/*
-                    if (File.Exists(saveBillDataPath))
-                    {
-                        try
-                        {
-                            UpdateProgress(25, "Sinkronisasi data SaveBill...");
-
-                            // Baca data SaveBill
-                            string saveBillJsonData = File.ReadAllText(saveBillDataPath);
-                            JObject saveBillData = JObject.Parse(saveBillJsonData);
-                            JArray saveBillTransactions = (JArray)saveBillData["data"];
-
-                            // Baca data transaksi existing
-                            string existingJsonData = File.ReadAllText(destinationPath);
-                            JObject existingData = JObject.Parse(existingJsonData);
-
-                            // Tambahkan transaksi SaveBill ke transaksi existing
-                            if (saveBillTransactions != null && saveBillTransactions.Any())
-                            {
-                                // After parsing the transactions from the JSON file
-                                foreach (var transaction in saveBillTransactions)
-                                {
-                                    // Track which transactions we're syncing
-                                    transactionIdsBeingSynced.Add(transaction["transaction_ref"].ToString());
-                                }
-
-                                // Simpan kembali ke file destinationPath
-                                File.WriteAllText(destinationPath, existingData.ToString());
-
-                            }
-                            UpdateProgress(35, "Selesai sinkronisasi SaveBill");
-
-                        }
-                        catch (Exception ex)
-                        {
-                            LoggerUtil.LogError(ex, "Gagal menggabungkan transaksi SaveBill: {ErrorMessage}", ex.Message);
-                        }
-                    }*/
 
                     // Process the transactions
                     UpdateProgress(60, "Memproses data transaksi...");
@@ -453,6 +420,110 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+        private async Task SyncExpenditureData(string expenditurePathFile)
+        {
+            try
+            {
+                // Step 1: Read the expenditure data from the file
+                var expenditures = ReadExpendituresFromFile(expenditurePathFile);
+
+                if (expenditures == null || !expenditures.Any())
+                {
+                    return;
+                }
+
+                // Step 2: Loop through each expenditure and check is_sync == 0
+                foreach (var expenditure in expenditures)
+                {
+                    if (expenditure.is_sync == 0)  // Only send if is_sync is 0
+                    {
+                        var payload = new
+                        {
+                            nominal = expenditure.nominal.ToString(),
+                            description = expenditure.description,
+                            outlet_id = expenditure.outlet_id
+                        };
+
+                        // Step 3: Send the data to the API
+                        var isSuccess = await SendToApi(payload);
+
+                        if (isSuccess)
+                        {
+                            // If the request was successful, update is_sync to 1
+                            expenditure.is_sync = 1;
+                        }
+                    }
+                }
+
+                // After sending all the data, update the file with the updated is_sync values
+                SaveExpendituresToFile(expenditures, expenditurePathFile);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error while sending expenditures to API: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        // Method to send data to the API using a POST request
+        private async Task<bool> SendToApi(object payload)
+        {
+            try
+            {
+                IApiService apiService = new ApiService();
+                string jsonString = JsonConvert.SerializeObject(payload, Formatting.Indented);
+
+                // Perform the POST request with the payload
+                HttpResponseMessage response = await apiService.notifikasiPengeluaran(jsonString, "/expenditure");
+
+
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    return true; // Successfully sent
+                }
+                return false; // Failed to send
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error while sending to API: {ErrorMessage}", ex.Message);
+                return false;
+            }
+        }
+
+        // Method to read expenditures data from file
+        private List<ExpenditureStrukShift> ReadExpendituresFromFile(string filePath)
+        {
+            try
+            {
+                var fileContent = File.ReadAllText(filePath);
+                var expenditureData = JsonConvert.DeserializeObject<ExpenditureData>(fileContent);
+                return expenditureData?.data ?? new List<ExpenditureStrukShift>();
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error reading or deserializing file: {ErrorMessage}", ex.Message);
+                return new List<ExpenditureStrukShift>();
+            }
+        }
+
+        // Method to save updated expenditures back to the file
+        private void SaveExpendituresToFile(List<ExpenditureStrukShift> expenditures, string expenditurePathFile)
+        {
+            try
+            {
+                var expenditureData = new ExpenditureData
+                {
+                    data = expenditures
+                };
+
+                string json = JsonConvert.SerializeObject(expenditureData, Formatting.Indented);
+                File.WriteAllText(expenditurePathFile, json);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error saving expenditures to file: {ErrorMessage}", ex.Message);
+            }
+        }
+
         private void SyncSpecificTransactions(string filePath, List<string> transactionIds)
         {
             const int maxRetries = 5;
@@ -1324,7 +1395,6 @@ namespace KASIR.Komponen
                         UpdateProgress(80, "Data diterima, memproses...");
                     }
 
-                    //File.WriteAllText($"DT-Cache\\Transaction\\ShiftRepot{baseOutlet}.data", JsonConvert.SerializeObject(response, Formatting.Indented));
                     if (response != null)
                     {
                         try

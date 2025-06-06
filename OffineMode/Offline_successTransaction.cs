@@ -93,6 +93,15 @@ namespace KASIR.OfflineMode
                         {
                             continue;
                         }
+                        string refundRemind = "";
+                        if (transaction["is_refund"]?.ToString() == "1")
+                        {
+                            refundRemind = " [Refunded]";
+                            if(transaction["is_refund_all"]?.ToString() == "1")
+                            {
+                                total = 0;
+                            }
+                        }
                         // Parse the created_at field and format it
                         if (DateTime.TryParse(transaction["created_at"]?.ToString(), out transactionTime))
                         {
@@ -102,7 +111,7 @@ namespace KASIR.OfflineMode
                                 numberQueue + ". " + transaction["receipt_number"]?.ToString(),
                                 customerName,
                                 customerSeat,
-                                string.Format("Rp. {0:n0},-", total),
+                                string.Format("Rp. {0:n0},-", total) + refundRemind,
                                 paymentType,
                                 formattedDate
                             );
@@ -115,7 +124,7 @@ namespace KASIR.OfflineMode
                                 numberQueue + ". " + transaction["receipt_number"]?.ToString(),
                                 customerName,
                                 customerSeat,
-                                string.Format("Rp. {0:n0},-", total),
+                                string.Format("Rp. {0:n0},-", total) + refundRemind,
                                 paymentType,
                                 transaction["created_at"]?.ToString()
                             );

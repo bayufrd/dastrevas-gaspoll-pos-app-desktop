@@ -708,7 +708,7 @@ namespace KASIR.komponen
 
                     if (currentAttempt >= maxAttempts)
                     {
-                        MessageBox.Show("Gagal mencetak setelah beberapa kali percobaan.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        //MessageBox.Show("Gagal mencetak setelah beberapa kali percobaan.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         LoggerUtil.LogError(ex, $"Gagal mencetak setelah beberapa kali percobaan. {currentAttempt}.");
 
                         return;

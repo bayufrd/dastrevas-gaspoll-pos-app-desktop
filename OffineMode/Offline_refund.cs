@@ -405,16 +405,19 @@ namespace KASIR.OfflineMode
                         }
                         // Kosongkan cartDetails setelah semua item ditambahkan ke refundDetails
                         //cartDetails.Clear();
+                        filteredTransaction["is_refund"] = 1;
+                        filteredTransaction["total"] = 0;
+                        filteredTransaction["subtotal"] = 0;
                         filteredTransaction["is_refund_all"] = 1;
                         filteredTransaction["refund_reason_all"] = txtNotes.Text.ToString(); // Menggunakan Trim untuk menghilangkan spasi
                         filteredTransaction["refund_payment_name_all"] = refund_payment_name_all;
                         filteredTransaction["refund_payment_id_all"] = refund_payment_id_all;
                         filteredTransaction["refund_created_at_all"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-
                     }
                     else
                     {
                         filteredTransaction["is_refund_all"] = 0;
+                        filteredTransaction["is_refund"] = 1;
 
                         // Process refundItems and add them to refundDetails
                         foreach (var refundItem in refundItems)
@@ -563,11 +566,13 @@ namespace KASIR.OfflineMode
                         filteredTransaction["is_sent_sync"] = 0;
                     }
                     filteredTransaction["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-
                     // Pastikan filteredTransaction bertipe JObject
                     JObject transactionObject = filteredTransaction as JObject;
+                    // Update is_refund field
+                    filteredTransaction["is_refund"] = 1;
                     // Update totals (total, subtotal, refund_total) berdasarkan cartDetails dan refundDetails
                     UpdateTransactionTotals(cartDetails, refundDetails, transactionObject, discounted_peritemPrice);
+
                     // Save the updated transaction data back to the file
                     File.WriteAllText(transactionDataPath, transactionData.ToString());
                     //MessageBox.Show(transactionData.ToString());
@@ -695,6 +700,7 @@ namespace KASIR.OfflineMode
             int discountPerItemPrice = 0;
             int.TryParse(filteredTransaction["discounted_peritem_price"]?.ToString() ?? "0", out discountPerItemPrice);
             discountedPriced = qtytot * discountPerItemPrice;
+            filteredTransaction["is_refund"] = 1; // Ensure subtotal is not less than 0
 
             // Update subtotal and total
             filteredTransaction["subtotal"] = Math.Max(cartsubTotal, 0); // Ensure subtotal is not less than 0

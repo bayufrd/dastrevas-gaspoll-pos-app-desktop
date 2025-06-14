@@ -8,7 +8,6 @@ namespace KASIR.OfflineMode
 {
     public partial class Offline_refund : Form
     {
-        public event EventHandler RefundSuccessful;
         private List<CartDetailTransaction> item = new List<CartDetailTransaction>();
         private List<RefundModel> refundItems = new List<RefundModel>();
         private DataRefundStruk refundData;
@@ -16,10 +15,9 @@ namespace KASIR.OfflineMode
         // Menyimpan data refund ke model sementara
         List<RefundDetailStruk> refundDetailStruks = new List<RefundDetailStruk>();
         public bool ReloadDataInBaseForm { get; private set; }
-        string idTransaksi, cartId, paymentodNgentod = "", transactionDataPath, updatedJson;
+        string idTransaksi, cartId, paymentodNgentod = "";
 
         private readonly string baseOutlet;
-        GetTransactionDetail dataTransaction;
         int urutanRiwayat, Nomortransaks, isrefundall;
         int TotalRefunded = 0;
         public Offline_refund(string transaksiId, int urutanRiwayat)

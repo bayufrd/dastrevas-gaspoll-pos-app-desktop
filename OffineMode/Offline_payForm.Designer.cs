@@ -252,7 +252,6 @@ namespace KASIR.OfflineMode
             txtJumlahPembayaran.Name = "txtJumlahPembayaran";
             txtJumlahPembayaran.Size = new Size(0, 15);
             txtJumlahPembayaran.TabIndex = 3;
-            txtJumlahPembayaran.Click += label3_Click;
             // 
             // panel5
             // 
@@ -263,7 +262,6 @@ namespace KASIR.OfflineMode
             panel5.Name = "panel5";
             panel5.Size = new Size(576, 36);
             panel5.TabIndex = 2;
-            panel5.Paint += panel5_Paint;
             // 
             // label3
             // 
@@ -607,14 +605,12 @@ namespace KASIR.OfflineMode
         private TextBox txtNama;
         private Label label4;
         private Panel panel3;
-        private Button btnTambah;
         private Button btnKurang;
         private Panel panel5;
         private TextBox txtKuantitas;
         private Label label1;
         private Button btnTunai;
         private Label label2;
-        private TextBox txtNotes;
         private TextBox txtCash;
         private Panel panel6;
         private Panel panel12;

@@ -11,14 +11,12 @@ namespace KASIR.OffineMode
     public partial class Offline_saveBill : Form
     {
         private readonly ILogger _log = LoggerService.Instance._log;
-        public event EventHandler MasterPos;
         string cart_id;
-        int row;
         private readonly string baseOutlet;
         private readonly string BaseOutletName;
         public bool ReloadDataInBaseForm { get; private set; }
         private string name, seat;
-        string namaMember, emailMember, hpMember, transactionId;
+        string transactionId;
         int totalTransactions;
         public Offline_saveBill(string cartId, string customerName, string customerSeat)
         {

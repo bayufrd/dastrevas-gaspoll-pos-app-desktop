@@ -15,8 +15,6 @@ namespace KASIR.Komponen
         private ApiService apiService;
         private readonly string baseOutlet;
         private int bedaCash = 0;
-        private DateTime akhirshift;
-        private string IDshift;
         private CancellationTokenSource cts;
 
         // Add these to the class fields

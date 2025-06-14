@@ -411,7 +411,6 @@ namespace KASIR.OffineMode
         private TextBox txtNotes;
         private FontAwesome.Sharp.IconButton button1;
         private FontAwesome.Sharp.IconButton button2;
-        private Label label3;
         private Model.GradientPanel panelComplaint;
         private DataGridView dataGridView1;
         private Label label4;

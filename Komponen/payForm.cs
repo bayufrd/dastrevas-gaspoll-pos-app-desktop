@@ -21,7 +21,6 @@ namespace KASIR.komponen
         string outletID, cartID, totalCart, ttl2;
         private readonly string baseOutlet;
         private string Kakimu;
-        private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
 
         private readonly ILogger _log = LoggerService.Instance._log;
         public bool KeluarButtonClicked { get; private set; }
@@ -30,7 +29,7 @@ namespace KASIR.komponen
         private DataTable originalDataTable;
         int customePrice = 0;
         int SelectedId, totalTransactions;
-        string namaMember, emailMember, hpMember;
+        string hpMember;
 
         public payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat, string name, masterPos masterPosForm)
         {

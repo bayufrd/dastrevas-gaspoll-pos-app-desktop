@@ -19,7 +19,7 @@ namespace KASIR.komponen
         private readonly ILogger _log = LoggerService.Instance._log;
 
         private ApiService apiService;
-        private DataTable originalDataTable, listDataTable;
+        private DataTable listDataTable;
         string totalCart;
         string cartID;
         string customer_name;

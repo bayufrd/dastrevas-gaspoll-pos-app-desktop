@@ -9,8 +9,6 @@ namespace KASIR.OfflineMode
     public partial class Offline_inputPin : Form
     {
         private readonly string baseOutlet;
-        private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
-        string cartId;
         GetTransactionDetail dataTransaction;
         private List<CartDetailTransaction> item = new List<CartDetailTransaction>();
         private List<RefundDetailTransaction> refundDetails = new List<RefundDetailTransaction>();

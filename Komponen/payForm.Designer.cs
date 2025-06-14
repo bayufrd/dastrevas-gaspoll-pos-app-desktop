@@ -607,13 +607,11 @@ namespace KASIR.komponen
         private Label label4;
         private Panel panel3;
         private Button btnTambah;
-        private Button btnKurang;
         private Panel panel5;
         private TextBox txtKuantitas;
         private Label label1;
         private Button btnTunai;
         private Label label2;
-        private TextBox txtNotes;
         private TextBox txtCash;
         private Panel panel6;
         private Panel panel12;

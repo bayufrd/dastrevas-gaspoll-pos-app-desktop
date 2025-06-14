@@ -842,7 +842,6 @@ namespace KASIR.OfflineMode
         private Panel panel9;
         private ComboBox cmbDiskon;
         private Label label1;
-        private Button button6;
         private Label lblDiskon1;
         private FlowLayoutPanel dataGridView3;
         private IconButton listBill1;
@@ -856,7 +855,6 @@ namespace KASIR.OfflineMode
         private PictureBox pictureBox2;
         private DataGridView dataGridView2;
         private TextBox txtCariMenuList;
-        private Model.SButton sButton2;
         private Label label5;
         private Label label4;
         private IconButton lblDetailKeranjang;

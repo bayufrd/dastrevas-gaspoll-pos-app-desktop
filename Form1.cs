@@ -52,12 +52,15 @@ namespace KASIR
             {
                 btnDev.Visible = false;
             }
+
             this.Shown += Form1_Shown; // Tambahkan ini
         }
+
         private void Form1_Shown(object sender, EventArgs e)
         {
             RefreshIconButtons();
         }
+
         private void RefreshIconButtons()
         {
             this.SuspendLayout();
@@ -65,6 +68,7 @@ namespace KASIR
             {
                 RecursiveRefreshIcons(c);
             }
+
             this.ResumeLayout(true);
         }
 
@@ -81,6 +85,7 @@ namespace KASIR
                 RecursiveRefreshIcons(child);
             }
         }
+
         // Tambahkan method ini di Form1
         public static void SetDoubleBufferedForAllControls(Control control)
         {
@@ -136,11 +141,7 @@ namespace KASIR
 
         private async Task LoadOfflineMasterPos()
         {
-            Offline_masterPos offlineMasterPos = new Offline_masterPos
-            {
-                TopLevel = false,
-                Dock = DockStyle.Fill
-            };
+            Offline_masterPos offlineMasterPos = new Offline_masterPos { TopLevel = false, Dock = DockStyle.Fill };
 
             RemoveExistingForm<masterPos>();
             panel1.Controls.Add(offlineMasterPos);
@@ -151,11 +152,7 @@ namespace KASIR
 
         private async Task LoadMasterPos()
         {
-            masterPos m = new masterPos
-            {
-                TopLevel = false,
-                Dock = DockStyle.Fill
-            };
+            masterPos m = new masterPos { TopLevel = false, Dock = DockStyle.Fill };
 
             RemoveExistingForm<Offline_masterPos>();
             panel1.Controls.Add(m);
@@ -174,6 +171,7 @@ namespace KASIR
                 }
             }
         }
+
         public async void UpdateContent()
         {
             ConfigOfflineMode();
@@ -194,6 +192,7 @@ namespace KASIR
             {
                 return;
             }
+
             string outletLogoPath = "icon\\OutletLogo.bmp";
             string tempCopyPath = "icon\\TempCopy.bmp";
 
@@ -208,7 +207,6 @@ namespace KASIR
                     File.Delete(outletLogoPath);
                     File.Copy(tempCopyPath, outletLogoPath);
                 }
-
             }
             catch (IOException ioEx)
             {
@@ -219,6 +217,7 @@ namespace KASIR
                 LoggerUtil.LogError(ex, "Terjadi kesalahan:", ex.Message);
             }
         }
+
         public async Task OpenDualMonitor()
         {
             try
@@ -240,15 +239,17 @@ namespace KASIR
                 p.Start();
 
                 Thread.Sleep(1000);
-
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         private async void StarterApp()
         {
+            SettingsForm c = new SettingsForm(this);
+            await c.LoadConfig();
             await headerOutletName("");
             initPingTest();
 
@@ -261,12 +262,14 @@ namespace KASIR
             {
                 Directory.CreateDirectory(directoryPath);
             }
+
             // Memeriksa apakah file ada
             if (!File.Exists(Config))
             {
                 // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
                 File.WriteAllText(Config, "ON");
             }
+
             string allSettingsData = File.ReadAllText(Config); // Ambil status offline
 
             await Task.Run(async () =>
@@ -285,16 +288,15 @@ namespace KASIR
                 CacheDataApp CacheDataApp = new CacheDataApp(TypeCacheEksekusi);
                 CacheDataApp.Show();
             }
-            SettingsForm c = new SettingsForm(this);
-            await c.LoadConfig();
+
             await headerName();
         }
+
         private async void LoadingAllSetting(string allSettingsData)
         {
             await sendDataSyncPerHours(allSettingsData);
             if (allSettingsData == "ON")
             {
-
                 // Create an instance of transactionFileMover and then call the method
                 var fileMover = new transactionFileMover();
                 await fileMover.refreshCacheTransaction();
@@ -302,7 +304,6 @@ namespace KASIR
 
             SettingsForm clean = new SettingsForm(this);
             await clean.CleanupPrinterSettings();
-
         }
 
         private async Task DualMonitorChecker()
@@ -329,6 +330,7 @@ namespace KASIR
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         public async Task headerOutletName(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return; // Avoid null or empty
@@ -345,6 +347,7 @@ namespace KASIR
                 lblNamaOutlet.Text = "Please Wait.. " + text;
             }
         }
+
         private async Task cekLastUpdaterApp()
         {
             try
@@ -353,6 +356,7 @@ namespace KASIR
                 {
                     return;
                 }
+
                 await headerOutletName("Check Last Update..");
                 findingdownloadpath();
                 string startupPath = AppDomain.CurrentDomain.BaseDirectory;
@@ -379,6 +383,7 @@ namespace KASIR
                     VersionUpdaterApp = File.ReadAllText(filePath);
                     await headerOutletName($"Version Updater {VersionUpdaterApp.ToString()}");
                 }
+
                 await DownloadUpdaterApp();
             }
             catch (Exception ex)
@@ -387,6 +392,7 @@ namespace KASIR
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         private async Task DownloadUpdaterApp()
         {
             try
@@ -409,7 +415,9 @@ namespace KASIR
                     {
                         await headerOutletName("Downloading New Updater...");
                         string fileUrl = "https://raw.githubusercontent.com/bayufrd/update/main/Dastrevas.rar";
-                        string destinationPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), $"{DownloadPath}\\Dastrevas.rar");
+                        string destinationPath =
+                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                                $"{DownloadPath}\\Dastrevas.rar");
 
                         await DownloadFileAsync(httpClient, fileUrl, destinationPath);
                         await ExtractAndUpdateAsync(destinationPath, changeVersion);
@@ -449,11 +457,8 @@ namespace KASIR
                 {
                     foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
                     {
-                        entry.WriteToDirectory(extractDirectory, new ExtractionOptions
-                        {
-                            ExtractFullPath = true,
-                            Overwrite = true
-                        });
+                        entry.WriteToDirectory(extractDirectory,
+                            new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
                     }
                 }
 
@@ -476,7 +481,8 @@ namespace KASIR
         {
             try
             {
-                string cariFolder1 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                string cariFolder1 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    "Downloads");
                 string cariFolder2 = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Downloads";
                 string userName = Environment.UserName;
                 string cariFolder3 = Path.Combine("C:\\Users", userName, "Downloads");
@@ -526,6 +532,7 @@ namespace KASIR
             // Memastikan hanya angka dan maksimal 5 digit
             return Regex.IsMatch(version, @"^\d{1,5}$");
         }
+
         private async Task ConfirmUpdate(string newVersion, string currentVersion)
         {
             try
@@ -542,9 +549,11 @@ namespace KASIR
                     last_updated = GetCurrentTimeInIndonesianFormat()
                 };
                 // Mengubah objek menjadi string JSON
-                string jsonString = JsonConvert.SerializeObject(json, Newtonsoft.Json.Formatting.Indented); // Tidak ada indentasi
+                string jsonString =
+                    JsonConvert.SerializeObject(json, Newtonsoft.Json.Formatting.Indented); // Tidak ada indentasi
                 IApiService apiService = new ApiService();
-                HttpResponseMessage response = await apiService.notifikasiPengeluaran(jsonString, $"/update-confirm?outlet_id={baseOutlet}");
+                HttpResponseMessage response =
+                    await apiService.notifikasiPengeluaran(jsonString, $"/update-confirm?outlet_id={baseOutlet}");
             }
             catch (Exception ex)
             {
@@ -558,6 +567,7 @@ namespace KASIR
             DateTime localTime = TimeZoneInfo.ConvertTime(DateTime.UtcNow, indonesiaTimeZone);
             return localTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         }
+
         private async Task cekVersionAndData()
         {
             try
@@ -592,21 +602,22 @@ namespace KASIR
                         // Ambil data focus outlet
                         string originalUrl = Properties.Settings.Default.BaseAddressDev.ToString();
                         var urlOutletFocus = RemoveApiPrefix(originalUrl);
-                        var focusOutletData = await httpClient.GetStringAsync($"{urlOutletFocus}/update/outletUpdate.txt");
+                        var focusOutletData =
+                            await httpClient.GetStringAsync($"{urlOutletFocus}/update/outletUpdate.txt");
 
                         // Parsing data focus outlet
                         var focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
-                                                           .Split(',')
-                                                           .Select(s => s.Trim()) // Menghapus spasi di sekitar
-                                                           .ToArray();
+                            .Split(',')
+                            .Select(s => s.Trim()) // Menghapus spasi di sekitar
+                            .ToArray();
 
                         // Cek apakah baseOutlet ada dalam focusOutlets
                         if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
                         {
                             shouldUpdate = true;
                             await headerOutletName("Opening Kasir Updater...");
-
                         }
+
                         if (shouldUpdate)
                         {
                             LoggerUtil.LogNetwork("Open Updater");
@@ -622,6 +633,7 @@ namespace KASIR
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         private string RemoveApiPrefix(string url)
         {
             // Memeriksa apakah URL mengandung "api."
@@ -630,8 +642,10 @@ namespace KASIR
                 // Mengganti "api." dengan string kosong
                 return url.Replace("api.", "");
             }
+
             return url; // Kembalikan URL asli jika tidak ada "api."
         }
+
         private async Task OpenUpdaterExe()
         {
             try
@@ -656,10 +670,7 @@ namespace KASIR
 
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
-                    FileName = updatePath,
-                    Arguments = "",
-                    UseShellExecute = true,
-                    Verb = "runas"
+                    FileName = updatePath, Arguments = "", UseShellExecute = true, Verb = "runas"
                 };
 
                 Process.Start(startInfo);
@@ -671,9 +682,11 @@ namespace KASIR
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "Failed to open updater");
-                MessageBox.Show($"Error opening updater: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error opening updater: {ex.Message}", "Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
+
         private async Task<string> GetOutletNameAsync()
         {
             string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
@@ -689,7 +702,8 @@ namespace KASIR
                 if (outletName != null)
                 {
                     // Simpan data ke file jika berhasil mendapatkan nama outlet
-                    await File.WriteAllTextAsync(filePath, JsonConvert.SerializeObject(new { data = new { name = outletName } }));
+                    await File.WriteAllTextAsync(filePath,
+                        JsonConvert.SerializeObject(new { data = new { name = outletName } }));
                     return outletName;
                 }
                 else
@@ -698,6 +712,7 @@ namespace KASIR
                 }
             }
         }
+
         public async Task headerName()
         {
             try
@@ -714,6 +729,7 @@ namespace KASIR
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         public string GetOutletNameFromFile(string filePath)
         {
             string fileContent = File.ReadAllText(filePath);
@@ -732,6 +748,7 @@ namespace KASIR
 
                 return apiResponse["data"]?["name"]?.ToString();
             }
+
             return null;
         }
 
@@ -759,16 +776,14 @@ namespace KASIR
             public static Color color5 = Color.FromArgb(249, 88, 155);
             public static Color color6 = Color.FromArgb(24, 161, 251);
         }
+
         private static Color PickRandomColor()
         {
-            Color[] colors = {
-            RGBColors.color1,
-            RGBColors.color2,
-            RGBColors.color3,
-            RGBColors.color4,
-            RGBColors.color5,
-            RGBColors.color6
-        };
+            Color[] colors =
+            {
+                RGBColors.color1, RGBColors.color2, RGBColors.color3, RGBColors.color4, RGBColors.color5,
+                RGBColors.color6
+            };
 
             int index = random.Next(colors.Length);
             return colors[index];
@@ -797,10 +812,9 @@ namespace KASIR
                 //Current Child Form Icon
                 iconCurrentChildForm.IconChar = currentBtn.IconChar;
                 iconCurrentChildForm.IconColor = color;
-
-
             }
         }
+
         private void DisableButton()
         {
             if (currentBtn != null)
@@ -816,19 +830,18 @@ namespace KASIR
 
         private async void button6_Click(object sender, EventArgs e)
         {
-            Color randomColor = PickRandomColor();  // Pick a random color for button
-            ActivateButton(sender, randomColor);    // Activate the button
+            Color randomColor = PickRandomColor(); // Pick a random color for button
+            ActivateButton(sender, randomColor); // Activate the button
 
             try
             {
                 // Read the OfflineMode status
                 string config = "setting\\OfflineMode.data";
-                string allSettingsData = File.ReadAllText(config);  // Get the current OfflineMode setting
+                string allSettingsData = File.ReadAllText(config); // Get the current OfflineMode setting
 
                 // Check if OfflineMode is ON
                 if (allSettingsData == "ON")
                 {
-
                     btnShiftLaporan.Enabled = false;
                     iconButton1.Enabled = false;
                     iconButton2.Enabled = false;
@@ -884,9 +897,11 @@ namespace KASIR
             catch (Exception ex)
             {
                 // Handle any exceptions that occur during the process
-                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
+
         private void link_Click(object sender, EventArgs e)
         {
             try
@@ -895,11 +910,7 @@ namespace KASIR
                 string url = "http://cms.gaspollmanagementcenter.com";
 
                 // Use the default browser to open the URL
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = url,
-                    UseShellExecute = true
-                });
+                Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
             }
             catch (Exception ex)
             {
@@ -919,21 +930,22 @@ namespace KASIR
             {
                 // Read the OfflineMode status
                 string config = "setting\\OfflineMode.data";
-                string allSettingsData = File.ReadAllText(config);  // Get the current OfflineMode setting
+                string allSettingsData = File.ReadAllText(config); // Get the current OfflineMode setting
 
                 // Check if OfflineMode is ON
                 if (allSettingsData == "ON")
                 {
-
                     btnShiftLaporan.Enabled = false;
                     iconButton1.Enabled = false;
                     iconButton2.Enabled = false;
                     Offline_successTransaction c = new Offline_successTransaction();
                     if (c == null)
                     {
-                        MessageBox.Show("Terjadi kesalah coba restart aplikasi", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("Terjadi kesalah coba restart aplikasi", "Error", MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
                         return;
                     }
+
                     c.Dock = DockStyle.Fill;
                     panel1.Controls.Add(c);
                     c.BringToFront();
@@ -953,34 +965,37 @@ namespace KASIR
                     {
                         return;
                     }
+
                     c.Dock = DockStyle.Fill;
                     panel1.Controls.Add(c);
                     c.BringToFront();
                     c.Show();
                     lblTitleChildForm.Text = "Transactions - History Transactions";
                     Form background = CreateOverlayForm();
-
                 }
-
             }
             catch (NullReferenceException ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
 
-                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
         //Drag Form
         [DllImport("user32.DLL", EntryPoint = "ReleaseCapture")]
         private extern static void ReleaseCapture();
+
         [DllImport("user32.DLL", EntryPoint = "SendMessage")]
         private extern static void SendMessage(System.IntPtr hWnd, int wMsg, int wParam, int lParam);
+
         private void panelTitleBar_MouseDown(object sender, MouseEventArgs e)
         {
             ReleaseCapture();
             SendMessage(this.Handle, 0x112, 0xf012, 0);
         }
+
         //Close-Maximize-Minimize
         private async void btnExit_Click(object sender, EventArgs e)
         {
@@ -989,6 +1004,7 @@ namespace KASIR
 
             Application.Exit();
         }
+
         private void btnMaximize_Click(object sender, EventArgs e)
         {
             if (WindowState == FormWindowState.Normal)
@@ -996,10 +1012,12 @@ namespace KASIR
             else
                 WindowState = FormWindowState.Normal;
         }
+
         private void btnMinimize_Click(object sender, EventArgs e)
         {
             WindowState = FormWindowState.Minimized;
         }
+
         //Remove transparent border in maximized state
         private void FormMainMenu_Resize(object sender, EventArgs e)
         {
@@ -1010,6 +1028,7 @@ namespace KASIR
             else
                 FormBorderStyle = FormBorderStyle.Sizable;
         }
+
         private void btnEditSettings_Click(object sender, EventArgs e)
         {
             Form background = CreateOverlayForm();
@@ -1061,7 +1080,7 @@ namespace KASIR
             {
                 // Read the OfflineMode status
                 string config = "setting\\OfflineMode.data";
-                string allSettingsData = File.ReadAllText(config);  // Get the current OfflineMode setting
+                string allSettingsData = File.ReadAllText(config); // Get the current OfflineMode setting
 
                 // Check if OfflineMode is ON
                 if (allSettingsData != "ON")
@@ -1110,6 +1129,7 @@ namespace KASIR
                 SyncTimer.Enabled = true;
             }
         }
+
         public async Task sendDataSyncPerHours(string allSettingsData)
         {
             // Check if OfflineMode is ON
@@ -1135,7 +1155,9 @@ namespace KASIR
             SignalPing.Text = text;
             SignalPing.IconColor = color;
         }
+
         public static readonly object FileLock = new object();
+
         private async void btnTestSpeed_Click(object sender, EventArgs e)
         {
             SignalPing.Text = "Testing...";
@@ -1143,14 +1165,12 @@ namespace KASIR
 
             try
             {
-
                 int ping = await TestPing("8.8.8.8"); // Ping ke Google DNS
                 UpdatePingColor(ping); // Perbarui warna berdasarkan nilai ping
 
                 SignalPing.Text = $"{ping} ms";
                 await Task.Delay(2000);
                 UpdatePingLabel(Color.White, "Test Ping");
-
             }
             catch (Exception ex)
             {
@@ -1159,6 +1179,7 @@ namespace KASIR
                 UpdatePingLabel(Color.Red, $"Error: {ex.Message}");
             }
         }
+
         private async Task<int> TestPing(string host)
         {
             Ping pingSender = new Ping();
@@ -1198,6 +1219,7 @@ namespace KASIR
                 UpdatePingLabel(Color.Red, $"{ping} ms - Poor");
             }
         }
+
         public static void OpenApplicationOnSecondMonitor(string path)
         {
             // Get the screen dimensions
@@ -1241,7 +1263,8 @@ namespace KASIR
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
             finally
             {
@@ -1270,6 +1293,7 @@ namespace KASIR
             await onlineTransaction.LoadData();
             lblTitleChildForm.Text = "Shift Report (Online)";
         }
+
         private Form CreateOverlayForm()
         {
             return new Form
@@ -1284,9 +1308,9 @@ namespace KASIR
                 ShowInTaskbar = false
             };
         }
+
         private void btnContact_Click(object sender, EventArgs e)
         {
-
             Form background = CreateOverlayForm();
 
             using (Offline_Complaint c = new Offline_Complaint())

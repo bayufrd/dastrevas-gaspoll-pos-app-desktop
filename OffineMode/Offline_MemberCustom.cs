@@ -5,11 +5,9 @@ namespace KASIR.komponen
 {
     public partial class Offline_MemberCustom : Form
     {
-        private masterPos _masterPos;
         private masterPos MasterPosForm { get; set; }
         private List<System.Windows.Forms.Button> radioButtonsList = new List<System.Windows.Forms.Button>();
         public string btnPayType;
-        string outletID, cartID, totalCart, ttl2;
         private readonly string baseOutlet;
         private readonly ILogger _log = LoggerService.Instance._log;
         public bool KeluarButtonClicked { get; private set; }

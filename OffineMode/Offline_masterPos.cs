@@ -33,7 +33,6 @@ namespace KASIR.OfflineMode
         private readonly string baseOutlet;
         private readonly string baseUrl;
         private BindingSource bindingSource = new BindingSource();
-        private DataTable dataTable2;
         List<DataDiscountCart> dataDiscountListCart;
         int subTotalPrice;
         Dictionary<Menu, Image> menuImageDictionary = new Dictionary<Menu, Image>();
@@ -80,8 +79,6 @@ namespace KASIR.OfflineMode
             this.Shown += MasterPos_ShownWrapper;
 
             cmbFilter.SelectedIndexChanged += cmbFilter_SelectedIndexChanged;
-
-            bindingSource.DataSource = dataTable2;
 
             cmbFilter.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbFilter.DrawMode = DrawMode.OwnerDrawVariable;

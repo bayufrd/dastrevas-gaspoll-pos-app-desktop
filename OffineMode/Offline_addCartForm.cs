@@ -28,7 +28,6 @@ namespace KASIR.OfflineMode
         string namelabel;
         int servingtypeall;
         string folder = "DT-Cache\\addCartForm";
-        int lblprice, lblsubtotal, lbltotal;
         public Offline_addCartForm(string id, string name, int selectedServingTypeall)
         {
             baseOutlet = Properties.Settings.Default.BaseOutlet;

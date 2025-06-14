@@ -17,7 +17,6 @@ namespace KASIR.OfflineMode
         public bool ReloadDataInBaseForm { get; private set; }
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
-        GetTransactionDetail dataTransaction;
         string cart_id;
         private readonly ILogger _log = LoggerService.Instance._log;
         public Offline_deleteForm(string cartId)

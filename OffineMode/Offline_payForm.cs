@@ -8,6 +8,7 @@ using KASIR.Printer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
+
 namespace KASIR.OfflineMode
 {
     public partial class Offline_payForm : Form
@@ -19,18 +20,17 @@ namespace KASIR.OfflineMode
         string outletID, cartID, totalCart, ttl2;
         private readonly string baseOutlet;
         private string Kakimu;
-        private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
 
         private readonly ILogger _log = LoggerService.Instance._log;
         public bool KeluarButtonClicked { get; private set; }
 
         public bool ReloadDataInBaseForm { get; private set; }
-        private DataTable originalDataTable, listDataTable;
         int customePrice = 0;
         int SelectedId, totalTransactions;
-        string namaMember, hpMember, transactionId;
+        string namaMember, transactionId;
 
-        public Offline_payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat, string name, Offline_masterPos masterPosForm)
+        public Offline_payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat,
+            string name, Offline_masterPos masterPosForm)
         {
             InitializeComponent();
             btnSimpan.Enabled = false;
@@ -92,6 +92,7 @@ namespace KASIR.OfflineMode
             {
                 button.Click += RadioButton_Click;
             }
+
             cmbPayform.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbPayform.DrawMode = DrawMode.OwnerDrawVariable;
             cmbPayform.DrawItem += CmbPayform_DrawItem;
@@ -110,6 +111,7 @@ namespace KASIR.OfflineMode
             // Attach the KeyPress event handler
             txtSeat.KeyPress += new KeyPressEventHandler(txtNumberOnly_KeyPress);
         }
+
         // KeyPress event handler to allow numbers only
         private void txtNumberOnly_KeyPress(object sender, KeyPressEventArgs e)
         {
@@ -119,10 +121,12 @@ namespace KASIR.OfflineMode
                 e.Handled = true; // Prevent non-numeric characters
             }
         }
+
         private async void loadFooterStruct()
         {
             Kakimu = await File.ReadAllTextAsync("setting\\FooterStruk.data");
         }
+
         private void loadCountingStruct()
         {
             try
@@ -168,7 +172,11 @@ namespace KASIR.OfflineMode
         {
             Random random = new Random();
 
-            string[] consonants = { "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z" };
+            string[] consonants =
+            {
+                "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y",
+                "z"
+            };
             string[] vowels = { "a", "e", "i", "o", "u" };
 
             string name = "";
@@ -178,14 +186,15 @@ namespace KASIR.OfflineMode
             {
                 for (int i = 0; i < nameLength; i++)
                 {
-                    name += i % 2 == 0 ? consonants[random.Next(consonants.Length)] : vowels[random.Next(vowels.Length)];
+                    name += i % 2 == 0
+                        ? consonants[random.Next(consonants.Length)]
+                        : vowels[random.Next(vowels.Length)];
                 }
 
                 name = char.ToUpper(name[0]) + name.Substring(1);
                 txtNama.Text = name + "(Auto)";
                 txtSeat.Text = "0";
             }
-
         }
 
         private async void LoadDataPaymentType()
@@ -194,7 +203,8 @@ namespace KASIR.OfflineMode
             {
                 if (File.Exists("DT-Cache" + "\\LoadDataPayment_" + "Outlet_" + baseOutlet + ".data"))
                 {
-                    string json = File.ReadAllText("DT-Cache" + "\\LoadDataPayment_" + "Outlet_" + baseOutlet + ".data");
+                    string json =
+                        File.ReadAllText("DT-Cache" + "\\LoadDataPayment_" + "Outlet_" + baseOutlet + ".data");
                     PaymentTypeModel payment = JsonConvert.DeserializeObject<PaymentTypeModel>(json);
                     List<PaymentType> data = payment.data;
                     cmbPayform.DataSource = data;
@@ -221,8 +231,8 @@ namespace KASIR.OfflineMode
             {
                 btnSimpan.Enabled = true;
             }
-
         }
+
         private void CmbPayform_DrawItem(object sender, DrawItemEventArgs e)
         {
             if (e.Index >= 0)
@@ -234,7 +244,9 @@ namespace KASIR.OfflineMode
                     int verticalMargin = 5;
                     string itemText = cmbPayform.GetItemText(cmbPayform.Items[e.Index]);
 
-                    e.Graphics.DrawString(itemText, e.Font, Brushes.Black, new Rectangle(e.Bounds.Left, e.Bounds.Top + verticalMargin, e.Bounds.Width, e.Bounds.Height - verticalMargin));
+                    e.Graphics.DrawString(itemText, e.Font, Brushes.Black,
+                        new Rectangle(e.Bounds.Left, e.Bounds.Top + verticalMargin, e.Bounds.Width,
+                            e.Bounds.Height - verticalMargin));
 
                     e.DrawFocusRectangle();
                 }
@@ -265,14 +277,17 @@ namespace KASIR.OfflineMode
                     string fulus = Regex.Replace(txtCash.Text, "[^0-9]", "");
                     if (string.IsNullOrEmpty(txtNama.Text))
                     {
-                        MessageBox.Show("Masukan nama pelanggan", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Masukan nama pelanggan", "Gaspol", MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
                         ResetButtonState();
                         return;
                     }
+
                     int seatAmount;
                     if (!int.TryParse(txtSeat.Text, out seatAmount))
                     {
-                        MessageBox.Show("Masukan seat pelanggan dengan benar", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Masukan seat pelanggan dengan benar", "Gaspol", MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
                         ResetButtonState();
                         return;
                     }
@@ -280,7 +295,8 @@ namespace KASIR.OfflineMode
                     fulus = Regex.Replace(txtCash.Text, "[^0-9]", "");
                     if (string.IsNullOrWhiteSpace(fulus))
                     {
-                        MessageBox.Show("Masukkan harga dengan benar.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Masukkan harga dengan benar.", "Gaspol", MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
                         ResetButtonState();
                         return;
                     }
@@ -288,7 +304,8 @@ namespace KASIR.OfflineMode
                     int fulusAmount;
                     if (!int.TryParse(fulus, out fulusAmount))
                     {
-                        MessageBox.Show("Harga tidak valid.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Harga tidak valid.", "Gaspol", MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
                         ResetButtonState();
                         return;
                     }
@@ -296,21 +313,24 @@ namespace KASIR.OfflineMode
                     int totalCartAmount;
                     if (!int.TryParse(totalCart, out totalCartAmount))
                     {
-                        MessageBox.Show("Harga gagal diolah.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Harga gagal diolah.", "Gaspol", MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
                         ResetButtonState();
                         return;
                     }
 
                     if (fulusAmount < totalCartAmount)
                     {
-                        MessageBox.Show("Uang anda belum cukup.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Uang anda belum cukup.", "Gaspol", MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
                         ResetButtonState();
                         return;
                     }
 
                     if (cmbPayform.Text == "Pilih Tipe Pembayaran")
                     {
-                        MessageBox.Show("Pilih tipe pembayaran", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Pilih tipe pembayaran", "Gaspol", MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
                         ResetButtonState();
                         return;
                     }
@@ -337,6 +357,7 @@ namespace KASIR.OfflineMode
                     {
                         cartData["canceled_items"] = new JArray();
                     }
+
                     var cancelDetails = cartData["canceled_items"] as JArray;
 
                     string firstCartDetailId = cartDetails?.FirstOrDefault()?["cart_detail_id"].ToString();
@@ -358,6 +379,7 @@ namespace KASIR.OfflineMode
                         // Jika parsing gagal, berikan nilai default atau tampilkan error
                         formattedreceiptMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                     }
+
                     string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{formattedreceiptMaker}";
                     string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                     string transaction_ref_sent = cartData["transaction_ref"].ToString();
@@ -365,21 +387,31 @@ namespace KASIR.OfflineMode
                     if (!string.IsNullOrEmpty(cartData["transaction_ref_split"]?.ToString()))
                     {
                         transaction_ref_splitted = cartData["transaction_ref_split"]?.ToString();
-
                     }
+
                     int edited_sync = 0;
                     int sent_sync = 0;
                     int savebill = 0;
-                    if (!string.IsNullOrEmpty(cartData["is_savebill"]?.ToString()) && int.Parse(cartData["is_savebill"]?.ToString()) == 1)
+                    if (!string.IsNullOrEmpty(cartData["is_savebill"]?.ToString()) &&
+                        int.Parse(cartData["is_savebill"]?.ToString()) == 1)
                     {
                         edited_sync = 1;
                         sent_sync = 0;
                         savebill = 1;
                     }
-                    int discount_idConv = cartData["discount_id"]?.ToString() != null ? int.Parse(cartData["discount_id"]?.ToString()) : 0;
-                    string discount_codeConv = cartData["discount_code"]?.ToString() != null ? cartData["discount_code"]?.ToString() : null;
-                    string discounts_valueConv = cartData["discounts_value"]?.ToString() != null ? cartData["discounts_value"]?.ToString() : null; // Null if no discount value
-                    string discounts_is_percentConv = cartData["discounts_is_percent"]?.ToString() != null ? cartData["discounts_is_percent"]?.ToString() : null;
+
+                    int discount_idConv = cartData["discount_id"]?.ToString() != null
+                        ? int.Parse(cartData["discount_id"]?.ToString())
+                        : 0;
+                    string discount_codeConv = cartData["discount_code"]?.ToString() != null
+                        ? cartData["discount_code"]?.ToString()
+                        : null;
+                    string discounts_valueConv = cartData["discounts_value"]?.ToString() != null
+                        ? cartData["discounts_value"]?.ToString()
+                        : null; // Null if no discount value
+                    string discounts_is_percentConv = cartData["discounts_is_percent"]?.ToString() != null
+                        ? cartData["discounts_is_percent"]?.ToString()
+                        : null;
 
                     var qtyTotal = cartDetails.Sum(item => (int)item["qty"]);
                     int discounted_price1 = subtotalCart - totalCartAmount;
@@ -391,17 +423,20 @@ namespace KASIR.OfflineMode
                         receipt_number = receipt_numberfix,
                         transaction_ref = transaction_ref_sent,
                         transaction_ref_split = transaction_ref_splitted,
-                        invoice_number = $"INV-{invoiceMaker}{paymentTypedId}",  // Custom invoice number with formatted date
+                        invoice_number =
+                            $"INV-{invoiceMaker}{paymentTypedId}", // Custom invoice number with formatted date
                         invoice_due_date = invoiceDue.ToString(), // Adjust due date as needed
                         payment_type_id = paymentTypedId,
-                        payment_type_name = paymentTypeName, // No need for .ToString() if paymentTypeName is already a string
+                        payment_type_name =
+                            paymentTypeName, // No need for .ToString() if paymentTypeName is already a string
                         customer_name = txtNama.Text,
                         customer_seat = int.Parse(txtSeat.Text),
                         customer_cash = fulusAmount,
                         customer_change = change,
                         total = totalCartAmount,
                         subtotal = subtotalCart, // You can replace this with actual subtotal if available
-                        created_at = receiptMaker ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                        created_at =
+                            receiptMaker ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
                         is_refund = 0,
@@ -446,20 +481,25 @@ namespace KASIR.OfflineMode
 
                     // Serialize and save back to transaction.data
                     var newTransactionData = new JObject { { "data", transactionDataArray } };
-                    File.WriteAllText(transactionDataPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
-                    convertData(fulus, change, paymentTypeName, receipt_numberfix, invoiceDue, discount_idConv, discount_codeConv, discounts_valueConv, discounts_is_percentConv);
+                    File.WriteAllText(transactionDataPath,
+                        JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
+                    convertData(fulus, change, paymentTypeName, receipt_numberfix, invoiceDue, discount_idConv,
+                        discount_codeConv, discounts_valueConv, discounts_is_percentConv);
                     //HandleSuccessfulTransaction(response, fulus);
                 }
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show($"Terjadi kesalahan, silakan coba lagi.{ex}", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Terjadi kesalahan, silakan coba lagi.{ex}", "Gaspol", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 ResetButtonState();
             }
         }
 
-        private async Task convertData(string fulus, int change, string paymentTypeName, string receipt_numberfix, string invoiceDue, int discount_idConv, string discount_codeConv, string discounts_valueConv, string discounts_is_percentConv)
+        private async Task convertData(string fulus, int change, string paymentTypeName, string receipt_numberfix,
+            string invoiceDue, int discount_idConv, string discount_codeConv, string discounts_valueConv,
+            string discounts_is_percentConv)
         {
             try
             {
@@ -604,9 +644,7 @@ namespace KASIR.OfflineMode
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
             }
-
         }
 
         private async Task HandleSuccessfulTransaction(string response, string fulus)
@@ -614,7 +652,8 @@ namespace KASIR.OfflineMode
             try
             {
                 PrinterModel printerModel = new PrinterModel();
-                GetStrukCustomerTransaction menuModel = JsonConvert.DeserializeObject<GetStrukCustomerTransaction>(response);
+                GetStrukCustomerTransaction menuModel =
+                    JsonConvert.DeserializeObject<GetStrukCustomerTransaction>(response);
 
                 if (menuModel != null && menuModel.data != null)
                 {
@@ -624,10 +663,14 @@ namespace KASIR.OfflineMode
                     List<KitchenAndBarCanceledItems> kitchenBarCanceled = data.kitchenBarCanceledItems;
 
                     List<CartDetailStrukCustomerTransaction> cartDetails = data.cart_details;
-                    List<KitchenAndBarCartDetails> kitchenItems = kitchenBarCart.Where(cd => cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList();
-                    List<KitchenAndBarCartDetails> barItems = kitchenBarCart.Where(cd => cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList();
-                    List<KitchenAndBarCanceledItems> canceledKitchenItems = kitchenBarCanceled.Where(cd => cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList();
-                    List<KitchenAndBarCanceledItems> canceledBarItems = kitchenBarCanceled.Where(cd => cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList();
+                    List<KitchenAndBarCartDetails> kitchenItems = kitchenBarCart
+                        .Where(cd => cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList();
+                    List<KitchenAndBarCartDetails> barItems = kitchenBarCart
+                        .Where(cd => cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList();
+                    List<KitchenAndBarCanceledItems> canceledKitchenItems = kitchenBarCanceled
+                        .Where(cd => cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList();
+                    List<KitchenAndBarCanceledItems> canceledBarItems = kitchenBarCanceled
+                        .Where(cd => cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList();
 
                     if (btnSimpan != null)
                     {
@@ -727,7 +770,8 @@ namespace KASIR.OfflineMode
                 string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs");
                 Directory.CreateDirectory(printJobsDir);
 
-                string filename = Path.Combine(printJobsDir, $"PrintJob_{job.TransactionNumber}_{DateTime.Now.Ticks}.json");
+                string filename = Path.Combine(printJobsDir,
+                    $"PrintJob_{job.TransactionNumber}_{DateTime.Now.Ticks}.json");
                 File.WriteAllText(filename, JsonConvert.SerializeObject(job));
             }
             catch (Exception ex)
@@ -785,7 +829,6 @@ namespace KASIR.OfflineMode
 
             foreach (var button in radioButtonsList)
             {
-
                 button.BackColor = SystemColors.ControlDark;
             }
 
@@ -797,7 +840,6 @@ namespace KASIR.OfflineMode
 
         private void panel2_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
         private void btnKeluar_Click(object sender, EventArgs e)
@@ -807,38 +849,20 @@ namespace KASIR.OfflineMode
 
             this.Close();
         }
-        private ApiService apiService;
-
-
-
-        private void label3_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void panel5_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
 
         private void btnSetPrice1_Click(object sender, EventArgs e)
         {
             txtCash.Text = Regex.Replace(btnSetPrice1.Text, "[^0-9]", "");
-            ////LoggerUtil.LogPrivateMethod(nameof(btnSetPrice1_Click));
-
         }
+
         private void btnSetPrice2_Click_1(object sender, EventArgs e)
         {
             txtCash.Text = Regex.Replace(btnSetPrice2.Text, "[^0-9]", "");
-            ////LoggerUtil.LogPrivateMethod(nameof(btnSetPrice2_Click_1));
-
         }
 
         private void btnSetPrice3_Click(object sender, EventArgs e)
         {
             txtCash.Text = Regex.Replace(btnSetPrice3.Text, "[^0-9]", "");
-            ////LoggerUtil.LogPrivateMethod(nameof(btnSetPrice3_Click));
-
         }
 
         private void txtCash_TextChanged(object sender, EventArgs e)
@@ -849,7 +873,8 @@ namespace KASIR.OfflineMode
             {
                 number = decimal.Parse(txtCash.Text, System.Globalization.NumberStyles.Currency);
                 // Menghitung nilai kembalian
-                int KembalianSekarang = Int32.Parse(Regex.Replace(txtCash.Text, "[^0-9]", "")) - Int32.Parse(Regex.Replace(ttl2, "[^0-9]", ""));
+                int KembalianSekarang = Int32.Parse(Regex.Replace(txtCash.Text, "[^0-9]", "")) -
+                                        Int32.Parse(Regex.Replace(ttl2, "[^0-9]", ""));
 
                 // Mengatur format budaya Indonesia
                 CultureInfo culture = new CultureInfo("id-ID");
@@ -868,8 +893,10 @@ namespace KASIR.OfflineMode
                     txtCash.Text = txtCash.Text.Substring(0, txtCash.Text.Length - 1);
                     txtCash.SelectionStart = txtCash.Text.Length; // Move the cursor to the end
                 }
+
                 return;
             }
+
             txtCash.Text = number.ToString("#,#");
             txtCash.SelectionStart = txtCash.Text.Length;
         }
@@ -946,7 +973,6 @@ namespace KASIR.OfflineMode
 
         private void txtSeat_TextChanged(object sender, EventArgs e)
         {
-
         }
     }
 }

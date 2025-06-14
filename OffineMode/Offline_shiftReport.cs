@@ -32,6 +32,7 @@ namespace KASIR.Komponen
             lblNotifikasi.Visible = false;
             InitializeLoadingUI();
             txtNamaKasir.Text = "Dastrevas (AutoFill)";
+            txtActualCash.Text = "0";
             Disposed += (s, e) =>
             {
                 cts?.Cancel();
@@ -258,9 +259,9 @@ namespace KASIR.Komponen
 
                     // Serialize dan simpan kembali ke shiftData.data
                     JObject newTransactionData = new() { { "data", shiftDataArray } };
-                    File.WriteAllText(shiftPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
-
                     await GenerateShiftReport(generateIDshift);
+
+                    File.WriteAllText(shiftPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
                 }
             }
             catch (TaskCanceledException ex)
@@ -695,7 +696,10 @@ namespace KASIR.Komponen
         {
             // Correct file path
             string filePath = $"DT-Cache\\Transaction\\ShiftReport\\shiftReport-{id}.data";
-
+            if (!File.Exists(filePath))
+            {
+                return;
+            }
             // Read the file content
             string fileContent = await File.ReadAllTextAsync(filePath);
 

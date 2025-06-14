@@ -1,16 +1,19 @@
 ﻿using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
+using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+
 namespace KASIR
 {
     public class Util
     {
+        private readonly string baseOutlet = Settings.Default.BaseOutlet;
+
         // Your other utility functions here
-        blur background = new blur();
-        private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet;
-        string outletName;
+        private readonly blur background = new();
+        private string outletName;
 
         public void ShowBlurredDialog(Form formToShow)
         {
@@ -28,29 +31,31 @@ namespace KASIR
             formToShow.ShowDialog();
             background.Dispose();
         }
+
         public string GetOutletNameFromFile(string filePath)
         {
             string fileContent = File.ReadAllText(filePath);
-            var outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
+            JObject? outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
             return outletData["data"]?["name"]?.ToString();
         }
+
         public async Task<string> GetOutletNameFromApi()
         {
             IApiService apiService = new ApiService();
             string response = await apiService.CekShift("/outlet/" + baseOutlet);
             if (response != null)
             {
-                var apiResponse = JsonConvert.DeserializeObject<JObject>(response);
+                JObject? apiResponse = JsonConvert.DeserializeObject<JObject>(response);
                 File.WriteAllText($"DT-Cache\\DataOutlet{baseOutlet}.data", JsonConvert.SerializeObject(response));
 
                 return apiResponse["data"]?["name"]?.ToString();
             }
+
             return null;
         }
 
         public async void sendLogTelegramBy(Exception ex, string message, params object[] properties)
         {
-
             IApiService apiService = new ApiService();
 
 
@@ -72,19 +77,20 @@ namespace KASIR
                 }
                 else
                 {
-                    outletName = Properties.Settings.Default.BaseOutletName.ToString();
+                    outletName = Settings.Default.BaseOutletName;
                 }
             }
 
 
-            string outletID = Properties.Settings.Default.BaseOutlet.ToString();
+            string outletID = Settings.Default.BaseOutlet;
 
-            using (var client = new HttpClient())
+            using (HttpClient client = new())
             {
                 string botToken = "6909601463:AAHnKWEKqlpL1NGRkzRpXVnDgHoVtJtrqo0";
                 DateTime currentDateTime = DateTime.Now;
                 string datetimeStamp = currentDateTime.ToString("yyyy-MM-dd HH:mm:ss");
-                string messageWithDatetime = $"Error Outlet ID: {outletID}\nOurlet Name: {outletName}\n[{datetimeStamp}] \n{message} \n{properties} \n{ex}";
+                string messageWithDatetime =
+                    $"Error Outlet ID: {outletID}\nOurlet Name: {outletName}\n[{datetimeStamp}] \n{message} \n{properties} \n{ex}";
 
                 // Replace these with your actual chat IDs
                 long chatId1 = 6668065856;
@@ -100,20 +106,21 @@ namespace KASIR
                 // Send to the third chat ID
                 await SendMessageToTelegram(client, botToken, chatId3, messageWithDatetime);
             }
-
         }
+
         private async Task SendMessageToTelegram(HttpClient client, string botToken, long chatId, string message)
         {
             try
             {
                 // Build the API URL
-                string apiUrl = $"https://api.telegram.org/bot{botToken}/sendMessage?chat_id={chatId}&text={Uri.EscapeDataString(message)}";
+                string apiUrl =
+                    $"https://api.telegram.org/bot{botToken}/sendMessage?chat_id={chatId}&text={Uri.EscapeDataString(message)}";
 
                 // Create an HttpRequestMessage
-                var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
+                HttpRequestMessage request = new(HttpMethod.Post, apiUrl);
 
                 // Send the request
-                var response = await client.SendAsync(request);
+                HttpResponseMessage response = await client.SendAsync(request);
 
                 // Check if the request was successful
                 response.EnsureSuccessStatusCode();
@@ -130,33 +137,30 @@ namespace KASIR
 
         public async void sendLogTelegramNetworkError(string message)
         {
-
             IApiService apiService = new ApiService();
 
             string response = await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
             if (response != null)
             {
-
-
                 GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
 
                 DataShift datas = cekShift.data;
-                outletName = datas.outlet_name.ToString();
-
-
+                outletName = datas.outlet_name;
             }
             else
             {
-                outletName = Properties.Settings.Default.BaseOutletName.ToString();
+                outletName = Settings.Default.BaseOutletName;
             }
-            string outletID = Properties.Settings.Default.BaseOutlet.ToString();
 
-            using (var client = new HttpClient())
+            string outletID = Settings.Default.BaseOutlet;
+
+            using (HttpClient client = new())
             {
                 string botToken = "6909601463:AAHnKWEKqlpL1NGRkzRpXVnDgHoVtJtrqo0";
                 DateTime currentDateTime = DateTime.Now;
                 string datetimeStamp = currentDateTime.ToString("yyyy-MM-dd HH:mm:ss");
-                string messageWithDatetime = $"Error Network Outlet ID: {outletID}\nOurlet Name: {outletName}\n[{datetimeStamp}] \n{message}";
+                string messageWithDatetime =
+                    $"Error Network Outlet ID: {outletID}\nOurlet Name: {outletName}\n[{datetimeStamp}] \n{message}";
 
                 // Replace these with your actual chat IDs
                 long chatId1 = 6668065856;
@@ -166,12 +170,7 @@ namespace KASIR
 
                 // Send to the second chat ID
                 await SendMessageToTelegram(client, botToken, chatId2, messageWithDatetime);
-
             }
-
         }
-
-
-
     }
 }

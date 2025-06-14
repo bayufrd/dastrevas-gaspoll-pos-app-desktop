@@ -52,10 +52,8 @@ namespace KASIR.komponen
         private readonly Dictionary<Menu, Image> menuImageDictionary = new();
 
         private Dictionary<string, Control> nameToControlMap;
+        // Declare a private field to store the original data 
 
-        //untuk search
-        private Dictionary<string, DataGridViewRow> nameToRowMap;
-        // Declare a private field to store the original data source
 
         // Create two separate FlowLayoutPanels
         private List<Panel> originalPanelControls;

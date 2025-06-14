@@ -2,6 +2,7 @@
 using System.Drawing.Printing;
 using System.Management;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using InTheHand.Net;
@@ -14,26 +15,29 @@ namespace KASIR.Printer
     public class PrinterModel
     {
         private readonly string baseDirectory;
-        //private readonly Dictionary<string, string> printerSettings = new Dictionary<string, string>();
-        private readonly Dictionary<string, string> printerSettings = new Dictionary<string, string>();
-        private readonly Dictionary<string, bool> checkBoxSettings = new Dictionary<string, bool>();
+        private readonly Dictionary<string, bool> checkBoxSettings = new();
+
         private readonly Graphics graphics;
+
+        //private readonly Dictionary<string, string> printerSettings = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> printerSettings = new();
 
         // Member variable to store the Kategori value
         private string _kategori;
+        private readonly int logoCredit = 75; //default 75 PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit);
 
         //init size logo struk
-        int logoSize = 250; //default 250 PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
-        int logoCredit = 75; //default 75 PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit);
+        private readonly int logoSize = 250; //default 250 PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
+
         public PrinterModel()
         {
-
             baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "setting");
             if (!Directory.Exists(baseDirectory))
             {
                 Directory.CreateDirectory(baseDirectory);
             }
         }
+
         public async Task SavePrinterBluetoothMACSettings(string comboBoxName, string printerId)
         {
             printerSettings[comboBoxName] = printerId;
@@ -45,6 +49,7 @@ namespace KASIR.Printer
             printerSettings[comboBoxName] = printerId;
             await SaveSettingsToFile("printerSettings.data", SerializePrinterSettings());
         }
+
         public async Task DelPrinterSettings(string comboBoxName)
         {
             if (printerSettings.ContainsKey(comboBoxName))
@@ -53,6 +58,7 @@ namespace KASIR.Printer
                 await SaveSettingsToFile("printerSettings.data", SerializePrinterSettings());
             }
         }
+
         public async Task<string?> LoadPrinterSettingsAsync(string comboBoxName)
         {
             await LoadAllPrinterSettings();
@@ -60,6 +66,7 @@ namespace KASIR.Printer
             {
                 return printerId;
             }
+
             return null;
         }
 
@@ -76,6 +83,7 @@ namespace KASIR.Printer
             {
                 return isChecked;
             }
+
             return false;
         }
 
@@ -87,11 +95,12 @@ namespace KASIR.Printer
 
         public string SerializePrinterSettings()
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (var kvp in printerSettings)
+            StringBuilder sb = new();
+            foreach (KeyValuePair<string, string> kvp in printerSettings)
             {
                 sb.AppendLine($"{kvp.Key}:{kvp.Value}");
             }
+
             return sb.ToString();
         }
 
@@ -111,13 +120,13 @@ namespace KASIR.Printer
 
         public async Task<List<PrinterItem>> GetAvailablePrinters()
         {
-            List<PrinterItem> availablePrinters = new List<PrinterItem>();
+            List<PrinterItem> availablePrinters = new();
 
             try
             {
                 await Task.Run(() =>
                 {
-                    using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Printer"))
+                    using (ManagementObjectSearcher searcher = new("SELECT * FROM Win32_Printer"))
                     {
                         foreach (ManagementObject printer in searcher.Get())
                         {
@@ -181,11 +190,12 @@ namespace KASIR.Printer
 
         public string SerializeCheckBoxSettings()
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (var kvp in checkBoxSettings)
+            StringBuilder sb = new();
+            foreach (KeyValuePair<string, bool> kvp in checkBoxSettings)
             {
                 sb.AppendLine($"{kvp.Key}:{kvp.Value}");
             }
+
             return sb.ToString();
         }
 
@@ -215,10 +225,10 @@ namespace KASIR.Printer
 
         private async Task LoadPrinterSettingsAsyncatPrinting(string filePath)
         {
-            var lines = await File.ReadAllLinesAsync(filePath);
-            foreach (var line in lines)
+            string[] lines = await File.ReadAllLinesAsync(filePath);
+            foreach (string line in lines)
             {
-                var parts = line.Split(':');
+                string[] parts = line.Split(':');
                 if (parts.Length == 2)
                 {
                     printerSettings[parts[0]] = parts[1];
@@ -228,11 +238,11 @@ namespace KASIR.Printer
 
         private async Task LoadCheckBoxSettingsAsync(string filePath)
         {
-            var lines = await File.ReadAllLinesAsync(filePath);
-            foreach (var line in lines)
+            string[] lines = await File.ReadAllLinesAsync(filePath);
+            foreach (string line in lines)
             {
-                var parts = line.Split(':');
-                if (parts.Length == 2 && bool.TryParse(parts[1], out var value))
+                string[] parts = line.Split(':');
+                if (parts.Length == 2 && bool.TryParse(parts[1], out bool value))
                 {
                     checkBoxSettings[parts[0]] = value;
                 }
@@ -246,45 +256,46 @@ namespace KASIR.Printer
             try
             {
                 await LoadPrinterSettings(); // Load printer settings
-                await LoadSettingsAsync();   // Load additional settings
+                await LoadSettingsAsync(); // Load additional settings
 
-                foreach (var printer in printerSettings)
+                foreach (KeyValuePair<string, string> printer in printerSettings)
                 {
-                    var printerName = printer.Value;
+                    string printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))
                     {
                         printerName = ConvertMacAddressFormat(printerName);
                     }
-                    var printerId = printer.Key.Replace("inter", "");
+
+                    string printerId = printer.Key.Replace("inter", "");
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
-                        PrintDocument printDocument = new PrintDocument();
+                        PrintDocument printDocument = new();
                         printDocument.PrintPage += Ex_PrintDocument_PrintPage;
                         //Ex_PrintDocument_PrintPage();
                         continue;
                     }
+
                     if (ShouldPrint(printerId, "Kasir"))
                     {
                         _kategori = "Kasir";
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                             
                             continue;
                         }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        using (BluetoothClient clientSocket = new BluetoothClient())
+                        using (BluetoothClient clientSocket = new())
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                 
                                 continue;
                             }
+
                             clientSocket.Connect(endpoint);
-                            System.IO.Stream stream = clientSocket.GetStream();
+                            Stream stream = clientSocket.GetStream();
 
                             string kodeHeksadesimalBold = "\x1B\x45\x01";
                             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
@@ -295,7 +306,8 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
+                            strukText += kodeHeksadesimalSizeBesar +
+                                         CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
                             strukText += CenterText("Test Tengah");
@@ -310,7 +322,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n\n\n\n\n";
                             PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
-                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
                             stream.Write(buffer, 0, buffer.Length);
                             stream.Flush();
@@ -320,29 +332,29 @@ namespace KASIR.Printer
                             clientSocket.Close();
                         }
                     }
+
                     if (ShouldPrint(printerId, "Checker"))
                     {
                         _kategori = "Checker";
 
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                             
                             continue;
                         }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        using (BluetoothClient clientSocket = new BluetoothClient())
+                        using (BluetoothClient clientSocket = new())
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                 
                                 continue;
                             }
+
                             clientSocket.Connect(endpoint);
-                            System.IO.Stream stream = clientSocket.GetStream();
+                            Stream stream = clientSocket.GetStream();
 
                             string kodeHeksadesimalBold = "\x1B\x45\x01";
                             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
@@ -353,7 +365,8 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
+                            strukText += kodeHeksadesimalSizeBesar +
+                                         CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
                             strukText += CenterText("Test Tengah");
@@ -368,7 +381,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n\n\n\n\n";
                             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
-                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
                             stream.Write(buffer, 0, buffer.Length);
                             stream.Flush();
@@ -378,28 +391,29 @@ namespace KASIR.Printer
                             clientSocket.Close();
                         }
                     }
+
                     if (ShouldPrint(printerId, "Makanan"))
                     {
                         _kategori = "Makanan";
 
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                             
                             continue;
                         }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        using (BluetoothClient clientSocket = new BluetoothClient())
+                        using (BluetoothClient clientSocket = new())
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
                                 continue;
                             }
+
                             clientSocket.Connect(endpoint);
-                            System.IO.Stream stream = clientSocket.GetStream();
+                            Stream stream = clientSocket.GetStream();
 
                             string kodeHeksadesimalBold = "\x1B\x45\x01";
                             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
@@ -410,7 +424,8 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
+                            strukText += kodeHeksadesimalSizeBesar +
+                                         CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
                             strukText += CenterText("Test Tengah");
@@ -425,7 +440,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n\n\n\n\n";
                             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
-                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
                             stream.Write(buffer, 0, buffer.Length);
                             stream.Flush();
@@ -435,29 +450,29 @@ namespace KASIR.Printer
                             clientSocket.Close();
                         }
                     }
+
                     if (ShouldPrint(printerId, "Minuman"))
                     {
                         _kategori = "Minuman";
 
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                             
                             continue;
                         }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        using (BluetoothClient clientSocket = new BluetoothClient())
+                        using (BluetoothClient clientSocket = new())
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                 
                                 continue;
                             }
+
                             clientSocket.Connect(endpoint);
-                            System.IO.Stream stream = clientSocket.GetStream();
+                            Stream stream = clientSocket.GetStream();
 
                             string kodeHeksadesimalBold = "\x1B\x45\x01";
                             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
@@ -468,7 +483,8 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
+                            strukText += kodeHeksadesimalSizeBesar +
+                                         CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
                             strukText += CenterText("Test Tengah");
@@ -483,7 +499,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n\n\n\n\n";
                             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
-                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
                             stream.Write(buffer, 0, buffer.Length);
                             stream.Flush();
@@ -503,8 +519,10 @@ namespace KASIR.Printer
 
         private bool ShouldPrint(string printerId, string printType)
         {
-            return checkBoxSettings.TryGetValue($"checkBox{printType}Printer{printerId}", out var shouldPrint) && shouldPrint;
+            return checkBoxSettings.TryGetValue($"checkBox{printType}Printer{printerId}", out bool shouldPrint) &&
+                   shouldPrint;
         }
+
         // Bluetooth Struct Printing
         private string ConvertMacAddressFormat(string macAddress)
         {
@@ -527,7 +545,7 @@ namespace KASIR.Printer
             string pattern = "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$";
 
             // Buat objek Regex untuk memeriksa format
-            Regex regex = new Regex(pattern);
+            Regex regex = new(pattern);
 
             // Lakukan pencocokan regex untuk memeriksa validitas MAC Address
             return regex.IsMatch(cleanedAddress);
@@ -536,29 +554,25 @@ namespace KASIR.Printer
 
         private void PrintViaBluetooth(string printerName, PrintDocument printDocument)
         {
-
             // Get Bluetooth address from printer settings
             string bluetoothAddress = printerName;
 
             try
             {
-                BluetoothClient client = new BluetoothClient();
+                BluetoothClient client = new();
 
-                BluetoothDeviceInfo printer = new BluetoothDeviceInfo(BluetoothAddress.Parse(bluetoothAddress));
+                BluetoothDeviceInfo printer = new(BluetoothAddress.Parse(bluetoothAddress));
                 if (printer == null)
                 {
-                    
                     return;
                 }
 
-                BluetoothEndPoint endpoint = new BluetoothEndPoint(printer.DeviceAddress, BluetoothService.SerialPort);
+                BluetoothEndPoint endpoint = new(printer.DeviceAddress, BluetoothService.SerialPort);
 
                 if (printer != null)
                 {
-
                     if (!BluetoothSecurity.PairRequest(printer.DeviceAddress, "0000"))
                     {
-                        
                         return;
                     }
 
@@ -587,49 +601,50 @@ namespace KASIR.Printer
                 // Handle Bluetooth connection or printing errors
                 LoggerUtil.LogError(ex, "An error occurred while printing via Bluetooth: {ErrorMessage}", ex.Message);
             }
-
         }
+
         public async void PrintDocument_PrintPage(object sender, PrintPageEventArgs e)
         {
             try
             {
                 await LoadPrinterSettings(); // Load printer settings
-                await LoadSettingsAsync();   // Load additional settings
+                await LoadSettingsAsync(); // Load additional settings
 
-                foreach (var printer in printerSettings)
+                foreach (KeyValuePair<string, string> printer in printerSettings)
                 {
-                    var printerName = printer.Value;
+                    string printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))
                     {
                         printerName = ConvertMacAddressFormat(printerName);
                     }
-                    var printerId = printer.Key.Replace("inter", "");
+
+                    string printerId = printer.Key.Replace("inter", "");
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
                         Ex_PrintDocument_PrintPage(sender, e);
                         continue;
                     }
+
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                             
                             continue;
                         }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        using (BluetoothClient clientSocket = new BluetoothClient())
+                        using (BluetoothClient clientSocket = new())
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                 
                                 continue;
                             }
+
                             clientSocket.Connect(endpoint);
-                            System.IO.Stream stream = clientSocket.GetStream();
+                            Stream stream = clientSocket.GetStream();
 
                             string kodeHeksadesimalBold = "\x1B\x45\x01";
                             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
@@ -640,7 +655,8 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName) + "\n";
+                            strukText += kodeHeksadesimalSizeBesar +
+                                         CenterText("Printed Success at Mac Address" + printerName) + "\n";
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
                             strukText += CenterText("Test Tengah") + "\n";
@@ -655,7 +671,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n\n\n\n\n";
                             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
-                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
                             stream.Write(buffer, 0, buffer.Length);
                             stream.Flush();
@@ -665,27 +681,27 @@ namespace KASIR.Printer
                             clientSocket.Close();
                         }
                     }
+
                     if (ShouldPrint(printerId, "Checker"))
                     {
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                             
                             continue;
                         }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        using (BluetoothClient clientSocket = new BluetoothClient())
+                        using (BluetoothClient clientSocket = new())
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                 
                                 continue;
                             }
+
                             clientSocket.Connect(endpoint);
-                            System.IO.Stream stream = clientSocket.GetStream();
+                            Stream stream = clientSocket.GetStream();
 
                             string kodeHeksadesimalBold = "\x1B\x45\x01";
                             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
@@ -696,7 +712,8 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
+                            strukText += kodeHeksadesimalSizeBesar +
+                                         CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
                             strukText += CenterText("Test Tengah");
@@ -711,7 +728,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n\n\n\n\n";
                             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
-                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
                             stream.Write(buffer, 0, buffer.Length);
                             stream.Flush();
@@ -721,27 +738,27 @@ namespace KASIR.Printer
                             clientSocket.Close();
                         }
                     }
+
                     if (ShouldPrint(printerId, "Makanan"))
                     {
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                             
                             continue;
                         }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        using (BluetoothClient clientSocket = new BluetoothClient())
+                        using (BluetoothClient clientSocket = new())
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                 
                                 continue;
                             }
+
                             clientSocket.Connect(endpoint);
-                            System.IO.Stream stream = clientSocket.GetStream();
+                            Stream stream = clientSocket.GetStream();
 
                             string kodeHeksadesimalBold = "\x1B\x45\x01";
                             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
@@ -752,7 +769,8 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
+                            strukText += kodeHeksadesimalSizeBesar +
+                                         CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
                             strukText += CenterText("Test Tengah");
@@ -767,7 +785,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n\n\n\n\n";
                             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
-                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
                             stream.Write(buffer, 0, buffer.Length);
                             stream.Flush();
@@ -777,27 +795,27 @@ namespace KASIR.Printer
                             clientSocket.Close();
                         }
                     }
+
                     if (ShouldPrint(printerId, "Minuman"))
                     {
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                             
                             continue;
                         }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        using (BluetoothClient clientSocket = new BluetoothClient())
+                        using (BluetoothClient clientSocket = new())
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                 
                                 continue;
                             }
+
                             clientSocket.Connect(endpoint);
-                            System.IO.Stream stream = clientSocket.GetStream();
+                            Stream stream = clientSocket.GetStream();
 
                             string kodeHeksadesimalBold = "\x1B\x45\x01";
                             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
@@ -808,7 +826,8 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
 
-                            strukText += kodeHeksadesimalSizeBesar + CenterText("Printed Success at Mac Address" + printerName);
+                            strukText += kodeHeksadesimalSizeBesar +
+                                         CenterText("Printed Success at Mac Address" + printerName);
                             strukText += kodeHeksadesimalNormal;
                             strukText += "--------------------------------\n";
                             strukText += CenterText("Test Tengah");
@@ -823,7 +842,7 @@ namespace KASIR.Printer
                             strukText += "--------------------------------\n\n\n\n\n";
                             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
 
-                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
                             stream.Write(buffer, 0, buffer.Length);
                             stream.Flush();
@@ -842,15 +861,15 @@ namespace KASIR.Printer
         }
 
 
-
         private void Ex_PrintDocument_PrintPage(object sender, PrintPageEventArgs e)
         {
             try
             {
                 string Kategori = _kategori;
                 // Mengatur font normal dan tebal
-                Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                Font boldFont = new Font("Arial", 8, FontStyle.Bold);
+                Font normalFont =
+                    new("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                Font boldFont = new("Arial", 8, FontStyle.Bold);
                 float leftMargin = 5; // Margin kiri (dalam pixel)
                 float rightMargin = 5; // Margin kanan (dalam pixel)
                 float topMargin = 5; // Margin atas (dalam pixel)
@@ -866,36 +885,49 @@ namespace KASIR.Printer
                     SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                     SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                     e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                    e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                    e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                        leftMargin + printableWidth - sizeRight.Width, yPos);
                     yPos += normalFont.GetHeight(e.Graphics);
                 }
 
                 // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                 void DrawCenterText(string text, Font font)
                 {
-                    if (text == null) text = string.Empty;
-                    if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                    if (text == null)
+                    {
+                        text = string.Empty;
+                    }
+
+                    if (font == null)
+                    {
+                        throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                    }
+
                     string[] words = text.Split(' ');
-                    StringBuilder currentLine = new StringBuilder();
+                    StringBuilder currentLine = new();
                     foreach (string word in words)
                     {
-                        SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                        SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                         if (size.Width > printableWidth)
                         {
                             // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                             SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                            e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                            e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                             yPos += font.GetHeight(e.Graphics);
                             currentLine.Clear();
                         }
+
                         // Tambahkan kata ke baris saat ini
                         currentLine.Append(word + " ");
                     }
+
                     // Gambar baris terakhir
                     if (currentLine.Length > 0)
                     {
                         SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                            leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                         yPos += font.GetHeight(e.Graphics);
                     }
                 }
@@ -908,6 +940,7 @@ namespace KASIR.Printer
                         //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                         return;
                     }
+
                     e.Graphics.DrawString(text, font, Brushes.Black, leftMargin, yPos);
                     yPos += font.GetHeight(e.Graphics);
                 }
@@ -918,25 +951,26 @@ namespace KASIR.Printer
                     e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                     yPos += normalFont.GetHeight(e.Graphics);
                 }
+
                 // Fungsi untuk mendapatkan dan mengonversi gambar logo ke hitam dan putih
                 Image GetLogoImage(string path)
                 {
                     Image img = Image.FromFile(path);
-                    Bitmap bmp = new Bitmap(img.Width, img.Height);
+                    Bitmap bmp = new(img.Width, img.Height);
                     using (Graphics g = Graphics.FromImage(bmp))
                     {
-                        ColorMatrix colorMatrix = new ColorMatrix(new float[][]
+                        ColorMatrix colorMatrix = new(new[]
                         {
-                new float[] { 0.3f, 0.3f, 0.3f, 0, 0 },
-                new float[] { 0.59f, 0.59f, 0.59f, 0, 0 },
-                new float[] { 0.11f, 0.11f, 0.11f, 0, 0 },
-                new float[] { 0, 0, 0, 1, 0 },
-                new float[] { 0, 0, 0, 0, 1 }
+                            new[] { 0.3f, 0.3f, 0.3f, 0, 0 }, new[] { 0.59f, 0.59f, 0.59f, 0, 0 },
+                            new[] { 0.11f, 0.11f, 0.11f, 0, 0 }, new float[] { 0, 0, 0, 1, 0 },
+                            new float[] { 0, 0, 0, 0, 1 }
                         });
-                        ImageAttributes attributes = new ImageAttributes();
+                        ImageAttributes attributes = new();
                         attributes.SetColorMatrix(colorMatrix);
-                        g.DrawImage(img, new Rectangle(0, 0, img.Width, img.Height), 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, attributes);
+                        g.DrawImage(img, new Rectangle(0, 0, img.Width, img.Height), 0, 0, img.Width, img.Height,
+                            GraphicsUnit.Pixel, attributes);
                     }
+
                     return bmp;
                 }
 
@@ -952,7 +986,7 @@ namespace KASIR.Printer
                     SizeF textSize = e.Graphics.MeasureString(poweredByText, normalFont);
 
                     // Gambar teks
-                    float textX = leftMargin + (printableWidth - textSize.Width) / 2;
+                    float textX = leftMargin + ((printableWidth - textSize.Width) / 2);
                     e.Graphics.DrawString(poweredByText, normalFont, Brushes.Black, textX, yPos);
 
                     // Sesuaikan yPos untuk logo
@@ -964,7 +998,7 @@ namespace KASIR.Printer
                     float scaleFactor = targetWidth / logoPoweredBy.Width;
                     float logoHeight = logoPoweredBy.Height * scaleFactor;
 
-                    float logoX = leftMargin + (printableWidth - targetWidth) / 2;
+                    float logoX = leftMargin + ((printableWidth - targetWidth) / 2);
                     e.Graphics.DrawImage(logoPoweredBy, logoX, yPos, targetWidth, logoHeight);
 
                     spaceBefore = 5;
@@ -986,7 +1020,7 @@ namespace KASIR.Printer
                 // Hitung tinggi logo berdasarkan lebar yang diinginkan dengan mempertahankan rasio aspek
                 float scaleFactor = logoTargetWidthPx / logo.Width;
                 float logoHeight = logo.Height * scaleFactor;
-                float logoX = leftMargin + (printableWidth - logoTargetWidthPx) / 2;
+                float logoX = leftMargin + ((printableWidth - logoTargetWidthPx) / 2);
 
                 // Gambar logo dengan ukuran yang diubah
                 e.Graphics.DrawImage(logo, logoX, yPos, logoTargetWidthPx, logoHeight);
@@ -1008,89 +1042,93 @@ namespace KASIR.Printer
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         // Struct Print Laporan Shift
         public async Task PrintModelCetakLaporanShift(DataStrukShift dataShifts,
-        List<ExpenditureStrukShift> expenditures,
-        List<CartDetailsSuccessStrukShift> cartDetailsSuccess,
-        List<CartDetailsPendingStrukShift> cartDetailsPendings,
-        List<CartDetailsCanceledStrukShift> cartDetailsCanceled,
-        List<RefundDetailStrukShift> refundDetails,
-        List<PaymentDetailStrukShift> paymentDetails)
+            List<ExpenditureStrukShift> expenditures,
+            List<CartDetailsSuccessStrukShift> cartDetailsSuccess,
+            List<CartDetailsPendingStrukShift> cartDetailsPendings,
+            List<CartDetailsCanceledStrukShift> cartDetailsCanceled,
+            List<RefundDetailStrukShift> refundDetails,
+            List<PaymentDetailStrukShift> paymentDetails)
         {
             try
             {
                 await LoadPrinterSettings(); // Load printer settings
-                await LoadSettingsAsync();   // Load additional settings
+                await LoadSettingsAsync(); // Load additional settings
 
-                foreach (var printer in printerSettings)
+                foreach (KeyValuePair<string, string> printer in printerSettings)
                 {
-                    var printerName = printer.Value;
+                    string printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))
                     {
                         printerName = ConvertMacAddressFormat(printerName);
                     }
 
-                    var printerId = printer.Key.Replace("inter", "");
+                    string printerId = printer.Key.Replace("inter", "");
                     if (string.IsNullOrWhiteSpace(printerName) || printerName.Length < 3)
                     {
                         continue;
                     }
+
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
-                        Ex_PrintModelCetakLaporanShift(dataShifts, expenditures, cartDetailsSuccess, cartDetailsPendings, cartDetailsCanceled, refundDetails, paymentDetails,
-                    printerId, printerName
-                );
+                        Ex_PrintModelCetakLaporanShift(dataShifts, expenditures, cartDetailsSuccess,
+                            cartDetailsPendings, cartDetailsCanceled, refundDetails, paymentDetails,
+                            printerId, printerName
+                        );
                         continue;
                     }
+
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        System.IO.Stream stream = Stream.Null; //Gunakan Stream.Null sebagai default
+                        Stream stream = Stream.Null; //Gunakan Stream.Null sebagai default
 
                         try
                         {
-                            if (System.Net.IPAddress.TryParse(printerName, out _))
+                            if (IPAddress.TryParse(printerName, out _))
                             {
                                 // Connect via LAN
-                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                TcpClient client = new(printerName, 9100);
                                 stream = client.GetStream();
                             }
                             else
                             {
                                 // Connect via Bluetooth dengan retry policy
                                 if (!await RetryPolicyAsync(async () =>
-                                {
-                                    // Connect via Bluetooth
-                                    BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                    if (printerDevice == null)
                                     {
-                                         
-                                        return false;
-                                    }
+                                        // Connect via Bluetooth
+                                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
+                                        if (printerDevice == null)
+                                        {
+                                            return false;
+                                        }
 
-                                    BluetoothClient client = new BluetoothClient();
-                                    BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                        BluetoothClient client = new();
+                                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                            BluetoothService.SerialPort);
 
-                                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                    {
-                                         
-                                        return false;
-                                    }
+                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                        {
+                                            return false;
+                                        }
 
-                                    client.Connect(endpoint);
-                                    stream = client.GetStream();
+                                        client.Connect(endpoint);
+                                        stream = client.GetStream();
 
-                                    return true;
-                                }, maxRetries: 3))
+                                        return true;
+                                    }, 3))
                                 {
                                     continue;
                                 }
                             }
 
-                            string strukText = GenerateStrukTextShiftLaporan(dataShifts, expenditures, cartDetailsSuccess, cartDetailsPendings, cartDetailsCanceled, refundDetails, paymentDetails);
-                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+                            string strukText = GenerateStrukTextShiftLaporan(dataShifts, expenditures,
+                                cartDetailsSuccess, cartDetailsPendings, cartDetailsCanceled, refundDetails,
+                                paymentDetails);
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
                             stream.Write(buffer, 0, buffer.Length);
                             stream.Flush();
-
                         }
                         finally
                         {
@@ -1143,23 +1181,44 @@ namespace KASIR.Printer
             strukText += kodeHeksadesimalNormal;
 
 
-            var sortedCartDetailsSuccess = cartDetailsSuccess.OrderBy(x =>
+            IOrderedEnumerable<CartDetailsSuccessStrukShift> sortedCartDetailsSuccess = cartDetailsSuccess.OrderBy(x =>
             {
-                if (x.menu_type.Contains("Minuman")) return 1;
-                if (x.menu_type.Contains("Additional Minuman")) return 2;
-                if (x.menu_type.Contains("Makanan")) return 3;
-                if (x.menu_type.Contains("Additional Makanan")) return 4;
+                if (x.menu_type.Contains("Minuman"))
+                {
+                    return 1;
+                }
+
+                if (x.menu_type.Contains("Additional Minuman"))
+                {
+                    return 2;
+                }
+
+                if (x.menu_type.Contains("Makanan"))
+                {
+                    return 3;
+                }
+
+                if (x.menu_type.Contains("Additional Makanan"))
+                {
+                    return 4;
+                }
+
                 return 5;
             }).ThenBy(x => x.menu_name);
 
-            foreach (var cartDetail in sortedCartDetailsSuccess)
+            foreach (CartDetailsSuccessStrukShift cartDetail in sortedCartDetailsSuccess)
             {
-                strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.total_price));
+                strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
+                    string.Format("{0:n0}", cartDetail.total_price));
                 if (!string.IsNullOrEmpty(cartDetail.varian))
+                {
                     strukText += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
+                }
             }
+
             strukText += FormatSimpleLine("Item Sold Qty", dataShifts.totalSuccessQty.ToString()) + "\n";
-            strukText += FormatSimpleLine("Item Sold Amount", string.Format("{0:n0}", dataShifts.totalCartSuccessAmount)) + "\n";
+            strukText +=
+                FormatSimpleLine("Item Sold Amount", string.Format("{0:n0}", dataShifts.totalCartSuccessAmount)) + "\n";
 
             if (cartDetailsPendings.Count != 0)
             {
@@ -1167,23 +1226,45 @@ namespace KASIR.Printer
                 strukText += kodeHeksadesimalBold + "PENDING ITEMS" + "\n";
 
                 strukText += kodeHeksadesimalNormal;
-                var sortedCartDetailsPendings = cartDetailsPendings.OrderBy(x =>
-                {
-                    if (x.menu_type.Contains("Minuman")) return 1;
-                    if (x.menu_type.Contains("Additional Minuman")) return 2;
-                    if (x.menu_type.Contains("Makanan")) return 3;
-                    if (x.menu_type.Contains("Additional Makanan")) return 4;
-                    return 5;
-                }).ThenBy(x => x.menu_name);
+                IOrderedEnumerable<CartDetailsPendingStrukShift> sortedCartDetailsPendings = cartDetailsPendings
+                    .OrderBy(x =>
+                    {
+                        if (x.menu_type.Contains("Minuman"))
+                        {
+                            return 1;
+                        }
 
-                foreach (var cartDetail in sortedCartDetailsPendings)
+                        if (x.menu_type.Contains("Additional Minuman"))
+                        {
+                            return 2;
+                        }
+
+                        if (x.menu_type.Contains("Makanan"))
+                        {
+                            return 3;
+                        }
+
+                        if (x.menu_type.Contains("Additional Makanan"))
+                        {
+                            return 4;
+                        }
+
+                        return 5;
+                    }).ThenBy(x => x.menu_name);
+
+                foreach (CartDetailsPendingStrukShift cartDetail in sortedCartDetailsPendings)
                 {
-                    strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.total_price));
+                    strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
+                        string.Format("{0:n0}", cartDetail.total_price));
                     if (!string.IsNullOrEmpty(cartDetail.varian))
+                    {
                         strukText += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
+                    }
                 }
+
                 strukText += FormatSimpleLine("Item Pending Qty", dataShifts.totalPendingQty.ToString()) + "\n";
-                strukText += FormatSimpleLine("Item Pending Amount", string.Format("{0:n0}", dataShifts.totalCartPendingAmount)) + "\n";
+                strukText += FormatSimpleLine("Item Pending Amount",
+                    string.Format("{0:n0}", dataShifts.totalCartPendingAmount)) + "\n";
             }
 
             if (cartDetailsCanceled.Count != 0)
@@ -1192,23 +1273,45 @@ namespace KASIR.Printer
                 strukText += kodeHeksadesimalBold + "CANCEL ITEMS" + "\n";
 
                 strukText += kodeHeksadesimalNormal;
-                var sortedCartDetailsCanceled = cartDetailsCanceled.OrderBy(x =>
-                {
-                    if (x.menu_type.Contains("Minuman")) return 1;
-                    if (x.menu_type.Contains("Additional Minuman")) return 2;
-                    if (x.menu_type.Contains("Makanan")) return 3;
-                    if (x.menu_type.Contains("Additional Makanan")) return 4;
-                    return 5;
-                }).ThenBy(x => x.menu_name);
+                IOrderedEnumerable<CartDetailsCanceledStrukShift> sortedCartDetailsCanceled = cartDetailsCanceled
+                    .OrderBy(x =>
+                    {
+                        if (x.menu_type.Contains("Minuman"))
+                        {
+                            return 1;
+                        }
 
-                foreach (var cartDetail in sortedCartDetailsCanceled)
+                        if (x.menu_type.Contains("Additional Minuman"))
+                        {
+                            return 2;
+                        }
+
+                        if (x.menu_type.Contains("Makanan"))
+                        {
+                            return 3;
+                        }
+
+                        if (x.menu_type.Contains("Additional Makanan"))
+                        {
+                            return 4;
+                        }
+
+                        return 5;
+                    }).ThenBy(x => x.menu_name);
+
+                foreach (CartDetailsCanceledStrukShift cartDetail in sortedCartDetailsCanceled)
                 {
-                    strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.total_price));
+                    strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
+                        string.Format("{0:n0}", cartDetail.total_price));
                     if (!string.IsNullOrEmpty(cartDetail.varian))
+                    {
                         strukText += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
+                    }
                 }
+
                 strukText += FormatSimpleLine("Item Cancel Qty", dataShifts.totalCanceledQty.ToString()) + "\n";
-                strukText += FormatSimpleLine("Item Cancel Amount", string.Format("{0:n0}", dataShifts.totalCartCanceledAmount)) + "\n";
+                strukText += FormatSimpleLine("Item Cancel Amount",
+                    string.Format("{0:n0}", dataShifts.totalCartCanceledAmount)) + "\n";
             }
 
             if (refundDetails.Count != 0)
@@ -1217,23 +1320,44 @@ namespace KASIR.Printer
                 strukText += kodeHeksadesimalBold + "REFUND ITEMS" + "\n";
 
                 strukText += kodeHeksadesimalNormal;
-                var sortedRefundDetails = refundDetails.OrderBy(x =>
+                IOrderedEnumerable<RefundDetailStrukShift> sortedRefundDetails = refundDetails.OrderBy(x =>
                 {
-                    if (x.menu_type.Contains("Minuman")) return 1;
-                    if (x.menu_type.Contains("Additional Minuman")) return 2;
-                    if (x.menu_type.Contains("Makanan")) return 3;
-                    if (x.menu_type.Contains("Additional Makanan")) return 4;
+                    if (x.menu_type.Contains("Minuman"))
+                    {
+                        return 1;
+                    }
+
+                    if (x.menu_type.Contains("Additional Minuman"))
+                    {
+                        return 2;
+                    }
+
+                    if (x.menu_type.Contains("Makanan"))
+                    {
+                        return 3;
+                    }
+
+                    if (x.menu_type.Contains("Additional Makanan"))
+                    {
+                        return 4;
+                    }
+
                     return 5;
                 }).ThenBy(x => x.menu_name);
 
-                foreach (var refundDetail in sortedRefundDetails)
+                foreach (RefundDetailStrukShift refundDetail in sortedRefundDetails)
                 {
-                    strukText += FormatSimpleLine(refundDetail.qty_refund_item + " " + refundDetail.menu_name, string.Format("{0:n0}", refundDetail.total_refund_price));
+                    strukText += FormatSimpleLine(refundDetail.qty_refund_item + " " + refundDetail.menu_name,
+                        string.Format("{0:n0}", refundDetail.total_refund_price));
                     if (!string.IsNullOrEmpty(refundDetail.varian))
+                    {
                         strukText += FormatDetailItemLine("Varian", refundDetail.varian) + "\n";
+                    }
                 }
+
                 strukText += FormatSimpleLine("Item Refund Qty", dataShifts.totalRefundQty.ToString()) + "\n";
-                strukText += FormatSimpleLine("Item Refund Amount", string.Format("{0:n0}", dataShifts.totalCartRefundAmount)) + "\n";
+                strukText += FormatSimpleLine("Item Refund Amount",
+                    string.Format("{0:n0}", dataShifts.totalCartRefundAmount)) + "\n";
             }
 
             strukText += "--------------------------------\n";
@@ -1247,23 +1371,30 @@ namespace KASIR.Printer
                 strukText += kodeHeksadesimalBold + "EXPENSE\n";
                 strukText += kodeHeksadesimalNormal;
 
-                foreach (var expense in expenditures)
+                foreach (ExpenditureStrukShift expense in expenditures)
                 {
                     strukText += FormatSimpleLine(expense.description, string.Format("{0:n0}", expense.nominal)) + "\n";
                 }
             }
 
-            strukText += FormatSimpleLine("Expected Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_expected)) + "\n";
-            strukText += FormatSimpleLine("Actual Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_actual)) + "\n";
-            strukText += FormatSimpleLine("Cash Difference", string.Format("{0:n0}", dataShifts.cash_difference)) + "\n";
+            strukText +=
+                FormatSimpleLine("Expected Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_expected)) +
+                "\n";
+            strukText +=
+                FormatSimpleLine("Actual Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_actual)) + "\n";
+            strukText += FormatSimpleLine("Cash Difference", string.Format("{0:n0}", dataShifts.cash_difference)) +
+                         "\n";
 
             strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + "DISCOUNTS\n";
             strukText += kodeHeksadesimalNormal;
 
-            strukText += FormatSimpleLine("All Discount items", string.Format("{0:n0}", dataShifts.discount_amount_per_items)) + "\n";
-            strukText += FormatSimpleLine("All Discount Cart", string.Format("{0:n0}", dataShifts.discount_amount_per_items)) + "\n";
-            strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", dataShifts.discount_total_amount)) + "\n";
+            strukText += FormatSimpleLine("All Discount items",
+                string.Format("{0:n0}", dataShifts.discount_amount_per_items)) + "\n";
+            strukText += FormatSimpleLine("All Discount Cart",
+                string.Format("{0:n0}", dataShifts.discount_amount_per_items)) + "\n";
+            strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", dataShifts.discount_total_amount)) +
+                         "\n";
 
             strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + CenterText("PAYMENT DETAIL");
@@ -1271,18 +1402,23 @@ namespace KASIR.Printer
 
             strukText += "--------------------------------\n";
 
-            foreach (var paymentDetail in paymentDetails)
+            foreach (PaymentDetailStrukShift paymentDetail in paymentDetails)
             {
                 strukText += paymentDetail.payment_category + "\n";
-                foreach (var paymentType in paymentDetail.payment_type_detail)
+                foreach (PaymentTypeDetailStrukShift paymentType in paymentDetail.payment_type_detail)
                 {
-                    strukText += FormatSimpleLine(paymentType.payment_type, string.Format("{0:n0}", paymentType.total_payment)) + "\n";
+                    strukText += FormatSimpleLine(paymentType.payment_type,
+                        string.Format("{0:n0}", paymentType.total_payment)) + "\n";
                 }
-                strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", paymentDetail.total_amount)) + "\n";
+
+                strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", paymentDetail.total_amount)) +
+                             "\n";
                 strukText += "--------------------------------\n";
             }
 
-            strukText += kodeHeksadesimalBold + FormatSimpleLine("TOTAL TRANSACTION", string.Format("{0:n0}", dataShifts.total_transaction)) + "\n";
+            strukText += kodeHeksadesimalBold +
+                         FormatSimpleLine("TOTAL TRANSACTION", string.Format("{0:n0}", dataShifts.total_transaction)) +
+                         "\n";
             strukText += kodeHeksadesimalNormal;
 
             strukText += "--------------------------------\n\n\n\n\n";
@@ -1300,12 +1436,12 @@ namespace KASIR.Printer
             }
 
             int maxLength = 32; // Maksimal panjang karakter dalam satu baris
-            StringBuilder centeredText = new StringBuilder();
+            StringBuilder centeredText = new();
             string[] words = text.Split(' ');
 
-            StringBuilder currentLine = new StringBuilder();
+            StringBuilder currentLine = new();
 
-            foreach (var word in words)
+            foreach (string word in words)
             {
                 // Jika satu kata lebih panjang dari maxLength, maka perlu dipotong
                 if (word.Length > maxLength)
@@ -1319,6 +1455,7 @@ namespace KASIR.Printer
                         AppendLineWithPadding(centeredText, currentLine, maxLength);
                         currentLine.Clear();
                     }
+
                     currentLine.Append(word + " ");
                 }
             }
@@ -1369,6 +1506,7 @@ namespace KASIR.Printer
 
             return formattedLine;
         }
+
         private string FormatDetailItemLine(string label, string value)
         {
             return "  @" + label + ": " + value;
@@ -1386,44 +1524,53 @@ namespace KASIR.Printer
         {
             try
             {
-                System.IO.Stream stream = null;
+                Stream stream = null;
 
                 // Koneksi printer langsung di sini
-                if (System.Net.IPAddress.TryParse(printerName, out _))
+                if (IPAddress.TryParse(printerName, out _))
                 {
-                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                    TcpClient client = new(printerName, 9100);
                     stream = client.GetStream();
                 }
                 else
                 {
                     await RetryPolicyAsync(async () =>
                     {
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                        if (printerDevice == null) return false;
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
+                        if (printerDevice == null)
+                        {
+                            return false;
+                        }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000")) return false;
+                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        {
+                            return false;
+                        }
 
                         client.Connect(endpoint);
                         stream = client.GetStream();
                         return true;
-                    }, maxRetries: 3);
+                    }, 3);
                 }
+
                 // Struck Checker
                 if (ShouldPrint(printerId, "Kasir"))
                 {
-                    PrintDocument printDocument = new PrintDocument();
+                    PrintDocument printDocument = new();
                     printDocument.PrintPage += (sender, e) =>
                     {
                         Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                         // Mengatur font normal dan tebal
-                        Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                        Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                        Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                        Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+                        Font normalFont =
+                            new("Arial", 8,
+                                FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                        Font boldFont = new("Arial", 8, FontStyle.Bold);
+                        Font BigboldFont = new("Arial", 10, FontStyle.Bold);
+                        Font NomorAntrian = new("Arial", 12, FontStyle.Bold);
 
                         float leftMargin = 5; // Margin kiri (dalam pixel)
                         float rightMargin = 5; // Margin kanan (dalam pixel)
@@ -1431,7 +1578,8 @@ namespace KASIR.Printer
                         float yPos = topMargin;
 
                         // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                        float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                        float paperWidth =
+                            58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
                         float printableWidth = paperWidth - leftMargin - rightMargin;
 
 
@@ -1441,36 +1589,49 @@ namespace KASIR.Printer
                             SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                             SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                             e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                                leftMargin + printableWidth - sizeRight.Width, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
 
                         // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                         void DrawCenterText(string text, Font font)
                         {
-                            if (text == null) text = string.Empty;
-                            if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            if (text == null)
+                            {
+                                text = string.Empty;
+                            }
+
+                            if (font == null)
+                            {
+                                throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                        leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
                                 SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                    leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                 yPos += font.GetHeight(e.Graphics);
                             }
                         }
@@ -1483,21 +1644,25 @@ namespace KASIR.Printer
                                 //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                 return;
                             }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                        yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
@@ -1513,9 +1678,11 @@ namespace KASIR.Printer
                             e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
+
                         void DrawSpace()
                         {
-                            yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                            yPos += normalFont
+                                .GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
                         }
 
                         DrawCenterText(dataShifts?.outlet_name, BigboldFont);
@@ -1534,17 +1701,34 @@ namespace KASIR.Printer
                         DrawCenterText("ORDER DETAILS", BigboldFont);
                         DrawSeparator();
                         DrawCenterText("SOLD ITEMS", boldFont);
-                        var sortedcartDetailSuccess = cartDetailsSuccess.OrderBy(x =>
-                        {
-                            if (x.menu_type.Contains("Minuman")) return 1;
-                            if (x.menu_type.Contains("Additional Minuman")) return 2;
-                            if (x.menu_type.Contains("Makanan")) return 3;
-                            if (x.menu_type.Contains("Additional Makanan")) return 4;
-                            return 5;
-                        })
-                        .ThenBy(x => x.menu_name);
+                        IOrderedEnumerable<CartDetailsSuccessStrukShift> sortedcartDetailSuccess = cartDetailsSuccess
+                            .OrderBy(x =>
+                            {
+                                if (x.menu_type.Contains("Minuman"))
+                                {
+                                    return 1;
+                                }
+
+                                if (x.menu_type.Contains("Additional Minuman"))
+                                {
+                                    return 2;
+                                }
+
+                                if (x.menu_type.Contains("Makanan"))
+                                {
+                                    return 3;
+                                }
+
+                                if (x.menu_type.Contains("Additional Makanan"))
+                                {
+                                    return 4;
+                                }
+
+                                return 5;
+                            })
+                            .ThenBy(x => x.menu_name);
                         //foreach (var cartDetail in cartDetailsSuccess)
-                        foreach (var cartDetail in sortedcartDetailSuccess)
+                        foreach (CartDetailsSuccessStrukShift cartDetail in sortedcartDetailSuccess)
                         {
                             // Add varian to the cart detail name if it's not null
                             string displayMenuName = cartDetail.menu_name;
@@ -1557,8 +1741,10 @@ namespace KASIR.Printer
                             {
                                 DrawSimpleLine(cartDetail.menu_name, "");
                             }
+
                             DrawSimpleLine(cartDetail.qty.ToString(), string.Format("{0:n0}", cartDetail.total_price));
                         }
+
                         DrawSpace();
                         DrawSimpleLine("Item Sold Qty", dataShifts.totalSuccessQty.ToString());
                         DrawSimpleLine("Item Sold Amount", string.Format("{0:n0}", dataShifts.totalCartSuccessAmount));
@@ -1566,17 +1752,34 @@ namespace KASIR.Printer
                         {
                             DrawSeparator();
                             DrawCenterText("PENDING ITEMS", boldFont);
-                            var sortedcartDetailPendings = cartDetailsPendings.OrderBy(x =>
-                            {
-                                if (x.menu_type.Contains("Minuman")) return 1;
-                                if (x.menu_type.Contains("Additional Minuman")) return 2;
-                                if (x.menu_type.Contains("Makanan")) return 3;
-                                if (x.menu_type.Contains("Additional Makanan")) return 4;
-                                return 5;
-                            })
-                            .ThenBy(x => x.menu_name);
+                            IOrderedEnumerable<CartDetailsPendingStrukShift> sortedcartDetailPendings =
+                                cartDetailsPendings.OrderBy(x =>
+                                    {
+                                        if (x.menu_type.Contains("Minuman"))
+                                        {
+                                            return 1;
+                                        }
+
+                                        if (x.menu_type.Contains("Additional Minuman"))
+                                        {
+                                            return 2;
+                                        }
+
+                                        if (x.menu_type.Contains("Makanan"))
+                                        {
+                                            return 3;
+                                        }
+
+                                        if (x.menu_type.Contains("Additional Makanan"))
+                                        {
+                                            return 4;
+                                        }
+
+                                        return 5;
+                                    })
+                                    .ThenBy(x => x.menu_name);
                             //foreach (var cartDetail in cartDetailsPendings)
-                            foreach (var cartDetail in sortedcartDetailPendings)
+                            foreach (CartDetailsPendingStrukShift cartDetail in sortedcartDetailPendings)
                             {
                                 // Add varian to the cart detail name if it's not null
                                 if (!string.IsNullOrEmpty(cartDetail.varian) && cartDetail.varian != "null")
@@ -1589,26 +1792,47 @@ namespace KASIR.Printer
                                     DrawSimpleLine(cartDetail.menu_name, "");
                                 }
 
-                                DrawSimpleLine(cartDetail.qty.ToString(), string.Format("{0:n0}", cartDetail.total_price));
+                                DrawSimpleLine(cartDetail.qty.ToString(),
+                                    string.Format("{0:n0}", cartDetail.total_price));
                             }
+
                             DrawSimpleLine("Item Pending Qty", dataShifts.totalPendingQty.ToString());
-                            DrawSimpleLine("Item Pending Amount", string.Format("{0:n0}", dataShifts.totalCartPendingAmount));
+                            DrawSimpleLine("Item Pending Amount",
+                                string.Format("{0:n0}", dataShifts.totalCartPendingAmount));
                         }
+
                         if (cartDetailsCanceled.Count != 0)
                         {
                             DrawSeparator();
                             DrawCenterText("CANCEL ITEMS", boldFont);
-                            var sortedcartDetailCanceled = cartDetailsCanceled.OrderBy(x =>
-                            {
-                                if (x.menu_type.Contains("Minuman")) return 1;
-                                if (x.menu_type.Contains("Additional Minuman")) return 2;
-                                if (x.menu_type.Contains("Makanan")) return 3;
-                                if (x.menu_type.Contains("Additional Makanan")) return 4;
-                                return 5;
-                            })
-                            .ThenBy(x => x.menu_name);
+                            IOrderedEnumerable<CartDetailsCanceledStrukShift> sortedcartDetailCanceled =
+                                cartDetailsCanceled.OrderBy(x =>
+                                    {
+                                        if (x.menu_type.Contains("Minuman"))
+                                        {
+                                            return 1;
+                                        }
+
+                                        if (x.menu_type.Contains("Additional Minuman"))
+                                        {
+                                            return 2;
+                                        }
+
+                                        if (x.menu_type.Contains("Makanan"))
+                                        {
+                                            return 3;
+                                        }
+
+                                        if (x.menu_type.Contains("Additional Makanan"))
+                                        {
+                                            return 4;
+                                        }
+
+                                        return 5;
+                                    })
+                                    .ThenBy(x => x.menu_name);
                             //foreach (var cartDetail in cartDetailsCanceled)
-                            foreach (var cartDetail in sortedcartDetailCanceled)
+                            foreach (CartDetailsCanceledStrukShift cartDetail in sortedcartDetailCanceled)
                             {
                                 // Add varian to the cart detail name if it's not null
                                 string displayMenuName = cartDetail.menu_name;
@@ -1621,26 +1845,47 @@ namespace KASIR.Printer
                                 {
                                     DrawSimpleLine(cartDetail.menu_name, "");
                                 }
-                                DrawSimpleLine(cartDetail.qty.ToString(), string.Format("{0:n0}", cartDetail.total_price));
+
+                                DrawSimpleLine(cartDetail.qty.ToString(),
+                                    string.Format("{0:n0}", cartDetail.total_price));
                             }
+
                             DrawSimpleLine("Item Cancel Qty", dataShifts.totalCanceledQty.ToString());
-                            DrawSimpleLine("Item Cancel Amount", string.Format("{0:n0}", dataShifts.totalCartCanceledAmount));
+                            DrawSimpleLine("Item Cancel Amount",
+                                string.Format("{0:n0}", dataShifts.totalCartCanceledAmount));
                         }
+
                         if (refundDetails.Count != 0)
                         {
                             DrawSeparator();
                             DrawCenterText("REFUND ITEMS", boldFont);
-                            var sortedrefundDetails = refundDetails.OrderBy(x =>
-                            {
-                                if (x.menu_type.Contains("Minuman")) return 1;
-                                if (x.menu_type.Contains("Additional Minuman")) return 2;
-                                if (x.menu_type.Contains("Makanan")) return 3;
-                                if (x.menu_type.Contains("Additional Makanan")) return 4;
-                                return 5;
-                            })
-                            .ThenBy(x => x.menu_name);
+                            IOrderedEnumerable<RefundDetailStrukShift> sortedrefundDetails = refundDetails.OrderBy(x =>
+                                {
+                                    if (x.menu_type.Contains("Minuman"))
+                                    {
+                                        return 1;
+                                    }
+
+                                    if (x.menu_type.Contains("Additional Minuman"))
+                                    {
+                                        return 2;
+                                    }
+
+                                    if (x.menu_type.Contains("Makanan"))
+                                    {
+                                        return 3;
+                                    }
+
+                                    if (x.menu_type.Contains("Additional Makanan"))
+                                    {
+                                        return 4;
+                                    }
+
+                                    return 5;
+                                })
+                                .ThenBy(x => x.menu_name);
                             //foreach (var cartDetail in refundDetails)
-                            foreach (var cartDetail in sortedrefundDetails)
+                            foreach (RefundDetailStrukShift cartDetail in sortedrefundDetails)
                             {
                                 // Add varian to the cart detail name if it's not null
                                 string displayMenuName = cartDetail.menu_name;
@@ -1653,47 +1898,58 @@ namespace KASIR.Printer
                                 {
                                     DrawSimpleLine(cartDetail.menu_name, "");
                                 }
-                                DrawSimpleLine(cartDetail.qty_refund_item.ToString(), string.Format("{0:n0}", cartDetail.total_refund_price));
+
+                                DrawSimpleLine(cartDetail.qty_refund_item.ToString(),
+                                    string.Format("{0:n0}", cartDetail.total_refund_price));
                             }
+
                             DrawSimpleLine("Item Refund Qty", dataShifts.totalRefundQty.ToString());
-                            DrawSimpleLine("Item Refund Amount", string.Format("{0:n0}", dataShifts.totalCartRefundAmount));
+                            DrawSimpleLine("Item Refund Amount",
+                                string.Format("{0:n0}", dataShifts.totalCartRefundAmount));
                         }
+
                         DrawSeparator();
                         DrawCenterText("CASH MANAGEMENT", BigboldFont);
                         DrawSeparator();
                         if (expenditures.Count != 0)
                         {
                             DrawLeftText("EXPENSE", boldFont);
-                            foreach (var expense in expenditures)
+                            foreach (ExpenditureStrukShift expense in expenditures)
                             {
                                 DrawSimpleLine(expense.description, string.Format("{0:n0}", expense.nominal));
                             }
                         }
-                        DrawSimpleLine("Expected Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_expected));
+
+                        DrawSimpleLine("Expected Ending Cash",
+                            string.Format("{0:n0}", dataShifts.ending_cash_expected));
                         DrawSimpleLine("Actual Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_actual));
                         DrawSimpleLine("Cash Difference", string.Format("{0:n0}", dataShifts.cash_difference));
                         DrawSeparator();
                         DrawLeftText("DISCOUNTS", boldFont);
-                        DrawSimpleLine("All Discount items", string.Format("{0:n0}", dataShifts.discount_amount_per_items));
-                        DrawSimpleLine("All Discount Cart", string.Format("{0:n0}", dataShifts.discount_amount_per_items));
+                        DrawSimpleLine("All Discount items",
+                            string.Format("{0:n0}", dataShifts.discount_amount_per_items));
+                        DrawSimpleLine("All Discount Cart",
+                            string.Format("{0:n0}", dataShifts.discount_amount_per_items));
                         DrawSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", dataShifts.discount_total_amount));
                         DrawSeparator();
                         DrawCenterText("PAYMENT DETAIL", BigboldFont);
                         DrawSeparator();
-                        foreach (var paymentDetail in paymentDetails)
+                        foreach (PaymentDetailStrukShift paymentDetail in paymentDetails)
                         {
                             DrawLeftText(paymentDetail.payment_category, boldFont);
-                            foreach (var paymentType in paymentDetail.payment_type_detail)
+                            foreach (PaymentTypeDetailStrukShift paymentType in paymentDetail.payment_type_detail)
                             {
-                                DrawSimpleLine(paymentType.payment_type, string.Format("{0:n0}", paymentType.total_payment));
+                                DrawSimpleLine(paymentType.payment_type,
+                                    string.Format("{0:n0}", paymentType.total_payment));
                             }
+
                             DrawSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", paymentDetail.total_amount));
                             DrawSeparator();
                         }
+
                         DrawSimpleLine("TOTAL TRANSACTION", string.Format("{0:n0}", dataShifts.total_transaction));
                         DrawSeparator();
                     };
-
                 }
             }
             catch (Exception ex)
@@ -1704,61 +1960,66 @@ namespace KASIR.Printer
 
         // Struct Print Ulang Shift
         public async Task PrintModelCetakUlangShift(DataStrukShift dataShifts,
-        List<ExpenditureStrukShift> expenditures,
-        List<CartDetailsSuccessStrukShift> cartDetailsSuccess,
-        List<CartDetailsPendingStrukShift> cartDetailsPendings,
-        List<CartDetailsCanceledStrukShift> cartDetailsCanceled,
-        List<RefundDetailStrukShift> refundDetails,
-        List<PaymentDetailStrukShift> paymentDetails)
+            List<ExpenditureStrukShift> expenditures,
+            List<CartDetailsSuccessStrukShift> cartDetailsSuccess,
+            List<CartDetailsPendingStrukShift> cartDetailsPendings,
+            List<CartDetailsCanceledStrukShift> cartDetailsCanceled,
+            List<RefundDetailStrukShift> refundDetails,
+            List<PaymentDetailStrukShift> paymentDetails)
         {
             try
             {
                 await LoadPrinterSettings(); // Load printer settings
-                await LoadSettingsAsync();   // Load additional settings
+                await LoadSettingsAsync(); // Load additional settings
 
-                foreach (var printer in printerSettings)
+                foreach (KeyValuePair<string, string> printer in printerSettings)
                 {
-                    var printerName = printer.Value;
+                    string printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))
                     {
                         printerName = ConvertMacAddressFormat(printerName);
                     }
-                    var printerId = printer.Key.Replace("inter", "");
+
+                    string printerId = printer.Key.Replace("inter", "");
 
                     if (string.IsNullOrWhiteSpace(printerName) || printerName.Length < 3)
                     {
                         continue;
                     }
+
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
-                        Ex_PrintModelCetakUlangShift(dataShifts, expenditures, cartDetailsSuccess, cartDetailsPendings, cartDetailsCanceled, refundDetails, paymentDetails,
-                    printerId, printerName
-                );
+                        Ex_PrintModelCetakUlangShift(dataShifts, expenditures, cartDetailsSuccess, cartDetailsPendings,
+                            cartDetailsCanceled, refundDetails, paymentDetails,
+                            printerId, printerName
+                        );
                         continue;
                     }
+
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        System.IO.Stream stream = Stream.Null;
+                        Stream stream = Stream.Null;
 
                         try
                         {
-                            if (System.Net.IPAddress.TryParse(printerName, out _))
+                            if (IPAddress.TryParse(printerName, out _))
                             {
                                 // Connect via LAN
-                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                TcpClient client = new(printerName, 9100);
                                 stream = client.GetStream();
                             }
                             else
                             {
                                 // Connect via Bluetooth
-                                BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                                 if (printerDevice == null)
                                 {
                                     continue;
                                 }
 
-                                BluetoothClient client = new BluetoothClient();
-                                BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                BluetoothClient client = new();
+                                BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                    BluetoothService.SerialPort);
 
                                 if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                                 {
@@ -1769,8 +2030,9 @@ namespace KASIR.Printer
                                 stream = client.GetStream();
                             }
 
-                            string strukText = GenerateStrukText(dataShifts, expenditures, cartDetailsSuccess, cartDetailsPendings, cartDetailsCanceled, refundDetails, paymentDetails);
-                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+                            string strukText = GenerateStrukText(dataShifts, expenditures, cartDetailsSuccess,
+                                cartDetailsPendings, cartDetailsCanceled, refundDetails, paymentDetails);
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
                             stream.Write(buffer, 0, buffer.Length);
                             stream.Flush();
                         }
@@ -1825,23 +2087,44 @@ namespace KASIR.Printer
             strukText += kodeHeksadesimalNormal;
 
 
-            var sortedCartDetailsSuccess = cartDetailsSuccess.OrderBy(x =>
+            IOrderedEnumerable<CartDetailsSuccessStrukShift> sortedCartDetailsSuccess = cartDetailsSuccess.OrderBy(x =>
             {
-                if (x.menu_type.Contains("Minuman")) return 1;
-                if (x.menu_type.Contains("Additional Minuman")) return 2;
-                if (x.menu_type.Contains("Makanan")) return 3;
-                if (x.menu_type.Contains("Additional Makanan")) return 4;
+                if (x.menu_type.Contains("Minuman"))
+                {
+                    return 1;
+                }
+
+                if (x.menu_type.Contains("Additional Minuman"))
+                {
+                    return 2;
+                }
+
+                if (x.menu_type.Contains("Makanan"))
+                {
+                    return 3;
+                }
+
+                if (x.menu_type.Contains("Additional Makanan"))
+                {
+                    return 4;
+                }
+
                 return 5;
             }).ThenBy(x => x.menu_name);
 
-            foreach (var cartDetail in sortedCartDetailsSuccess)
+            foreach (CartDetailsSuccessStrukShift cartDetail in sortedCartDetailsSuccess)
             {
-                strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.total_price));
+                strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
+                    string.Format("{0:n0}", cartDetail.total_price));
                 if (!string.IsNullOrEmpty(cartDetail.varian))
+                {
                     strukText += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
+                }
             }
+
             strukText += FormatSimpleLine("Item Sold Qty", dataShifts.totalSuccessQty.ToString()) + "\n";
-            strukText += FormatSimpleLine("Item Sold Amount", string.Format("{0:n0}", dataShifts.totalCartSuccessAmount)) + "\n";
+            strukText +=
+                FormatSimpleLine("Item Sold Amount", string.Format("{0:n0}", dataShifts.totalCartSuccessAmount)) + "\n";
 
             if (cartDetailsPendings.Count != 0)
             {
@@ -1849,23 +2132,45 @@ namespace KASIR.Printer
                 strukText += kodeHeksadesimalBold + "PENDING ITEMS" + "\n";
 
                 strukText += kodeHeksadesimalNormal;
-                var sortedCartDetailsPendings = cartDetailsPendings.OrderBy(x =>
-                {
-                    if (x.menu_type.Contains("Minuman")) return 1;
-                    if (x.menu_type.Contains("Additional Minuman")) return 2;
-                    if (x.menu_type.Contains("Makanan")) return 3;
-                    if (x.menu_type.Contains("Additional Makanan")) return 4;
-                    return 5;
-                }).ThenBy(x => x.menu_name);
+                IOrderedEnumerable<CartDetailsPendingStrukShift> sortedCartDetailsPendings = cartDetailsPendings
+                    .OrderBy(x =>
+                    {
+                        if (x.menu_type.Contains("Minuman"))
+                        {
+                            return 1;
+                        }
 
-                foreach (var cartDetail in sortedCartDetailsPendings)
+                        if (x.menu_type.Contains("Additional Minuman"))
+                        {
+                            return 2;
+                        }
+
+                        if (x.menu_type.Contains("Makanan"))
+                        {
+                            return 3;
+                        }
+
+                        if (x.menu_type.Contains("Additional Makanan"))
+                        {
+                            return 4;
+                        }
+
+                        return 5;
+                    }).ThenBy(x => x.menu_name);
+
+                foreach (CartDetailsPendingStrukShift cartDetail in sortedCartDetailsPendings)
                 {
-                    strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.total_price));
+                    strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
+                        string.Format("{0:n0}", cartDetail.total_price));
                     if (!string.IsNullOrEmpty(cartDetail.varian))
+                    {
                         strukText += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
+                    }
                 }
+
                 strukText += FormatSimpleLine("Item Pending Qty", dataShifts.totalPendingQty.ToString()) + "\n";
-                strukText += FormatSimpleLine("Item Pending Amount", string.Format("{0:n0}", dataShifts.totalCartPendingAmount)) + "\n";
+                strukText += FormatSimpleLine("Item Pending Amount",
+                    string.Format("{0:n0}", dataShifts.totalCartPendingAmount)) + "\n";
             }
 
             if (cartDetailsCanceled.Count != 0)
@@ -1874,23 +2179,45 @@ namespace KASIR.Printer
                 strukText += kodeHeksadesimalBold + "CANCEL ITEMS" + "\n";
 
                 strukText += kodeHeksadesimalNormal;
-                var sortedCartDetailsCanceled = cartDetailsCanceled.OrderBy(x =>
-                {
-                    if (x.menu_type.Contains("Minuman")) return 1;
-                    if (x.menu_type.Contains("Additional Minuman")) return 2;
-                    if (x.menu_type.Contains("Makanan")) return 3;
-                    if (x.menu_type.Contains("Additional Makanan")) return 4;
-                    return 5;
-                }).ThenBy(x => x.menu_name);
+                IOrderedEnumerable<CartDetailsCanceledStrukShift> sortedCartDetailsCanceled = cartDetailsCanceled
+                    .OrderBy(x =>
+                    {
+                        if (x.menu_type.Contains("Minuman"))
+                        {
+                            return 1;
+                        }
 
-                foreach (var cartDetail in sortedCartDetailsCanceled)
+                        if (x.menu_type.Contains("Additional Minuman"))
+                        {
+                            return 2;
+                        }
+
+                        if (x.menu_type.Contains("Makanan"))
+                        {
+                            return 3;
+                        }
+
+                        if (x.menu_type.Contains("Additional Makanan"))
+                        {
+                            return 4;
+                        }
+
+                        return 5;
+                    }).ThenBy(x => x.menu_name);
+
+                foreach (CartDetailsCanceledStrukShift cartDetail in sortedCartDetailsCanceled)
                 {
-                    strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.total_price));
+                    strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
+                        string.Format("{0:n0}", cartDetail.total_price));
                     if (!string.IsNullOrEmpty(cartDetail.varian))
+                    {
                         strukText += FormatDetailItemLine("Varian", cartDetail.varian) + "\n";
+                    }
                 }
+
                 strukText += FormatSimpleLine("Item Cancel Qty", dataShifts.totalCanceledQty.ToString()) + "\n";
-                strukText += FormatSimpleLine("Item Cancel Amount", string.Format("{0:n0}", dataShifts.totalCartCanceledAmount)) + "\n";
+                strukText += FormatSimpleLine("Item Cancel Amount",
+                    string.Format("{0:n0}", dataShifts.totalCartCanceledAmount)) + "\n";
             }
 
             if (refundDetails.Count != 0)
@@ -1899,23 +2226,44 @@ namespace KASIR.Printer
                 strukText += kodeHeksadesimalBold + "REFUND ITEMS" + "\n";
 
                 strukText += kodeHeksadesimalNormal;
-                var sortedRefundDetails = refundDetails.OrderBy(x =>
+                IOrderedEnumerable<RefundDetailStrukShift> sortedRefundDetails = refundDetails.OrderBy(x =>
                 {
-                    if (x.menu_type.Contains("Minuman")) return 1;
-                    if (x.menu_type.Contains("Additional Minuman")) return 2;
-                    if (x.menu_type.Contains("Makanan")) return 3;
-                    if (x.menu_type.Contains("Additional Makanan")) return 4;
+                    if (x.menu_type.Contains("Minuman"))
+                    {
+                        return 1;
+                    }
+
+                    if (x.menu_type.Contains("Additional Minuman"))
+                    {
+                        return 2;
+                    }
+
+                    if (x.menu_type.Contains("Makanan"))
+                    {
+                        return 3;
+                    }
+
+                    if (x.menu_type.Contains("Additional Makanan"))
+                    {
+                        return 4;
+                    }
+
                     return 5;
                 }).ThenBy(x => x.menu_name);
 
-                foreach (var refundDetail in sortedRefundDetails)
+                foreach (RefundDetailStrukShift refundDetail in sortedRefundDetails)
                 {
-                    strukText += FormatSimpleLine(refundDetail.qty_refund_item + " " + refundDetail.menu_name, string.Format("{0:n0}", refundDetail.total_refund_price));
+                    strukText += FormatSimpleLine(refundDetail.qty_refund_item + " " + refundDetail.menu_name,
+                        string.Format("{0:n0}", refundDetail.total_refund_price));
                     if (!string.IsNullOrEmpty(refundDetail.varian))
+                    {
                         strukText += FormatDetailItemLine("Varian", refundDetail.varian) + "\n";
+                    }
                 }
+
                 strukText += FormatSimpleLine("Item Refund Qty", dataShifts.totalRefundQty.ToString()) + "\n";
-                strukText += FormatSimpleLine("Item Refund Amount", string.Format("{0:n0}", dataShifts.totalCartRefundAmount)) + "\n";
+                strukText += FormatSimpleLine("Item Refund Amount",
+                    string.Format("{0:n0}", dataShifts.totalCartRefundAmount)) + "\n";
             }
 
             strukText += "--------------------------------\n";
@@ -1929,23 +2277,30 @@ namespace KASIR.Printer
                 strukText += kodeHeksadesimalBold + "EXPENSE\n";
                 strukText += kodeHeksadesimalNormal;
 
-                foreach (var expense in expenditures)
+                foreach (ExpenditureStrukShift expense in expenditures)
                 {
                     strukText += FormatSimpleLine(expense.description, string.Format("{0:n0}", expense.nominal)) + "\n";
                 }
             }
 
-            strukText += FormatSimpleLine("Expected Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_expected)) + "\n";
-            strukText += FormatSimpleLine("Actual Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_actual)) + "\n";
-            strukText += FormatSimpleLine("Cash Difference", string.Format("{0:n0}", dataShifts.cash_difference)) + "\n";
+            strukText +=
+                FormatSimpleLine("Expected Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_expected)) +
+                "\n";
+            strukText +=
+                FormatSimpleLine("Actual Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_actual)) + "\n";
+            strukText += FormatSimpleLine("Cash Difference", string.Format("{0:n0}", dataShifts.cash_difference)) +
+                         "\n";
 
             strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + "DISCOUNTS\n";
             strukText += kodeHeksadesimalNormal;
 
-            strukText += FormatSimpleLine("All Discount items", string.Format("{0:n0}", dataShifts.discount_amount_per_items)) + "\n";
-            strukText += FormatSimpleLine("All Discount Cart", string.Format("{0:n0}", dataShifts.discount_amount_per_items)) + "\n";
-            strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", dataShifts.discount_total_amount)) + "\n";
+            strukText += FormatSimpleLine("All Discount items",
+                string.Format("{0:n0}", dataShifts.discount_amount_per_items)) + "\n";
+            strukText += FormatSimpleLine("All Discount Cart",
+                string.Format("{0:n0}", dataShifts.discount_amount_per_items)) + "\n";
+            strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", dataShifts.discount_total_amount)) +
+                         "\n";
 
             strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + CenterText("PAYMENT DETAIL");
@@ -1953,24 +2308,30 @@ namespace KASIR.Printer
 
             strukText += "--------------------------------\n";
 
-            foreach (var paymentDetail in paymentDetails)
+            foreach (PaymentDetailStrukShift paymentDetail in paymentDetails)
             {
                 strukText += paymentDetail.payment_category + "\n";
-                foreach (var paymentType in paymentDetail.payment_type_detail)
+                foreach (PaymentTypeDetailStrukShift paymentType in paymentDetail.payment_type_detail)
                 {
-                    strukText += FormatSimpleLine(paymentType.payment_type, string.Format("{0:n0}", paymentType.total_payment)) + "\n";
+                    strukText += FormatSimpleLine(paymentType.payment_type,
+                        string.Format("{0:n0}", paymentType.total_payment)) + "\n";
                 }
-                strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", paymentDetail.total_amount)) + "\n";
+
+                strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", paymentDetail.total_amount)) +
+                             "\n";
                 strukText += "--------------------------------\n";
             }
 
-            strukText += kodeHeksadesimalBold + FormatSimpleLine("TOTAL TRANSACTION", string.Format("{0:n0}", dataShifts.total_transaction)) + "\n";
+            strukText += kodeHeksadesimalBold +
+                         FormatSimpleLine("TOTAL TRANSACTION", string.Format("{0:n0}", dataShifts.total_transaction)) +
+                         "\n";
             strukText += kodeHeksadesimalNormal;
 
             strukText += "--------------------------------\n\n\n\n\n";
 
             return strukText;
         }
+
         public async Task Ex_PrintModelCetakUlangShift(DataStrukShift dataShifts,
             List<ExpenditureStrukShift> expenditures,
             List<CartDetailsSuccessStrukShift> cartDetailsSuccess,
@@ -1978,50 +2339,58 @@ namespace KASIR.Printer
             List<CartDetailsCanceledStrukShift> cartDetailsCanceled,
             List<RefundDetailStrukShift> refundDetails,
             List<PaymentDetailStrukShift> paymentDetails,
-    string printerId,
-    string printerName)
+            string printerId,
+            string printerName)
         {
             try
             {
-
-                System.IO.Stream stream = null;
+                Stream stream = null;
 
                 // Koneksi printer langsung di sini
-                if (System.Net.IPAddress.TryParse(printerName, out _))
+                if (IPAddress.TryParse(printerName, out _))
                 {
-                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                    TcpClient client = new(printerName, 9100);
                     stream = client.GetStream();
                 }
                 else
                 {
                     await RetryPolicyAsync(async () =>
                     {
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                        if (printerDevice == null) return false;
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
+                        if (printerDevice == null)
+                        {
+                            return false;
+                        }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000")) return false;
+                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        {
+                            return false;
+                        }
 
                         client.Connect(endpoint);
                         stream = client.GetStream();
                         return true;
-                    }, maxRetries: 3);
+                    }, 3);
                 }
+
                 // Struck Checker
                 if (ShouldPrint(printerId, "Kasir"))
                 {
-                    PrintDocument printDocument = new PrintDocument();
+                    PrintDocument printDocument = new();
                     printDocument.PrintPage += (sender, e) =>
                     {
                         Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                         // Mengatur font normal dan tebal
-                        Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                        Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                        Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                        Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+                        Font normalFont =
+                            new("Arial", 8,
+                                FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                        Font boldFont = new("Arial", 8, FontStyle.Bold);
+                        Font BigboldFont = new("Arial", 10, FontStyle.Bold);
+                        Font NomorAntrian = new("Arial", 12, FontStyle.Bold);
 
                         float leftMargin = 5; // Margin kiri (dalam pixel)
                         float rightMargin = 5; // Margin kanan (dalam pixel)
@@ -2029,7 +2398,8 @@ namespace KASIR.Printer
                         float yPos = topMargin;
 
                         // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                        float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                        float paperWidth =
+                            58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
                         float printableWidth = paperWidth - leftMargin - rightMargin;
 
 
@@ -2039,36 +2409,49 @@ namespace KASIR.Printer
                             SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                             SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                             e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                                leftMargin + printableWidth - sizeRight.Width, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
 
                         // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                         void DrawCenterText(string text, Font font)
                         {
-                            if (text == null) text = string.Empty;
-                            if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            if (text == null)
+                            {
+                                text = string.Empty;
+                            }
+
+                            if (font == null)
+                            {
+                                throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                        leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
                                 SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                    leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                 yPos += font.GetHeight(e.Graphics);
                             }
                         }
@@ -2081,21 +2464,25 @@ namespace KASIR.Printer
                                 //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                 return;
                             }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                        yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
@@ -2111,9 +2498,11 @@ namespace KASIR.Printer
                             e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
+
                         void DrawSpace()
                         {
-                            yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                            yPos += normalFont
+                                .GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
                         }
 
                         DrawCenterText(dataShifts?.outlet_name, BigboldFont);
@@ -2132,17 +2521,34 @@ namespace KASIR.Printer
                         DrawCenterText("ORDER DETAILS", BigboldFont);
                         DrawSeparator();
                         DrawCenterText("SOLD ITEMS", boldFont);
-                        var sortedcartDetailSuccess = cartDetailsSuccess.OrderBy(x =>
-                        {
-                            if (x.menu_type.Contains("Minuman")) return 1;
-                            if (x.menu_type.Contains("Additional Minuman")) return 2;
-                            if (x.menu_type.Contains("Makanan")) return 3;
-                            if (x.menu_type.Contains("Additional Makanan")) return 4;
-                            return 5;
-                        })
-                        .ThenBy(x => x.menu_name);
+                        IOrderedEnumerable<CartDetailsSuccessStrukShift> sortedcartDetailSuccess = cartDetailsSuccess
+                            .OrderBy(x =>
+                            {
+                                if (x.menu_type.Contains("Minuman"))
+                                {
+                                    return 1;
+                                }
+
+                                if (x.menu_type.Contains("Additional Minuman"))
+                                {
+                                    return 2;
+                                }
+
+                                if (x.menu_type.Contains("Makanan"))
+                                {
+                                    return 3;
+                                }
+
+                                if (x.menu_type.Contains("Additional Makanan"))
+                                {
+                                    return 4;
+                                }
+
+                                return 5;
+                            })
+                            .ThenBy(x => x.menu_name);
                         //foreach (var cartDetail in cartDetailsSuccess)
-                        foreach (var cartDetail in sortedcartDetailSuccess)
+                        foreach (CartDetailsSuccessStrukShift cartDetail in sortedcartDetailSuccess)
                         {
                             // Add varian to the cart detail name if it's not null
                             string displayMenuName = cartDetail.menu_name;
@@ -2155,8 +2561,10 @@ namespace KASIR.Printer
                             {
                                 DrawSimpleLine(cartDetail.menu_name, "");
                             }
+
                             DrawSimpleLine(cartDetail.qty.ToString(), string.Format("{0:n0}", cartDetail.total_price));
                         }
+
                         DrawSpace();
                         DrawSimpleLine("Item Sold Qty", dataShifts.totalSuccessQty.ToString());
                         DrawSimpleLine("Item Sold Amount", string.Format("{0:n0}", dataShifts.totalCartSuccessAmount));
@@ -2164,17 +2572,34 @@ namespace KASIR.Printer
                         {
                             DrawSeparator();
                             DrawCenterText("PENDING ITEMS", boldFont);
-                            var sortedcartDetailPendings = cartDetailsPendings.OrderBy(x =>
-                            {
-                                if (x.menu_type.Contains("Minuman")) return 1;
-                                if (x.menu_type.Contains("Additional Minuman")) return 2;
-                                if (x.menu_type.Contains("Makanan")) return 3;
-                                if (x.menu_type.Contains("Additional Makanan")) return 4;
-                                return 5;
-                            })
-                            .ThenBy(x => x.menu_name);
+                            IOrderedEnumerable<CartDetailsPendingStrukShift> sortedcartDetailPendings =
+                                cartDetailsPendings.OrderBy(x =>
+                                    {
+                                        if (x.menu_type.Contains("Minuman"))
+                                        {
+                                            return 1;
+                                        }
+
+                                        if (x.menu_type.Contains("Additional Minuman"))
+                                        {
+                                            return 2;
+                                        }
+
+                                        if (x.menu_type.Contains("Makanan"))
+                                        {
+                                            return 3;
+                                        }
+
+                                        if (x.menu_type.Contains("Additional Makanan"))
+                                        {
+                                            return 4;
+                                        }
+
+                                        return 5;
+                                    })
+                                    .ThenBy(x => x.menu_name);
                             //foreach (var cartDetail in cartDetailsPendings)
-                            foreach (var cartDetail in sortedcartDetailPendings)
+                            foreach (CartDetailsPendingStrukShift cartDetail in sortedcartDetailPendings)
                             {
                                 // Add varian to the cart detail name if it's not null
                                 if (!string.IsNullOrEmpty(cartDetail.varian) && cartDetail.varian != "null")
@@ -2187,26 +2612,47 @@ namespace KASIR.Printer
                                     DrawSimpleLine(cartDetail.menu_name, "");
                                 }
 
-                                DrawSimpleLine(cartDetail.qty.ToString(), string.Format("{0:n0}", cartDetail.total_price));
+                                DrawSimpleLine(cartDetail.qty.ToString(),
+                                    string.Format("{0:n0}", cartDetail.total_price));
                             }
+
                             DrawSimpleLine("Item Pending Qty", dataShifts.totalPendingQty.ToString());
-                            DrawSimpleLine("Item Pending Amount", string.Format("{0:n0}", dataShifts.totalCartPendingAmount));
+                            DrawSimpleLine("Item Pending Amount",
+                                string.Format("{0:n0}", dataShifts.totalCartPendingAmount));
                         }
+
                         if (cartDetailsCanceled.Count != 0)
                         {
                             DrawSeparator();
                             DrawCenterText("CANCEL ITEMS", boldFont);
-                            var sortedcartDetailCanceled = cartDetailsCanceled.OrderBy(x =>
-                            {
-                                if (x.menu_type.Contains("Minuman")) return 1;
-                                if (x.menu_type.Contains("Additional Minuman")) return 2;
-                                if (x.menu_type.Contains("Makanan")) return 3;
-                                if (x.menu_type.Contains("Additional Makanan")) return 4;
-                                return 5;
-                            })
-                            .ThenBy(x => x.menu_name);
+                            IOrderedEnumerable<CartDetailsCanceledStrukShift> sortedcartDetailCanceled =
+                                cartDetailsCanceled.OrderBy(x =>
+                                    {
+                                        if (x.menu_type.Contains("Minuman"))
+                                        {
+                                            return 1;
+                                        }
+
+                                        if (x.menu_type.Contains("Additional Minuman"))
+                                        {
+                                            return 2;
+                                        }
+
+                                        if (x.menu_type.Contains("Makanan"))
+                                        {
+                                            return 3;
+                                        }
+
+                                        if (x.menu_type.Contains("Additional Makanan"))
+                                        {
+                                            return 4;
+                                        }
+
+                                        return 5;
+                                    })
+                                    .ThenBy(x => x.menu_name);
                             //foreach (var cartDetail in cartDetailsCanceled)
-                            foreach (var cartDetail in sortedcartDetailCanceled)
+                            foreach (CartDetailsCanceledStrukShift cartDetail in sortedcartDetailCanceled)
                             {
                                 // Add varian to the cart detail name if it's not null
                                 string displayMenuName = cartDetail.menu_name;
@@ -2219,26 +2665,47 @@ namespace KASIR.Printer
                                 {
                                     DrawSimpleLine(cartDetail.menu_name, "");
                                 }
-                                DrawSimpleLine(cartDetail.qty.ToString(), string.Format("{0:n0}", cartDetail.total_price));
+
+                                DrawSimpleLine(cartDetail.qty.ToString(),
+                                    string.Format("{0:n0}", cartDetail.total_price));
                             }
+
                             DrawSimpleLine("Item Cancel Qty", dataShifts.totalCanceledQty.ToString());
-                            DrawSimpleLine("Item Cancel Amount", string.Format("{0:n0}", dataShifts.totalCartCanceledAmount));
+                            DrawSimpleLine("Item Cancel Amount",
+                                string.Format("{0:n0}", dataShifts.totalCartCanceledAmount));
                         }
+
                         if (refundDetails.Count != 0)
                         {
                             DrawSeparator();
                             DrawCenterText("REFUND ITEMS", boldFont);
-                            var sortedrefundDetails = refundDetails.OrderBy(x =>
-                            {
-                                if (x.menu_type.Contains("Minuman")) return 1;
-                                if (x.menu_type.Contains("Additional Minuman")) return 2;
-                                if (x.menu_type.Contains("Makanan")) return 3;
-                                if (x.menu_type.Contains("Additional Makanan")) return 4;
-                                return 5;
-                            })
-                            .ThenBy(x => x.menu_name);
+                            IOrderedEnumerable<RefundDetailStrukShift> sortedrefundDetails = refundDetails.OrderBy(x =>
+                                {
+                                    if (x.menu_type.Contains("Minuman"))
+                                    {
+                                        return 1;
+                                    }
+
+                                    if (x.menu_type.Contains("Additional Minuman"))
+                                    {
+                                        return 2;
+                                    }
+
+                                    if (x.menu_type.Contains("Makanan"))
+                                    {
+                                        return 3;
+                                    }
+
+                                    if (x.menu_type.Contains("Additional Makanan"))
+                                    {
+                                        return 4;
+                                    }
+
+                                    return 5;
+                                })
+                                .ThenBy(x => x.menu_name);
                             //foreach (var cartDetail in refundDetails)
-                            foreach (var cartDetail in sortedrefundDetails)
+                            foreach (RefundDetailStrukShift cartDetail in sortedrefundDetails)
                             {
                                 // Add varian to the cart detail name if it's not null
                                 string displayMenuName = cartDetail.menu_name;
@@ -2251,43 +2718,55 @@ namespace KASIR.Printer
                                 {
                                     DrawSimpleLine(cartDetail.menu_name, "");
                                 }
-                                DrawSimpleLine(cartDetail.qty_refund_item.ToString(), string.Format("{0:n0}", cartDetail.total_refund_price));
+
+                                DrawSimpleLine(cartDetail.qty_refund_item.ToString(),
+                                    string.Format("{0:n0}", cartDetail.total_refund_price));
                             }
+
                             DrawSimpleLine("Item Refund Qty", dataShifts.totalRefundQty.ToString());
-                            DrawSimpleLine("Item Refund Amount", string.Format("{0:n0}", dataShifts.totalCartRefundAmount));
+                            DrawSimpleLine("Item Refund Amount",
+                                string.Format("{0:n0}", dataShifts.totalCartRefundAmount));
                         }
+
                         DrawSeparator();
                         DrawCenterText("CASH MANAGEMENT", BigboldFont);
                         DrawSeparator();
                         if (expenditures.Count != 0)
                         {
                             DrawLeftText("EXPENSE", boldFont);
-                            foreach (var expense in expenditures)
+                            foreach (ExpenditureStrukShift expense in expenditures)
                             {
                                 DrawSimpleLine(expense.description, string.Format("{0:n0}", expense.nominal));
                             }
                         }
-                        DrawSimpleLine("Expected Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_expected));
+
+                        DrawSimpleLine("Expected Ending Cash",
+                            string.Format("{0:n0}", dataShifts.ending_cash_expected));
                         DrawSimpleLine("Actual Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_actual));
                         DrawSimpleLine("Cash Difference", string.Format("{0:n0}", dataShifts.cash_difference));
                         DrawSeparator();
                         DrawLeftText("DISCOUNTS", boldFont);
-                        DrawSimpleLine("All Discount items", string.Format("{0:n0}", dataShifts.discount_amount_per_items));
-                        DrawSimpleLine("All Discount Cart", string.Format("{0:n0}", dataShifts.discount_amount_per_items));
+                        DrawSimpleLine("All Discount items",
+                            string.Format("{0:n0}", dataShifts.discount_amount_per_items));
+                        DrawSimpleLine("All Discount Cart",
+                            string.Format("{0:n0}", dataShifts.discount_amount_per_items));
                         DrawSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", dataShifts.discount_total_amount));
                         DrawSeparator();
                         DrawCenterText("PAYMENT DETAIL", BigboldFont);
                         DrawSeparator();
-                        foreach (var paymentDetail in paymentDetails)
+                        foreach (PaymentDetailStrukShift paymentDetail in paymentDetails)
                         {
                             DrawLeftText(paymentDetail.payment_category, boldFont);
-                            foreach (var paymentType in paymentDetail.payment_type_detail)
+                            foreach (PaymentTypeDetailStrukShift paymentType in paymentDetail.payment_type_detail)
                             {
-                                DrawSimpleLine(paymentType.payment_type, string.Format("{0:n0}", paymentType.total_payment));
+                                DrawSimpleLine(paymentType.payment_type,
+                                    string.Format("{0:n0}", paymentType.total_payment));
                             }
+
                             DrawSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", paymentDetail.total_amount));
                             DrawSeparator();
                         }
+
                         DrawSimpleLine("TOTAL TRANSACTION", string.Format("{0:n0}", dataShifts.total_transaction));
                         DrawSeparator();
                     };
@@ -2302,51 +2781,54 @@ namespace KASIR.Printer
 
         // Struct Refund
         public async Task PrintModelRefund(DataRefundStruk datas,
-        List<RefundDetailStruk> refundDetailStruks,
-        int totalTransactions)
+            List<RefundDetailStruk> refundDetailStruks,
+            int totalTransactions)
         {
             try
             {
                 await LoadPrinterSettings(); // Load printer settings
-                await LoadSettingsAsync();   // Load additional settings
+                await LoadSettingsAsync(); // Load additional settings
 
-                foreach (var printer in printerSettings.ToList())
+                foreach (KeyValuePair<string, string> printer in printerSettings.ToList())
                 {
-                    var printerName = printer.Value;
+                    string printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))
                     {
                         printerName = ConvertMacAddressFormat(printerName);
                     }
-                    var printerId = printer.Key.Replace("inter", "");
+
+                    string printerId = printer.Key.Replace("inter", "");
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
                         Ex_PrintModelRefund(datas, refundDetailStruks, totalTransactions,
-                    printerId, printerName);
+                            printerId, printerName);
                         continue;
                     }
+
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        System.IO.Stream stream = Stream.Null;
+                        Stream stream = Stream.Null;
 
                         try
                         {
-                            if (System.Net.IPAddress.TryParse(printerName, out _))
+                            if (IPAddress.TryParse(printerName, out _))
                             {
                                 // Connect via LAN
-                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                TcpClient client = new(printerName, 9100);
                                 stream = client.GetStream();
                             }
                             else
                             {
                                 // Connect via Bluetooth
-                                BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                                 if (printerDevice == null)
                                 {
                                     continue;
                                 }
 
-                                BluetoothClient client = new BluetoothClient();
-                                BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                BluetoothClient client = new();
+                                BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                    BluetoothService.SerialPort);
 
                                 if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                                 {
@@ -2375,15 +2857,15 @@ namespace KASIR.Printer
             }
         }
 
-        private void PrintRefundReceipt(System.IO.Stream stream, DataRefundStruk datas,
+        private void PrintRefundReceipt(Stream stream, DataRefundStruk datas,
             List<RefundDetailStruk> refundDetailStruks, int totalTransactions)
         {
             string kodeHeksadesimalBold = "\x1B\x45\x01";
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
 
-            byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
-            byte[] NewLine = new byte[] { 0x0A }; // New line
+            byte[] InitPrinter = { 0x1B, 0x40 }; // Initialize printer
+            byte[] NewLine = { 0x0A }; // New line
 
             // Write initialization bytes
             stream.Write(InitPrinter, 0, InitPrinter.Length);
@@ -2399,32 +2881,53 @@ namespace KASIR.Printer
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
             if (datas?.invoice_due_date != null)
+            {
                 strukText += CenterText(datas?.invoice_due_date);
+            }
+
             strukText += "Name: " + datas?.customer_name + "\n";
 
-            var servingTypes = refundDetailStruks.Select(cd => cd.serving_type_name).Distinct();
+            IEnumerable<string> servingTypes = refundDetailStruks.Select(cd => cd.serving_type_name).Distinct();
 
-            foreach (var servingType in servingTypes)
+            foreach (string servingType in servingTypes)
             {
-                var itemsForServingType = refundDetailStruks.Where(cd => cd.serving_type_name == servingType).ToList();
+                List<RefundDetailStruk> itemsForServingType =
+                    refundDetailStruks.Where(cd => cd.serving_type_name == servingType).ToList();
                 if (itemsForServingType.Count == 0)
+                {
                     continue;
+                }
 
                 strukText += "--------------------------------\n";
                 strukText += CenterText(servingType);
                 strukText += "\n";
 
-                foreach (var refundDetail in itemsForServingType)
+                foreach (RefundDetailStruk refundDetail in itemsForServingType)
                 {
-                    strukText += FormatSimpleLine(refundDetail.qty_refund_item + " " + refundDetail.menu_name, string.Format("{0:n0}", refundDetail.menu_price));
+                    strukText += FormatSimpleLine(refundDetail.qty_refund_item + " " + refundDetail.menu_name,
+                        string.Format("{0:n0}", refundDetail.menu_price));
                     if (!string.IsNullOrEmpty(refundDetail.varian))
+                    {
                         strukText += "   Varian: " + refundDetail.varian + "\n";
-                    if (!string.IsNullOrEmpty(refundDetail.note_item?.ToString()))
+                    }
+
+                    if (!string.IsNullOrEmpty(refundDetail.note_item))
+                    {
                         strukText += "   Note: " + refundDetail.note_item + "\n";
+                    }
+
                     if (!string.IsNullOrEmpty(refundDetail.discount_code))
+                    {
                         strukText += "   Discount Code: " + refundDetail.discount_code + "\n";
+                    }
+
                     if (refundDetail.discounted_price.HasValue && refundDetail.discounted_price != 0)
-                        strukText += "   Total Discount: " + (refundDetail.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", refundDetail.discounts_value) : refundDetail.discounts_value + " %") + "\n";
+                    {
+                        strukText += "   Total Discount: " + (refundDetail.discounts_is_percent != "1"
+                            ? string.Format("{0:n0}", refundDetail.discounts_value)
+                            : refundDetail.discounts_value + " %") + "\n";
+                    }
+
                     strukText += "   Payment Type Refund: " + refundDetail.payment_type_name + "\n";
                     strukText += "   Total Refund: " + string.Format("{0:n0}", refundDetail.total_refund_price) + "\n";
                     strukText += "   Refund Reason: " + refundDetail.refund_reason_item + "\n";
@@ -2435,24 +2938,36 @@ namespace KASIR.Printer
             strukText += "--------------------------------\n";
             strukText += FormatSimpleLine("Subtotal", string.Format("{0:n0}", datas.subtotal)) + "\n";
             if (!string.IsNullOrEmpty(datas.discount_code))
+            {
                 strukText += "Discount Code: " + datas.discount_code + "\n";
+            }
+
             if (datas.discounts_value.HasValue && datas.discounts_value != 0)
-                strukText += FormatSimpleLine("Discount Value", (datas.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", datas.discounts_value) : datas.discounts_value + " %")) + "\n";
+            {
+                strukText += FormatSimpleLine("Discount Value",
+                    datas.discounts_is_percent != "1"
+                        ? string.Format("{0:n0}", datas.discounts_value)
+                        : datas.discounts_value + " %") + "\n";
+            }
 
             strukText += FormatSimpleLine("Total", string.Format("{0:n0}", datas.total)) + "\n";
             strukText += "Payment Type: " + datas.payment_type + "\n";
             if (!string.IsNullOrEmpty(datas.refund_reason))
+            {
                 strukText += "Refund Reason: " + datas.refund_reason + "\n";
+            }
+
             strukText += FormatSimpleLine("Total Refund", string.Format("{0:n0}", datas.total_refund)) + "\n";
             strukText += "--------------------------------\n";
-            strukText += CenterText("Meja No. " + datas.customer_seat.ToString());
+            strukText += CenterText("Meja No. " + datas.customer_seat);
             strukText += "--------------------------------\n";
             strukText += CenterText("Powered By Dastrevas");
 
-            string NomorUrut = "\n" + kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n\n\n    ";
+            string NomorUrut = "\n" + kodeHeksadesimalSizeBesar + kodeHeksadesimalBold +
+                               CenterText("No. " + totalTransactions) + "\n\n\n    ";
 
-            byte[] buffer1 = System.Text.Encoding.UTF8.GetBytes(NomorUrut);
-            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+            byte[] buffer1 = Encoding.UTF8.GetBytes(NomorUrut);
+            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
             stream.Write(buffer1, 0, buffer1.Length);
             PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
@@ -2464,52 +2979,61 @@ namespace KASIR.Printer
         }
 
         public async Task Ex_PrintModelRefund
-          (DataRefundStruk datas,
+        (DataRefundStruk datas,
             List<RefundDetailStruk> refundDetailStruks,
-           int totalTransactions,
-    string printerId,
-    string printerName)
+            int totalTransactions,
+            string printerId,
+            string printerName)
         {
             try
             {
-                System.IO.Stream stream = null;
+                Stream stream = null;
 
                 // Koneksi printer langsung di sini
-                if (System.Net.IPAddress.TryParse(printerName, out _))
+                if (IPAddress.TryParse(printerName, out _))
                 {
-                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                    TcpClient client = new(printerName, 9100);
                     stream = client.GetStream();
                 }
                 else
                 {
                     await RetryPolicyAsync(async () =>
                     {
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                        if (printerDevice == null) return false;
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
+                        if (printerDevice == null)
+                        {
+                            return false;
+                        }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000")) return false;
+                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        {
+                            return false;
+                        }
 
                         client.Connect(endpoint);
                         stream = client.GetStream();
                         return true;
-                    }, maxRetries: 3);
+                    }, 3);
                 }
+
                 // Struck Checker
                 if (ShouldPrint(printerId, "Kasir"))
                 {
-                    PrintDocument printDocument = new PrintDocument();
+                    PrintDocument printDocument = new();
                     printDocument.PrintPage += (sender, e) =>
                     {
                         Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                         // Mengatur font normal dan tebal
-                        Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                        Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                        Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                        Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+                        Font normalFont =
+                            new("Arial", 8,
+                                FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                        Font boldFont = new("Arial", 8, FontStyle.Bold);
+                        Font BigboldFont = new("Arial", 10, FontStyle.Bold);
+                        Font NomorAntrian = new("Arial", 12, FontStyle.Bold);
 
                         float leftMargin = 5; // Margin kiri (dalam pixel)
                         float rightMargin = 5; // Margin kanan (dalam pixel)
@@ -2517,7 +3041,8 @@ namespace KASIR.Printer
                         float yPos = topMargin;
 
                         // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                        float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                        float paperWidth =
+                            58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
                         float printableWidth = paperWidth - leftMargin - rightMargin;
 
 
@@ -2527,36 +3052,49 @@ namespace KASIR.Printer
                             SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                             SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                             e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                                leftMargin + printableWidth - sizeRight.Width, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
 
                         // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                         void DrawCenterText(string text, Font font)
                         {
-                            if (text == null) text = string.Empty;
-                            if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            if (text == null)
+                            {
+                                text = string.Empty;
+                            }
+
+                            if (font == null)
+                            {
+                                throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                        leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
                                 SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                    leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                 yPos += font.GetHeight(e.Graphics);
                             }
                         }
@@ -2569,21 +3107,25 @@ namespace KASIR.Printer
                                 //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                 return;
                             }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                        yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
@@ -2599,32 +3141,33 @@ namespace KASIR.Printer
                             e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
+
                         void DrawSpace()
                         {
-                            yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                            yPos += normalFont
+                                .GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
                         }
-
 
 
                         // Fungsi untuk mendapatkan dan mengonversi gambar logo ke hitam dan putih
                         Image GetLogoImage(string path)
                         {
                             Image img = Image.FromFile(path);
-                            Bitmap bmp = new Bitmap(img.Width, img.Height);
+                            Bitmap bmp = new(img.Width, img.Height);
                             using (Graphics g = Graphics.FromImage(bmp))
                             {
-                                ColorMatrix colorMatrix = new ColorMatrix(new float[][]
+                                ColorMatrix colorMatrix = new(new[]
                                 {
-                                        new float[] { 0.3f, 0.3f, 0.3f, 0, 0 },
-                                        new float[] { 0.59f, 0.59f, 0.59f, 0, 0 },
-                                        new float[] { 0.11f, 0.11f, 0.11f, 0, 0 },
-                                        new float[] { 0, 0, 0, 1, 0 },
-                                        new float[] { 0, 0, 0, 0, 1 }
+                                    new[] { 0.3f, 0.3f, 0.3f, 0, 0 }, new[] { 0.59f, 0.59f, 0.59f, 0, 0 },
+                                    new[] { 0.11f, 0.11f, 0.11f, 0, 0 }, new float[] { 0, 0, 0, 1, 0 },
+                                    new float[] { 0, 0, 0, 0, 1 }
                                 });
-                                ImageAttributes attributes = new ImageAttributes();
+                                ImageAttributes attributes = new();
                                 attributes.SetColorMatrix(colorMatrix);
-                                g.DrawImage(img, new Rectangle(0, 0, img.Width, img.Height), 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, attributes);
+                                g.DrawImage(img, new Rectangle(0, 0, img.Width, img.Height), 0, 0, img.Width,
+                                    img.Height, GraphicsUnit.Pixel, attributes);
                             }
+
                             return bmp;
                         }
 
@@ -2640,7 +3183,7 @@ namespace KASIR.Printer
                             SizeF textSize = e.Graphics.MeasureString(poweredByText, normalFont);
 
                             // Gambar teks
-                            float textX = leftMargin + (printableWidth - textSize.Width) / 2;
+                            float textX = leftMargin + ((printableWidth - textSize.Width) / 2);
                             e.Graphics.DrawString(poweredByText, normalFont, Brushes.Black, textX, yPos);
 
                             // Sesuaikan yPos untuk logo
@@ -2652,7 +3195,7 @@ namespace KASIR.Printer
                             float scaleFactor = targetWidth / logoPoweredBy.Width;
                             float logoHeight = logoPoweredBy.Height * scaleFactor;
 
-                            float logoX = leftMargin + (printableWidth - targetWidth) / 2;
+                            float logoX = leftMargin + ((printableWidth - targetWidth) / 2);
                             e.Graphics.DrawImage(logoPoweredBy, logoX, yPos, targetWidth, logoHeight);
 
                             spaceBefore = 5;
@@ -2662,7 +3205,7 @@ namespace KASIR.Printer
                         }
 
 
-                        DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
+                        DrawCenterText("No. " + totalTransactions, NomorAntrian);
 
                         // Path ke logo Powered by Anda
                         string poweredByLogoPath = "icon\\DT-Logo.bmp"; // Ganti dengan path logo Powered by Anda
@@ -2676,7 +3219,7 @@ namespace KASIR.Printer
                         // Hitung tinggi logo berdasarkan lebar yang diinginkan dengan mempertahankan rasio aspek
                         float scaleFactor = logoTargetWidthPx / logo.Width;
                         float logoHeight = logo.Height * scaleFactor;
-                        float logoX = leftMargin + (printableWidth - logoTargetWidthPx) / 2;
+                        float logoX = leftMargin + ((printableWidth - logoTargetWidthPx) / 2);
 
                         // Gambar logo dengan ukuran yang diubah
                         e.Graphics.DrawImage(logo, logoX, yPos, logoTargetWidthPx, logoHeight);
@@ -2696,21 +3239,28 @@ namespace KASIR.Printer
                         DrawCenterText("Receipt No. " + datas?.receipt_number, normalFont);
                         DrawSeparator();
                         if (datas?.invoice_due_date != null)
+                        {
                             DrawCenterText(datas?.invoice_due_date, normalFont);
+                        }
+
                         DrawSpace();
                         DrawLeftText(datas?.customer_name, normalFont);
 
                         // Iterate through cart details and group by serving_type_name
-                        var servingTypes = refundDetailStruks.Select(cd => cd.serving_type_name).Distinct();
+                        IEnumerable<string> servingTypes =
+                            refundDetailStruks.Select(cd => cd.serving_type_name).Distinct();
 
-                        foreach (var servingType in servingTypes)
+                        foreach (string servingType in servingTypes)
                         {
                             // Filter cart details by serving_type_name
-                            var itemsForServingType = refundDetailStruks.Where(cd => cd.serving_type_name == servingType).ToList();
+                            List<RefundDetailStruk> itemsForServingType = refundDetailStruks
+                                .Where(cd => cd.serving_type_name == servingType).ToList();
 
                             // Skip if there are no items for this serving type
                             if (itemsForServingType.Count == 0)
+                            {
                                 continue;
+                            }
 
                             // Add a section for the serving type
                             DrawSeparator();
@@ -2718,43 +3268,71 @@ namespace KASIR.Printer
                             DrawSpace();
 
                             // Iterate through items for this serving type
-                            foreach (var refundDetail in itemsForServingType)
+                            foreach (RefundDetailStruk refundDetail in itemsForServingType)
                             {
-                                DrawSimpleLine(refundDetail.qty_refund_item + " " + refundDetail.menu_name, string.Format("{0:n0}", refundDetail.menu_price));
+                                DrawSimpleLine(refundDetail.qty_refund_item + " " + refundDetail.menu_name,
+                                    string.Format("{0:n0}", refundDetail.menu_price));
                                 // Add detail items
                                 if (!string.IsNullOrEmpty(refundDetail.varian))
+                                {
                                     DrawLeftText("   Varian: " + refundDetail.varian, normalFont);
-                                if (!string.IsNullOrEmpty(refundDetail.note_item?.ToString()))
+                                }
+
+                                if (!string.IsNullOrEmpty(refundDetail.note_item))
+                                {
                                     DrawLeftText("   Note: " + refundDetail.note_item, normalFont);
+                                }
+
                                 if (!string.IsNullOrEmpty(refundDetail.discount_code))
+                                {
                                     DrawLeftText("   Discount Code: " + refundDetail.discount_code, normalFont);
+                                }
+
                                 if (refundDetail.discounted_price.HasValue && refundDetail.discounted_price != 0)
-                                    DrawSimpleLine("   Total Discount", (refundDetail.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", refundDetail.discounts_value) : refundDetail.discounts_value + " %"));
+                                {
+                                    DrawSimpleLine("   Total Discount",
+                                        refundDetail.discounts_is_percent != "1"
+                                            ? string.Format("{0:n0}", refundDetail.discounts_value)
+                                            : refundDetail.discounts_value + " %");
+                                }
+
                                 DrawLeftText("   Payment Type Refund: " + refundDetail.payment_type_name, normalFont);
-                                DrawSimpleLine("   Total Refund", string.Format("{0:n0}", refundDetail.total_refund_price));
+                                DrawSimpleLine("   Total Refund",
+                                    string.Format("{0:n0}", refundDetail.total_refund_price));
                                 DrawLeftText("   Refund Reason: " + refundDetail.refund_reason_item, normalFont);
 
                                 // Add an empty line between items
                                 DrawSpace();
                             }
                         }
+
                         DrawSeparator();
                         DrawSimpleLine("Subtotal", string.Format("{0:n0}", datas.subtotal));
                         if (!string.IsNullOrEmpty(datas.discount_code))
+                        {
                             DrawLeftText("Discount Code: " + datas.discount_code, normalFont);
+                        }
+
                         if (datas.discounts_value.HasValue && datas.discounts_value != 0)
-                            DrawSimpleLine("Discount Value", (datas.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", datas.discounts_value) : datas.discounts_value + " %"));
+                        {
+                            DrawSimpleLine("Discount Value",
+                                datas.discounts_is_percent != "1"
+                                    ? string.Format("{0:n0}", datas.discounts_value)
+                                    : datas.discounts_value + " %");
+                        }
 
                         DrawSimpleLine("Total", string.Format("{0:n0}", datas.total));
                         DrawLeftText("Payment Type: " + datas.payment_type, normalFont);
                         if (!string.IsNullOrEmpty(datas.refund_reason))
+                        {
                             DrawLeftText("Refund Reason: " + datas.refund_reason, normalFont);
+                        }
+
                         DrawSimpleLine("Total Refund ", string.Format("{0:n0}", datas.total_refund));
                         DrawSeparator();
                         DrawPoweredByLogo(poweredByLogoPath);
                         DrawSpace();
                         DrawCenterText(nomorMeja, NomorAntrian);
-
                     };
                 }
             }
@@ -2767,15 +3345,15 @@ namespace KASIR.Printer
 
         // Struct InputPin cetak ulang struk
         public async Task PrintModelInputPin(DataRestruk datas,
-        List<CartDetailRestruk> cartDetails,
-        List<RefundDetailRestruk> cartRefundDetails,
-        List<CanceledItemStrukCustomerRestruk> canceledItems,
-        int totalTransactions)
+            List<CartDetailRestruk> cartDetails,
+            List<RefundDetailRestruk> cartRefundDetails,
+            List<CanceledItemStrukCustomerRestruk> canceledItems,
+            int totalTransactions)
         {
             try
             {
                 await LoadPrinterSettings(); // Load printer settings
-                await LoadSettingsAsync();   // Load additional settings
+                await LoadSettingsAsync(); // Load additional settings
 
                 List<KeyValuePair<string, string>> printerSettingsCopy;
                 lock (printerSettings)
@@ -2783,52 +3361,53 @@ namespace KASIR.Printer
                     printerSettingsCopy = printerSettings.ToList(); // Create a copy of the collection
                 }
 
-                foreach (var printer in printerSettingsCopy)
+                foreach (KeyValuePair<string, string> printer in printerSettingsCopy)
                 {
-                    var printerName = printer.Value;
+                    string printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))
                     {
                         printerName = ConvertMacAddressFormat(printerName);
                     }
-                    var printerId = printer.Key.Replace("inter", "");
+
+                    string printerId = printer.Key.Replace("inter", "");
 
                     if (string.IsNullOrWhiteSpace(printerName) || printerName.Length < 3)
                     {
                         continue;
                     }
+
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
-
                         Ex_PrintModelInputPin(datas, cartDetails, cartRefundDetails, canceledItems, totalTransactions,
-                    printerId, printerName
-                );
+                            printerId, printerName
+                        );
                         continue;
                     }
+
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        System.IO.Stream stream = Stream.Null;
+                        Stream stream = Stream.Null;
 
                         try
                         {
-                            if (System.Net.IPAddress.TryParse(printerName, out _))
+                            if (IPAddress.TryParse(printerName, out _))
                             {
-
                                 // Connect via LAN
-                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                TcpClient client = new(printerName, 9100);
                                 stream = client.GetStream();
                             }
                             else
                             {
-
                                 // Connect via Bluetooth
-                                BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                                 if (printerDevice == null)
                                 {
                                     continue;
                                 }
 
-                                BluetoothClient client = new BluetoothClient();
-                                BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                BluetoothClient client = new();
+                                BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                    BluetoothService.SerialPort);
 
                                 if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                                 {
@@ -2839,7 +3418,8 @@ namespace KASIR.Printer
                                 stream = client.GetStream();
                             }
 
-                            PrintInputPinReceipt(stream, datas, cartDetails, cartRefundDetails, canceledItems, totalTransactions);
+                            PrintInputPinReceipt(stream, datas, cartDetails, cartRefundDetails, canceledItems,
+                                totalTransactions);
                         }
                         finally
                         {
@@ -2857,7 +3437,7 @@ namespace KASIR.Printer
             }
         }
 
-        private void PrintInputPinReceipt(System.IO.Stream stream, DataRestruk datas,
+        private void PrintInputPinReceipt(Stream stream, DataRestruk datas,
             List<CartDetailRestruk> cartDetails,
             List<RefundDetailRestruk> cartRefundDetails,
             List<CanceledItemStrukCustomerRestruk> canceledItems,
@@ -2867,8 +3447,8 @@ namespace KASIR.Printer
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
 
-            byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
-            byte[] NewLine = new byte[] { 0x0A }; // New line
+            byte[] InitPrinter = { 0x1B, 0x40 }; // Initialize printer
+            byte[] NewLine = { 0x0A }; // New line
             /*
                         // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
                         byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
@@ -2891,75 +3471,112 @@ namespace KASIR.Printer
             //strukText += "--------------------------------\n";
 
             if (datas?.invoice_due_date != null)
+            {
                 strukText += CenterText(datas?.invoice_due_date);
+            }
+
             strukText += "Name: " + datas?.customer_name + "\n";
 
             if (cartDetails.Count != 0)
             {
-                var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
 
-                foreach (var servingType in servingTypes)
+                foreach (string servingType in servingTypes)
                 {
-                    var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                    List<CartDetailRestruk> itemsForServingType =
+                        cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
                     strukText += "--------------------------------\n";
                     strukText += CenterText("ORDERED");
 
                     if (itemsForServingType.Count == 0)
+                    {
                         continue;
+                    }
 
                     //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType) + "\n";
                     //strukText += "\n";
 
-                    foreach (var cartDetail in itemsForServingType)
+                    foreach (CartDetailRestruk cartDetail in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalBold + $"{cartDetail.menu_name}" + "\n";
                         strukText += kodeHeksadesimalNormal;
-                        strukText += FormatSimpleLine("@" + string.Format("{0:n0}", cartDetail.price) + " x" + cartDetail.qty, string.Format("{0:n0}", cartDetail.total_price)) + "\n";
+                        strukText +=
+                            FormatSimpleLine("@" + string.Format("{0:n0}", cartDetail.price) + " x" + cartDetail.qty,
+                                string.Format("{0:n0}", cartDetail.total_price)) + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                        {
                             strukText += "  Varian: " + cartDetail.varian + "\n";
-                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                            strukText += "  Note: " + cartDetail.note_item + "\n";
-                        if (!string.IsNullOrEmpty(cartDetail.discount_code))
-                            strukText += "  Discount Code: " + cartDetail.discount_code + "\n";
-                        if (cartDetail.discounts_value != null && Convert.ToDecimal(cartDetail.discounts_value) != 0)
-                            strukText += "  Discount Value: " + (cartDetail.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", cartDetail.discounts_value.ToString()) : cartDetail.discounts_value.ToString() + " %") + "\n";
+                        }
 
+                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                        {
+                            strukText += "  Note: " + cartDetail.note_item + "\n";
+                        }
+
+                        if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                        {
+                            strukText += "  Discount Code: " + cartDetail.discount_code + "\n";
+                        }
+
+                        if (cartDetail.discounts_value != null && Convert.ToDecimal(cartDetail.discounts_value) != 0)
+                        {
+                            strukText += "  Discount Value: " + (cartDetail.discounts_is_percent.ToString() != "1"
+                                ? string.Format("{0:n0}", cartDetail.discounts_value.ToString())
+                                : cartDetail.discounts_value + " %") + "\n";
+                        }
                     }
                 }
             }
 
             if (canceledItems.Count != 0)
             {
-                var servingTypesCancel = canceledItems.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypesCancel = canceledItems.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
                 strukText += CenterText("CANCELED");
 
-                foreach (var servingType in servingTypesCancel)
+                foreach (string servingType in servingTypesCancel)
                 {
-                    var itemsForServingType = canceledItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                    List<CanceledItemStrukCustomerRestruk> itemsForServingType =
+                        canceledItems.Where(cd => cd.serving_type_name == servingType).ToList();
 
                     if (itemsForServingType.Count == 0)
+                    {
                         continue;
+                    }
 
                     //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
                     //strukText += "\n";
 
-                    foreach (var cancelItem in itemsForServingType)
+                    foreach (CanceledItemStrukCustomerRestruk cancelItem in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalBold + $"{cancelItem.menu_name}" + "\n";
                         strukText += kodeHeksadesimalNormal;
-                        strukText += FormatSimpleLine("@" + string.Format("{0:n0}", cancelItem.price) + " x" + cancelItem.qty, string.Format("{0:n0}", cancelItem.total_price)) + "\n";
+                        strukText +=
+                            FormatSimpleLine("@" + string.Format("{0:n0}", cancelItem.price) + " x" + cancelItem.qty,
+                                string.Format("{0:n0}", cancelItem.total_price)) + "\n";
                         if (!string.IsNullOrEmpty(cancelItem.varian))
+                        {
                             strukText += "  Varian: " + cancelItem.varian + "\n";
-                        if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
-                            strukText += "  Note: " + cancelItem.note_item + "\n";
-                        if (!string.IsNullOrEmpty(cancelItem.discount_code))
-                            strukText += "  Discount Code: " + cancelItem.discount_code + "\n";
-                        if (cancelItem.discounts_value != null && Convert.ToDecimal(cancelItem.discounts_value) != 0)
-                            strukText += "  Discount Value: " + (cancelItem.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", cancelItem.discounts_value.ToString()) : cancelItem.discounts_value.ToString() + " %") + "\n";
+                        }
 
+                        if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                        {
+                            strukText += "  Note: " + cancelItem.note_item + "\n";
+                        }
+
+                        if (!string.IsNullOrEmpty(cancelItem.discount_code))
+                        {
+                            strukText += "  Discount Code: " + cancelItem.discount_code + "\n";
+                        }
+
+                        if (cancelItem.discounts_value != null && Convert.ToDecimal(cancelItem.discounts_value) != 0)
+                        {
+                            strukText += "  Discount Value: " + (cancelItem.discounts_is_percent.ToString() != "1"
+                                ? string.Format("{0:n0}", cancelItem.discounts_value)
+                                : cancelItem.discounts_value + " %") + "\n";
+                        }
                     }
                 }
             }
@@ -2968,36 +3585,62 @@ namespace KASIR.Printer
             {
                 strukText += "--------------------------------\n";
                 strukText += CenterText("REFUNDED");
-                var servingTypesRefund = cartRefundDetails.Select(cd => cd.serving_type_name).Distinct();
-                foreach (var servingTypeRefund in servingTypesRefund)
+                IEnumerable<string> servingTypesRefund =
+                    cartRefundDetails.Select(cd => cd.serving_type_name).Distinct();
+                foreach (string servingTypeRefund in servingTypesRefund)
                 {
-                    var itemsForServingType = cartRefundDetails.Where(cd => cd.serving_type_name == servingTypeRefund).ToList();
+                    List<RefundDetailRestruk> itemsForServingType =
+                        cartRefundDetails.Where(cd => cd.serving_type_name == servingTypeRefund).ToList();
 
                     if (itemsForServingType.Count == 0)
+                    {
                         continue;
+                    }
 
                     //strukText += "--------------------------------\n";
                     strukText += CenterText(servingTypeRefund);
                     //strukText += "\n";
 
-                    foreach (var cartDetail in itemsForServingType)
+                    foreach (RefundDetailRestruk cartDetail in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalBold + $"{cartDetail.menu_name}" + "\n";
                         strukText += kodeHeksadesimalNormal;
-                        strukText += FormatSimpleLine("@" + string.Format("{0:n0}", cartDetail.menu_price) + " x" + cartDetail.qty_refund_item, string.Format("{0:n0}", cartDetail.total_refund_price)) + "\n";
+                        strukText +=
+                            FormatSimpleLine(
+                                "@" + string.Format("{0:n0}", cartDetail.menu_price) + " x" +
+                                cartDetail.qty_refund_item, string.Format("{0:n0}", cartDetail.total_refund_price)) +
+                            "\n";
                         //strukText += FormatSimpleLine(cartDetail.qty_refund_item + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.total_refund_price)) + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                        {
                             strukText += "   Varian: " + cartDetail.varian + "\n";
-                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                        }
+
+                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                        {
                             strukText += "   Note: " + cartDetail.note_item + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                        {
                             strukText += "   Discount Code: " + cartDetail.discount_code + "\n";
+                        }
+
                         if (cartDetail.discounted_price != null)
-                            strukText += "   Total Discount: " + string.Format("{0:n0}", cartDetail.discounted_price) + "\n";
+                        {
+                            strukText += "   Total Discount: " + string.Format("{0:n0}", cartDetail.discounted_price) +
+                                         "\n";
+                        }
+
                         if (cartDetail.payment_type_name != null)
+                        {
                             strukText += "   Payment Type: " + cartDetail.payment_type_name + "\n";
+                        }
+
                         if (cartDetail.refund_reason_item != null)
+                        {
                             strukText += "   Refund Reason: " + cartDetail.refund_reason_item + "\n";
+                        }
                         //strukText += "\n";
                     }
                 }
@@ -3006,46 +3649,60 @@ namespace KASIR.Printer
             strukText += "--------------------------------\n";
             strukText += FormatSimpleLine("Subtotal", string.Format("{0:n0}", datas.subtotal)) + "\n";
             if (!string.IsNullOrEmpty(datas.discount_code))
+            {
                 strukText += "Discount Code: " + datas.discount_code + "\n";
+            }
+
             if (datas.discounts_value != null)
-                strukText += FormatSimpleLine("Discount Value", (datas.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", datas.discounts_value.ToString()) : datas.discounts_value.ToString() + " %")) + "\n";
+            {
+                strukText += FormatSimpleLine("Discount Value",
+                    datas.discounts_is_percent != "1"
+                        ? string.Format("{0:n0}", datas.discounts_value)
+                        : datas.discounts_value + " %") + "\n";
+            }
 
             strukText += FormatSimpleLine("Total", string.Format("{0:n0}", datas.total)) + "\n";
             strukText += "Payment Type: " + datas.payment_type + "\n";
             strukText += FormatSimpleLine("Cash", string.Format("{0:n0}", datas.customer_cash)) + "\n";
             strukText += FormatSimpleLine("Change", string.Format("{0:n0}", datas.customer_change)) + "\n";
             if (datas.total_refund != null)
+            {
                 strukText += FormatSimpleLine("Total Refund", string.Format("{0:n0}", datas.total_refund)) + "\n";
+            }
+
             strukText += "--------------------------------\n";
 
-            strukText += CenterText("Meja No. " + datas.customer_seat.ToString());
+            strukText += CenterText("Meja No. " + datas.customer_seat);
             //strukText += "--------------------------------\n\n";
             strukText += CenterText("Powered By Dastrevas");
 
-            string NomorUrut = "\n" + kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
+            string NomorUrut = "\n" + kodeHeksadesimalSizeBesar + kodeHeksadesimalBold +
+                               CenterText("No. " + totalTransactions) + "\n";
 
-            byte[] buffer1 = System.Text.Encoding.UTF8.GetBytes(NomorUrut);
-            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+            byte[] buffer1 = Encoding.UTF8.GetBytes(NomorUrut);
+            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
             stream.Write(buffer1, 0, buffer1.Length);
             PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
             stream.Write(buffer, 0, buffer.Length);
             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
             strukText = "\n\n\n\n\n";
-            buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+            buffer = Encoding.UTF8.GetBytes(strukText);
             stream.Write(buffer, 0, buffer.Length);
             stream.Write(NewLine, 0, NewLine.Length);
 
             stream.Flush();
         }
-        private void PrintLogo(System.IO.Stream stream, string logoPath, int targetWidthPx)
+
+        private void PrintLogo(Stream stream, string logoPath, int targetWidthPx)
         {
             if (!File.Exists(logoPath))
             {
                 return;
             }
+
             Image logo = Image.FromFile(logoPath);
-            Bitmap bmp = new Bitmap(logo);
+            Bitmap bmp = new(logo);
 
             // Resize the bitmap to the target width
             Bitmap resizedBitmap = ResizeBitmap(bmp, targetWidthPx);
@@ -3058,11 +3715,12 @@ namespace KASIR.Printer
         private Bitmap ResizeBitmap(Bitmap bmp, int targetWidthPx)
         {
             int targetHeightPx = (int)((float)bmp.Height / bmp.Width * targetWidthPx);
-            Bitmap resizedBmp = new Bitmap(targetWidthPx, targetHeightPx);
+            Bitmap resizedBmp = new(targetWidthPx, targetHeightPx);
             using (Graphics g = Graphics.FromImage(resizedBmp))
             {
                 g.DrawImage(bmp, 0, 0, targetWidthPx, targetHeightPx);
             }
+
             return resizedBmp;
         }
 
@@ -3073,7 +3731,7 @@ namespace KASIR.Printer
             int width = bitmap.Width;
             int height = bitmap.Height;
             int bytesPerLine = (printerWidthPx + 7) / 8; // Adjust for total width including padding
-            List<byte> imageData = new List<byte>();
+            List<byte> imageData = new();
 
             // ESC/POS raster bitmap header
             imageData.Add(0x1D); // GS
@@ -3094,6 +3752,7 @@ namespace KASIR.Printer
                 {
                     imageData.Add(0x00);
                 }
+
                 for (int x = 0; x < width; x += 8)
                 {
                     byte byteData = 0x00;
@@ -3108,8 +3767,10 @@ namespace KASIR.Printer
                             }
                         }
                     }
+
                     imageData.Add(byteData);
                 }
+
                 // Add padding to the right to center the image
                 for (int p = 0; p < paddingPx / 8; p++)
                 {
@@ -3121,58 +3782,64 @@ namespace KASIR.Printer
         }
 
 
-
         public async Task Ex_PrintModelInputPin
-           (DataRestruk datas,
+        (DataRestruk datas,
             List<CartDetailRestruk> cartDetails,
             List<RefundDetailRestruk> cartRefundDetails,
             List<CanceledItemStrukCustomerRestruk> canceledItems,
             int totalTransactions,
-    string printerId,
-    string printerName)
+            string printerId,
+            string printerName)
         {
             try
             {
-
-                System.IO.Stream stream = null;
+                Stream stream = null;
 
                 // Koneksi printer langsung di sini
-                if (System.Net.IPAddress.TryParse(printerName, out _))
+                if (IPAddress.TryParse(printerName, out _))
                 {
-                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                    TcpClient client = new(printerName, 9100);
                     stream = client.GetStream();
                 }
                 else
                 {
                     await RetryPolicyAsync(async () =>
                     {
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                        if (printerDevice == null) return false;
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
+                        if (printerDevice == null)
+                        {
+                            return false;
+                        }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000")) return false;
+                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        {
+                            return false;
+                        }
 
                         client.Connect(endpoint);
                         stream = client.GetStream();
                         return true;
-                    }, maxRetries: 3);
+                    }, 3);
                 }
 
                 // Struck Checker
                 if (ShouldPrint(printerId, "Kasir"))
                 {
-                    PrintDocument printDocument = new PrintDocument();
+                    PrintDocument printDocument = new();
                     printDocument.PrintPage += (sender, e) =>
                     {
                         Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                         // Mengatur font normal dan tebal
-                        Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                        Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                        Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                        Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+                        Font normalFont =
+                            new("Arial", 8,
+                                FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                        Font boldFont = new("Arial", 8, FontStyle.Bold);
+                        Font BigboldFont = new("Arial", 10, FontStyle.Bold);
+                        Font NomorAntrian = new("Arial", 12, FontStyle.Bold);
 
                         float leftMargin = 5; // Margin kiri (dalam pixel)
                         float rightMargin = 5; // Margin kanan (dalam pixel)
@@ -3180,7 +3847,8 @@ namespace KASIR.Printer
                         float yPos = topMargin;
 
                         // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                        float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                        float paperWidth =
+                            58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
                         float printableWidth = paperWidth - leftMargin - rightMargin;
 
 
@@ -3190,7 +3858,8 @@ namespace KASIR.Printer
                             SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                             SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                             e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                                leftMargin + printableWidth - sizeRight.Width, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
 
@@ -3202,27 +3871,32 @@ namespace KASIR.Printer
                                 //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                 return;
                             }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                        leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
                                 SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                    leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                 yPos += font.GetHeight(e.Graphics);
                             }
                         }
@@ -3235,21 +3909,25 @@ namespace KASIR.Printer
                                 //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                 return;
                             }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                        yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
@@ -3265,32 +3943,33 @@ namespace KASIR.Printer
                             e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
+
                         void DrawSpace()
                         {
-                            yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                            yPos += normalFont
+                                .GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
                         }
-
 
 
                         // Fungsi untuk mendapatkan dan mengonversi gambar logo ke hitam dan putih
                         Image GetLogoImage(string path)
                         {
                             Image img = Image.FromFile(path);
-                            Bitmap bmp = new Bitmap(img.Width, img.Height);
+                            Bitmap bmp = new(img.Width, img.Height);
                             using (Graphics g = Graphics.FromImage(bmp))
                             {
-                                ColorMatrix colorMatrix = new ColorMatrix(new float[][]
+                                ColorMatrix colorMatrix = new(new[]
                                 {
-                                        new float[] { 0.3f, 0.3f, 0.3f, 0, 0 },
-                                        new float[] { 0.59f, 0.59f, 0.59f, 0, 0 },
-                                        new float[] { 0.11f, 0.11f, 0.11f, 0, 0 },
-                                        new float[] { 0, 0, 0, 1, 0 },
-                                        new float[] { 0, 0, 0, 0, 1 }
+                                    new[] { 0.3f, 0.3f, 0.3f, 0, 0 }, new[] { 0.59f, 0.59f, 0.59f, 0, 0 },
+                                    new[] { 0.11f, 0.11f, 0.11f, 0, 0 }, new float[] { 0, 0, 0, 1, 0 },
+                                    new float[] { 0, 0, 0, 0, 1 }
                                 });
-                                ImageAttributes attributes = new ImageAttributes();
+                                ImageAttributes attributes = new();
                                 attributes.SetColorMatrix(colorMatrix);
-                                g.DrawImage(img, new Rectangle(0, 0, img.Width, img.Height), 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, attributes);
+                                g.DrawImage(img, new Rectangle(0, 0, img.Width, img.Height), 0, 0, img.Width,
+                                    img.Height, GraphicsUnit.Pixel, attributes);
                             }
+
                             return bmp;
                         }
 
@@ -3306,7 +3985,7 @@ namespace KASIR.Printer
                             SizeF textSize = e.Graphics.MeasureString(poweredByText, normalFont);
 
                             // Gambar teks
-                            float textX = leftMargin + (printableWidth - textSize.Width) / 2;
+                            float textX = leftMargin + ((printableWidth - textSize.Width) / 2);
                             e.Graphics.DrawString(poweredByText, normalFont, Brushes.Black, textX, yPos);
 
                             // Sesuaikan yPos untuk logo
@@ -3318,7 +3997,7 @@ namespace KASIR.Printer
                             float scaleFactor = targetWidth / logoPoweredBy.Width;
                             float logoHeight = logoPoweredBy.Height * scaleFactor;
 
-                            float logoX = leftMargin + (printableWidth - targetWidth) / 2;
+                            float logoX = leftMargin + ((printableWidth - targetWidth) / 2);
                             e.Graphics.DrawImage(logoPoweredBy, logoX, yPos, targetWidth, logoHeight);
 
                             spaceBefore = 5;
@@ -3328,7 +4007,7 @@ namespace KASIR.Printer
                         }
 
 
-                        DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
+                        DrawCenterText("No. " + totalTransactions, NomorAntrian);
 
                         // Path ke logo Powered by Anda
                         string poweredByLogoPath = "icon\\DT-Logo.bmp"; // Ganti dengan path logo Powered by Anda
@@ -3342,7 +4021,7 @@ namespace KASIR.Printer
                         // Hitung tinggi logo berdasarkan lebar yang diinginkan dengan mempertahankan rasio aspek
                         float scaleFactor = logoTargetWidthPx / logo.Width;
                         float logoHeight = logo.Height * scaleFactor;
-                        float logoX = leftMargin + (printableWidth - logoTargetWidthPx) / 2;
+                        float logoX = leftMargin + ((printableWidth - logoTargetWidthPx) / 2);
 
                         // Gambar logo dengan ukuran yang diubah
                         e.Graphics.DrawImage(logo, logoX, yPos, logoTargetWidthPx, logoHeight);
@@ -3362,7 +4041,10 @@ namespace KASIR.Printer
                         DrawCenterText("Receipt No. " + datas?.receipt_number, normalFont);
                         DrawSeparator();
                         if (datas?.invoice_due_date != null)
+                        {
                             DrawCenterText(datas?.invoice_due_date, normalFont);
+                        }
+
                         DrawSpace();
                         DrawLeftText(datas?.customer_name, normalFont);
 
@@ -3370,18 +4052,22 @@ namespace KASIR.Printer
                         if (cartDetails.Count != 0)
                         {
                             // Iterate through cart details and group by serving_type_name
-                            var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
+                            IEnumerable<string> servingTypes =
+                                cartDetails.Select(cd => cd.serving_type_name).Distinct();
 
-                            foreach (var servingType in servingTypes)
+                            foreach (string servingType in servingTypes)
                             {
                                 // Filter cart details by serving_type_name
-                                var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                                List<CartDetailRestruk> itemsForServingType =
+                                    cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
                                 DrawSeparator();
                                 DrawCenterText("ORDERED", boldFont);
 
                                 // Skip if there are no items for this serving type
                                 if (itemsForServingType.Count == 0)
+                                {
                                     continue;
+                                }
 
                                 // Add a section for the serving type
                                 DrawSeparator();
@@ -3389,18 +4075,32 @@ namespace KASIR.Printer
                                 DrawSpace();
 
                                 // Iterate through items for this serving type
-                                foreach (var cartDetail in itemsForServingType)
+                                foreach (CartDetailRestruk cartDetail in itemsForServingType)
                                 {
-                                    DrawSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.price));
+                                    DrawSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
+                                        string.Format("{0:n0}", cartDetail.price));
                                     // Add detail items
                                     if (!string.IsNullOrEmpty(cartDetail.varian))
+                                    {
                                         DrawLeftText("   Varian: " + cartDetail.varian, normalFont);
-                                    if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                    }
+
+                                    if (!string.IsNullOrEmpty(cartDetail.note_item))
+                                    {
                                         DrawLeftText("   Note: " + cartDetail.note_item, normalFont);
+                                    }
+
                                     if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                                    {
                                         DrawLeftText("   Discount Code: " + cartDetail.discount_code, normalFont);
+                                    }
+
                                     if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
-                                        DrawSimpleLine("   Total Discount: ", string.Format("{0:n0}", cartDetail.discounted_price));
+                                    {
+                                        DrawSimpleLine("   Total Discount: ",
+                                            string.Format("{0:n0}", cartDetail.discounted_price));
+                                    }
+
                                     DrawSimpleLine("   Total Price:", string.Format("{0:n0}", cartDetail.total_price));
                                     DrawSpace();
                                 }
@@ -3409,93 +4109,151 @@ namespace KASIR.Printer
 
                         if (canceledItems.Count != 0)
                         {
-                            var servingTypesCancel = canceledItems.Select(cd => cd.serving_type_name).Distinct();
+                            IEnumerable<string> servingTypesCancel =
+                                canceledItems.Select(cd => cd.serving_type_name).Distinct();
                             DrawSeparator();
                             DrawCenterText("CANCELED", boldFont);
 
-                            foreach (var servingType in servingTypesCancel)
+                            foreach (string servingType in servingTypesCancel)
                             {
-                                var itemsForServingType = canceledItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                                List<CanceledItemStrukCustomerRestruk> itemsForServingType =
+                                    canceledItems.Where(cd => cd.serving_type_name == servingType).ToList();
 
                                 if (itemsForServingType.Count == 0)
+                                {
                                     continue;
+                                }
 
                                 DrawSeparator();
                                 DrawCenterText(servingType, normalFont);
                                 DrawSpace();
 
-                                foreach (var cancelItem in itemsForServingType)
+                                foreach (CanceledItemStrukCustomerRestruk cancelItem in itemsForServingType)
                                 {
-                                    DrawSimpleLine(cancelItem.qty + " " + cancelItem.menu_name, string.Format("{0:n0}", cancelItem.price));
+                                    DrawSimpleLine(cancelItem.qty + " " + cancelItem.menu_name,
+                                        string.Format("{0:n0}", cancelItem.price));
                                     // Add detail items
                                     if (!string.IsNullOrEmpty(cancelItem.varian))
+                                    {
                                         DrawLeftText("   Varian: " + cancelItem.varian, normalFont);
+                                    }
+
                                     if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                                    {
                                         DrawLeftText("   Note: " + cancelItem.note_item, normalFont);
+                                    }
+
                                     if (!string.IsNullOrEmpty(cancelItem.discount_code))
+                                    {
                                         DrawLeftText("   Discount Code: " + cancelItem.discount_code, normalFont);
+                                    }
+
                                     if (cancelItem.discounted_price.HasValue && cancelItem.discounted_price != 0)
-                                        DrawSimpleLine("   Total Discount", string.Format("{0:n0}", cancelItem.discounted_price));
+                                    {
+                                        DrawSimpleLine("   Total Discount",
+                                            string.Format("{0:n0}", cancelItem.discounted_price));
+                                    }
+
                                     if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                                    {
                                         DrawLeftText("   Reason: " + cancelItem.cancel_reason, normalFont);
+                                    }
+
                                     // Add an empty line between items
                                     DrawSpace();
                                 }
                             }
                         }
+
                         if (cartRefundDetails.Count != 0)
                         {
-
                             DrawSeparator();
                             DrawCenterText("REFUNDED", boldFont);
-                            var servingTypesRefund = cartRefundDetails.Select(cd => cd.serving_type_name).Distinct();
-                            foreach (var servingTypeRefund in servingTypesRefund)
+                            IEnumerable<string> servingTypesRefund =
+                                cartRefundDetails.Select(cd => cd.serving_type_name).Distinct();
+                            foreach (string servingTypeRefund in servingTypesRefund)
                             {
                                 // Filter cart details by serving_type_name
-                                var itemsForServingType = cartRefundDetails.Where(cd => cd.serving_type_name == servingTypeRefund).ToList();
+                                List<RefundDetailRestruk> itemsForServingType = cartRefundDetails
+                                    .Where(cd => cd.serving_type_name == servingTypeRefund).ToList();
 
                                 // Skip if there are no items for this serving type
                                 if (itemsForServingType.Count == 0)
+                                {
                                     continue;
+                                }
 
                                 // Add a section for the serving type
                                 DrawSeparator();
                                 DrawCenterText(servingTypeRefund, normalFont);
                                 DrawSpace();
                                 // Iterate through items for this serving type
-                                foreach (var cartDetail in itemsForServingType)
+                                foreach (RefundDetailRestruk cartDetail in itemsForServingType)
                                 {
-                                    DrawSimpleLine(cartDetail.qty_refund_item + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.total_refund_price));
+                                    DrawSimpleLine(cartDetail.qty_refund_item + " " + cartDetail.menu_name,
+                                        string.Format("{0:n0}", cartDetail.total_refund_price));
                                     // Add detail items
                                     if (!string.IsNullOrEmpty(cartDetail.varian))
+                                    {
                                         DrawLeftText("   Varian: " + cartDetail.varian, normalFont);
-                                    if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                    }
+
+                                    if (!string.IsNullOrEmpty(cartDetail.note_item))
+                                    {
                                         DrawLeftText("   Note: " + cartDetail.note_item, normalFont);
+                                    }
+
                                     if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                                    {
                                         DrawLeftText("   Discount Code: " + cartDetail.discount_code, normalFont);
+                                    }
+
                                     if (cartDetail.discounted_price != null)
-                                        DrawSimpleLine("   Total Discount: ", string.Format("{0:n0}", cartDetail.discounted_price));
+                                    {
+                                        DrawSimpleLine("   Total Discount: ",
+                                            string.Format("{0:n0}", cartDetail.discounted_price));
+                                    }
+
                                     if (cartDetail.payment_type_name != null)
+                                    {
                                         DrawLeftText("   Payment Type: " + cartDetail.payment_type_name, normalFont);
+                                    }
+
                                     if (cartDetail.refund_reason_item != null)
+                                    {
                                         DrawLeftText("   Refund Reason: " + cartDetail.refund_reason_item, normalFont);
+                                    }
+
                                     // Add an empty line between items
                                     DrawSpace();
                                 }
                             }
                         }
+
                         DrawSeparator();
                         DrawSimpleLine("Subtotal", string.Format("{0:n0}", datas.subtotal));
                         if (!string.IsNullOrEmpty(datas.discount_code))
+                        {
                             DrawSimpleLine("Discount Code", datas.discount_code);
+                        }
+
                         if (datas.discounts_value != null)
-                            DrawSimpleLine("Discount Value", (datas.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", datas.discounts_value.ToString()) : datas.discounts_value.ToString() + " %"));
+                        {
+                            DrawSimpleLine("Discount Value",
+                                datas.discounts_is_percent != "1"
+                                    ? string.Format("{0:n0}", datas.discounts_value)
+                                    : datas.discounts_value + " %");
+                        }
+
                         DrawSimpleLine("Total", string.Format("{0:n0}", datas.total));
                         DrawLeftText("Payment Type " + datas.payment_type, normalFont);
                         DrawSimpleLine("Cash", string.Format("{0:n0}", datas.customer_cash));
                         DrawSimpleLine("Change", string.Format("{0:n0}", datas.customer_change));
                         if (datas.total_refund != null)
+                        {
                             DrawSimpleLine("Total Refund", string.Format("{0:n0}", datas.total_refund));
+                        }
+
                         DrawSeparator();
                         DrawPoweredByLogo(poweredByLogoPath);
                         DrawSpace();
@@ -3512,74 +4270,82 @@ namespace KASIR.Printer
 
         // Struct DataBill Simpan
         public async Task PrintModelDataBill(DataRestruk datas,
-    List<CartDetailRestruk> cartDetails,
-    List<CanceledItemStrukCustomerRestruk> canceledItems,
-    int totalTransactions)
+            List<CartDetailRestruk> cartDetails,
+            List<CanceledItemStrukCustomerRestruk> canceledItems,
+            int totalTransactions)
         {
             if (totalTransactions < 0 || totalTransactions == null)
+            {
                 totalTransactions = 0;
+            }
+
             try
             {
                 await LoadPrinterSettings(); // Load printer settings
-                await LoadSettingsAsync();   // Load additional settings
+                await LoadSettingsAsync(); // Load additional settings
 
-                foreach (var printer in printerSettings.ToList()) // Membuat salinan dari koleksi
+                foreach (KeyValuePair<string, string> printer in
+                         printerSettings.ToList()) // Membuat salinan dari koleksi
                 {
-                    var printerName = printer.Value;
+                    string printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))
                     {
                         printerName = ConvertMacAddressFormat(printerName);
                     }
-                    var printerId = printer.Key.Replace("inter", "");
+
+                    string printerId = printer.Key.Replace("inter", "");
 
                     if (string.IsNullOrWhiteSpace(printerName) || printerName.Length < 3)
                     {
                         continue;
                     }
+
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
                         Ex_PrintModelDataBill(datas, cartDetails, canceledItems, totalTransactions,
-                    printerId, printerName
-                );
+                            printerId, printerName
+                        );
                         continue;
                     }
+
                     if (ShouldPrint(printerId, "Checker"))
                     {
-                        System.IO.Stream stream = Stream.Null;
+                        Stream stream = Stream.Null;
 
                         try
                         {
-                            if (System.Net.IPAddress.TryParse(printerName, out _))
+                            if (IPAddress.TryParse(printerName, out _))
                             {
                                 // Connect via LAN
-                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                TcpClient client = new(printerName, 9100);
                                 stream = client.GetStream();
                             }
                             else
                             {
                                 // Connect via Bluetooth dengan retry policy
                                 if (!await RetryPolicyAsync(async () =>
-                                {
-                                    // Connect via Bluetooth
-                                    BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                    if (printerDevice == null)
                                     {
-                                        return false;
-                                    }
+                                        // Connect via Bluetooth
+                                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
+                                        if (printerDevice == null)
+                                        {
+                                            return false;
+                                        }
 
-                                    BluetoothClient client = new BluetoothClient();
-                                    BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                        BluetoothClient client = new();
+                                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                            BluetoothService.SerialPort);
 
-                                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                    {
-                                        return false;
-                                    }
+                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                        {
+                                            return false;
+                                        }
 
-                                    client.Connect(endpoint);
-                                    stream = client.GetStream();
+                                        client.Connect(endpoint);
+                                        stream = client.GetStream();
 
-                                    return true;
-                                }, maxRetries: 3))
+                                        return true;
+                                    }, 3))
                                 {
                                     continue;
                                 }
@@ -3587,7 +4353,6 @@ namespace KASIR.Printer
 
                             // Setelah koneksi berhasil, cetak struk
                             PrintDataBillReceipt(stream, datas, cartDetails, canceledItems, totalTransactions);
-
                         }
                         finally
                         {
@@ -3605,7 +4370,7 @@ namespace KASIR.Printer
             }
         }
 
-        private void PrintDataBillReceipt(System.IO.Stream stream, DataRestruk datas,
+        private void PrintDataBillReceipt(Stream stream, DataRestruk datas,
             List<CartDetailRestruk> cartDetails,
             List<CanceledItemStrukCustomerRestruk> canceledItems,
             int totalTransactions)
@@ -3615,7 +4380,7 @@ namespace KASIR.Printer
 
             // Construct receipt text
             string strukText = kodeHeksadesimalNormal;
-            strukText += kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions.ToString());
+            strukText += kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions);
             strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + CenterText("CHECKER");
@@ -3625,12 +4390,12 @@ namespace KASIR.Printer
                 if (datas.receipt_number.Length > 32)
                 {
                     // Jika lebih dari 32 karakter, gunakan teks biasa
-                    strukText += "Receipt No." + datas.receipt_number.ToString() + "\n";
+                    strukText += "Receipt No." + datas.receipt_number + "\n";
                 }
                 else
                 {
                     // Jika tidak lebih dari 32 karakter, gunakan CenterText
-                    strukText += CenterText("Receipt No." + datas.receipt_number.ToString());
+                    strukText += CenterText("Receipt No." + datas.receipt_number);
                 }
             }
             else
@@ -3644,42 +4409,62 @@ namespace KASIR.Printer
             //strukText += "--------------------------------\n";
 
             if (datas?.invoice_due_date != null)
+            {
                 strukText += CenterText(datas?.invoice_due_date);
+            }
 
             strukText += "Name: " + datas?.customer_name + "\n";
 
             // Ordered items
             if (cartDetails.Count > 0 && cartDetails != null)
             {
-                var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
 
-                foreach (var servingType in servingTypes)
+                foreach (string servingType in servingTypes)
                 {
-                    var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                    List<CartDetailRestruk> itemsForServingType =
+                        cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
                     strukText += "--------------------------------\n";
                     strukText += CenterText("ORDERED");
 
                     if (itemsForServingType.Count == 0)
+                    {
                         continue;
+                    }
 
                     //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
                     //strukText += "\n";
 
-                    foreach (var cartDetail in itemsForServingType)
+                    foreach (CartDetailRestruk cartDetail in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalBold + $"{cartDetail.menu_name}" + "\n";
                         strukText += kodeHeksadesimalNormal;
-                        strukText += FormatSimpleLine("@" + string.Format("{0:n0}", cartDetail.price) + " x" + cartDetail.qty, string.Format("{0:n0}", cartDetail.total_price)) + "\n";
+                        strukText +=
+                            FormatSimpleLine("@" + string.Format("{0:n0}", cartDetail.price) + " x" + cartDetail.qty,
+                                string.Format("{0:n0}", cartDetail.total_price)) + "\n";
                         //strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.price)) + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                        {
                             strukText += "   Varian: " + cartDetail.varian + "\n";
-                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                        }
+
+                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                        {
                             strukText += "   Note: " + cartDetail.note_item + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                        {
                             strukText += "   Discount Code: " + cartDetail.discount_code + "\n";
+                        }
+
                         if (cartDetail.discounts_value != null && Convert.ToDecimal(cartDetail.discounts_value) != 0)
-                            strukText += "   Discount Value: " + (cartDetail.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", cartDetail.discounts_value.ToString()) : cartDetail.discounts_value.ToString() + " %") + "\n";
+                        {
+                            strukText += "   Discount Value: " + (cartDetail.discounts_is_percent.ToString() != "1"
+                                ? string.Format("{0:n0}", cartDetail.discounts_value.ToString())
+                                : cartDetail.discounts_value + " %") + "\n";
+                        }
                     }
                 }
             }
@@ -3687,33 +4472,46 @@ namespace KASIR.Printer
             // Canceled items
             if (canceledItems.Count > 0 && canceledItems != null)
             {
-                var servingTypesCancel = canceledItems.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypesCancel = canceledItems.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
                 strukText += CenterText("CANCELED");
 
-                foreach (var servingType in servingTypesCancel)
+                foreach (string servingType in servingTypesCancel)
                 {
-                    var itemsForServingType = canceledItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                    List<CanceledItemStrukCustomerRestruk> itemsForServingType =
+                        canceledItems.Where(cd => cd.serving_type_name == servingType).ToList();
 
                     if (itemsForServingType.Count == 0)
+                    {
                         continue;
+                    }
 
                     //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
                     //strukText += "\n";
 
-                    foreach (var cancelItem in itemsForServingType)
+                    foreach (CanceledItemStrukCustomerRestruk cancelItem in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalBold + $"{cancelItem.menu_name}" + "\n";
                         strukText += kodeHeksadesimalNormal;
-                        strukText += FormatSimpleLine("@" + string.Format("{0:n0}", cancelItem.price) + " x" + cancelItem.qty, string.Format("{0:n0}", cancelItem.total_price)) + "\n";
+                        strukText +=
+                            FormatSimpleLine("@" + string.Format("{0:n0}", cancelItem.price) + " x" + cancelItem.qty,
+                                string.Format("{0:n0}", cancelItem.total_price)) + "\n";
                         //strukText += FormatSimpleLine(cancelItem.qty + " " + cancelItem.menu_name, string.Format("{0:n0}", cancelItem.price)) + "\n";
                         if (!string.IsNullOrEmpty(cancelItem.varian))
+                        {
                             strukText += "   Varian: " + cancelItem.varian + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                        {
                             strukText += "   Note: " + cancelItem.note_item + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                        {
                             strukText += "   Reason: " + cancelItem.cancel_reason + "\n";
+                        }
                         //strukText += "\n";
                     }
                 }
@@ -3723,9 +4521,18 @@ namespace KASIR.Printer
             strukText += "--------------------------------\n";
             strukText += FormatSimpleLine("Subtotal", string.Format("{0:n0}", datas.subtotal)) + "\n";
             if (!string.IsNullOrEmpty(datas.discount_code))
+            {
                 strukText += "Discount Code: " + datas.discount_code + "\n";
+            }
+
             if (datas?.discounts_value != null && datas.discounts_value != "")
-                strukText += FormatSimpleLine("Discount Value: ", (datas.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", datas.discounts_value.ToString()) : datas.discounts_value.ToString() + " %")) + "\n";
+            {
+                strukText += FormatSimpleLine("Discount Value: ",
+                    datas.discounts_is_percent != "1"
+                        ? string.Format("{0:n0}", datas.discounts_value)
+                        : datas.discounts_value + " %") + "\n";
+            }
+
             strukText += FormatSimpleLine("Total", string.Format("{0:n0}", datas.total)) + "\n";
 
             // Add the "Meja No." at the bottom
@@ -3734,64 +4541,72 @@ namespace KASIR.Printer
             //strukText += "--------------------------------\n";
 
             // Convert the final string to bytes and send to the printer
-            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
             stream.Write(buffer, 0, buffer.Length);
 
             // Flush the stream to ensure everything is sent
             stream.Flush();
-
         }
 
         public async Task Ex_PrintModelDataBill
-           (DataRestruk datas,
+        (DataRestruk datas,
             List<CartDetailRestruk> cartDetails,
             List<CanceledItemStrukCustomerRestruk> canceledItems,
-           int totalTransactions,
-    string printerId,
-    string printerName)
+            int totalTransactions,
+            string printerId,
+            string printerName)
         {
             try
             {
                 LoggerUtil.LogWarning("Ex_PrintModelDataBill");
 
-                System.IO.Stream stream = null;
+                Stream stream = null;
 
                 // Koneksi printer langsung di sini
-                if (System.Net.IPAddress.TryParse(printerName, out _))
+                if (IPAddress.TryParse(printerName, out _))
                 {
-                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                    TcpClient client = new(printerName, 9100);
                     stream = client.GetStream();
                 }
                 else
                 {
                     await RetryPolicyAsync(async () =>
                     {
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                        if (printerDevice == null) return false;
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
+                        if (printerDevice == null)
+                        {
+                            return false;
+                        }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000")) return false;
+                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        {
+                            return false;
+                        }
 
                         client.Connect(endpoint);
                         stream = client.GetStream();
                         return true;
-                    }, maxRetries: 3);
+                    }, 3);
                 }
+
                 // Struck Checker
                 if (ShouldPrint(printerId, "Checker"))
                 {
-                    PrintDocument printDocument = new PrintDocument();
+                    PrintDocument printDocument = new();
                     printDocument.PrintPage += (sender, e) =>
                     {
                         Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                         // Mengatur font normal dan tebal
-                        Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                        Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                        Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                        Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+                        Font normalFont =
+                            new("Arial", 8,
+                                FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                        Font boldFont = new("Arial", 8, FontStyle.Bold);
+                        Font BigboldFont = new("Arial", 10, FontStyle.Bold);
+                        Font NomorAntrian = new("Arial", 12, FontStyle.Bold);
 
                         float leftMargin = 5; // Margin kiri (dalam pixel)
                         float rightMargin = 5; // Margin kanan (dalam pixel)
@@ -3799,7 +4614,8 @@ namespace KASIR.Printer
                         float yPos = topMargin;
 
                         // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                        float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                        float paperWidth =
+                            58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
                         float printableWidth = paperWidth - leftMargin - rightMargin;
 
 
@@ -3809,7 +4625,8 @@ namespace KASIR.Printer
                             SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                             SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                             e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                                leftMargin + printableWidth - sizeRight.Width, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
 
@@ -3821,27 +4638,32 @@ namespace KASIR.Printer
                                 //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                 return;
                             }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                        leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
                                 SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                    leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                 yPos += font.GetHeight(e.Graphics);
                             }
                         }
@@ -3854,21 +4676,25 @@ namespace KASIR.Printer
                                 //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                 return;
                             }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                        yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
@@ -3884,13 +4710,15 @@ namespace KASIR.Printer
                             e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
+
                         void DrawSpace()
                         {
-                            yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                            yPos += normalFont
+                                .GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
                         }
 
 
-                        DrawCenterText("SaveBill No. " + totalTransactions.ToString(), NomorAntrian);
+                        DrawCenterText("SaveBill No. " + totalTransactions, NomorAntrian);
                         string nomorMeja = "Meja No." + datas?.customer_seat;
                         //DrawCenterText(datas?.outlet_name, BigboldFont);
                         //DrawCenterText(datas?.outlet_address, normalFont);
@@ -3903,25 +4731,32 @@ namespace KASIR.Printer
                         DrawCenterText("Receipt No. " + datas?.receipt_number, normalFont);
                         DrawSeparator();
                         if (datas?.invoice_due_date != null)
+                        {
                             DrawCenterText(datas?.invoice_due_date, normalFont);
+                        }
+
                         DrawSpace();
                         DrawLeftText(datas?.customer_name, normalFont);
 
                         if (cartDetails.Count != 0)
                         {
                             // Iterate through cart details and group by serving_type_name
-                            var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
+                            IEnumerable<string> servingTypes =
+                                cartDetails.Select(cd => cd.serving_type_name).Distinct();
 
-                            foreach (var servingType in servingTypes)
+                            foreach (string servingType in servingTypes)
                             {
                                 // Filter cart details by serving_type_name
-                                var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                                List<CartDetailRestruk> itemsForServingType =
+                                    cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
                                 DrawSeparator();
                                 DrawCenterText("ORDERED", boldFont);
 
                                 // Skip if there are no items for this serving type
                                 if (itemsForServingType.Count == 0)
+                                {
                                     continue;
+                                }
 
                                 // Add a section for the serving type
                                 DrawSeparator();
@@ -3929,18 +4764,32 @@ namespace KASIR.Printer
                                 DrawSpace();
 
                                 // Iterate through items for this serving type
-                                foreach (var cartDetail in itemsForServingType)
+                                foreach (CartDetailRestruk cartDetail in itemsForServingType)
                                 {
-                                    DrawSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.price));
+                                    DrawSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
+                                        string.Format("{0:n0}", cartDetail.price));
                                     // Add detail items
                                     if (!string.IsNullOrEmpty(cartDetail.varian))
+                                    {
                                         DrawLeftText("   Varian: " + cartDetail.varian, normalFont);
-                                    if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                    }
+
+                                    if (!string.IsNullOrEmpty(cartDetail.note_item))
+                                    {
                                         DrawLeftText("   Note: " + cartDetail.note_item, normalFont);
+                                    }
+
                                     if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                                    {
                                         DrawLeftText("   Discount Code: " + cartDetail.discount_code, normalFont);
+                                    }
+
                                     if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
-                                        DrawSimpleLine("   Total Discount: ", string.Format("{0:n0}", cartDetail.discounted_price));
+                                    {
+                                        DrawSimpleLine("   Total Discount: ",
+                                            string.Format("{0:n0}", cartDetail.discounted_price));
+                                    }
+
                                     DrawSimpleLine("   Total Price:", string.Format("{0:n0}", cartDetail.total_price));
                                     DrawSpace();
                                 }
@@ -3949,42 +4798,66 @@ namespace KASIR.Printer
 
                         if (canceledItems.Count != 0)
                         {
-                            var servingTypesCancel = canceledItems.Select(cd => cd.serving_type_name).Distinct();
+                            IEnumerable<string> servingTypesCancel =
+                                canceledItems.Select(cd => cd.serving_type_name).Distinct();
                             DrawSeparator();
                             DrawCenterText("CANCELED", boldFont);
 
-                            foreach (var servingType in servingTypesCancel)
+                            foreach (string servingType in servingTypesCancel)
                             {
-                                var itemsForServingType = canceledItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                                List<CanceledItemStrukCustomerRestruk> itemsForServingType =
+                                    canceledItems.Where(cd => cd.serving_type_name == servingType).ToList();
 
                                 if (itemsForServingType.Count == 0)
+                                {
                                     continue;
+                                }
 
                                 DrawSeparator();
                                 DrawCenterText(servingType, normalFont);
                                 DrawSpace();
 
-                                foreach (var cancelItem in itemsForServingType)
+                                foreach (CanceledItemStrukCustomerRestruk cancelItem in itemsForServingType)
                                 {
-                                    DrawSimpleLine(cancelItem.qty + " " + cancelItem.menu_name, string.Format("{0:n0}", cancelItem.price));
+                                    DrawSimpleLine(cancelItem.qty + " " + cancelItem.menu_name,
+                                        string.Format("{0:n0}", cancelItem.price));
                                     // Add detail items
                                     if (!string.IsNullOrEmpty(cancelItem.varian))
+                                    {
                                         DrawLeftText("   Varian: " + cancelItem.varian, normalFont);
+                                    }
+
                                     if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                                    {
                                         DrawLeftText("   Note: " + cancelItem.note_item, normalFont);
+                                    }
+
                                     if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                                    {
                                         DrawLeftText("   Reason: " + cancelItem.cancel_reason, normalFont);
+                                    }
+
                                     // Add an empty line between items
                                     DrawSpace();
                                 }
                             }
                         }
+
                         DrawSeparator();
                         DrawSimpleLine("Subtotal", string.Format("{0:n0}", datas.subtotal));
                         if (!string.IsNullOrEmpty(datas.discount_code))
+                        {
                             DrawLeftText("Discount Code: " + datas.discount_code, normalFont);
+                        }
+
                         if (datas?.discounts_value != null && datas.discounts_value != "")
-                            DrawSimpleLine("Discount Value: ", (datas.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", datas.discounts_value.ToString()) : datas.discounts_value.ToString() + " %"));
+                        {
+                            DrawSimpleLine("Discount Value: ",
+                                datas.discounts_is_percent != "1"
+                                    ? string.Format("{0:n0}", datas.discounts_value)
+                                    : datas.discounts_value + " %");
+                        }
+
                         DrawSimpleLine("Total", string.Format("{0:n0}", datas.total));
                         DrawSeparator();
                         DrawSpace();
@@ -4000,17 +4873,17 @@ namespace KASIR.Printer
 
         // Struct Simpan bill / save bill / savebill
         public async Task PrinterModelSimpan(
-        GetStrukCustomerTransaction datas,
-        List<CartDetailStrukCustomerTransaction> KitchenCartDetails,
-        List<CanceledItemStrukCustomerTransaction> KitchenCancelItems,
-        List<CartDetailStrukCustomerTransaction> BarCartDetails,
-        List<CanceledItemStrukCustomerTransaction> BarCancelItems,
-        int totalTransactions)
+            GetStrukCustomerTransaction datas,
+            List<CartDetailStrukCustomerTransaction> KitchenCartDetails,
+            List<CanceledItemStrukCustomerTransaction> KitchenCancelItems,
+            List<CartDetailStrukCustomerTransaction> BarCartDetails,
+            List<CanceledItemStrukCustomerTransaction> BarCancelItems,
+            int totalTransactions)
         {
             try
             {
                 await LoadPrinterSettings(); // Load printer settings
-                await LoadSettingsAsync();   // Load additional settings
+                await LoadSettingsAsync(); // Load additional settings
 
                 List<KeyValuePair<string, string>> printerSettingsCopy;
                 lock (printerSettings)
@@ -4018,71 +4891,78 @@ namespace KASIR.Printer
                     printerSettingsCopy = printerSettings.ToList(); // Create a copy of the collection
                 }
 
-                foreach (var printer in printerSettingsCopy)
+                foreach (KeyValuePair<string, string> printer in printerSettingsCopy)
                 {
-                    var printerName = printer.Value;
+                    string printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))
                     {
                         printerName = ConvertMacAddressFormat(printerName);
                     }
-                    var printerId = printer.Key.Replace("inter", "");
+
+                    string printerId = printer.Key.Replace("inter", "");
 
                     if (string.IsNullOrWhiteSpace(printerName) || printerName.Length < 3)
                     {
                         continue;
                     }
+
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
-                        Ex_PrinterModelSimpan(datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails, BarCancelItems, totalTransactions,
-                    printerId, printerName
-                );
+                        Ex_PrinterModelSimpan(datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails,
+                            BarCancelItems, totalTransactions,
+                            printerId, printerName
+                        );
                         continue;
                     }
+
                     if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
                     {
                         if (ShouldPrint(printerId, "Makanan"))
                         {
-                            System.IO.Stream stream = Stream.Null;
+                            Stream stream = Stream.Null;
 
                             try
                             {
-                                if (System.Net.IPAddress.TryParse(printerName, out _))
+                                if (IPAddress.TryParse(printerName, out _))
                                 {
                                     // Connect via LAN
-                                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                    TcpClient client = new(printerName, 9100);
                                     stream = client.GetStream();
                                 }
                                 else
                                 {
                                     // Connect via Bluetooth dengan retry policy
                                     if (!await RetryPolicyAsync(async () =>
-                                    {
-                                        // Connect via Bluetooth
-                                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                        if (printerDevice == null)
                                         {
-                                            return false;
-                                        }
+                                            // Connect via Bluetooth
+                                            BluetoothDeviceInfo printerDevice =
+                                                new(BluetoothAddress.Parse(printerName));
+                                            if (printerDevice == null)
+                                            {
+                                                return false;
+                                            }
 
-                                        BluetoothClient client = new BluetoothClient();
-                                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                            BluetoothClient client = new();
+                                            BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                                BluetoothService.SerialPort);
 
-                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                        {
-                                            return false;
-                                        }
+                                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                            {
+                                                return false;
+                                            }
 
-                                        client.Connect(endpoint);
-                                        stream = client.GetStream();
+                                            client.Connect(endpoint);
+                                            stream = client.GetStream();
 
-                                        return true;
-                                    }, maxRetries: 3))
+                                            return true;
+                                        }, 3))
                                     {
                                         continue;
                                     }
                                 }
 
-                                PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails, BarCancelItems, totalTransactions, "Makanan");
+                                PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems,
+                                    BarCartDetails, BarCancelItems, totalTransactions, "Makanan");
                             }
                             finally
                             {
@@ -4098,47 +4978,50 @@ namespace KASIR.Printer
                     {
                         if (ShouldPrint(printerId, "Minuman"))
                         {
-                            System.IO.Stream stream = Stream.Null;
+                            Stream stream = Stream.Null;
 
                             try
                             {
-                                if (System.Net.IPAddress.TryParse(printerName, out _))
+                                if (IPAddress.TryParse(printerName, out _))
                                 {
                                     // Connect via LAN
-                                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                    TcpClient client = new(printerName, 9100);
                                     stream = client.GetStream();
                                 }
                                 else
                                 {
                                     // Connect via Bluetooth dengan retry policy
                                     if (!await RetryPolicyAsync(async () =>
-                                    {
-                                        // Connect via Bluetooth
-                                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                        if (printerDevice == null)
                                         {
-                                            return false;
-                                        }
+                                            // Connect via Bluetooth
+                                            BluetoothDeviceInfo printerDevice =
+                                                new(BluetoothAddress.Parse(printerName));
+                                            if (printerDevice == null)
+                                            {
+                                                return false;
+                                            }
 
-                                        BluetoothClient client = new BluetoothClient();
-                                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                            BluetoothClient client = new();
+                                            BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                                BluetoothService.SerialPort);
 
-                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                        {
-                                            return false;
-                                        }
+                                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                            {
+                                                return false;
+                                            }
 
-                                        client.Connect(endpoint);
-                                        stream = client.GetStream();
+                                            client.Connect(endpoint);
+                                            stream = client.GetStream();
 
-                                        return true;
-                                    }, maxRetries: 3))
+                                            return true;
+                                        }, 3))
                                     {
                                         continue;
                                     }
                                 }
 
-                                PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails, BarCancelItems, totalTransactions, "Minuman");
+                                PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems,
+                                    BarCartDetails, BarCancelItems, totalTransactions, "Minuman");
                             }
                             finally
                             {
@@ -4149,53 +5032,55 @@ namespace KASIR.Printer
                             }
                         }
                     }
+
                     if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
                     {
                         if (ShouldPrint(printerId, "Checker"))
                         {
-                            System.IO.Stream stream = Stream.Null;
+                            Stream stream = Stream.Null;
 
                             try
                             {
-                                if (System.Net.IPAddress.TryParse(printerName, out _))
+                                if (IPAddress.TryParse(printerName, out _))
                                 {
                                     // Connect via LAN
-                                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                    TcpClient client = new(printerName, 9100);
                                     stream = client.GetStream();
                                 }
                                 else
                                 {
                                     // Connect via Bluetooth dengan retry policy
                                     if (!await RetryPolicyAsync(async () =>
-                                    {
-                                        // Connect via Bluetooth
-                                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                        if (printerDevice == null)
                                         {
-                                             
-                                            return false;
-                                        }
+                                            // Connect via Bluetooth
+                                            BluetoothDeviceInfo printerDevice =
+                                                new(BluetoothAddress.Parse(printerName));
+                                            if (printerDevice == null)
+                                            {
+                                                return false;
+                                            }
 
-                                        BluetoothClient client = new BluetoothClient();
-                                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                            BluetoothClient client = new();
+                                            BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                                BluetoothService.SerialPort);
 
-                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                        {
-                                             
-                                            return false;
-                                        }
+                                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                            {
+                                                return false;
+                                            }
 
-                                        client.Connect(endpoint);
-                                        stream = client.GetStream();
+                                            client.Connect(endpoint);
+                                            stream = client.GetStream();
 
-                                        return true;
-                                    }, maxRetries: 3))
+                                            return true;
+                                        }, 3))
                                     {
                                         continue;
                                     }
                                 }
 
-                                PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails, BarCancelItems, totalTransactions, "Checker");
+                                PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems,
+                                    BarCartDetails, BarCancelItems, totalTransactions, "Checker");
                             }
                             finally
                             {
@@ -4214,7 +5099,7 @@ namespace KASIR.Printer
             }
         }
 
-        private void PrintSimpanReceipt(System.IO.Stream stream, GetStrukCustomerTransaction datas,
+        private void PrintSimpanReceipt(Stream stream, GetStrukCustomerTransaction datas,
             List<CartDetailStrukCustomerTransaction> KitchenCartDetails,
             List<CanceledItemStrukCustomerTransaction> KitchenCancelItems,
             List<CartDetailStrukCustomerTransaction> BarCartDetails,
@@ -4229,7 +5114,7 @@ namespace KASIR.Printer
             //PrintLogo(stream, "icon\\OutletLogo.bmp", 50); // Larger logo size
 
             // Print the rest of the receipt
-            string strukText = "\n" + kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions.ToString());
+            string strukText = "\n" + kodeHeksadesimalBold + CenterText("SaveBill No. " + totalTransactions);
             strukText += kodeHeksadesimalNormal;
             strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + CenterText(type.ToUpper());
@@ -4241,28 +5126,37 @@ namespace KASIR.Printer
 
             if (type == "Makanan" && KitchenCartDetails.Count != 0)
             {
-                var servingTypes = KitchenCartDetails.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypes = KitchenCartDetails.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
                 strukText += CenterText("ORDER");
 
-                foreach (var servingType in servingTypes)
+                foreach (string servingType in servingTypes)
                 {
-                    var itemsForServingType = KitchenCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-                    if (itemsForServingType.Count == 0) continue;
+                    List<CartDetailStrukCustomerTransaction> itemsForServingType =
+                        KitchenCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                    if (itemsForServingType.Count == 0)
+                    {
+                        continue;
+                    }
 
                     strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
                     strukText += "\n";
 
-                    foreach (var cartDetail in itemsForServingType)
+                    foreach (CartDetailStrukCustomerTransaction cartDetail in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
 
                         strukText += FormatSimpleLine(cartDetail.menu_name, cartDetail.qty) + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                        {
                             strukText += "Varian: " + cartDetail.varian + "\n";
-                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                        }
+
+                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                        {
                             strukText += "Note: " + cartDetail.note_item + "\n";
+                        }
 
                         strukText += kodeHeksadesimalNormal;
                         strukText += "\n";
@@ -4272,30 +5166,43 @@ namespace KASIR.Printer
 
             if (type == "Makanan" && KitchenCancelItems.Count != 0)
             {
-                var servingTypes = KitchenCancelItems.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypes = KitchenCancelItems.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
                 strukText += CenterText("CANCELED");
 
-                foreach (var servingType in servingTypes)
+                foreach (string servingType in servingTypes)
                 {
-                    var itemsForServingType = KitchenCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
-                    if (itemsForServingType.Count == 0) continue;
+                    List<CanceledItemStrukCustomerTransaction> itemsForServingType =
+                        KitchenCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                    if (itemsForServingType.Count == 0)
+                    {
+                        continue;
+                    }
 
                     strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
                     strukText += "\n";
 
-                    foreach (var cancelItem in itemsForServingType)
+                    foreach (CanceledItemStrukCustomerTransaction cancelItem in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
 
                         strukText += FormatSimpleLine(cancelItem.menu_name, cancelItem.qty) + "\n";
                         if (!string.IsNullOrEmpty(cancelItem.varian))
+                        {
                             strukText += "Varian: " + cancelItem.varian + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                        {
                             strukText += "Note: " + cancelItem.note_item + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                        {
                             strukText += "Canceled Reason: " + cancelItem.cancel_reason + "\n";
+                        }
+
                         strukText += kodeHeksadesimalNormal;
 
                         strukText += "\n";
@@ -4305,28 +5212,38 @@ namespace KASIR.Printer
 
             if (type == "Minuman" && BarCartDetails.Count != 0)
             {
-                var servingTypes = BarCartDetails.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypes = BarCartDetails.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
                 strukText += CenterText("ORDER");
 
-                foreach (var servingType in servingTypes)
+                foreach (string servingType in servingTypes)
                 {
-                    var itemsForServingType = BarCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-                    if (itemsForServingType.Count == 0) continue;
+                    List<CartDetailStrukCustomerTransaction> itemsForServingType =
+                        BarCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                    if (itemsForServingType.Count == 0)
+                    {
+                        continue;
+                    }
 
                     strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
                     strukText += "\n";
 
-                    foreach (var cartDetail in itemsForServingType)
+                    foreach (CartDetailStrukCustomerTransaction cartDetail in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
 
                         strukText += FormatSimpleLine("x" + cartDetail.qty + " " + cartDetail.menu_name, "") + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                        {
                             strukText += "Varian: " + cartDetail.varian + "\n";
-                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                        }
+
+                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                        {
                             strukText += "Note: " + cartDetail.note_item + "\n";
+                        }
+
                         strukText += kodeHeksadesimalNormal;
 
                         strukText += "\n";
@@ -4336,48 +5253,70 @@ namespace KASIR.Printer
 
             if (type == "Minuman" && BarCancelItems.Count != 0)
             {
-                var servingTypes = BarCancelItems.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypes = BarCancelItems.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
                 strukText += CenterText("CANCELED");
 
-                foreach (var servingType in servingTypes)
+                foreach (string servingType in servingTypes)
                 {
-                    var itemsForServingType = BarCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
-                    if (itemsForServingType.Count == 0) continue;
+                    List<CanceledItemStrukCustomerTransaction> itemsForServingType =
+                        BarCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                    if (itemsForServingType.Count == 0)
+                    {
+                        continue;
+                    }
 
                     strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
                     strukText += "\n";
 
-                    foreach (var cancelItem in itemsForServingType)
+                    foreach (CanceledItemStrukCustomerTransaction cancelItem in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
 
                         strukText += FormatSimpleLine("x" + cancelItem.qty + " " + cancelItem.menu_name, "") + "\n";
                         if (!string.IsNullOrEmpty(cancelItem.varian))
+                        {
                             strukText += "Varian: " + cancelItem.varian + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                        {
                             strukText += "Note: " + cancelItem.note_item + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                        {
                             strukText += "Canceled Reason: " + cancelItem.cancel_reason + "\n";
+                        }
+
                         strukText += kodeHeksadesimalNormal;
 
                         strukText += "\n";
                     }
                 }
             }
+
             if (type == "Checker")
             {
                 // Get all unique serving types from both food and beverage items
-                var allServingTypes = new HashSet<string>();
+                HashSet<string> allServingTypes = new();
 
-                foreach (var item in KitchenCartDetails)
+                foreach (CartDetailStrukCustomerTransaction item in KitchenCartDetails)
+                {
                     if (!string.IsNullOrEmpty(item.serving_type_name))
+                    {
                         allServingTypes.Add(item.serving_type_name);
+                    }
+                }
 
-                foreach (var item in BarCartDetails)
+                foreach (CartDetailStrukCustomerTransaction item in BarCartDetails)
+                {
                     if (!string.IsNullOrEmpty(item.serving_type_name))
+                    {
                         allServingTypes.Add(item.serving_type_name);
+                    }
+                }
 
                 if (KitchenCartDetails.Count > 0 || BarCartDetails.Count > 0)
                 {
@@ -4385,36 +5324,50 @@ namespace KASIR.Printer
                     strukText += CenterText("ORDER");
 
                     // Process each serving type
-                    foreach (var servingType in allServingTypes)
+                    foreach (string servingType in allServingTypes)
                     {
                         strukText += "--------------------------------\n";
                         strukText += CenterText(servingType);
                         strukText += "\n";
 
                         // Process food items for this serving type
-                        var foodItems = KitchenCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-                        foreach (var cartDetail in foodItems)
+                        List<CartDetailStrukCustomerTransaction> foodItems =
+                            KitchenCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                        foreach (CartDetailStrukCustomerTransaction cartDetail in foodItems)
                         {
                             strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
                             strukText += FormatSimpleLine(cartDetail.menu_name, cartDetail.qty) + "\n";
                             if (!string.IsNullOrEmpty(cartDetail.varian))
+                            {
                                 strukText += "Varian: " + cartDetail.varian + "\n";
-                            if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                            }
+
+                            if (!string.IsNullOrEmpty(cartDetail.note_item))
+                            {
                                 strukText += "Note: " + cartDetail.note_item + "\n";
+                            }
+
                             strukText += kodeHeksadesimalNormal;
                             strukText += "\n";
                         }
 
                         // Process beverage items for this serving type
-                        var beverageItems = BarCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-                        foreach (var cartDetail in beverageItems)
+                        List<CartDetailStrukCustomerTransaction> beverageItems =
+                            BarCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                        foreach (CartDetailStrukCustomerTransaction cartDetail in beverageItems)
                         {
                             strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
                             strukText += FormatSimpleLine(cartDetail.menu_name, cartDetail.qty) + "\n";
                             if (!string.IsNullOrEmpty(cartDetail.varian))
+                            {
                                 strukText += "Varian: " + cartDetail.varian + "\n";
-                            if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                            }
+
+                            if (!string.IsNullOrEmpty(cartDetail.note_item))
+                            {
                                 strukText += "Note: " + cartDetail.note_item + "\n";
+                            }
+
                             strukText += kodeHeksadesimalNormal;
                             strukText += "\n";
                         }
@@ -4422,15 +5375,23 @@ namespace KASIR.Printer
                 }
 
                 // Now handle all canceled items in a separate section
-                var canceledServingTypes = new HashSet<string>();
+                HashSet<string> canceledServingTypes = new();
 
-                foreach (var item in KitchenCancelItems)
+                foreach (CanceledItemStrukCustomerTransaction item in KitchenCancelItems)
+                {
                     if (!string.IsNullOrEmpty(item.serving_type_name))
+                    {
                         canceledServingTypes.Add(item.serving_type_name);
+                    }
+                }
 
-                foreach (var item in BarCancelItems)
+                foreach (CanceledItemStrukCustomerTransaction item in BarCancelItems)
+                {
                     if (!string.IsNullOrEmpty(item.serving_type_name))
+                    {
                         canceledServingTypes.Add(item.serving_type_name);
+                    }
+                }
 
                 if (KitchenCancelItems.Count > 0 || BarCancelItems.Count > 0)
                 {
@@ -4438,50 +5399,71 @@ namespace KASIR.Printer
                     strukText += CenterText("CANCELED");
 
                     // Process each serving type for canceled items
-                    foreach (var servingType in canceledServingTypes)
+                    foreach (string servingType in canceledServingTypes)
                     {
                         strukText += "--------------------------------\n";
                         strukText += CenterText(servingType);
                         strukText += "\n";
 
                         // Process canceled food items for this serving type
-                        var canceledFoodItems = KitchenCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
-                        foreach (var cancelItem in canceledFoodItems)
+                        List<CanceledItemStrukCustomerTransaction> canceledFoodItems =
+                            KitchenCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                        foreach (CanceledItemStrukCustomerTransaction cancelItem in canceledFoodItems)
                         {
                             strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
                             strukText += FormatSimpleLine(cancelItem.menu_name, cancelItem.qty) + "\n";
                             if (!string.IsNullOrEmpty(cancelItem.varian))
+                            {
                                 strukText += "Varian: " + cancelItem.varian + "\n";
+                            }
+
                             if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                            {
                                 strukText += "Note: " + cancelItem.note_item + "\n";
+                            }
+
                             if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                            {
                                 strukText += "Canceled Reason: " + cancelItem.cancel_reason + "\n";
+                            }
+
                             strukText += kodeHeksadesimalNormal;
                             strukText += "\n";
                         }
 
                         // Process canceled beverage items for this serving type
-                        var canceledBeverageItems = BarCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
-                        foreach (var cancelItem in canceledBeverageItems)
+                        List<CanceledItemStrukCustomerTransaction> canceledBeverageItems =
+                            BarCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                        foreach (CanceledItemStrukCustomerTransaction cancelItem in canceledBeverageItems)
                         {
                             strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
                             strukText += FormatSimpleLine(cancelItem.menu_name, cancelItem.qty) + "\n";
                             if (!string.IsNullOrEmpty(cancelItem.varian))
+                            {
                                 strukText += "Varian: " + cancelItem.varian + "\n";
+                            }
+
                             if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                            {
                                 strukText += "Note: " + cancelItem.note_item + "\n";
+                            }
+
                             if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                            {
                                 strukText += "Canceled Reason: " + cancelItem.cancel_reason + "\n";
+                            }
+
                             strukText += kodeHeksadesimalNormal;
                             strukText += "\n";
                         }
                     }
                 }
             }
+
             strukText += "--------------------------------\n\n\n\n\n";
 
             // Encode your text into bytes (you might need to adjust the encoding)
-            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
             // Send the text to the printer
             stream.Write(buffer, 0, buffer.Length);
@@ -4498,54 +5480,61 @@ namespace KASIR.Printer
             List<CartDetailStrukCustomerTransaction> BarCartDetails,
             List<CanceledItemStrukCustomerTransaction> BarCancelItems,
             int totalTransactions,
-    string printerId,
-    string printerName)
+            string printerId,
+            string printerName)
         {
             try
             {
-                System.IO.Stream stream = null;
+                Stream stream = null;
 
                 // Koneksi printer langsung di sini
-                if (System.Net.IPAddress.TryParse(printerName, out _))
+                if (IPAddress.TryParse(printerName, out _))
                 {
-                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                    TcpClient client = new(printerName, 9100);
                     stream = client.GetStream();
                 }
                 else
                 {
                     await RetryPolicyAsync(async () =>
                     {
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                        if (printerDevice == null) return false;
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
+                        if (printerDevice == null)
+                        {
+                            return false;
+                        }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000")) return false;
+                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        {
+                            return false;
+                        }
 
                         client.Connect(endpoint);
                         stream = client.GetStream();
                         return true;
-                    }, maxRetries: 3);
+                    }, 3);
                 }
 
                 // Struct Kitchen&Bar
 
                 if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
                 {
-
                     if (ShouldPrint(printerId, "Makanan"))
                     {
-                        PrintDocument printDocument = new PrintDocument();
+                        PrintDocument printDocument = new();
                         printDocument.PrintPage += (sender, e) =>
                         {
                             Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                             // Mengatur font normal dan tebal
-                            Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                            Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                            Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                            Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+                            Font normalFont =
+                                new("Arial", 8,
+                                    FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                            Font boldFont = new("Arial", 8, FontStyle.Bold);
+                            Font BigboldFont = new("Arial", 10, FontStyle.Bold);
+                            Font NomorAntrian = new("Arial", 12, FontStyle.Bold);
 
                             float leftMargin = 5; // Margin kiri (dalam pixel)
                             float rightMargin = 5; // Margin kanan (dalam pixel)
@@ -4553,50 +5542,71 @@ namespace KASIR.Printer
                             float yPos = topMargin;
 
                             // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                            float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                            float paperWidth =
+                                58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
                             float printableWidth = paperWidth - leftMargin - rightMargin;
 
 
                             // Fungsi untuk format teks kiri dan kanan
                             void DrawSimpleLine(string textLeft, string textRight)
                             {
-                                if (textLeft == null) textLeft = string.Empty;
-                                if (textRight == null) textRight = string.Empty;
+                                if (textLeft == null)
+                                {
+                                    textLeft = string.Empty;
+                                }
+
+                                if (textRight == null)
+                                {
+                                    textRight = string.Empty;
+                                }
 
                                 SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                                 SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                                 e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                                e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                                e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                                    leftMargin + printableWidth - sizeRight.Width, yPos);
                                 yPos += normalFont.GetHeight(e.Graphics);
                             }
 
                             // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                             void DrawCenterText(string text, Font font)
                             {
-                                if (text == null) text = string.Empty;
-                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                                if (text == null)
+                                {
+                                    text = string.Empty;
+                                }
+
+                                if (font == null)
+                                {
+                                    throw new ArgumentNullException(nameof(font),
+                                        "Font is null in DrawCenterText method.");
+                                }
 
                                 string[] words = text.Split(' ');
-                                StringBuilder currentLine = new StringBuilder();
+                                StringBuilder currentLine = new();
                                 foreach (string word in words)
                                 {
-                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                    SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                     if (size.Width > printableWidth)
                                     {
                                         // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                         SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                            leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                         yPos += font.GetHeight(e.Graphics);
                                         currentLine.Clear();
                                     }
+
                                     // Tambahkan kata ke baris saat ini
                                     currentLine.Append(word + " ");
                                 }
+
                                 // Gambar baris terakhir
                                 if (currentLine.Length > 0)
                                 {
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                        leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                 }
                             }
@@ -4609,28 +5619,41 @@ namespace KASIR.Printer
                                     //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                     return;
                                 }
-                                if (text == null) text = string.Empty;
-                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawLeftText method.");
+
+                                if (text == null)
+                                {
+                                    text = string.Empty;
+                                }
+
+                                if (font == null)
+                                {
+                                    throw new ArgumentNullException(nameof(font),
+                                        "Font is null in DrawLeftText method.");
+                                }
 
                                 string[] words = text.Split(' ');
-                                StringBuilder currentLine = new StringBuilder();
+                                StringBuilder currentLine = new();
                                 foreach (string word in words)
                                 {
-                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                    SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                     if (size.Width > printableWidth)
                                     {
                                         // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                            yPos);
                                         yPos += font.GetHeight(e.Graphics);
                                         currentLine.Clear();
                                     }
+
                                     // Tambahkan kata ke baris saat ini
                                     currentLine.Append(word + " ");
                                 }
+
                                 // Gambar baris terakhir
                                 if (currentLine.Length > 0)
                                 {
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                        yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                 }
                             }
@@ -4641,14 +5664,17 @@ namespace KASIR.Printer
                                 e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                                 yPos += normalFont.GetHeight(e.Graphics);
                             }
+
                             void DrawSpace()
                             {
-                                yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                                yPos += normalFont
+                                    .GetHeight(e
+                                        .Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
                             }
 
 
                             string nomorMeja = "Meja No." + datas.data?.customer_seat;
-                            DrawCenterText("SaveBill No. " + totalTransactions.ToString(), NomorAntrian);
+                            DrawCenterText("SaveBill No. " + totalTransactions, NomorAntrian);
 
                             // Generate struk text
                             DrawSeparator();
@@ -4661,29 +5687,39 @@ namespace KASIR.Printer
 
                             if (KitchenCartDetails.Count != 0)
                             {
-                                var servingTypes = KitchenCartDetails.Select(cd => cd.serving_type_name).Distinct();
+                                IEnumerable<string> servingTypes =
+                                    KitchenCartDetails.Select(cd => cd.serving_type_name).Distinct();
                                 DrawSeparator();
                                 DrawCenterText("ORDER", boldFont);
 
-                                foreach (var servingType in servingTypes)
+                                foreach (string servingType in servingTypes)
                                 {
-                                    var itemsForServingType = KitchenCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                                    List<CartDetailStrukCustomerTransaction> itemsForServingType =
+                                        KitchenCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
 
                                     if (itemsForServingType.Count == 0)
+                                    {
                                         continue;
+                                    }
 
                                     DrawSeparator();
                                     DrawCenterText(servingType, normalFont);
 
-                                    foreach (var cartDetail in itemsForServingType)
+                                    foreach (CartDetailStrukCustomerTransaction cartDetail in itemsForServingType)
                                     {
-                                        string qtyMenu = "x" + cartDetail.qty.ToString();
+                                        string qtyMenu = "x" + cartDetail.qty;
                                         DrawCenterText(qtyMenu + " " + cartDetail.menu_name, BigboldFont);
 
                                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                                        {
                                             DrawCenterText("Varian: " + cartDetail.varian, BigboldFont);
-                                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                        }
+
+                                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                                        {
                                             DrawCenterText("Note: " + cartDetail.note_item, BigboldFont);
+                                        }
+
                                         DrawSpace();
                                     }
                                 }
@@ -4691,35 +5727,49 @@ namespace KASIR.Printer
 
                             if (KitchenCancelItems.Count != 0)
                             {
-                                var servingTypes = KitchenCancelItems.Select(cd => cd.serving_type_name).Distinct();
+                                IEnumerable<string> servingTypes =
+                                    KitchenCancelItems.Select(cd => cd.serving_type_name).Distinct();
                                 DrawSeparator();
                                 DrawCenterText("CANCELED", boldFont);
 
-                                foreach (var servingType in servingTypes)
+                                foreach (string servingType in servingTypes)
                                 {
-                                    var itemsForServingType = KitchenCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                                    List<CanceledItemStrukCustomerTransaction> itemsForServingType =
+                                        KitchenCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
 
                                     if (itemsForServingType.Count == 0)
+                                    {
                                         continue;
+                                    }
 
                                     DrawSeparator();
                                     DrawCenterText(servingType, boldFont);
 
-                                    foreach (var cancelItem in itemsForServingType)
+                                    foreach (CanceledItemStrukCustomerTransaction cancelItem in itemsForServingType)
                                     {
-                                        string qtyMenu = "x" + cancelItem.qty.ToString();
+                                        string qtyMenu = "x" + cancelItem.qty;
                                         DrawCenterText(qtyMenu + " " + cancelItem.menu_name, BigboldFont);
 
                                         if (!string.IsNullOrEmpty(cancelItem.varian))
+                                        {
                                             DrawCenterText("Varian: " + cancelItem.varian, BigboldFont);
+                                        }
+
                                         if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
-                                            DrawCenterText("Note: " + cancelItem.note_item?.ToString(), BigboldFont);
+                                        {
+                                            DrawCenterText("Note: " + cancelItem.note_item, BigboldFont);
+                                        }
+
                                         if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                                        {
                                             DrawCenterText("Canceled Reason: " + cancelItem.cancel_reason, BigboldFont);
+                                        }
+
                                         DrawSpace();
                                     }
                                 }
                             }
+
                             DrawSeparator();
                             DrawSpace();
                             DrawCenterText(nomorMeja, NomorAntrian);
@@ -4743,16 +5793,18 @@ namespace KASIR.Printer
                 {
                     if (ShouldPrint(printerId, "Minuman"))
                     {
-                        PrintDocument printDocument = new PrintDocument();
+                        PrintDocument printDocument = new();
                         printDocument.PrintPage += (sender, e) =>
                         {
                             Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                             // Mengatur font normal dan tebal
-                            Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                            Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                            Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                            Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+                            Font normalFont =
+                                new("Arial", 8,
+                                    FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                            Font boldFont = new("Arial", 8, FontStyle.Bold);
+                            Font BigboldFont = new("Arial", 10, FontStyle.Bold);
+                            Font NomorAntrian = new("Arial", 12, FontStyle.Bold);
 
                             float leftMargin = 5; // Margin kiri (dalam pixel)
                             float rightMargin = 5; // Margin kanan (dalam pixel)
@@ -4760,50 +5812,71 @@ namespace KASIR.Printer
                             float yPos = topMargin;
 
                             // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                            float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                            float paperWidth =
+                                58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
                             float printableWidth = paperWidth - leftMargin - rightMargin;
 
 
                             // Fungsi untuk format teks kiri dan kanan
                             void DrawSimpleLine(string textLeft, string textRight)
                             {
-                                if (textLeft == null) textLeft = string.Empty;
-                                if (textRight == null) textRight = string.Empty;
+                                if (textLeft == null)
+                                {
+                                    textLeft = string.Empty;
+                                }
+
+                                if (textRight == null)
+                                {
+                                    textRight = string.Empty;
+                                }
 
                                 SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                                 SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                                 e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                                e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                                e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                                    leftMargin + printableWidth - sizeRight.Width, yPos);
                                 yPos += normalFont.GetHeight(e.Graphics);
                             }
 
                             // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                             void DrawCenterText(string text, Font font)
                             {
-                                if (text == null) text = string.Empty;
-                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                                if (text == null)
+                                {
+                                    text = string.Empty;
+                                }
+
+                                if (font == null)
+                                {
+                                    throw new ArgumentNullException(nameof(font),
+                                        "Font is null in DrawCenterText method.");
+                                }
 
                                 string[] words = text.Split(' ');
-                                StringBuilder currentLine = new StringBuilder();
+                                StringBuilder currentLine = new();
                                 foreach (string word in words)
                                 {
-                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                    SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                     if (size.Width > printableWidth)
                                     {
                                         // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                         SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                            leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                         yPos += font.GetHeight(e.Graphics);
                                         currentLine.Clear();
                                     }
+
                                     // Tambahkan kata ke baris saat ini
                                     currentLine.Append(word + " ");
                                 }
+
                                 // Gambar baris terakhir
                                 if (currentLine.Length > 0)
                                 {
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                        leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                 }
                             }
@@ -4816,28 +5889,41 @@ namespace KASIR.Printer
                                     //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                     return;
                                 }
-                                if (text == null) text = string.Empty;
-                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawLeftText method.");
+
+                                if (text == null)
+                                {
+                                    text = string.Empty;
+                                }
+
+                                if (font == null)
+                                {
+                                    throw new ArgumentNullException(nameof(font),
+                                        "Font is null in DrawLeftText method.");
+                                }
 
                                 string[] words = text.Split(' ');
-                                StringBuilder currentLine = new StringBuilder();
+                                StringBuilder currentLine = new();
                                 foreach (string word in words)
                                 {
-                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                    SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                     if (size.Width > printableWidth)
                                     {
                                         // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                            yPos);
                                         yPos += font.GetHeight(e.Graphics);
                                         currentLine.Clear();
                                     }
+
                                     // Tambahkan kata ke baris saat ini
                                     currentLine.Append(word + " ");
                                 }
+
                                 // Gambar baris terakhir
                                 if (currentLine.Length > 0)
                                 {
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                        yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                 }
                             }
@@ -4848,14 +5934,17 @@ namespace KASIR.Printer
                                 e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                                 yPos += normalFont.GetHeight(e.Graphics);
                             }
+
                             void DrawSpace()
                             {
-                                yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                                yPos += normalFont
+                                    .GetHeight(e
+                                        .Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
                             }
 
 
                             string nomorMeja = "Meja No." + datas.data?.customer_seat;
-                            DrawCenterText("SaveBill No. " + totalTransactions.ToString(), NomorAntrian);
+                            DrawCenterText("SaveBill No. " + totalTransactions, NomorAntrian);
 
                             // Generate struk text
                             DrawSeparator();
@@ -4868,29 +5957,39 @@ namespace KASIR.Printer
 
                             if (BarCartDetails.Count != 0)
                             {
-                                var servingTypes = BarCartDetails.Select(cd => cd.serving_type_name).Distinct();
+                                IEnumerable<string> servingTypes =
+                                    BarCartDetails.Select(cd => cd.serving_type_name).Distinct();
                                 DrawSeparator();
                                 DrawCenterText("ORDER", boldFont);
 
-                                foreach (var servingType in servingTypes)
+                                foreach (string servingType in servingTypes)
                                 {
-                                    var itemsForServingType = BarCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                                    List<CartDetailStrukCustomerTransaction> itemsForServingType =
+                                        BarCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
 
                                     if (itemsForServingType.Count == 0)
+                                    {
                                         continue;
+                                    }
 
                                     DrawSeparator();
                                     DrawCenterText(servingType, normalFont);
 
-                                    foreach (var cartDetail in itemsForServingType)
+                                    foreach (CartDetailStrukCustomerTransaction cartDetail in itemsForServingType)
                                     {
-                                        string qtyMenu = "x" + cartDetail.qty.ToString();
+                                        string qtyMenu = "x" + cartDetail.qty;
                                         DrawCenterText(qtyMenu + " " + cartDetail.menu_name, BigboldFont);
 
                                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                                        {
                                             DrawCenterText("Varian: " + cartDetail.varian, BigboldFont);
-                                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                        }
+
+                                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                                        {
                                             DrawCenterText("Note: " + cartDetail.note_item, BigboldFont);
+                                        }
+
                                         DrawSpace();
                                     }
                                 }
@@ -4898,35 +5997,49 @@ namespace KASIR.Printer
 
                             if (BarCancelItems.Count != 0)
                             {
-                                var servingTypes = BarCancelItems.Select(cd => cd.serving_type_name).Distinct();
+                                IEnumerable<string> servingTypes =
+                                    BarCancelItems.Select(cd => cd.serving_type_name).Distinct();
                                 DrawSeparator();
                                 DrawCenterText("CANCELED", boldFont);
 
-                                foreach (var servingType in servingTypes)
+                                foreach (string servingType in servingTypes)
                                 {
-                                    var itemsForServingType = BarCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                                    List<CanceledItemStrukCustomerTransaction> itemsForServingType =
+                                        BarCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
 
                                     if (itemsForServingType.Count == 0)
+                                    {
                                         continue;
+                                    }
 
                                     DrawSeparator();
                                     DrawCenterText(servingType, boldFont);
 
-                                    foreach (var cancelItem in itemsForServingType)
+                                    foreach (CanceledItemStrukCustomerTransaction cancelItem in itemsForServingType)
                                     {
-                                        string qtyMenu = "x" + cancelItem.qty.ToString();
+                                        string qtyMenu = "x" + cancelItem.qty;
                                         DrawCenterText(qtyMenu + " " + cancelItem.menu_name, BigboldFont);
 
                                         if (!string.IsNullOrEmpty(cancelItem.varian))
+                                        {
                                             DrawCenterText("Varian: " + cancelItem.varian, BigboldFont);
+                                        }
+
                                         if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
-                                            DrawCenterText("Note: " + cancelItem.note_item?.ToString(), BigboldFont);
+                                        {
+                                            DrawCenterText("Note: " + cancelItem.note_item, BigboldFont);
+                                        }
+
                                         if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                                        {
                                             DrawCenterText("Canceled Reason: " + cancelItem.cancel_reason, BigboldFont);
+                                        }
+
                                         DrawSpace();
                                     }
                                 }
                             }
+
                             DrawSeparator();
                             DrawSpace();
                             DrawCenterText(nomorMeja, NomorAntrian);
@@ -4942,82 +6055,84 @@ namespace KASIR.Printer
         // Struct Payform
 
         public async Task PrintModelPayform(
-    GetStrukCustomerTransaction datas,
-    List<CartDetailStrukCustomerTransaction> cartDetails,
-    List<KitchenAndBarCartDetails> KitchenCartDetails,
-    List<KitchenAndBarCartDetails> BarCartDetails,
-    List<KitchenAndBarCanceledItems> KitchenCancelItems,
-    List<KitchenAndBarCanceledItems> BarCancelItems,
-    int totalTransactions,
-    string Kakimu)
+            GetStrukCustomerTransaction datas,
+            List<CartDetailStrukCustomerTransaction> cartDetails,
+            List<KitchenAndBarCartDetails> KitchenCartDetails,
+            List<KitchenAndBarCartDetails> BarCartDetails,
+            List<KitchenAndBarCanceledItems> KitchenCancelItems,
+            List<KitchenAndBarCanceledItems> BarCancelItems,
+            int totalTransactions,
+            string Kakimu)
         {
             try
             {
                 await LoadPrinterSettings(); // Load printer settings
-                await LoadSettingsAsync();   // Load additional settings
+                await LoadSettingsAsync(); // Load additional settings
 
-                foreach (var printer in printerSettings)
+                foreach (KeyValuePair<string, string> printer in printerSettings)
                 {
-                    var printerName = printer.Value;
+                    string printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))
                     {
                         printerName = ConvertMacAddressFormat(printerName);
                     }
-                    var printerId = printer.Key.Replace("inter", "");
+
+                    string printerId = printer.Key.Replace("inter", "");
 
                     if (string.IsNullOrWhiteSpace(printerName) || printerName.Length < 3)
                     {
                         continue;
                     }
+
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
                         await Ex_PrintModelPayform(
-                    datas, cartDetails, KitchenCartDetails, BarCartDetails,
-                    KitchenCancelItems, BarCancelItems, totalTransactions, Kakimu,
-                    printerId, printerName
-                );
+                            datas, cartDetails, KitchenCartDetails, BarCartDetails,
+                            KitchenCancelItems, BarCancelItems, totalTransactions, Kakimu,
+                            printerId, printerName
+                        );
                         continue;
                     }
+
                     // Struct Customer ====
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        System.IO.Stream stream = Stream.Null;
+                        Stream stream = Stream.Null;
 
                         try
                         {
-                            if (System.Net.IPAddress.TryParse(printerName, out _))
+                            if (IPAddress.TryParse(printerName, out _))
                             {
                                 // Connect via LAN
-                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                TcpClient client = new(printerName, 9100);
                                 stream = client.GetStream();
                             }
                             else
                             {
                                 // Connect via Bluetooth dengan retry policy
                                 if (!await RetryPolicyAsync(async () =>
-                                {
-                                    // Connect via Bluetooth
-                                    BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                    if (printerDevice == null)
                                     {
-                                         
-                                        return false;
-                                    }
+                                        // Connect via Bluetooth
+                                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
+                                        if (printerDevice == null)
+                                        {
+                                            return false;
+                                        }
 
-                                    BluetoothClient client = new BluetoothClient();
-                                    BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                        BluetoothClient client = new();
+                                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                            BluetoothService.SerialPort);
 
-                                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                    {
-                                         
-                                        return false;
-                                    }
+                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                        {
+                                            return false;
+                                        }
 
-                                    client.Connect(endpoint);
-                                    stream = client.GetStream();
+                                        client.Connect(endpoint);
+                                        stream = client.GetStream();
 
-                                    return true;
-                                }, maxRetries: 3))
+                                        return true;
+                                    }, 3))
                                 {
                                     continue;
                                 }
@@ -5025,7 +6140,6 @@ namespace KASIR.Printer
 
                             // Setelah koneksi berhasil, cetak struk
                             PrintCustomerReceipt(stream, datas, cartDetails, totalTransactions, Kakimu);
-
                         }
                         finally
                         {
@@ -5039,48 +6153,49 @@ namespace KASIR.Printer
                     // Struct Checker
                     if (ShouldPrint(printerId, "Checker"))
                     {
-                        System.IO.Stream stream = null;
+                        Stream stream = null;
 
                         try
                         {
                             // Filter checker cart details yang is_ordered == 1
-                            var orderedCheckerItems = cartDetails.Where(x => x.is_ordered != 1).ToList();
+                            List<CartDetailStrukCustomerTransaction> orderedCheckerItems =
+                                cartDetails.Where(x => x.is_ordered != 1).ToList();
 
                             if (orderedCheckerItems.Any())
                             {
-                                if (System.Net.IPAddress.TryParse(printerName, out _))
+                                if (IPAddress.TryParse(printerName, out _))
                                 {
                                     // Connect via LAN
-                                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                    TcpClient client = new(printerName, 9100);
                                     stream = client.GetStream();
                                 }
                                 else
                                 {
                                     // Connect via Bluetooth dengan retry policy
                                     if (!await RetryPolicyAsync(async () =>
-                                    {
-                                        // Connect via Bluetooth
-                                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                        if (printerDevice == null)
                                         {
-                                             
-                                            return false;
-                                        }
+                                            // Connect via Bluetooth
+                                            BluetoothDeviceInfo printerDevice =
+                                                new(BluetoothAddress.Parse(printerName));
+                                            if (printerDevice == null)
+                                            {
+                                                return false;
+                                            }
 
-                                        BluetoothClient client = new BluetoothClient();
-                                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                            BluetoothClient client = new();
+                                            BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                                BluetoothService.SerialPort);
 
-                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                        {
-                                             
-                                            return false;
-                                        }
+                                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                            {
+                                                return false;
+                                            }
 
-                                        client.Connect(endpoint);
-                                        stream = client.GetStream();
+                                            client.Connect(endpoint);
+                                            stream = client.GetStream();
 
-                                        return true;
-                                    }, maxRetries: 3))
+                                            return true;
+                                        }, 3))
                                     {
                                         continue;
                                     }
@@ -5088,7 +6203,6 @@ namespace KASIR.Printer
 
                                 // Setelah koneksi berhasil, cetak struk
                                 PrintCheckerReceipt(stream, datas, cartDetails, totalTransactions);
-
                             }
                         }
                         finally
@@ -5105,56 +6219,57 @@ namespace KASIR.Printer
                     {
                         if (ShouldPrint(printerId, "Makanan"))
                         {
-                            System.IO.Stream stream = Stream.Null;
+                            Stream stream = Stream.Null;
 
                             try
                             {
                                 // Filter kitchen cart details yang is_ordered == 1
-                                var orderedKitchenItems = KitchenCartDetails.Where(x => x.is_ordered != 1).ToList();
+                                List<KitchenAndBarCartDetails> orderedKitchenItems =
+                                    KitchenCartDetails.Where(x => x.is_ordered != 1).ToList();
 
                                 if (orderedKitchenItems.Any())
                                 {
-                                    if (System.Net.IPAddress.TryParse(printerName, out _))
+                                    if (IPAddress.TryParse(printerName, out _))
                                     {
                                         // Connect via LAN
-                                        var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                        TcpClient client = new(printerName, 9100);
                                         stream = client.GetStream();
                                     }
                                     else
                                     {
                                         // Connect via Bluetooth dengan retry policy
                                         if (!await RetryPolicyAsync(async () =>
-                                        {
-                                            // Connect via Bluetooth
-                                            BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                            if (printerDevice == null)
                                             {
-                                                 
-                                                return false;
-                                            }
+                                                // Connect via Bluetooth
+                                                BluetoothDeviceInfo printerDevice =
+                                                    new(BluetoothAddress.Parse(printerName));
+                                                if (printerDevice == null)
+                                                {
+                                                    return false;
+                                                }
 
-                                            BluetoothClient client = new BluetoothClient();
-                                            BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                                BluetoothClient client = new();
+                                                BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                                    BluetoothService.SerialPort);
 
-                                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                            {
-                                                 
-                                                return false;
-                                            }
+                                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                                {
+                                                    return false;
+                                                }
 
-                                            client.Connect(endpoint);
-                                            stream = client.GetStream();
+                                                client.Connect(endpoint);
+                                                stream = client.GetStream();
 
-                                            return true;
-                                        }, maxRetries: 3))
+                                                return true;
+                                            }, 3))
                                         {
                                             continue;
                                         }
                                     }
 
                                     // Setelah koneksi berhasil, cetak struk
-                                    PrintKitchenOrBarReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, totalTransactions, "Makanan");
-
+                                    PrintKitchenOrBarReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems,
+                                        totalTransactions, "Makanan");
                                 }
                             }
                             finally
@@ -5172,56 +6287,57 @@ namespace KASIR.Printer
                     {
                         if (ShouldPrint(printerId, "Minuman"))
                         {
-                            System.IO.Stream stream = Stream.Null;
+                            Stream stream = Stream.Null;
 
                             try
                             {
                                 // Filter bar cart details yang is_ordered == 1
-                                var orderedBarItems = BarCartDetails.Where(x => x.is_ordered != 1).ToList();
+                                List<KitchenAndBarCartDetails> orderedBarItems =
+                                    BarCartDetails.Where(x => x.is_ordered != 1).ToList();
 
                                 if (orderedBarItems.Any())
                                 {
-                                    if (System.Net.IPAddress.TryParse(printerName, out _))
+                                    if (IPAddress.TryParse(printerName, out _))
                                     {
                                         // Connect via LAN
-                                        var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                        TcpClient client = new(printerName, 9100);
                                         stream = client.GetStream();
                                     }
                                     else
                                     {
                                         // Connect via Bluetooth dengan retry policy
                                         if (!await RetryPolicyAsync(async () =>
-                                        {
-                                            // Connect via Bluetooth
-                                            BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                                            if (printerDevice == null)
                                             {
-                                                 
-                                                return false;
-                                            }
+                                                // Connect via Bluetooth
+                                                BluetoothDeviceInfo printerDevice =
+                                                    new(BluetoothAddress.Parse(printerName));
+                                                if (printerDevice == null)
+                                                {
+                                                    return false;
+                                                }
 
-                                            BluetoothClient client = new BluetoothClient();
-                                            BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                                                BluetoothClient client = new();
+                                                BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
+                                                    BluetoothService.SerialPort);
 
-                                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                            {
-                                                 
-                                                return false;
-                                            }
+                                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                                {
+                                                    return false;
+                                                }
 
-                                            client.Connect(endpoint);
-                                            stream = client.GetStream();
+                                                client.Connect(endpoint);
+                                                stream = client.GetStream();
 
-                                            return true;
-                                        }, maxRetries: 3))
+                                                return true;
+                                            }, 3))
                                         {
                                             continue;
                                         }
                                     }
 
                                     // Setelah koneksi berhasil, cetak struk
-                                    PrintKitchenOrBarReceipt(stream, datas, BarCartDetails, BarCancelItems, totalTransactions, "Minuman");
-
+                                    PrintKitchenOrBarReceipt(stream, datas, BarCartDetails, BarCancelItems,
+                                        totalTransactions, "Minuman");
                                 }
                             }
                             finally
@@ -5241,7 +6357,7 @@ namespace KASIR.Printer
             }
         }
 
-        private void PrintCustomerReceipt(System.IO.Stream stream, GetStrukCustomerTransaction datas,
+        private void PrintCustomerReceipt(Stream stream, GetStrukCustomerTransaction datas,
             List<CartDetailStrukCustomerTransaction> cartDetails,
             int totalTransactions, string Kakimu)
         {
@@ -5264,33 +6380,52 @@ namespace KASIR.Printer
 
             if (cartDetails.Count != 0)
             {
-                var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
                 strukText += CenterText("ORDER");
 
-                foreach (var servingType in servingTypes)
+                foreach (string servingType in servingTypes)
                 {
-                    var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-                    if (itemsForServingType.Count == 0) continue;
+                    List<CartDetailStrukCustomerTransaction> itemsForServingType =
+                        cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                    if (itemsForServingType.Count == 0)
+                    {
+                        continue;
+                    }
 
                     //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
                     //strukText += "\n";
 
-                    foreach (var cartDetail in itemsForServingType)
+                    foreach (CartDetailStrukCustomerTransaction cartDetail in itemsForServingType)
                     {
                         //strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.price)) + "\n";
                         strukText += kodeHeksadesimalBold + $"{cartDetail.menu_name}" + "\n";
                         strukText += kodeHeksadesimalNormal;
-                        strukText += FormatSimpleLine("@" + string.Format("{0:n0}", cartDetail.price) + " x" + cartDetail.qty, string.Format("{0:n0}", cartDetail.total_price)) + "\n";
+                        strukText +=
+                            FormatSimpleLine("@" + string.Format("{0:n0}", cartDetail.price) + " x" + cartDetail.qty,
+                                string.Format("{0:n0}", cartDetail.total_price)) + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                        {
                             strukText += "  Varian: " + cartDetail.varian + "\n";
-                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                        }
+
+                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                        {
                             strukText += "  Note: " + cartDetail.note_item + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                        {
                             strukText += "  Discount Code: " + cartDetail.discount_code + "\n";
+                        }
+
                         if (cartDetail.discounts_value != null && Convert.ToDecimal(cartDetail.discounts_value) != 0)
-                            strukText += "  Discount Value: " + (cartDetail.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", cartDetail.discounts_value.ToString()) : cartDetail.discounts_value.ToString() + " %") + "\n";
+                        {
+                            strukText += "  Discount Value: " + (cartDetail.discounts_is_percent.ToString() != "1"
+                                ? string.Format("{0:n0}", cartDetail.discounts_value.ToString())
+                                : cartDetail.discounts_value + " %") + "\n";
+                        }
                     }
                 }
             }
@@ -5298,24 +6433,34 @@ namespace KASIR.Printer
             strukText += "--------------------------------\n";
             strukText += FormatSimpleLine("Subtotal", string.Format("{0:n0}", datas.data.subtotal)) + "\n";
             if (!string.IsNullOrEmpty(datas.data.discount_code))
+            {
                 strukText += "Discount Code: " + datas.data.discount_code + "\n";
+            }
+
             if (datas.data.discounts_value.HasValue && datas.data.discounts_value != 0)
-                strukText += FormatSimpleLine("Discount Value: ", (datas.data.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", datas.data.discounts_value.ToString()) : datas.data.discounts_value.ToString() + " %")) + "\n";
+            {
+                strukText += FormatSimpleLine("Discount Value: ",
+                    datas.data.discounts_is_percent != "1"
+                        ? string.Format("{0:n0}", datas.data.discounts_value.ToString())
+                        : datas.data.discounts_value + " %") + "\n";
+            }
+
             strukText += FormatSimpleLine("Total", string.Format("{0:n0}", datas.data.total)) + "\n";
             strukText += "Payment Type: " + datas.data.payment_type + "\n";
             strukText += FormatSimpleLine("Cash", string.Format("{0:n0}", datas.data.customer_cash)) + "\n";
             strukText += FormatSimpleLine("Change", string.Format("{0:n0}", datas.data.customer_change)) + "\n";
             strukText += "--------------------------------\n";
             strukText += CenterText(datas.data.outlet_footer);
-            strukText += CenterText(Kakimu.ToString());
-            strukText += CenterText("Meja No. " + datas.data.customer_seat.ToString());
+            strukText += CenterText(Kakimu);
+            strukText += CenterText("Meja No. " + datas.data.customer_seat);
             strukText += "--------------------------------\n";
             strukText += CenterText("Powered By Dastrevas");
 
-            string NomorUrut = "\n" + kodeHeksadesimalSizeBesar + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n\n\n    ";
+            string NomorUrut = "\n" + kodeHeksadesimalSizeBesar + kodeHeksadesimalBold +
+                               CenterText("No. " + totalTransactions) + "\n\n\n    ";
 
-            byte[] buffer1 = System.Text.Encoding.UTF8.GetBytes(NomorUrut);
-            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+            byte[] buffer1 = Encoding.UTF8.GetBytes(NomorUrut);
+            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
             // Menulis ke stream
             stream.Write(buffer1, 0, buffer1.Length);
@@ -5328,13 +6473,13 @@ namespace KASIR.Printer
             PrintLogo(stream, "icon\\QRcode.bmp", logoSize);
 
             // Menambahkan buffer yang diperlukan
-            buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+            buffer = Encoding.UTF8.GetBytes(strukText);
 
             stream.Write(buffer, 0, buffer.Length);
             stream.Flush();
         }
 
-        private void PrintCheckerReceipt(System.IO.Stream stream, GetStrukCustomerTransaction datas,
+        private void PrintCheckerReceipt(Stream stream, GetStrukCustomerTransaction datas,
             List<CartDetailStrukCustomerTransaction> cartDetails,
             int totalTransactions)
         {
@@ -5344,7 +6489,7 @@ namespace KASIR.Printer
 
             //string strukText = kodeHeksadesimalNormal + "--------------------------------\n";
             string strukText = kodeHeksadesimalNormal;
-            strukText += kodeHeksadesimalBold + CenterText("CHECKER No. " + totalTransactions.ToString());
+            strukText += kodeHeksadesimalBold + CenterText("CHECKER No. " + totalTransactions);
             strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
             strukText += kodeHeksadesimalBold + CenterText("Receipt No.: " + datas.data?.receipt_number);
@@ -5355,43 +6500,54 @@ namespace KASIR.Printer
 
             if (cartDetails.Count != 0)
             {
-                var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
                 strukText += CenterText("ORDER");
 
-                foreach (var servingType in servingTypes)
+                foreach (string servingType in servingTypes)
                 {
-                    var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-                    if (itemsForServingType.Count == 0) continue;
+                    List<CartDetailStrukCustomerTransaction> itemsForServingType =
+                        cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                    if (itemsForServingType.Count == 0)
+                    {
+                        continue;
+                    }
 
                     //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
                     //strukText += "\n";
 
-                    foreach (var cartDetail in itemsForServingType)
+                    foreach (CartDetailStrukCustomerTransaction cartDetail in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
                         strukText += FormatSimpleLine(cartDetail.menu_name, cartDetail.qty.ToString()) + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                        {
                             strukText += "   Varian: " + cartDetail.varian + "\n";
-                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                        }
+
+                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                        {
                             strukText += "   Note: " + cartDetail.note_item + "\n";
+                        }
+
                         strukText += kodeHeksadesimalNormal;
 
                         //strukText += "\n";
                     }
                 }
             }
+
             strukText += CenterText("Meja No." + datas.data?.customer_seat);
             strukText += "--------------------------------\n\n\n\n\n";
 
-            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
             stream.Write(buffer, 0, buffer.Length);
             stream.Flush();
         }
 
-        private void PrintKitchenOrBarReceipt(System.IO.Stream stream, GetStrukCustomerTransaction datas,
+        private void PrintKitchenOrBarReceipt(Stream stream, GetStrukCustomerTransaction datas,
             List<KitchenAndBarCartDetails> CartDetails,
             List<KitchenAndBarCanceledItems> CancelItems,
             int totalTransactions, string type)
@@ -5403,7 +6559,7 @@ namespace KASIR.Printer
             //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
             string strukText = kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
-            strukText += kodeHeksadesimalBold + CenterText(type.ToUpper() + " No. " + totalTransactions.ToString());
+            strukText += kodeHeksadesimalBold + CenterText(type.ToUpper() + " No. " + totalTransactions);
             strukText += kodeHeksadesimalBold + CenterText("Receipt No.: " + datas.data?.receipt_number);
             strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
@@ -5412,27 +6568,37 @@ namespace KASIR.Printer
 
             if (CartDetails.Count > 0 && CartDetails != null)
             {
-                var servingTypes = CartDetails.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypes = CartDetails.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
                 strukText += CenterText("ORDER");
 
-                foreach (var servingType in servingTypes)
+                foreach (string servingType in servingTypes)
                 {
-                    var itemsForServingType = CartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
-                    if (itemsForServingType.Count == 0) continue;
+                    List<KitchenAndBarCartDetails> itemsForServingType =
+                        CartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                    if (itemsForServingType.Count == 0)
+                    {
+                        continue;
+                    }
 
                     //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
                     strukText += "\n";
 
-                    foreach (var cartDetail in itemsForServingType)
+                    foreach (KitchenAndBarCartDetails cartDetail in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
                         strukText += FormatSimpleLine(cartDetail.menu_name, cartDetail.qty.ToString()) + "\n";
                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                        {
                             strukText += "   Varian: " + cartDetail.varian + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                        {
                             strukText += "   Note: " + cartDetail.note_item + "\n";
+                        }
+
                         strukText += kodeHeksadesimalNormal;
 
                         strukText += "\n";
@@ -5442,46 +6608,60 @@ namespace KASIR.Printer
 
             if (CancelItems.Count > 0 && CancelItems != null)
             {
-                var servingTypes = CancelItems.Select(cd => cd.serving_type_name).Distinct();
+                IEnumerable<string> servingTypes = CancelItems.Select(cd => cd.serving_type_name).Distinct();
                 strukText += "--------------------------------\n";
                 strukText += CenterText("CANCELED");
 
-                foreach (var servingType in servingTypes)
+                foreach (string servingType in servingTypes)
                 {
-                    var itemsForServingType = CancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
-                    if (itemsForServingType.Count == 0) continue;
+                    List<KitchenAndBarCanceledItems> itemsForServingType =
+                        CancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                    if (itemsForServingType.Count == 0)
+                    {
+                        continue;
+                    }
 
                     //strukText += "--------------------------------\n";
                     strukText += CenterText(servingType);
                     strukText += "\n";
 
-                    foreach (var cancelItem in itemsForServingType)
+                    foreach (KitchenAndBarCanceledItems cancelItem in itemsForServingType)
                     {
                         strukText += kodeHeksadesimalSizeBesar + kodeHeksadesimalBold;
                         strukText += FormatSimpleLine(cancelItem.menu_name, cancelItem.qty.ToString()) + "\n";
                         if (!string.IsNullOrEmpty(cancelItem.varian))
+                        {
                             strukText += "   Varian: " + cancelItem.varian + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                        {
                             strukText += "   Note: " + cancelItem.note_item + "\n";
+                        }
+
                         if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                        {
                             strukText += "   Canceled Reason: " + cancelItem.cancel_reason + "\n";
+                        }
+
                         strukText += kodeHeksadesimalNormal;
 
                         //strukText += "\n";
                     }
                 }
             }
+
             strukText += CenterText("Meja No." + datas.data?.customer_seat + "\n");
             strukText += "--------------------------------\n\n\n\n\n";
 
-            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
+            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
             stream.Write(buffer, 0, buffer.Length);
             stream.Flush();
         }
 
         public async Task Ex_PrintModelPayform
-            (GetStrukCustomerTransaction datas,
+        (GetStrukCustomerTransaction datas,
             List<CartDetailStrukCustomerTransaction> cartDetails,
             List<KitchenAndBarCartDetails> KitchenCartDetails,
             List<KitchenAndBarCartDetails> BarCartDetails,
@@ -5496,11 +6676,11 @@ namespace KASIR.Printer
             {
                 LoggerUtil.LogWarning("Ex_PrintModelPayform");
 
-                System.IO.Stream stream = null;
-                if (System.Net.IPAddress.TryParse(printerName, out _))
+                Stream stream = null;
+                if (IPAddress.TryParse(printerName, out _))
                 {
                     // Connect via LAN
-                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                    TcpClient client = new(printerName, 9100);
                     stream = client.GetStream();
                 }
                 else
@@ -5508,31 +6688,40 @@ namespace KASIR.Printer
                     // Bluetooth connection with retry policy
                     await RetryPolicyAsync(async () =>
                     {
-                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                        if (printerDevice == null) return false;
+                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
+                        if (printerDevice == null)
+                        {
+                            return false;
+                        }
 
-                        BluetoothClient client = new BluetoothClient();
-                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000")) return false;
+                        BluetoothClient client = new();
+                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        {
+                            return false;
+                        }
 
                         client.Connect(endpoint);
                         stream = client.GetStream();
                         return true;
-                    }, maxRetries: 3);
+                    }, 3);
                 }
+
                 // Struct Customer ====
                 if (ShouldPrint(printerId, "Kasir"))
                 {
-                    PrintDocument printDocument = new PrintDocument();
+                    PrintDocument printDocument = new();
                     printDocument.PrintPage += (sender, e) =>
                     {
                         Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                         // Mengatur font normal dan tebal
-                        Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                        Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                        Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                        Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+                        Font normalFont =
+                            new("Arial", 8,
+                                FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                        Font boldFont = new("Arial", 8, FontStyle.Bold);
+                        Font BigboldFont = new("Arial", 10, FontStyle.Bold);
+                        Font NomorAntrian = new("Arial", 12, FontStyle.Bold);
 
                         float leftMargin = 5; // Margin kiri (dalam pixel)
                         float rightMargin = 5; // Margin kanan (dalam pixel)
@@ -5540,7 +6729,8 @@ namespace KASIR.Printer
                         float yPos = topMargin;
 
                         // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                        float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                        float paperWidth =
+                            58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
                         float printableWidth = paperWidth - leftMargin - rightMargin;
 
                         // Fungsi untuk format teks kiri dan kanan
@@ -5549,36 +6739,49 @@ namespace KASIR.Printer
                             SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                             SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                             e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                                leftMargin + printableWidth - sizeRight.Width, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
 
                         // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                         void DrawCenterText(string text, Font font)
                         {
-                            if (text == null) text = string.Empty;
-                            if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            if (text == null)
+                            {
+                                text = string.Empty;
+                            }
+
+                            if (font == null)
+                            {
+                                throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                        leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
                                 SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                    leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                 yPos += font.GetHeight(e.Graphics);
                             }
                         }
@@ -5591,21 +6794,25 @@ namespace KASIR.Printer
                                 //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                 return;
                             }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                        yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
@@ -5621,25 +6828,26 @@ namespace KASIR.Printer
                             e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
+
                         // Fungsi untuk mendapatkan dan mengonversi gambar logo ke hitam dan putih
                         Image GetLogoImage(string path)
                         {
                             Image img = Image.FromFile(path);
-                            Bitmap bmp = new Bitmap(img.Width, img.Height);
+                            Bitmap bmp = new(img.Width, img.Height);
                             using (Graphics g = Graphics.FromImage(bmp))
                             {
-                                ColorMatrix colorMatrix = new ColorMatrix(new float[][]
+                                ColorMatrix colorMatrix = new(new[]
                                 {
-                                        new float[] { 0.3f, 0.3f, 0.3f, 0, 0 },
-                                        new float[] { 0.59f, 0.59f, 0.59f, 0, 0 },
-                                        new float[] { 0.11f, 0.11f, 0.11f, 0, 0 },
-                                        new float[] { 0, 0, 0, 1, 0 },
-                                        new float[] { 0, 0, 0, 0, 1 }
+                                    new[] { 0.3f, 0.3f, 0.3f, 0, 0 }, new[] { 0.59f, 0.59f, 0.59f, 0, 0 },
+                                    new[] { 0.11f, 0.11f, 0.11f, 0, 0 }, new float[] { 0, 0, 0, 1, 0 },
+                                    new float[] { 0, 0, 0, 0, 1 }
                                 });
-                                ImageAttributes attributes = new ImageAttributes();
+                                ImageAttributes attributes = new();
                                 attributes.SetColorMatrix(colorMatrix);
-                                g.DrawImage(img, new Rectangle(0, 0, img.Width, img.Height), 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, attributes);
+                                g.DrawImage(img, new Rectangle(0, 0, img.Width, img.Height), 0, 0, img.Width,
+                                    img.Height, GraphicsUnit.Pixel, attributes);
                             }
+
                             return bmp;
                         }
 
@@ -5655,7 +6863,7 @@ namespace KASIR.Printer
                             SizeF textSize = e.Graphics.MeasureString(poweredByText, normalFont);
 
                             // Gambar teks
-                            float textX = leftMargin + (printableWidth - textSize.Width) / 2;
+                            float textX = leftMargin + ((printableWidth - textSize.Width) / 2);
                             e.Graphics.DrawString(poweredByText, normalFont, Brushes.Black, textX, yPos);
 
                             // Sesuaikan yPos untuk logo
@@ -5667,7 +6875,7 @@ namespace KASIR.Printer
                             float scaleFactor = targetWidth / logoPoweredBy.Width;
                             float logoHeight = logoPoweredBy.Height * scaleFactor;
 
-                            float logoX = leftMargin + (printableWidth - targetWidth) / 2;
+                            float logoX = leftMargin + ((printableWidth - targetWidth) / 2);
                             e.Graphics.DrawImage(logoPoweredBy, logoX, yPos, targetWidth, logoHeight);
 
                             spaceBefore = 5;
@@ -5675,13 +6883,15 @@ namespace KASIR.Printer
                             // Sesuaikan yPos untuk elemen berikutnya
                             yPos += logoHeight;
                         }
+
                         void DrawSpace()
                         {
-                            yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                            yPos += normalFont
+                                .GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
                         }
 
 
-                        DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
+                        DrawCenterText("No. " + totalTransactions, NomorAntrian);
 
                         // Path ke logo Powered by Anda
                         string poweredByLogoPath = "icon\\DT-Logo.bmp"; // Ganti dengan path logo Powered by Anda
@@ -5695,7 +6905,7 @@ namespace KASIR.Printer
                         // Hitung tinggi logo berdasarkan lebar yang diinginkan dengan mempertahankan rasio aspek
                         float scaleFactor = logoTargetWidthPx / logo.Width;
                         float logoHeight = logo.Height * scaleFactor;
-                        float logoX = leftMargin + (printableWidth - logoTargetWidthPx) / 2;
+                        float logoX = leftMargin + ((printableWidth - logoTargetWidthPx) / 2);
 
                         // Gambar logo dengan ukuran yang diubah
                         e.Graphics.DrawImage(logo, logoX, yPos, logoTargetWidthPx, logoHeight);
@@ -5731,26 +6941,44 @@ namespace KASIR.Printer
                             DrawSeparator();
                         }
 
-                        var servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
-                        foreach (var servingType in servingTypes)
+                        IEnumerable<string> servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
+                        foreach (string servingType in servingTypes)
                         {
-                            var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                            List<CartDetailStrukCustomerTransaction> itemsForServingType =
+                                cartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
                             if (itemsForServingType.Count == 0)
+                            {
                                 continue;
+                            }
+
                             DrawSeparator();
                             DrawCenterText(servingType, normalFont);
                             DrawSeparator();
-                            foreach (var cartDetail in itemsForServingType)
+                            foreach (CartDetailStrukCustomerTransaction cartDetail in itemsForServingType)
                             {
-                                DrawSimpleLine(cartDetail.qty.ToString() + " " + cartDetail.menu_name, string.Format("{0:n0}", cartDetail.price));
+                                DrawSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
+                                    string.Format("{0:n0}", cartDetail.price));
                                 if (!string.IsNullOrEmpty(cartDetail.varian))
+                                {
                                     DrawLeftText("   Varian: " + cartDetail.varian, normalFont);
-                                if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                }
+
+                                if (!string.IsNullOrEmpty(cartDetail.note_item))
+                                {
                                     DrawLeftText("   Note: " + cartDetail.note_item, normalFont);
+                                }
+
                                 if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                                {
                                     DrawLeftText("   Discount Code: " + cartDetail.discount_code, normalFont);
+                                }
+
                                 if (cartDetail.discounted_price.HasValue && cartDetail.discounted_price != 0)
-                                    DrawSimpleLine("   Total Discount: ", string.Format("{0:n0}", cartDetail.discounted_price));
+                                {
+                                    DrawSimpleLine("   Total Discount: ",
+                                        string.Format("{0:n0}", cartDetail.discounted_price));
+                                }
+
                                 DrawSimpleLine("   Total Price:", string.Format("{0:n0}", cartDetail.total_price));
                                 DrawSpace();
                             }
@@ -5759,16 +6987,25 @@ namespace KASIR.Printer
                         DrawSeparator();
                         DrawSimpleLine("Subtotal", string.Format("{0:n0}", datas.data.subtotal));
                         if (!string.IsNullOrEmpty(datas.data.discount_code))
+                        {
                             DrawLeftText("Discount Code: " + datas.data.discount_code, normalFont);
+                        }
+
                         if (datas.data.discounts_value.HasValue && datas.data.discounts_value != 0)
-                            DrawSimpleLine("Discount Value: ", (datas.data.discounts_is_percent.ToString() != "1" ? string.Format("{0:n0}", datas.data.discounts_value.ToString()) : datas.data.discounts_value.ToString() + " %"));
+                        {
+                            DrawSimpleLine("Discount Value: ",
+                                datas.data.discounts_is_percent != "1"
+                                    ? string.Format("{0:n0}", datas.data.discounts_value.ToString())
+                                    : datas.data.discounts_value + " %");
+                        }
+
                         DrawSimpleLine("Total", string.Format("{0:n0}", datas.data.total));
                         DrawLeftText("Payment Type: " + datas.data.payment_type, normalFont);
                         DrawSimpleLine("Cash", string.Format("{0:n0}", datas.data.customer_cash));
                         DrawSimpleLine("Change", string.Format("{0:n0}", datas.data.customer_change));
                         DrawSeparator();
                         DrawCenterText(datas.data.outlet_footer, normalFont);
-                        DrawCenterText(Kakimu.ToString(), normalFont);
+                        DrawCenterText(Kakimu, normalFont);
                         DrawPoweredByLogo(poweredByLogoPath);
                         DrawSpace();
                         DrawCenterText(nomorMeja, NomorAntrian);
@@ -5778,16 +7015,18 @@ namespace KASIR.Printer
                 // Struck Checker
                 if (ShouldPrint(printerId, "Checker"))
                 {
-                    PrintDocument printDocument = new PrintDocument();
+                    PrintDocument printDocument = new();
                     printDocument.PrintPage += (sender, e) =>
                     {
                         Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                         // Mengatur font normal dan tebal
-                        Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                        Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                        Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                        Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+                        Font normalFont =
+                            new("Arial", 8,
+                                FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                        Font boldFont = new("Arial", 8, FontStyle.Bold);
+                        Font BigboldFont = new("Arial", 10, FontStyle.Bold);
+                        Font NomorAntrian = new("Arial", 12, FontStyle.Bold);
 
                         float leftMargin = 5; // Margin kiri (dalam pixel)
                         float rightMargin = 5; // Margin kanan (dalam pixel)
@@ -5795,7 +7034,8 @@ namespace KASIR.Printer
                         float yPos = topMargin;
 
                         // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                        float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                        float paperWidth =
+                            58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
                         float printableWidth = paperWidth - leftMargin - rightMargin;
 
 
@@ -5805,36 +7045,49 @@ namespace KASIR.Printer
                             SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                             SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                             e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                            e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                                leftMargin + printableWidth - sizeRight.Width, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
 
                         // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                         void DrawCenterText(string text, Font font)
                         {
-                            if (text == null) text = string.Empty;
-                            if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            if (text == null)
+                            {
+                                text = string.Empty;
+                            }
+
+                            if (font == null)
+                            {
+                                throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                            }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                        leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
                                 SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                    leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                 yPos += font.GetHeight(e.Graphics);
                             }
                         }
@@ -5847,21 +7100,25 @@ namespace KASIR.Printer
                                 //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                 return;
                             }
+
                             string[] words = text.Split(' ');
-                            StringBuilder currentLine = new StringBuilder();
+                            StringBuilder currentLine = new();
                             foreach (string word in words)
                             {
-                                SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                 if (size.Width > printableWidth)
                                 {
                                     // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                        yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                     currentLine.Clear();
                                 }
+
                                 // Tambahkan kata ke baris saat ini
                                 currentLine.Append(word + " ");
                             }
+
                             // Gambar baris terakhir
                             if (currentLine.Length > 0)
                             {
@@ -5877,13 +7134,15 @@ namespace KASIR.Printer
                             e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                             yPos += normalFont.GetHeight(e.Graphics);
                         }
+
                         void DrawSpace()
                         {
-                            yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                            yPos += normalFont
+                                .GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
                         }
 
 
-                        DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
+                        DrawCenterText("No. " + totalTransactions, NomorAntrian);
                         string nomorMeja = "Meja No." + datas.data.customer_seat;
                         DrawSeparator();
 
@@ -5895,16 +7154,20 @@ namespace KASIR.Printer
                         DrawSpace();
                         DrawSimpleLine(datas.data.customer_name, "");
                         // Iterate through cart details and group by serving_type_name
-                        var checkerServingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
+                        IEnumerable<string> checkerServingTypes =
+                            cartDetails.Select(cd => cd.serving_type_name).Distinct();
 
-                        foreach (var checkerServingType in checkerServingTypes)
+                        foreach (string checkerServingType in checkerServingTypes)
                         {
                             // Filter cart details by serving_type_name
-                            var itemsForServingType = cartDetails.Where(cd => cd.serving_type_name == checkerServingType).ToList();
+                            List<CartDetailStrukCustomerTransaction> itemsForServingType =
+                                cartDetails.Where(cd => cd.serving_type_name == checkerServingType).ToList();
 
                             // Skip if there are no items for this serving type
                             if (itemsForServingType.Count == 0)
+                            {
                                 continue;
+                            }
 
                             // Add a section for the serving type
                             DrawSeparator();
@@ -5912,17 +7175,24 @@ namespace KASIR.Printer
                             DrawSeparator();
 
                             // Iterate through items for this serving type
-                            foreach (var cartDetail in itemsForServingType)
+                            foreach (CartDetailStrukCustomerTransaction cartDetail in itemsForServingType)
                             {
                                 DrawSimpleLine(cartDetail.menu_name, cartDetail.qty.ToString());
                                 // Add detail items
                                 if (!string.IsNullOrEmpty(cartDetail.varian))
+                                {
                                     DrawLeftText("   Varian: " + cartDetail.varian, normalFont);
-                                if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
-                                    DrawLeftText("   Note: " + cartDetail.note_item.ToString(), normalFont);
+                                }
+
+                                if (!string.IsNullOrEmpty(cartDetail.note_item))
+                                {
+                                    DrawLeftText("   Note: " + cartDetail.note_item, normalFont);
+                                }
+
                                 DrawSpace();
                             }
                         }
+
                         DrawSeparator();
                         DrawSpace();
                         DrawCenterText(nomorMeja, NomorAntrian);
@@ -5933,19 +7203,20 @@ namespace KASIR.Printer
 
                 if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
                 {
-
                     if (ShouldPrint(printerId, "Makanan"))
                     {
-                        PrintDocument printDocument = new PrintDocument();
+                        PrintDocument printDocument = new();
                         printDocument.PrintPage += (sender, e) =>
                         {
                             Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                             // Mengatur font normal dan tebal
-                            Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                            Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                            Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                            Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+                            Font normalFont =
+                                new("Arial", 8,
+                                    FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                            Font boldFont = new("Arial", 8, FontStyle.Bold);
+                            Font BigboldFont = new("Arial", 10, FontStyle.Bold);
+                            Font NomorAntrian = new("Arial", 12, FontStyle.Bold);
 
                             float leftMargin = 5; // Margin kiri (dalam pixel)
                             float rightMargin = 5; // Margin kanan (dalam pixel)
@@ -5953,7 +7224,8 @@ namespace KASIR.Printer
                             float yPos = topMargin;
 
                             // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                            float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                            float paperWidth =
+                                58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
                             float printableWidth = paperWidth - leftMargin - rightMargin;
 
 
@@ -5963,36 +7235,50 @@ namespace KASIR.Printer
                                 SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                                 SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                                 e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                                e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                                e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                                    leftMargin + printableWidth - sizeRight.Width, yPos);
                                 yPos += normalFont.GetHeight(e.Graphics);
                             }
 
                             // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                             void DrawCenterText(string text, Font font)
                             {
-                                if (text == null) text = string.Empty;
-                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                                if (text == null)
+                                {
+                                    text = string.Empty;
+                                }
+
+                                if (font == null)
+                                {
+                                    throw new ArgumentNullException(nameof(font),
+                                        "Font is null in DrawCenterText method.");
+                                }
+
                                 string[] words = text.Split(' ');
-                                StringBuilder currentLine = new StringBuilder();
+                                StringBuilder currentLine = new();
                                 foreach (string word in words)
                                 {
-                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                    SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                     if (size.Width > printableWidth)
                                     {
                                         // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                         SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                            leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                         yPos += font.GetHeight(e.Graphics);
                                         currentLine.Clear();
                                     }
+
                                     // Tambahkan kata ke baris saat ini
                                     currentLine.Append(word + " ");
                                 }
+
                                 // Gambar baris terakhir
                                 if (currentLine.Length > 0)
                                 {
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                        leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                 }
                             }
@@ -6005,25 +7291,30 @@ namespace KASIR.Printer
                                     //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                     return;
                                 }
+
                                 string[] words = text.Split(' ');
-                                StringBuilder currentLine = new StringBuilder();
+                                StringBuilder currentLine = new();
                                 foreach (string word in words)
                                 {
-                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                    SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                     if (size.Width > printableWidth)
                                     {
                                         // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                            yPos);
                                         yPos += font.GetHeight(e.Graphics);
                                         currentLine.Clear();
                                     }
+
                                     // Tambahkan kata ke baris saat ini
                                     currentLine.Append(word + " ");
                                 }
+
                                 // Gambar baris terakhir
                                 if (currentLine.Length > 0)
                                 {
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                        yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                 }
                             }
@@ -6035,13 +7326,16 @@ namespace KASIR.Printer
                                 e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                                 yPos += normalFont.GetHeight(e.Graphics);
                             }
+
                             void DrawSpace()
                             {
-                                yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                                yPos += normalFont
+                                    .GetHeight(e
+                                        .Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
                             }
 
 
-                            DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
+                            DrawCenterText("No. " + totalTransactions, NomorAntrian);
                             string nomorMeja = "Meja No." + datas.data.customer_seat;
 
                             // Generate struk text
@@ -6055,29 +7349,39 @@ namespace KASIR.Printer
 
                             if (KitchenCartDetails.Count != 0)
                             {
-                                var servingTypes = KitchenCartDetails.Select(cd => cd.serving_type_name).Distinct();
+                                IEnumerable<string> servingTypes =
+                                    KitchenCartDetails.Select(cd => cd.serving_type_name).Distinct();
                                 DrawSeparator();
                                 DrawCenterText("ORDER", boldFont);
 
-                                foreach (var servingType in servingTypes)
+                                foreach (string servingType in servingTypes)
                                 {
-                                    var itemsForServingType = KitchenCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                                    List<KitchenAndBarCartDetails> itemsForServingType = KitchenCartDetails
+                                        .Where(cd => cd.serving_type_name == servingType).ToList();
 
                                     if (itemsForServingType.Count == 0)
+                                    {
                                         continue;
+                                    }
 
                                     DrawSeparator();
                                     DrawCenterText(servingType, normalFont);
 
-                                    foreach (var cartDetail in itemsForServingType)
+                                    foreach (KitchenAndBarCartDetails cartDetail in itemsForServingType)
                                     {
-                                        string qtyMenu = "x" + cartDetail.qty.ToString();
+                                        string qtyMenu = "x" + cartDetail.qty;
                                         DrawCenterText(qtyMenu + " " + cartDetail.menu_name, BigboldFont);
 
                                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                                        {
                                             DrawCenterText("Varian: " + cartDetail.varian, BigboldFont);
+                                        }
+
                                         if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                        {
                                             DrawCenterText("Note: " + cartDetail.note_item, BigboldFont);
+                                        }
+
                                         DrawSpace();
                                     }
                                 }
@@ -6085,35 +7389,49 @@ namespace KASIR.Printer
 
                             if (KitchenCancelItems.Count != 0)
                             {
-                                var servingTypes = KitchenCancelItems.Select(cd => cd.serving_type_name).Distinct();
+                                IEnumerable<string> servingTypes =
+                                    KitchenCancelItems.Select(cd => cd.serving_type_name).Distinct();
                                 DrawSeparator();
                                 DrawCenterText("CANCELED", boldFont);
 
-                                foreach (var servingType in servingTypes)
+                                foreach (string servingType in servingTypes)
                                 {
-                                    var itemsForServingType = KitchenCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                                    List<KitchenAndBarCanceledItems> itemsForServingType = KitchenCancelItems
+                                        .Where(cd => cd.serving_type_name == servingType).ToList();
 
                                     if (itemsForServingType.Count == 0)
+                                    {
                                         continue;
+                                    }
 
                                     DrawSeparator();
                                     DrawCenterText(servingType, boldFont);
 
-                                    foreach (var cancelItem in itemsForServingType)
+                                    foreach (KitchenAndBarCanceledItems cancelItem in itemsForServingType)
                                     {
-                                        string qtyMenu = "x" + cancelItem.qty.ToString();
+                                        string qtyMenu = "x" + cancelItem.qty;
                                         DrawCenterText(qtyMenu + " " + cancelItem.menu_name, BigboldFont);
 
                                         if (!string.IsNullOrEmpty(cancelItem.varian))
+                                        {
                                             DrawCenterText("Varian: " + cancelItem.varian, BigboldFont);
+                                        }
+
                                         if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
-                                            DrawCenterText("Note: " + cancelItem.note_item?.ToString(), BigboldFont);
+                                        {
+                                            DrawCenterText("Note: " + cancelItem.note_item, BigboldFont);
+                                        }
+
                                         if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                                        {
                                             DrawCenterText("Canceled Reason: " + cancelItem.cancel_reason, BigboldFont);
+                                        }
+
                                         DrawSpace();
                                     }
                                 }
                             }
+
                             DrawSeparator();
                             DrawSpace();
                             DrawCenterText(nomorMeja, NomorAntrian);
@@ -6126,16 +7444,18 @@ namespace KASIR.Printer
                 {
                     if (ShouldPrint(printerId, "Minuman"))
                     {
-                        PrintDocument printDocument = new PrintDocument();
+                        PrintDocument printDocument = new();
                         printDocument.PrintPage += (sender, e) =>
                         {
                             Graphics graphics = e.Graphics ?? Graphics.FromImage(new Bitmap(1, 1));
 
                             // Mengatur font normal dan tebal
-                            Font normalFont = new Font("Arial", 8, FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
-                            Font boldFont = new Font("Arial", 8, FontStyle.Bold);
-                            Font BigboldFont = new Font("Arial", 10, FontStyle.Bold);
-                            Font NomorAntrian = new Font("Arial", 12, FontStyle.Bold);
+                            Font normalFont =
+                                new("Arial", 8,
+                                    FontStyle.Regular); // Ukuran font lebih kecil untuk mencocokkan lebar kertas
+                            Font boldFont = new("Arial", 8, FontStyle.Bold);
+                            Font BigboldFont = new("Arial", 10, FontStyle.Bold);
+                            Font NomorAntrian = new("Arial", 12, FontStyle.Bold);
 
                             float leftMargin = 5; // Margin kiri (dalam pixel)
                             float rightMargin = 5; // Margin kanan (dalam pixel)
@@ -6143,7 +7463,8 @@ namespace KASIR.Printer
                             float yPos = topMargin;
 
                             // Lebar kertas thermal 58mm, sesuaikan dengan margin
-                            float paperWidth = 58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
+                            float paperWidth =
+                                58 / 25.4f * 85; // 58mm converted to inches and then to hundredths of an inch
                             float printableWidth = paperWidth - leftMargin - rightMargin;
 
 
@@ -6153,36 +7474,50 @@ namespace KASIR.Printer
                                 SizeF sizeLeft = e.Graphics.MeasureString(textLeft, normalFont);
                                 SizeF sizeRight = e.Graphics.MeasureString(textRight, normalFont);
                                 e.Graphics.DrawString(textLeft, normalFont, Brushes.Black, leftMargin, yPos);
-                                e.Graphics.DrawString(textRight, normalFont, Brushes.Black, leftMargin + printableWidth - sizeRight.Width, yPos);
+                                e.Graphics.DrawString(textRight, normalFont, Brushes.Black,
+                                    leftMargin + printableWidth - sizeRight.Width, yPos);
                                 yPos += normalFont.GetHeight(e.Graphics);
                             }
 
                             // Fungsi untuk menggambar teks terpusat dengan pemotongan otomatis
                             void DrawCenterText(string text, Font font)
                             {
-                                if (text == null) text = string.Empty;
-                                if (font == null) throw new ArgumentNullException(nameof(font), "Font is null in DrawCenterText method.");
+                                if (text == null)
+                                {
+                                    text = string.Empty;
+                                }
+
+                                if (font == null)
+                                {
+                                    throw new ArgumentNullException(nameof(font),
+                                        "Font is null in DrawCenterText method.");
+                                }
+
                                 string[] words = text.Split(' ');
-                                StringBuilder currentLine = new StringBuilder();
+                                StringBuilder currentLine = new();
                                 foreach (string word in words)
                                 {
-                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                    SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                     if (size.Width > printableWidth)
                                     {
                                         // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
                                         SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                            leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                         yPos += font.GetHeight(e.Graphics);
                                         currentLine.Clear();
                                     }
+
                                     // Tambahkan kata ke baris saat ini
                                     currentLine.Append(word + " ");
                                 }
+
                                 // Gambar baris terakhir
                                 if (currentLine.Length > 0)
                                 {
                                     SizeF currentSize = e.Graphics.MeasureString(currentLine.ToString(), font);
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin + (printableWidth - currentSize.Width) / 2, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
+                                        leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                 }
                             }
@@ -6195,25 +7530,30 @@ namespace KASIR.Printer
                                     //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
                                     return;
                                 }
+
                                 string[] words = text.Split(' ');
-                                StringBuilder currentLine = new StringBuilder();
+                                StringBuilder currentLine = new();
                                 foreach (string word in words)
                                 {
-                                    SizeF size = e.Graphics.MeasureString(currentLine.ToString() + word, font);
+                                    SizeF size = e.Graphics.MeasureString(currentLine + word, font);
                                     if (size.Width > printableWidth)
                                     {
                                         // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                            yPos);
                                         yPos += font.GetHeight(e.Graphics);
                                         currentLine.Clear();
                                     }
+
                                     // Tambahkan kata ke baris saat ini
                                     currentLine.Append(word + " ");
                                 }
+
                                 // Gambar baris terakhir
                                 if (currentLine.Length > 0)
                                 {
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin, yPos);
+                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
+                                        yPos);
                                     yPos += font.GetHeight(e.Graphics);
                                 }
                             }
@@ -6225,13 +7565,16 @@ namespace KASIR.Printer
                                 e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
                                 yPos += normalFont.GetHeight(e.Graphics);
                             }
+
                             void DrawSpace()
                             {
-                                yPos += normalFont.GetHeight(e.Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                                yPos += normalFont
+                                    .GetHeight(e
+                                        .Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
                             }
 
 
-                            DrawCenterText("No. " + totalTransactions.ToString(), NomorAntrian);
+                            DrawCenterText("No. " + totalTransactions, NomorAntrian);
                             string nomorMeja = "Meja No." + datas.data.customer_seat;
 
                             // Generate struk text
@@ -6245,29 +7588,39 @@ namespace KASIR.Printer
 
                             if (BarCartDetails.Count != 0)
                             {
-                                var servingTypes = BarCartDetails.Select(cd => cd.serving_type_name).Distinct();
+                                IEnumerable<string> servingTypes =
+                                    BarCartDetails.Select(cd => cd.serving_type_name).Distinct();
                                 DrawSeparator();
                                 DrawCenterText("ORDER", boldFont);
 
-                                foreach (var servingType in servingTypes)
+                                foreach (string servingType in servingTypes)
                                 {
-                                    var itemsForServingType = BarCartDetails.Where(cd => cd.serving_type_name == servingType).ToList();
+                                    List<KitchenAndBarCartDetails> itemsForServingType = BarCartDetails
+                                        .Where(cd => cd.serving_type_name == servingType).ToList();
 
                                     if (itemsForServingType.Count == 0)
+                                    {
                                         continue;
+                                    }
 
                                     DrawSeparator();
                                     DrawCenterText(servingType, normalFont);
 
-                                    foreach (var cartDetail in itemsForServingType)
+                                    foreach (KitchenAndBarCartDetails cartDetail in itemsForServingType)
                                     {
-                                        string qtyMenu = "x" + cartDetail.qty.ToString();
+                                        string qtyMenu = "x" + cartDetail.qty;
                                         DrawCenterText(qtyMenu + " " + cartDetail.menu_name, BigboldFont);
 
                                         if (!string.IsNullOrEmpty(cartDetail.varian))
+                                        {
                                             DrawCenterText("Varian: " + cartDetail.varian, BigboldFont);
+                                        }
+
                                         if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                                        {
                                             DrawCenterText("Note: " + cartDetail.note_item, BigboldFont);
+                                        }
+
                                         DrawSpace();
                                     }
                                 }
@@ -6275,42 +7628,55 @@ namespace KASIR.Printer
 
                             if (BarCancelItems.Count != 0)
                             {
-                                var servingTypes = BarCancelItems.Select(cd => cd.serving_type_name).Distinct();
+                                IEnumerable<string> servingTypes =
+                                    BarCancelItems.Select(cd => cd.serving_type_name).Distinct();
                                 DrawSeparator();
                                 DrawCenterText("CANCELED", boldFont);
 
-                                foreach (var servingType in servingTypes)
+                                foreach (string servingType in servingTypes)
                                 {
-                                    var itemsForServingType = BarCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
+                                    List<KitchenAndBarCanceledItems> itemsForServingType =
+                                        BarCancelItems.Where(cd => cd.serving_type_name == servingType).ToList();
 
                                     if (itemsForServingType.Count == 0)
+                                    {
                                         continue;
+                                    }
 
                                     DrawSeparator();
                                     DrawCenterText(servingType, boldFont);
 
-                                    foreach (var cancelItem in itemsForServingType)
+                                    foreach (KitchenAndBarCanceledItems cancelItem in itemsForServingType)
                                     {
-                                        string qtyMenu = "x" + cancelItem.qty.ToString();
+                                        string qtyMenu = "x" + cancelItem.qty;
                                         DrawCenterText(qtyMenu + " " + cancelItem.menu_name, BigboldFont);
 
                                         if (!string.IsNullOrEmpty(cancelItem.varian))
+                                        {
                                             DrawCenterText("Varian: " + cancelItem.varian, BigboldFont);
+                                        }
+
                                         if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
-                                            DrawCenterText("Note: " + cancelItem.note_item?.ToString(), BigboldFont);
+                                        {
+                                            DrawCenterText("Note: " + cancelItem.note_item, BigboldFont);
+                                        }
+
                                         if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                                        {
                                             DrawCenterText("Canceled Reason: " + cancelItem.cancel_reason, BigboldFont);
+                                        }
+
                                         DrawSpace();
                                     }
                                 }
                             }
+
                             DrawSeparator();
                             DrawSpace();
                             DrawCenterText(nomorMeja, NomorAntrian);
                         };
                     }
                 }
-
             }
             catch (Exception ex)
             {
@@ -6342,8 +7708,8 @@ namespace KASIR.Printer
             }
 
             // Log details error
-            Util util = new Util();
-            util.sendLogTelegramNetworkError($"All {maxRetries} attempts failed. Last error: {lastException?.ToString()}");
+            Util util = new();
+            util.sendLogTelegramNetworkError($"All {maxRetries} attempts failed. Last error: {lastException}");
             return false;
         }
 

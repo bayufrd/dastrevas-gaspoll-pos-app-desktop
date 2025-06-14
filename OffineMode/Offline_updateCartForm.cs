@@ -20,7 +20,6 @@ namespace KASIR.OfflineMode
         List<DataDiscountCart> dataDiscount;
         List<DataDiscountCart> dataDiskonList;
         string is_ordered = "0";
-        string searchText = "";
         string searchTextserving = "", lblnamaitem;
         int kuantitas = 900000;
         string folder = "DT-Cache\\addCartForm";

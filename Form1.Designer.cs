@@ -81,7 +81,6 @@ namespace KASIR
             panel1.Controls.Add(panelTitleBar);
             resources.ApplyResources(panel1, "panel1");
             panel1.Name = "panel1";
-            panel1.Paint += panel1_Paint;
             // 
             // panelTitleBar
             // 
@@ -283,7 +282,7 @@ namespace KASIR
             iconButton2.IconSize = 25;
             iconButton2.Name = "iconButton2";
             iconButton2.UseVisualStyleBackColor = false;
-            iconButton2.Click += button1_Click;
+            iconButton2.Click += buttonHistoryTransaction;
             // 
             // panel3
             // 
@@ -320,7 +319,6 @@ namespace KASIR
             panel2.Controls.Add(gradientPanel2);
             resources.ApplyResources(panel2, "panel2");
             panel2.Name = "panel2";
-            panel2.Paint += panel2_Paint;
             // 
             // Form1
             // 
@@ -333,7 +331,6 @@ namespace KASIR
             FormBorderStyle = FormBorderStyle.FixedSingle;
             HelpButton = true;
             Name = "Form1";
-            Load += Form1_Load;
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
             panelTitleBar.ResumeLayout(false);

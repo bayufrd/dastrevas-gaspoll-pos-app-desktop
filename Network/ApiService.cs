@@ -81,7 +81,8 @@ namespace KASIR.Network
                         }
                         catch (Exception retryEx)
                         {
-                            throw retryEx;
+                            LoggerUtil.LogError(retryEx, "Retry attempt failed: {Message}", retryEx.Message);
+                            throw;
                         }
                     }
                     else
@@ -91,7 +92,6 @@ namespace KASIR.Network
                 }
                 else
                 {
-                    //MessageBox.Show("Terjadi kesalahan yang tidak terduga. Silakan coba lagi nanti.", "Unexpected Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     throw; // rethrow the exception to maintain the original behavior
                 }
             }

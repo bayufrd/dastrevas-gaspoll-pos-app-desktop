@@ -2,7 +2,7 @@
 using FontAwesome.Sharp;
 namespace KASIR.komponen
 {
-    partial class editMember
+    partial class Offline_MemberCustom
     {
         /// <summary>
         /// Required designer variable.
@@ -34,21 +34,21 @@ namespace KASIR.komponen
             flowLayoutPanel1 = new FlowLayoutPanel();
             panel9 = new Panel();
             panel3 = new Panel();
-            textBox1 = new TextBox();
+            txtEmail = new TextBox();
             label1 = new Label();
             panel10 = new Panel();
-            txtSeat = new TextBox();
+            txtPhone = new TextBox();
             label5 = new Label();
             panel11 = new Panel();
             txtNama = new TextBox();
             label4 = new Label();
             panel2 = new Panel();
+            hapusButton = new IconButton();
             btnSimpan = new IconButton();
             btnKeluar = new IconButton();
             panel7 = new Panel();
             btnTunai = new Button();
             label2 = new Label();
-            hapusButton = new IconButton();
             panel1.SuspendLayout();
             flowLayoutPanel1.SuspendLayout();
             panel9.SuspendLayout();
@@ -96,20 +96,20 @@ namespace KASIR.komponen
             // panel3
             // 
             panel3.BorderStyle = BorderStyle.FixedSingle;
-            panel3.Controls.Add(textBox1);
+            panel3.Controls.Add(txtEmail);
             panel3.Location = new Point(8, 91);
             panel3.Name = "panel3";
             panel3.Size = new Size(270, 36);
             panel3.TabIndex = 4;
             // 
-            // textBox1
+            // txtEmail
             // 
-            textBox1.BorderStyle = BorderStyle.None;
-            textBox1.Location = new Point(11, 9);
-            textBox1.Name = "textBox1";
-            textBox1.PlaceholderText = "Masukan Alamat Email ...";
-            textBox1.Size = new Size(246, 16);
-            textBox1.TabIndex = 0;
+            txtEmail.BorderStyle = BorderStyle.None;
+            txtEmail.Location = new Point(11, 9);
+            txtEmail.Name = "txtEmail";
+            txtEmail.PlaceholderText = "Masukan Alamat Email ...";
+            txtEmail.Size = new Size(246, 16);
+            txtEmail.TabIndex = 0;
             // 
             // label1
             // 
@@ -125,20 +125,20 @@ namespace KASIR.komponen
             // panel10
             // 
             panel10.BorderStyle = BorderStyle.FixedSingle;
-            panel10.Controls.Add(txtSeat);
+            panel10.Controls.Add(txtPhone);
             panel10.Location = new Point(313, 22);
             panel10.Name = "panel10";
             panel10.Size = new Size(271, 36);
             panel10.TabIndex = 4;
             // 
-            // txtSeat
+            // txtPhone
             // 
-            txtSeat.BorderStyle = BorderStyle.None;
-            txtSeat.Location = new Point(11, 9);
-            txtSeat.Name = "txtSeat";
-            txtSeat.PlaceholderText = "Masukan Nomo Handphone ...";
-            txtSeat.Size = new Size(246, 16);
-            txtSeat.TabIndex = 0;
+            txtPhone.BorderStyle = BorderStyle.None;
+            txtPhone.Location = new Point(11, 9);
+            txtPhone.Name = "txtPhone";
+            txtPhone.PlaceholderText = "Masukan Nomo Handphone ...";
+            txtPhone.Size = new Size(246, 16);
+            txtPhone.TabIndex = 0;
             // 
             // label5
             // 
@@ -193,6 +193,27 @@ namespace KASIR.komponen
             panel2.Size = new Size(598, 70);
             panel2.TabIndex = 2;
             // 
+            // hapusButton
+            // 
+            hapusButton.BackColor = Color.DarkRed;
+            hapusButton.Cursor = Cursors.Hand;
+            hapusButton.FlatAppearance.BorderSize = 0;
+            hapusButton.FlatStyle = FlatStyle.Flat;
+            hapusButton.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            hapusButton.ForeColor = Color.WhiteSmoke;
+            hapusButton.IconChar = IconChar.UserAltSlash;
+            hapusButton.IconColor = Color.WhiteSmoke;
+            hapusButton.IconFont = IconFont.Auto;
+            hapusButton.IconSize = 25;
+            hapusButton.Location = new Point(364, 21);
+            hapusButton.Name = "hapusButton";
+            hapusButton.Size = new Size(109, 30);
+            hapusButton.TabIndex = 26;
+            hapusButton.Text = "Hapus";
+            hapusButton.TextImageRelation = TextImageRelation.ImageBeforeText;
+            hapusButton.UseVisualStyleBackColor = false;
+            hapusButton.Click += hapusButton_Click;
+            // 
             // btnSimpan
             // 
             btnSimpan.BackColor = Color.FromArgb(30, 31, 68);
@@ -209,7 +230,7 @@ namespace KASIR.komponen
             btnSimpan.Name = "btnSimpan";
             btnSimpan.Size = new Size(109, 30);
             btnSimpan.TabIndex = 24;
-            btnSimpan.Text = "Edit";
+            btnSimpan.Text = "Tambah";
             btnSimpan.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnSimpan.UseVisualStyleBackColor = false;
             btnSimpan.Click += btnSimpan_Click;
@@ -266,26 +287,6 @@ namespace KASIR.komponen
             label2.TabIndex = 1;
             label2.Text = "TIPE PEMBAYARAN";
             // 
-            // hapusButton
-            // 
-            hapusButton.BackColor = Color.DarkRed;
-            hapusButton.Cursor = Cursors.Hand;
-            hapusButton.FlatAppearance.BorderSize = 0;
-            hapusButton.FlatStyle = FlatStyle.Flat;
-            hapusButton.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            hapusButton.ForeColor = Color.WhiteSmoke;
-            hapusButton.IconChar = IconChar.UserAltSlash;
-            hapusButton.IconColor = Color.WhiteSmoke;
-            hapusButton.IconFont = IconFont.Auto;
-            hapusButton.IconSize = 25;
-            hapusButton.Location = new Point(364, 21);
-            hapusButton.Name = "hapusButton";
-            hapusButton.Size = new Size(109, 30);
-            hapusButton.TabIndex = 25;
-            hapusButton.Text = "Hapus";
-            hapusButton.TextImageRelation = TextImageRelation.ImageBeforeText;
-            hapusButton.UseVisualStyleBackColor = false;
-            // 
             // addMember
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -318,21 +319,20 @@ namespace KASIR.komponen
         private FlowLayoutPanel flowLayoutPanel1;
         private Panel panel9;
         private Panel panel10;
-        private TextBox txtSeat;
+        private TextBox txtPhone;
         private Label label5;
         private Panel panel11;
         private TextBox txtNama;
         private Label label4;
         private Button btnTambah;
         private Button btnKurang;
-        private TextBox txtKuantitas;
         private Button btnTunai;
         private Label label2;
         private TextBox txtNotes;
         private FontAwesome.Sharp.IconButton btnKeluar;
         private FontAwesome.Sharp.IconButton btnSimpan;
         private Panel panel3;
-        private TextBox textBox1;
+        private TextBox txtEmail;
         private Label label1;
         private IconButton hapusButton;
     }

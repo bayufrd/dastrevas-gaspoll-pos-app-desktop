@@ -15,6 +15,10 @@ namespace KASIR.Model
     public class RefundDetailStruk
     {
         public int cart_detail_id { get; set; }
+        public int menu_id { get; set; }
+        public int menu_detail_id { get; set; }
+        public int refund_payment_type_id_item { get; set; }
+        public string menu_detail_name { get; set; }
         public string refund_reason_item { get; set; }
         public string payment_type_name { get; set; }
         public int qty_refund_item { get; set; }
@@ -29,6 +33,8 @@ namespace KASIR.Model
         public string discounts_is_percent { get; set; }
         public int menu_price { get; set; }
         public string note_item { get; set; }
+        public string created_at { get; set; }
+        public string updated_at { get; set; }
     }
 
     public class DataRefundStruk

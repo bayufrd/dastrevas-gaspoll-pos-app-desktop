@@ -237,11 +237,12 @@ namespace KASIR.Model
         public string menu_type { get; set; }
         public string varian { get; set; }
         public string menu_detail_name { get; set; }
+        public int menu_detail_id { get; set; }
         public int qty { get; set; }
         public int price { get; set; }
         public int is_ordered { get; set; }
-        public decimal total_price { get; set; }
-        public decimal discounted_price { get; set; }
+        public int total_price { get; set; }
+        public int discounted_price { get; set; }
     }
     public class RefundDetails
     {
@@ -251,7 +252,7 @@ namespace KASIR.Model
         public string menu_type { get; set; }
         public string menu_detail_name { get; set; }
         public int refund_qty { get; set; }
-        public decimal total_price { get; set; }
+        public int total_price { get; set; }
         public int refund_total { get; set; }
     }
     public class Transaction
@@ -266,10 +267,10 @@ namespace KASIR.Model
         public string invoice_due_date { get; set; }
         public string payment_type_name { get; set; }
         public string customer_name { get; set; }
-        public decimal customer_cash { get; set; }
-        public decimal discounted_price { get; set; }
-        public decimal total { get; set; }
-        public decimal total_refund { get; set; }  // Refund for the whole transaction
+        public int customer_cash { get; set; }
+        public int discounted_price { get; set; }
+        public int total { get; set; }
+        public int total_refund { get; set; }  // Refund for the whole transaction
         public List<CartDetails> cart_details { get; set; }
         public List<RefundDetails> refund_details { get; set; }
         public List<CanceledDetails> canceled_items { get; set; }
@@ -278,11 +279,13 @@ namespace KASIR.Model
     public class CanceledDetails
     {
         public int cart_detail_id { get; set; }
+        public int menu_id { get; set; }
+        public int menu_detail_id { get; set; }
         public string menu_name { get; set; }
         public string menu_type { get; set; }
         public string menu_detail_name { get; set; }
         public int qty { get; set; }
-        public decimal total_price { get; set; }
+        public int total_price { get; set; }
     }
 
     public class TransactionData

@@ -115,7 +115,6 @@ namespace KASIR.OfflineMode
             panel3.Padding = new Padding(5);
             panel3.Size = new Size(410, 657);
             panel3.TabIndex = 8;
-            panel3.Paint += panel3_Paint;
             // 
             // lblDetailKeranjang
             // 
@@ -154,7 +153,7 @@ namespace KASIR.OfflineMode
             buttonDelete.Text = "Hapus Pesanan";
             buttonDelete.TextImageRelation = TextImageRelation.ImageBeforeText;
             buttonDelete.UseVisualStyleBackColor = true;
-            buttonDelete.Click += button5_ClickAsync;
+            buttonDelete.Click += buttonDeleteCart_ClickAsync;
             // 
             // listBill1
             // 
@@ -193,7 +192,6 @@ namespace KASIR.OfflineMode
             panel6.Name = "panel6";
             panel6.Size = new Size(401, 135);
             panel6.TabIndex = 15;
-            panel6.Paint += panel6_Paint;
             // 
             // label6
             // 
@@ -301,7 +299,6 @@ namespace KASIR.OfflineMode
             lblSubTotal1.Size = new Size(52, 15);
             lblSubTotal1.TabIndex = 2;
             lblSubTotal1.Text = "SubTotal";
-            lblSubTotal1.Click += lblSubTotal1_Click;
             // 
             // lblTotal
             // 
@@ -393,7 +390,6 @@ namespace KASIR.OfflineMode
             dataGridView1.Size = new Size(400, 291);
             dataGridView1.TabIndex = 14;
             dataGridView1.CellContentClick += dataGridView1_CellContentClick;
-            dataGridView1.CellPainting += DataGridView1_CellPainting;
             // 
             // panel1
             // 
@@ -802,7 +798,6 @@ namespace KASIR.OfflineMode
             FormBorderStyle = FormBorderStyle.None;
             Name = "Offline_masterPos";
             Text = "menu";
-            Load += masterPos_Load;
             panel3.ResumeLayout(false);
             panel6.ResumeLayout(false);
             panel6.PerformLayout();

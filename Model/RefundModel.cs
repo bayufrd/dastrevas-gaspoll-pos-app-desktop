@@ -15,6 +15,7 @@ namespace KASIR.Model
         public string RefundReason { get; set; } // Alasan refund
         public int menu_id { get; set; }
         public string menu_name { get; set; }
+        public string menu_type { get; set; }
         public int menu_detail_id { get; set; }
         public string menu_detail_name { get; set; }
         public int price { get; set; }

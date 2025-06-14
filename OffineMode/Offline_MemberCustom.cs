@@ -3,13 +3,13 @@ using Newtonsoft.Json;
 using Serilog;
 namespace KASIR.komponen
 {
-    public partial class addMember : Form
+    public partial class Offline_MemberCustom : Form
     {
         private masterPos _masterPos;
         private masterPos MasterPosForm { get; set; }
         private List<System.Windows.Forms.Button> radioButtonsList = new List<System.Windows.Forms.Button>();
         public string btnPayType;
-        string totalCart, ttl2;
+        string outletID, cartID, totalCart, ttl2;
         private readonly string baseOutlet;
         private readonly ILogger _log = LoggerService.Instance._log;
         public bool KeluarButtonClicked { get; private set; }
@@ -19,7 +19,7 @@ namespace KASIR.komponen
         int idid;
 
 
-        public addMember(string customMember, int idMember, string namaMember, string hpMember, string emailMember)
+        public Offline_MemberCustom(string customMember, int idMember, string namaMember, string hpMember, string emailMember)
         {
             InitializeComponent();
             btnSimpan.Enabled = false;

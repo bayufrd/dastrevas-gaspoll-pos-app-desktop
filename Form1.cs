@@ -34,7 +34,6 @@ namespace KASIR
         public Form1()
         {
             InitializeComponent();
-            // Panggil di constructor setelah InitializeComponent()
             SetDoubleBufferedForAllControls(this);
             //this.Height = 768;
             //this.Width = 1024;
@@ -55,12 +54,10 @@ namespace KASIR
             }
             this.Shown += Form1_Shown; // Tambahkan ini
         }
-        // Event handler untuk form shown
         private void Form1_Shown(object sender, EventArgs e)
         {
             RefreshIconButtons();
         }
-        // Method untuk refresh icon buttons
         private void RefreshIconButtons()
         {
             this.SuspendLayout();
@@ -100,114 +97,86 @@ namespace KASIR
             }
         }
 
-        private async void ConfigOfflineMode()
+        private async Task EnsureOfflineModeConfig()
         {
-            // Mengecek apakah sButtonOffline dalam status checked
-            string Config = "setting\\OfflineMode.data";
+            string configPath = "setting\\OfflineMode.data";
+            string directoryPath = Path.GetDirectoryName(configPath);
+
             // Ensure the directory exists
-            string directoryPath = Path.GetDirectoryName(Config);
             if (!Directory.Exists(directoryPath))
             {
                 Directory.CreateDirectory(directoryPath);
             }
-            // Memeriksa apakah file ada
-            if (!File.Exists(Config))
+
+            // Create or overwrite the config file
+            if (!File.Exists(configPath))
             {
-                // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
-                File.WriteAllText(Config, "ON");
+                await File.WriteAllTextAsync(configPath, "ON");
             }
-            File.WriteAllText(Config, "ON");
+        }
 
-            string allSettingsData = File.ReadAllText(Config); // Ambil status offline
+        private async void ConfigOfflineMode()
+        {
+            await EnsureOfflineModeConfig();
 
-            // Jika status offline ON, tampilkan Offline_masterPos
+            string outletName = await GetOutletNameAsync();
+            string allSettingsData = await File.ReadAllTextAsync("setting\\OfflineMode.data");
+
             if (allSettingsData == "ON")
             {
-                Offline_masterPos offlineMasterPos = new Offline_masterPos();
-                offlineMasterPos.TopLevel = false;
-                offlineMasterPos.Dock = DockStyle.Fill;
-
-                // Jika ada form masterPos yang sudah terbuka, tutup dulu
-                foreach (Control c in panel1.Controls)
-                {
-                    if (c is masterPos)
-                    {
-                        c.Dispose(); // Menutup form masterPos jika ada
-                    }
-                }
-
-                panel1.Controls.Add(offlineMasterPos);
-                offlineMasterPos.BringToFront();
-                offlineMasterPos.Show();
-                await offlineMasterPos.LoadCart();
-
+                await LoadOfflineMasterPos();
+                UpdateOutletLabel(outletName + " (Hybrid)");
             }
             else
             {
-                masterPos m = new masterPos();
-                m.TopLevel = false;
-                m.Dock = DockStyle.Fill;
+                await LoadMasterPos();
+                UpdateOutletLabel(outletName + " (Online)");
+            }
+        }
 
-                // Jika ada form Offline_masterPos yang sudah terbuka, tutup dulu
-                foreach (Control c in panel1.Controls)
+        private async Task LoadOfflineMasterPos()
+        {
+            Offline_masterPos offlineMasterPos = new Offline_masterPos
+            {
+                TopLevel = false,
+                Dock = DockStyle.Fill
+            };
+
+            RemoveExistingForm<masterPos>();
+            panel1.Controls.Add(offlineMasterPos);
+            offlineMasterPos.BringToFront();
+            offlineMasterPos.Show();
+            await offlineMasterPos.LoadCart();
+        }
+
+        private async Task LoadMasterPos()
+        {
+            masterPos m = new masterPos
+            {
+                TopLevel = false,
+                Dock = DockStyle.Fill
+            };
+
+            RemoveExistingForm<Offline_masterPos>();
+            panel1.Controls.Add(m);
+            m.BringToFront();
+            m.Show();
+            await m.LoadCart();
+        }
+
+        private void RemoveExistingForm<T>() where T : Form
+        {
+            foreach (Control c in panel1.Controls)
+            {
+                if (c is T)
                 {
-                    if (c is Offline_masterPos)
-                    {
-                        c.Dispose(); // Menutup form Offline_masterPos jika ada
-                    }
+                    c.Dispose();
                 }
-
-                panel1.Controls.Add(m);
-                m.BringToFront();
-                m.Show();
-                await m.LoadCart();
-
             }
         }
         public async void UpdateContent()
         {
-            string Config = "setting\\OfflineMode.data";
-            string allSettingsData = File.ReadAllText(Config); // Ambil status offline
-
-            // Jika status offline ON, tampilkan Offline_masterPos
-            if (allSettingsData == "ON")
-            {
-                Offline_masterPos offlineMasterPos = new Offline_masterPos();
-                offlineMasterPos.TopLevel = false;
-                offlineMasterPos.Dock = DockStyle.Fill;
-
-                // Menutup form masterPos jika ada
-                foreach (Control c in panel1.Controls)
-                {
-                    if (c is masterPos)
-                    {
-                        c.Dispose();
-                    }
-                }
-
-                panel1.Controls.Add(offlineMasterPos);
-                offlineMasterPos.BringToFront();
-                offlineMasterPos.Show();
-            }
-            else
-            {
-                masterPos m = new masterPos();
-                m.TopLevel = false;
-                m.Dock = DockStyle.Fill;
-
-                // Menutup form Offline_masterPos jika ada
-                foreach (Control c in panel1.Controls)
-                {
-                    if (c is Offline_masterPos)
-                    {
-                        c.Dispose();
-                    }
-                }
-
-                panel1.Controls.Add(m);
-                m.BringToFront();
-                m.Show();
-            }
+            ConfigOfflineMode();
         }
 
 
@@ -219,14 +188,12 @@ namespace KASIR
             SignalPing.IconColor = DrawingColor.White;
         }
 
-        static string ReplaceColonWithDash(string mac)
-        {
-            // Gunakan Replace untuk mengganti semua ":" dengan "-"
-            return mac.Replace(":", "-");
-        }
-
         public static void DuplicateTemp()
         {
+            if (!File.Exists("icon\\OutletLogo.bmp"))
+            {
+                return;
+            }
             string outletLogoPath = "icon\\OutletLogo.bmp";
             string tempCopyPath = "icon\\TempCopy.bmp";
 
@@ -318,8 +285,8 @@ namespace KASIR
                 CacheDataApp CacheDataApp = new CacheDataApp(TypeCacheEksekusi);
                 CacheDataApp.Show();
             }
-
-
+            SettingsForm c = new SettingsForm(this);
+            await c.LoadConfig();
             await headerName();
         }
         private async void LoadingAllSetting(string allSettingsData)
@@ -364,13 +331,12 @@ namespace KASIR
         }
         public async Task headerOutletName(string text)
         {
+            if (string.IsNullOrWhiteSpace(text)) return; // Avoid null or empty
+
             if (lblNamaOutlet.InvokeRequired)
             {
                 await Task.Factory.FromAsync(
-                    lblNamaOutlet.BeginInvoke(
-                        new Action(() => lblNamaOutlet.Text = "Please Wait.. " + text),
-                        null
-                    ),
+                    lblNamaOutlet.BeginInvoke(new Action(() => lblNamaOutlet.Text = "Please Wait.. " + text), null),
                     ar => lblNamaOutlet.EndInvoke(ar)
                 );
             }
@@ -429,40 +395,31 @@ namespace KASIR
 
                 using (var httpClient = new HttpClient())
                 {
-                    // Fetch version
                     string urlVersion = "https://raw.githubusercontent.com/bayufrd/update/main/updaterVersionApp.txt";
                     string newVersion = await httpClient.GetStringAsync(urlVersion);
-                    string changeVersion = newVersion.Trim();
+                    if (string.IsNullOrWhiteSpace(newVersion)) throw new Exception("Version data is empty.");
 
+                    string changeVersion = newVersion.Trim();
                     await headerOutletName($"New Version Updater is {changeVersion}");
 
                     // Version comparison
                     newVersion = newVersion.Replace(".", "");
                     VersionUpdaterApp = VersionUpdaterApp.Replace(".", "");
-
                     if (Convert.ToInt32(newVersion) > Convert.ToInt32(VersionUpdaterApp))
                     {
                         await headerOutletName("Downloading New Updater...");
-
-                        // Prepare download paths
                         string fileUrl = "https://raw.githubusercontent.com/bayufrd/update/main/Dastrevas.rar";
-                        string destinationPath = Path.Combine(
-                            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                            $"{DownloadPath}\\Dastrevas.rar"
-                        );
+                        string destinationPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), $"{DownloadPath}\\Dastrevas.rar");
 
-                        // Download file
                         await DownloadFileAsync(httpClient, fileUrl, destinationPath);
-
-                        // Extract and update
                         await ExtractAndUpdateAsync(destinationPath, changeVersion);
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}", "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                MessageBox.Show($"Error: {ex.Message}", "Updater Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LoggerUtil.LogError(ex, "An error occurred during updating: {ErrorMessage}", ex.Message);
             }
         }
 
@@ -717,33 +674,35 @@ namespace KASIR
                 MessageBox.Show($"Error opening updater: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        private async Task<string> GetOutletNameAsync()
+        {
+            string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
+
+            // Cek apakah file ada dan baca data dari file atau API
+            if (File.Exists(filePath))
+            {
+                return GetOutletNameFromFile(filePath);
+            }
+            else
+            {
+                string outletName = await GetOutletNameFromApi();
+                if (outletName != null)
+                {
+                    // Simpan data ke file jika berhasil mendapatkan nama outlet
+                    await File.WriteAllTextAsync(filePath, JsonConvert.SerializeObject(new { data = new { name = outletName } }));
+                    return outletName;
+                }
+                else
+                {
+                    return " (Hybrid)";
+                }
+            }
+        }
         public async Task headerName()
         {
             try
             {
-                string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
-                string outletName;
-
-                // Cek apakah file ada dan baca data dari file atau API
-                if (File.Exists(filePath))
-                {
-                    outletName = GetOutletNameFromFile(filePath);
-                }
-                else
-                {
-                    outletName = await GetOutletNameFromApi();
-                    if (outletName != null)
-                    {
-                        // Simpan data ke file jika berhasil mendapatkan nama outlet
-                        File.WriteAllText(filePath, JsonConvert.SerializeObject(new { data = new { name = outletName } }));
-                    }
-                    else
-                    {
-                        outletName = " (Hybrid)";
-                    }
-                }
-
-                // Update label UI
+                string outletName = await GetOutletNameAsync();
                 UpdateOutletLabel(outletName + " (Hybrid)");
             }
             catch (TaskCanceledException ex)
@@ -755,7 +714,6 @@ namespace KASIR
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
         public string GetOutletNameFromFile(string filePath)
         {
             string fileContent = File.ReadAllText(filePath);
@@ -929,29 +887,8 @@ namespace KASIR
                 MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-        }
-
-        private void button2_Click_1(object sender, EventArgs e)
-        {
-        }
-
-        private void panel1_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
-
-        private void panel2_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
         private void link_Click(object sender, EventArgs e)
         {
-            ////LoggerUtil.LogPrivateMethod(nameof(link_Click));
-
             try
             {
                 // Specify the URL to open
@@ -973,7 +910,7 @@ namespace KASIR
         }
 
         //button shiftreport / shift report end shift
-        private async void button1_Click(object sender, EventArgs e)
+        private async void buttonHistoryTransaction(object sender, EventArgs e)
         {
             Color randomColor = PickRandomColor();
             ActivateButton(sender, randomColor);
@@ -991,15 +928,12 @@ namespace KASIR
                     btnShiftLaporan.Enabled = false;
                     iconButton1.Enabled = false;
                     iconButton2.Enabled = false;
-                    // If OfflineMode is ON, load the Offline_masterPos form
                     Offline_successTransaction c = new Offline_successTransaction();
                     if (c == null)
                     {
                         MessageBox.Show("Terjadi kesalah coba restart aplikasi", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
-                    //panel3.Height = btn1.Height;
-                    //panel3.Top = btn1.Top;
                     c.Dock = DockStyle.Fill;
                     panel1.Controls.Add(c);
                     c.BringToFront();
@@ -1015,31 +949,17 @@ namespace KASIR
                 {
                     successTransaction c = new successTransaction();
 
-                    // Misalkan 'obj' adalah objek yang mungkin null
                     if (c == null)
                     {
                         return;
                     }
-                    //panel3.Height = btn1.Height;
-                    //panel3.Top = btn1.Top;
                     c.Dock = DockStyle.Fill;
                     panel1.Controls.Add(c);
                     c.BringToFront();
                     c.Show();
                     lblTitleChildForm.Text = "Transactions - History Transactions";
-                    Form background = new Form
-                    {
-                        StartPosition = FormStartPosition.Manual,
-                        FormBorderStyle = FormBorderStyle.None,
-                        Opacity = 0.7d,
-                        BackColor = Color.Black,
-                        WindowState = FormWindowState.Maximized,
-                        TopMost = true,
-                        Location = this.Location,
-                        ShowInTaskbar = false,
-                    };
-                    // Lakukan operasi dengan 'obj'
-                    // ...
+                    Form background = CreateOverlayForm();
+
                 }
 
             }
@@ -1092,18 +1012,7 @@ namespace KASIR
         }
         private void btnEditSettings_Click(object sender, EventArgs e)
         {
-            // Create the background form
-            Form background = new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
-            };
+            Form background = CreateOverlayForm();
 
             // Create the SettingsForm
             using (SettingsForm settingsForm = new SettingsForm(this))
@@ -1315,48 +1224,24 @@ namespace KASIR
         private async void btnShiftLaporan_Click(object sender, EventArgs e)
         {
             SyncTimer.Enabled = false;
-
-            //====by
             ActivateButton(sender, RGBColors.color4);
+
             try
             {
-                Offline_shiftReport c = new Offline_shiftReport();
-
-                // Misalkan 'obj' adalah objek yang mungkin null
-                if (c == null)
+                string allSettingsData = await File.ReadAllTextAsync("setting\\OfflineMode.data");
+                if (allSettingsData == "ON")
                 {
-                    return;
+                    await LoadOfflineSuccessTransaction();
                 }
-                //panel3.Height = btn1.Height;
-                //panel3.Top = btn1.Top;
-                c.Dock = DockStyle.Fill;
-                panel1.Controls.Add(c);
-                c.BringToFront();
-                c.Show();
-                await c.LoadData();
-                lblTitleChildForm.Text = "Shift Report - Report Shift and Shift Transactions, Print Shift and Cash Out";
-
-
-                Form background = new Form
+                else
                 {
-                    StartPosition = FormStartPosition.Manual,
-                    FormBorderStyle = FormBorderStyle.None,
-                    Opacity = 0.7d,
-                    BackColor = Color.Black,
-                    WindowState = FormWindowState.Maximized,
-                    TopMost = true,
-                    Location = this.Location,
-                    ShowInTaskbar = false,
-                };
-                // Lakukan operasi dengan 'obj'
-                // ...
+                    await LoadOnlineSuccessTransaction();
+                }
             }
-            catch (NullReferenceException ex)
+            catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
                 MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                // Log error jika diperlukan
             }
             finally
             {
@@ -1364,14 +1249,30 @@ namespace KASIR
             }
         }
 
-        private void iconButton3_Click(object sender, EventArgs e)
+        private async Task LoadOfflineSuccessTransaction()
         {
+            Offline_shiftReport offlineTransaction = new Offline_shiftReport();
+            offlineTransaction.Dock = DockStyle.Fill;
+
+            panel1.Controls.Add(offlineTransaction);
+            offlineTransaction.BringToFront();
+            await offlineTransaction.LoadData();
+            lblTitleChildForm.Text = "Shift Report (Offline)";
         }
 
-        private void btnContact_Click(object sender, EventArgs e)
+        private async Task LoadOnlineSuccessTransaction()
         {
+            shiftReport onlineTransaction = new shiftReport();
+            onlineTransaction.Dock = DockStyle.Fill;
 
-            Form background = new Form
+            panel1.Controls.Add(onlineTransaction);
+            onlineTransaction.BringToFront();
+            await onlineTransaction.LoadData();
+            lblTitleChildForm.Text = "Shift Report (Online)";
+        }
+        private Form CreateOverlayForm()
+        {
+            return new Form
             {
                 StartPosition = FormStartPosition.Manual,
                 FormBorderStyle = FormBorderStyle.None,
@@ -1380,8 +1281,13 @@ namespace KASIR
                 WindowState = FormWindowState.Maximized,
                 TopMost = true,
                 Location = this.Location,
-                ShowInTaskbar = false,
+                ShowInTaskbar = false
             };
+        }
+        private void btnContact_Click(object sender, EventArgs e)
+        {
+
+            Form background = CreateOverlayForm();
 
             using (Offline_Complaint c = new Offline_Complaint())
             {
@@ -1405,20 +1311,6 @@ namespace KASIR
             panel1.Controls.Add(c);
             c.BringToFront();
             c.Show();
-
-
-            Form background = new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
-            };
-
         }
     }
 }

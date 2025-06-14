@@ -12,7 +12,6 @@ namespace KASIR.Komponen
         private ApiService apiService;
         private DataTable originalDataTable;
         private readonly string baseOutlet;
-        private inputPin pinForm;
         int numberQueue = 0;
         public successTransaction()
         {
@@ -38,23 +37,12 @@ namespace KASIR.Komponen
                 }
             }
         }
-        private void OpenRefundForm(string transaksiId)
-        {
-            refund refundForm = new refund(transaksiId);
-            refundForm.RefundSuccessful += OnRefundSuccess;
-            if (pinForm != null && !pinForm.IsDisposed)
-            {
-                pinForm.Close();
-            }
-            refundForm.ShowDialog();
-        }
-
         private void OnRefundSuccess(object sender, EventArgs e)
         {
             // Refresh data in successTransaction form
             LoadData();
         }
-        public async void LoadData()
+        public async Task LoadData()
         {
             try
             {

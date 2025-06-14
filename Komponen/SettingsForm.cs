@@ -19,10 +19,8 @@ namespace KASIR.Komponen
     public partial class SettingsForm : Form
     {
         public Form1 MainForm { get; set; }
-        private PrinterItem selectedPrinterItem;
-        //private IPrinterModel printerModel;
         private PrinterModel printerModel;
-        private readonly string baseOutlet;
+        private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet;
         private string configFolderPath = "setting";
         public SettingsForm(Form1 mainForm)
         {
@@ -30,112 +28,79 @@ namespace KASIR.Komponen
             InitializeComponent();
             MainForm = mainForm;
             LoadConfig();
+            InitializeUpdateSettings();
+            LoadPrintersAndSettings().ConfigureAwait(false);
+            cekUpdate();
+        }
+
+        private void InitializeUpdateSettings()
+        {
             lblNewVersion.Visible = true;
             lblNewVersionNow.Visible = true;
             btnUpdate.Text = "Repair";
             lblVersion.Text = Properties.Settings.Default.Version.ToString();
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
-
-
-            // test printer melalui pencarian. ( untuk check list )
             printerModel = new PrinterModel(); // Initialize printerModel
-                                               // Load printers when the form loads or as appropriate
-            LoadPrintersAndSettings().ConfigureAwait(false);
-
-            //
-            cekUpdate();
-
         }
         // Metode untuk memuat pengaturan printer dan checkbox
         public async Task LoadPrintersAndSettings()
         {
-
-            PrinterModel printerModel = new PrinterModel();
             List<ComboBox> comboBoxes = new List<ComboBox> { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
 
             foreach (var comboBox in comboBoxes)
             {
                 comboBox.Items.Clear();
-                comboBox.SelectedIndexChanged -= ComboBoxPrinter_SelectedIndexChanged; // Remove handler first
+                comboBox.SelectedIndexChanged -= ComboBoxPrinter_SelectedIndexChanged; // Drum handler pertama
 
                 try
                 {
                     var printers = await printerModel.GetAvailablePrinters();
-
-                    // Add the default item first
                     comboBox.Items.Add(new PrinterItem("Mac Address Manual", null));
+                    comboBox.Items.AddRange(printers.ToArray());
 
-                    foreach (var printer in printers)
-                    {
-                        comboBox.Items.Add(printer);
-                    }
-
-                    string comboBoxName = comboBox.Name.Substring(10); // Extract the number from comboBox name
-                    string savedPrinterId = await printerModel.LoadPrinterSettingsAsync(comboBoxName);
-                    if (!string.IsNullOrEmpty(savedPrinterId) && !printerModel.IsNotMacAddressOrIpAddress(savedPrinterId))
-                    {
-                        comboBox.SelectedIndex = 0;
-                        string numberString = comboBoxName.Substring(5); // Mengambil angka setelah "inter"
-                        if (int.TryParse(numberString, out int printerNumber))
-                        {
-                            // Bentuk nama TextBox berdasarkan nomor printer
-                            string textBoxName = $"txtPrinter{printerNumber}";
-
-                            // Cari kontrol TextBox yang sesuai
-                            TextBox textBox = Controls.Find(textBoxName, true).FirstOrDefault() as TextBox;
-                            if (textBox != null)
-                            {
-                                textBox.Text = savedPrinterId;
-                            }
-                        }
-
-                    }
-                    else
-                    {
-                        if (string.IsNullOrEmpty(savedPrinterId))
-                        {
-                            // If no saved printer, select default item
-                            comboBox.SelectedIndex = 0;
-
-                        }
-                        else
-                        {
-                            if (!printerModel.IsBluetoothPrinter(savedPrinterId))
-                                SetSelectedPrinter(comboBox, savedPrinterId);
-                        }
-                    }
-
-
-                    // Load and set checkbox states
-                    await LoadCheckBoxStates(comboBoxName);
-
-                    comboBox.SelectedIndexChanged += ComboBoxPrinter_SelectedIndexChanged; // Add handler back
-
-                    // Hook up events for checkboxes dynamically
-                    string checkBoxPrefix = "checkBoxKasir";
-                    List<CheckBox> checkBoxes = FindCheckBoxesByPrefix(checkBoxPrefix + comboBoxName);
-
-
-                    foreach (var checkBox in checkBoxes)
-                    {
-                        checkBox.CheckedChanged -= CheckBox_CheckedChanged; // Remove handler first (optional)
-                        checkBox.CheckedChanged += CheckBox_CheckedChanged; // Add handler
-                    }
-                    // Setelah selesai memuat pengaturan printer
-                    await CheckAndUpdateCheckboxStates();
+                    // Set printer yang sudah disimpan
+                    await SetSavedPrinterAsync(comboBox);
+                    // Load the checkbox states
+                    await LoadCheckBoxStates(comboBox.Name.Substring(10)); // Mengambil angka dari ComboBox
                 }
                 catch (Exception ex)
                 {
-                    // Handle any exceptions, log or show an error message
-                    MessageBox.Show($"Error loading printers for {comboBox.Name}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
-                    // Set default item if there's an error
-                    comboBox.Items.Add(new PrinterItem("Mac Address Manual", null));
-                    comboBox.SelectedIndex = 0;
+                    HandlePrinterLoadingError(comboBox, ex);
+                }
+                finally
+                {
+                    comboBox.SelectedIndexChanged += ComboBoxPrinter_SelectedIndexChanged; // Restore the event handler
                 }
             }
         }
+
+        private async Task SetSavedPrinterAsync(ComboBox comboBox)
+        {
+            string comboBoxName = comboBox.Name.Substring(10); // Mengambil angka dari nama ComboBox
+            string savedPrinterId = await printerModel.LoadPrinterSettingsAsync(comboBoxName);
+
+            if (string.IsNullOrEmpty(savedPrinterId))
+            {
+                comboBox.SelectedIndex = 0; // Select default item
+            }
+            else
+            {
+                SetSelectedPrinter(comboBox, savedPrinterId);
+                TextBox associatedTextBox = Controls.Find($"txtPrinter{comboBoxName.Last()}", true).FirstOrDefault() as TextBox;
+                if (associatedTextBox != null)
+                {
+                    associatedTextBox.Text = savedPrinterId; // Update associated TextBox
+                }
+            }
+        }
+
+        private void HandlePrinterLoadingError(ComboBox comboBox, Exception ex)
+        {
+            MessageBox.Show($"Error loading printers for {comboBox.Name}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            comboBox.Items.Add(new PrinterItem("Mac Address Manual", null));
+            comboBox.SelectedIndex = 0; // Set default item on error
+        }
+
         public async Task CheckAndUpdateCheckboxStates()
         {
             List<ComboBox> comboBoxes = new List<ComboBox> { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
@@ -571,70 +536,58 @@ namespace KASIR.Komponen
         public async void btnUpdate_Click(object sender, EventArgs e)
         {
             string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
-            string outletName;
-
-            // Cek apakah file ada dan baca data dari file atau API
-            if (File.Exists(filePath))
-            {
-                outletName = GetOutletNameFromFile(filePath);
-            }
-            else
-            {
-                outletName = await GetOutletNameFromApi();
-                if (outletName != null)
-                {
-                    // Simpan data ke file jika berhasil mendapatkan nama outlet
-                    File.WriteAllText(filePath, JsonConvert.SerializeObject(new { data = new { name = outletName } }));
-                }
-                else
-                {
-                    outletName = " (Hybrid)";
-                }
-            }
-            ////LoggerUtil.LogPrivateMethod(nameof(btnUpdate_Click));
+            string outletName = await GetOrCreateOutletName(filePath);
             Util n = new Util();
             n.sendLogTelegramNetworkError("Open Updater Manual" + outletName);
             btnUpdate.Enabled = false;
 
             try
             {
-                if (File.Exists(System.Windows.Forms.Application.StartupPath + "update\\update.exe"))
-                {
-                    if (IsInternetConnected())
-                    {
-
-                        LoggerUtil.LogWarning("Open Update.exe");
-
-
-                        string path = System.Windows.Forms.Application.StartupPath + "update\\update.exe";
-
-                        Process p = new Process();
-                        p.StartInfo.FileName = path;
-                        p.StartInfo.Arguments = "";
-                        p.StartInfo.UseShellExecute = false;
-                        p.StartInfo.CreateNoWindow = false;
-                        p.StartInfo.RedirectStandardOutput = true;
-                        p.StartInfo.Verb = "runas";
-                        p.Start();
-                        Thread.Sleep(3000);
-
-                        System.Windows.Forms.Application.Exit();
-
-
-                    }
-                }
-                else
-                {
-
-                    System.Windows.Forms.MessageBox.Show("File tidak ditemukan", "Kesalahan", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                    LoggerUtil.LogWarning("File not found");
-
-                }
+                await StartUpdaterProcess();
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private async Task<string> GetOrCreateOutletName(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                return GetOutletNameFromFile(filePath);
+            }
+            string outletName = await GetOutletNameFromApi();
+            if (outletName != null)
+            {
+                // Simpan data ke file jika berhasil mendapatkan nama outlet
+                await File.WriteAllTextAsync(filePath, JsonConvert.SerializeObject(new { data = new { name = outletName } }));
+                return outletName;
+            }
+            return " (Hybrid)";
+        }
+
+        private async Task StartUpdaterProcess()
+        {
+            if (File.Exists(System.Windows.Forms.Application.StartupPath + "update\\update.exe"))
+            {
+                if (IsInternetConnected())
+                {
+                    LoggerUtil.LogWarning("Open Update.exe");
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = System.Windows.Forms.Application.StartupPath + "update\\update.exe",
+                        UseShellExecute = false,
+                        CreateNoWindow = false,
+                        Verb = "runas"
+                    });
+                    System.Windows.Forms.Application.Exit();
+                }
+            }
+            else
+            {
+                System.Windows.Forms.MessageBox.Show("File tidak ditemukan", "Kesalahan", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LoggerUtil.LogWarning("File not found");
             }
         }
 
@@ -769,132 +722,46 @@ namespace KASIR.Komponen
                 System.Windows.MessageBox.Show($"Gagal Download Data : {ex}");
             }
         }
-        private async void LoadConfig()
+        public async Task LoadConfig()
         {
             if (!Directory.Exists(configFolderPath))
             {
                 Directory.CreateDirectory(configFolderPath);
             }
 
-            // load Footer
-            if (!File.Exists("setting\\FooterStruk.data"))
+            await EnsureFileExistsAsync("setting\\FooterStruk.data", "TERIMAKASIH ATAS KUNJUNGANNYA", txtFooter);
+            await EnsureFileExistsAsync("setting\\RunningText.data", "TERIMAKASIH ATAS KUNJUNGANNYA", txtRunningText);
+            await EnsureFileExistsAsync("setting\\configListMenu.data", "OFF", sButtonListMenu);
+            await EnsureFileExistsAsync("setting\\configDualMonitor.data", "OFF", radioDualMonitor);
+            await EnsureFileExistsAsync("setting\\OfflineMode.data", "OFF", sButtonOffline);
+        }
+
+        private async Task EnsureFileExistsAsync(string filePath, string defaultContent, Control controlToUpdate)
+        {
+            if (!File.Exists(filePath))
             {
-                string data = "TERIMAKASIH ATAS KUNJUNGANNYA";
-                await File.WriteAllTextAsync("setting\\FooterStruk.data", data);
+                await File.WriteAllTextAsync(filePath, defaultContent);
             }
             else
             {
-                string allSettingsData = await File.ReadAllTextAsync("setting\\FooterStruk.data");
-                if (!string.IsNullOrEmpty(allSettingsData))
-                    txtFooter.Text = allSettingsData;
-            }
-            //load running text
-            if (!File.Exists("setting\\RunningText.data"))
-            {
-                string data = "TERIMAKASIH ATAS KUNJUNGANNYA";
-                await File.WriteAllTextAsync("setting\\RunningText.data", data);
-            }
-            else
-            {
-                string allSettingsData = await File.ReadAllTextAsync("setting\\RunningText.data");
-                if (!string.IsNullOrEmpty(allSettingsData))
+                string content = await File.ReadAllTextAsync(filePath);
+                if (!string.IsNullOrEmpty(content))
                 {
-                    txtRunningText.Text = allSettingsData;
-                }
-                else
-                {
-                    string data = "TERIMAKASIH ATAS KUNJUNGANNYA";
-                    await File.WriteAllTextAsync("setting\\RunningText.data", data);
-                }
-            }
-            //load ListMenu
-            if (!File.Exists("setting\\configListMenu.data"))
-            {
-                string data = "OFF";
-                await File.WriteAllTextAsync("setting\\configListMenu.data", data);
-            }
-            else
-            {
-                string allSettingsData = await File.ReadAllTextAsync("setting\\configListMenu.data");
-
-                if (!string.IsNullOrEmpty(allSettingsData))
-                {
-                    if (allSettingsData == "ON")
+                    if (controlToUpdate is TextBox textBox)
                     {
-                        sButtonListMenu.Checked = true;
+                        textBox.Text = content;
                     }
-                    else
+                    else if (controlToUpdate is CheckBox checkBox)
                     {
-                        sButtonListMenu.Checked = false;
+                        checkBox.Checked = content == "ON";
                     }
-                }
-                else
-                {
-                    sButtonListMenu.Checked = false;
-                    string data = "OFF";
-                    await File.WriteAllTextAsync("setting\\configListMenu.data", data);
+                    else if (controlToUpdate is RadioButton radioButton)
+                    {
+                        radioButton.Checked = content == "ON";
+                    }
+                    // Tambah jenis kontrol lain jika diperlukan
                 }
             }
-            //load dual monitor
-            if (!File.Exists("setting\\configDualMonitor.data"))
-            {
-                string data = "OFF";
-                await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
-            }
-            else
-            {
-                string allSettingsData = await File.ReadAllTextAsync("setting\\configDualMonitor.data");
-
-                if (!string.IsNullOrEmpty(allSettingsData))
-                {
-                    if (allSettingsData == "ON")
-                    {
-                        radioDualMonitor.Checked = true;
-                    }
-                    else
-                    {
-                        radioDualMonitor.Checked = false;
-                    }
-
-                }
-                else
-                {
-                    radioDualMonitor.Checked = false;
-                    string data = "OFF";
-                    await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
-                }
-            }
-
-            //loadOfflinemode
-            string Configflie = "setting\\OfflineMode.data";
-            if (!File.Exists(Configflie))
-            {
-                string data = "OFF";
-                await File.WriteAllTextAsync(Configflie, data);
-            }
-            else
-            {
-                string allSettingsData = await File.ReadAllTextAsync(Configflie);
-
-                if (!string.IsNullOrEmpty(allSettingsData))
-                {
-                    if (allSettingsData == "ON")
-                    {
-                        sButtonOffline.Checked = true;
-                    }
-                    else
-                    {
-                        sButtonOffline.Checked = false;
-                    }
-                }
-                else
-                {
-                    sButtonOffline.Checked = false;
-                    string data = "OFF";
-                    await File.WriteAllTextAsync(Configflie, data);
-                }
-            }
-
         }
         private async void sButtonListMenu_CheckedChanged(object sender, EventArgs e)
         {
@@ -1061,7 +928,6 @@ namespace KASIR.Komponen
             string data, Config = "setting\\OfflineMode.data";
             string allSettingsData = await File.ReadAllTextAsync(Config);
 
-            // Cek apakah Offline mode diaktifkan
             if (sButtonOffline.Checked == true && allSettingsData == "OFF")
             {
                 data = "ON";
@@ -1076,13 +942,11 @@ namespace KASIR.Komponen
                 form3.Show();
             }
 
-            // Cek apakah Offline mode dimatikan
             if (sButtonOffline.Checked == false && allSettingsData == "ON")
             {
                 data = "OFF";
                 await File.WriteAllTextAsync(Config, data);
 
-                // Memanggil UpdateContent pada Form1 yang sudah ada
                 MainForm.UpdateContent(); // Mengupdate konten pada Form1 yang sudah ada
                 this.Close();
 

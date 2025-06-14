@@ -13,10 +13,6 @@ namespace KASIR.OffineMode
     {
         private readonly string baseOutlet;
 
-        private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
-        private List<ListBill> Model;
-        int nomor = 0;
-
         public List<CartDetail> cart_details { get; set; }
 
         // Refund details

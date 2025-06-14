@@ -10,8 +10,6 @@ namespace KASIR
         private static readonly LoggerService _instance = new LoggerService();
         public static LoggerService Instance => _instance;
         private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet;
-        string outletName;
-
         public ILogger _log { get; private set; }
 
         private LoggerService()

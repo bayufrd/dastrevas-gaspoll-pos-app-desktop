@@ -15,7 +15,7 @@ namespace KASIR.Komponen
         private ApiService apiService;
         private readonly string baseOutlet;
         int bedaCash = 0;
-        int shiftnumber, NewDataChecker = 0;
+        int shiftnumber;
         DateTime mulaishift, akhirshift;
         public shiftReport()
         {
@@ -384,8 +384,6 @@ namespace KASIR.Komponen
                         // Update only the transactions we tracked for this sync operation
                         SyncSpecificTransactions(filePath, transactionIdsBeingSynced);
                         //SyncSuccess(filePath);
-                        NewDataChecker = 1;
-
                         if (ShouldShowProgress())
                         {
                             UpdateProgress(100, "Sinkronisasi selesai!");
@@ -1336,7 +1334,6 @@ namespace KASIR.Komponen
             {
                 try
                 {
-                    NewDataChecker = 0;
                     // Mengecek apakah sButtonOffline dalam status checked
                     string directoryPath = Path.GetDirectoryName(Config);
                     if (!Directory.Exists(directoryPath))

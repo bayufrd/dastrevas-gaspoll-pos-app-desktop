@@ -156,7 +156,6 @@ namespace KASIR.OfflineMode
             panel13.Name = "panel13";
             panel13.Size = new Size(584, 177);
             panel13.TabIndex = 16;
-            panel13.Paint += panel13_Paint;
             // 
             // panel3
             // 
@@ -207,7 +206,7 @@ namespace KASIR.OfflineMode
             btnRefund.Text = "Refund";
             btnRefund.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnRefund.UseVisualStyleBackColor = false;
-            btnRefund.Click += button2_Click;
+            btnRefund.Click += Refundbutton_Click;
             // 
             // button1
             // 

@@ -10,8 +10,6 @@ namespace KASIR.OfflineMode
     {
         private readonly string baseOutlet;
         private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
-
-        private readonly string BaseOutletName;
         string cartId;
         GetTransactionDetail dataTransaction;
         private List<CartDetailTransaction> item = new List<CartDetailTransaction>();

@@ -2172,11 +2172,13 @@ namespace KASIR.komponen
         }
         private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
         {
-            // Add separator row to DataTable
-            dataTable.Rows.Add(null, null, null, groupKey + "s\n", null, null);
-
-            // Don't immediately try to style the row here
-            // Instead, style all rows after the DataGridView has been fully populated
+            // Tambahkan baris separator ke DataTable
+            dataTable.Rows.Add(null, null, null, $"{groupKey}s", null, null);
+            // Cek apakah kita sudah memiliki data, jika ya tambahkan ke DataGridView
+            if (dataTable.Rows.Count > 0)
+            {
+                dataGridView.DataSource = dataTable;
+            }
         }
 
         // Then, after all data is loaded and the DataGridView's DataSource is set:

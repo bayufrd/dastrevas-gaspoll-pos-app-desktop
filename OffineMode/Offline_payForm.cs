@@ -26,10 +26,9 @@ namespace KASIR.OfflineMode
 
         public bool ReloadDataInBaseForm { get; private set; }
         private DataTable originalDataTable, listDataTable;
-        int items = 0;
         int customePrice = 0;
         int SelectedId, totalTransactions;
-        string namaMember, emailMember, hpMember, transactionId;
+        string namaMember, hpMember, transactionId;
 
         public Offline_payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat, string name, Offline_masterPos masterPosForm)
         {
@@ -884,7 +883,7 @@ namespace KASIR.OfflineMode
                 panel14.Visible = true;
                 btnDataMember.Visible = true;
                 lblPoint.Visible = true;
-
+                txtNama.Enabled = false;
             }
             else
             {
@@ -893,6 +892,7 @@ namespace KASIR.OfflineMode
                 panel14.Visible = false;
                 btnDataMember.Visible = false;
                 lblPoint.Visible = false;
+                txtNama.Enabled = true;
             }
         }
 
@@ -912,18 +912,13 @@ namespace KASIR.OfflineMode
                     ShowInTaskbar = false,
                 };
 
-                using (dataMember listMember = new dataMember())
+                using (Offline_MemberData listMember = new Offline_MemberData())
                 {
                     listMember.Owner = background;
 
                     background.Show();
 
-                    //DialogResult dialogResult = dataBill.ShowDialog();
-
-                    //background.Dispose();
                     DialogResult result = listMember.ShowDialog();
-
-                    // Handle the result if needed
                     if (result == DialogResult.OK)
                     {
                         SelectedId = listMember.SelectedId;
@@ -931,12 +926,11 @@ namespace KASIR.OfflineMode
                         lblEmailMember.Text = listMember.emailMember;
                         lblHPMember.Text = listMember.hpMember;
                         txtNama.Text = listMember.namaMember;
+                        txtNama.Enabled = false;
                         background.Dispose();
-                        // Settings were successfully updated, perform any necessary actions
                     }
                     else
                     {
-                        //MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
                         background.Dispose();
                     }
                 }

@@ -17,6 +17,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="OffineMode\Offline_MemberCustom.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="OffineMode\Offline_MemberData.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="OffineMode\Offline_notifikasiPengeluaran.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -75,15 +81,6 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="Komponen\SettingsDual.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Komponen\dataMember.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Komponen\editMember.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Komponen\addMember.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="Komponen\shiftReport.cs">

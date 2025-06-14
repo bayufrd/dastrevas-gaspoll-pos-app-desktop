@@ -8,7 +8,6 @@ using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
 using KASIR.Model;
-using Serilog.Core;
 
 namespace KASIR.Printer
 {
@@ -138,19 +137,17 @@ namespace KASIR.Printer
                                     availablePrinters.Add(new PrinterItem(printerName, printerId));
                                 }
                             }
-                            catch (Exception)
+                            catch (Exception ex)
                             {
-                                // Log individual printer query errors
-                                //MessageBox.Show($"Error processing printer: {innerEx.Message}");
+                                LoggerUtil.LogError(ex, "An error occurred: " + ex.Message);
                             }
                         }
                     }
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Log general errors
-                //MessageBox.Show($"Error retrieving printers: {ex.Message}");
+                LoggerUtil.LogError(ex, "An error occurred: " + ex.Message);
             }
 
             return availablePrinters;
@@ -272,7 +269,7 @@ namespace KASIR.Printer
                         BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                            //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                             
                             continue;
                         }
 
@@ -283,7 +280,7 @@ namespace KASIR.Printer
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                //MessageBox.Show("Pairing failed to " + printerName, "Error");
+                                 
                                 continue;
                             }
                             clientSocket.Connect(endpoint);
@@ -330,7 +327,7 @@ namespace KASIR.Printer
                         BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                            //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                             
                             continue;
                         }
 
@@ -341,7 +338,7 @@ namespace KASIR.Printer
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                //MessageBox.Show("Pairing failed to " + printerName, "Error");
+                                 
                                 continue;
                             }
                             clientSocket.Connect(endpoint);
@@ -388,7 +385,7 @@ namespace KASIR.Printer
                         BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                            //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                             
                             continue;
                         }
 
@@ -399,7 +396,6 @@ namespace KASIR.Printer
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                //MessageBox.Show("Pairing failed to " + printerName, "Error");
                                 continue;
                             }
                             clientSocket.Connect(endpoint);
@@ -446,7 +442,7 @@ namespace KASIR.Printer
                         BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                            //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                             
                             continue;
                         }
 
@@ -457,7 +453,7 @@ namespace KASIR.Printer
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                //MessageBox.Show("Pairing failed to " + printerName, "Error");
+                                 
                                 continue;
                             }
                             clientSocket.Connect(endpoint);
@@ -551,7 +547,7 @@ namespace KASIR.Printer
                 BluetoothDeviceInfo printer = new BluetoothDeviceInfo(BluetoothAddress.Parse(bluetoothAddress));
                 if (printer == null)
                 {
-                    //MessageBox.Show("Printer" + bluetoothAddress + " not found", "Gaspol");
+                    
                     return;
                 }
 
@@ -562,7 +558,7 @@ namespace KASIR.Printer
 
                     if (!BluetoothSecurity.PairRequest(printer.DeviceAddress, "0000"))
                     {
-                        //MessageBox.Show("Pairing failed to " + bluetoothAddress, "Gaspol");
+                        
                         return;
                     }
 
@@ -618,7 +614,7 @@ namespace KASIR.Printer
                         BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                            //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                             
                             continue;
                         }
 
@@ -629,7 +625,7 @@ namespace KASIR.Printer
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                //MessageBox.Show("Pairing failed to " + printerName, "Error");
+                                 
                                 continue;
                             }
                             clientSocket.Connect(endpoint);
@@ -674,7 +670,7 @@ namespace KASIR.Printer
                         BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                            //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                             
                             continue;
                         }
 
@@ -685,7 +681,7 @@ namespace KASIR.Printer
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                //MessageBox.Show("Pairing failed to " + printerName, "Error");
+                                 
                                 continue;
                             }
                             clientSocket.Connect(endpoint);
@@ -730,7 +726,7 @@ namespace KASIR.Printer
                         BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                            //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                             
                             continue;
                         }
 
@@ -741,7 +737,7 @@ namespace KASIR.Printer
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                //MessageBox.Show("Pairing failed to " + printerName, "Error");
+                                 
                                 continue;
                             }
                             clientSocket.Connect(endpoint);
@@ -786,7 +782,7 @@ namespace KASIR.Printer
                         BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
                         {
-                            //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                             
                             continue;
                         }
 
@@ -797,7 +793,7 @@ namespace KASIR.Printer
                         {
                             if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                             {
-                                //MessageBox.Show("Pairing failed to " + printerName, "Error");
+                                 
                                 continue;
                             }
                             clientSocket.Connect(endpoint);
@@ -1067,7 +1063,7 @@ namespace KASIR.Printer
                                     BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                                     if (printerDevice == null)
                                     {
-                                        //MessageBox.Show("Printer " + printerName + " not found", "Error");
+                                         
                                         return false;
                                     }
 
@@ -1076,7 +1072,7 @@ namespace KASIR.Printer
 
                                     if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                                     {
-                                        //MessageBox.Show("Pairing failed to " + printerName, "Error");
+                                         
                                         return false;
                                     }
 
@@ -1758,7 +1754,6 @@ namespace KASIR.Printer
                                 BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                                 if (printerDevice == null)
                                 {
-                                    //MessageBox.Show("Printer " + printerName + " not found", "Error");
                                     continue;
                                 }
 
@@ -1767,7 +1762,6 @@ namespace KASIR.Printer
 
                                 if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                                 {
-                                    //MessageBox.Show("Pairing failed to " + printerName, "Error");
                                     continue;
                                 }
 
@@ -2330,28 +2324,47 @@ namespace KASIR.Printer
                     printerId, printerName);
                         continue;
                     }
-                    // Tambahkan metode TryBluetoothConnection untuk mencoba koneksi
-                    var connectionResult = await TryBluetoothConnection(printerName);
+                    if (ShouldPrint(printerId, "Kasir"))
+                    {
+                        System.IO.Stream stream = Stream.Null;
 
-                    if (!connectionResult.IsSuccess)
-                    {
-                        LoggerUtil.LogWarning($"Bluetooth connection failed for printer: {printerName}. Reason: {connectionResult.ErrorMessage}");
-                        continue;
-                    }
-                    // Gunakan stream dari connectionResult
-                    System.IO.Stream stream = connectionResult.Stream;
-                    try
-                    {
-                        if (ShouldPrint(printerId, "Kasir"))
+                        try
                         {
+                            if (System.Net.IPAddress.TryParse(printerName, out _))
+                            {
+                                // Connect via LAN
+                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                stream = client.GetStream();
+                            }
+                            else
+                            {
+                                // Connect via Bluetooth
+                                BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                if (printerDevice == null)
+                                {
+                                    continue;
+                                }
+
+                                BluetoothClient client = new BluetoothClient();
+                                BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                {
+                                    continue;
+                                }
+
+                                client.Connect(endpoint);
+                                stream = client.GetStream();
+                            }
+
                             PrintRefundReceipt(stream, datas, refundDetailStruks, totalTransactions);
                         }
-                    }
-                    finally
-                    {
-                        if (stream != null)
+                        finally
                         {
-                            stream.Close();
+                            if (stream != null)
+                            {
+                                stream.Close();
+                            }
                         }
                     }
                 }
@@ -2368,6 +2381,14 @@ namespace KASIR.Printer
             string kodeHeksadesimalBold = "\x1B\x45\x01";
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+            byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
+            byte[] NewLine = new byte[] { 0x0A }; // New line
+
+            // Write initialization bytes
+            stream.Write(InitPrinter, 0, InitPrinter.Length);
+
+            // Print logo (assuming logo is already in a proper format for the printer)
 
             // Print the rest of the receipt
             //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
@@ -2437,6 +2458,7 @@ namespace KASIR.Printer
             PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
             stream.Write(buffer, 0, buffer.Length);
             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
+            stream.Write(NewLine, 0, NewLine.Length);
 
             stream.Flush();
         }
@@ -2778,34 +2800,53 @@ namespace KASIR.Printer
                     {
 
                         Ex_PrintModelInputPin(datas, cartDetails, cartRefundDetails, canceledItems, totalTransactions,
-                            printerId, printerName
-                        );
+                    printerId, printerName
+                );
                         continue;
                     }
-
-                    // Tambahkan metode TryBluetoothConnection untuk mencoba koneksi
-                    var connectionResult = await TryBluetoothConnection(printerName);
-
-                    if (!connectionResult.IsSuccess)
+                    if (ShouldPrint(printerId, "Kasir"))
                     {
-                        LoggerUtil.LogWarning($"Bluetooth connection failed for printer: {printerName}. Reason: {connectionResult.ErrorMessage}");
-                        continue;
-                    }
-                    // Gunakan stream dari connectionResult
-                    System.IO.Stream stream = connectionResult.Stream;
+                        System.IO.Stream stream = Stream.Null;
 
-                    try
-                    {
-                        if (ShouldPrint(printerId, "Kasir"))
+                        try
                         {
+                            if (System.Net.IPAddress.TryParse(printerName, out _))
+                            {
+
+                                // Connect via LAN
+                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                stream = client.GetStream();
+                            }
+                            else
+                            {
+
+                                // Connect via Bluetooth
+                                BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                if (printerDevice == null)
+                                {
+                                    continue;
+                                }
+
+                                BluetoothClient client = new BluetoothClient();
+                                BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                {
+                                    continue;
+                                }
+
+                                client.Connect(endpoint);
+                                stream = client.GetStream();
+                            }
+
                             PrintInputPinReceipt(stream, datas, cartDetails, cartRefundDetails, canceledItems, totalTransactions);
                         }
-                    }
-                    finally
-                    {
-                        if (stream != null)
+                        finally
                         {
-                            stream.Close();
+                            if (stream != null)
+                            {
+                                stream.Close();
+                            }
                         }
                     }
                 }
@@ -2825,6 +2866,17 @@ namespace KASIR.Printer
             string kodeHeksadesimalBold = "\x1B\x45\x01";
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+            byte[] InitPrinter = new byte[] { 0x1B, 0x40 }; // Initialize printer
+            byte[] NewLine = new byte[] { 0x0A }; // New line
+            /*
+                        // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
+                        byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
+                        stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
+            */
+            // Write initialization bytes
+            stream.Write(InitPrinter, 0, InitPrinter.Length);
+
             // Print logo (assuming logo is already in a proper format for the printer)
 
             // Print the rest of the receipt
@@ -2982,11 +3034,16 @@ namespace KASIR.Printer
             strukText = "\n\n\n\n\n";
             buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
             stream.Write(buffer, 0, buffer.Length);
+            stream.Write(NewLine, 0, NewLine.Length);
 
             stream.Flush();
         }
         private void PrintLogo(System.IO.Stream stream, string logoPath, int targetWidthPx)
         {
+            if (!File.Exists(logoPath))
+            {
+                return;
+            }
             Image logo = Image.FromFile(logoPath);
             Bitmap bmp = new Bitmap(logo);
 
@@ -3507,7 +3564,6 @@ namespace KASIR.Printer
                                     BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                                     if (printerDevice == null)
                                     {
-                                        //MessageBox.Show("Printer " + printerName + " not found", "Error");
                                         return false;
                                     }
 
@@ -3516,7 +3572,6 @@ namespace KASIR.Printer
 
                                     if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
                                     {
-                                        ////MessageBox.Show("Pairing failed to " + printerName, "Error");
                                         return false;
                                     }
 
@@ -3976,51 +4031,179 @@ namespace KASIR.Printer
                     {
                         continue;
                     }
-                    var connectionResult = await TryBluetoothConnection(printerName);
-                    if (!connectionResult.IsSuccess)
-                    {
-                        LoggerUtil.LogWarning($"Bluetooth connection failed for printer: {printerName}. Reason: {connectionResult.ErrorMessage}");
-                        continue;
-                    }
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
                         Ex_PrinterModelSimpan(datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails, BarCancelItems, totalTransactions,
-                        printerId, printerName
-                        );
+                    printerId, printerName
+                );
                         continue;
                     }
-
-                    // Gunakan stream dari connectionResult
-                    System.IO.Stream stream = connectionResult.Stream;
-                    try
+                    if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
                     {
-                        if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
+                        if (ShouldPrint(printerId, "Makanan"))
                         {
-                            if (ShouldPrint(printerId, "Makanan"))
+                            System.IO.Stream stream = Stream.Null;
+
+                            try
                             {
+                                if (System.Net.IPAddress.TryParse(printerName, out _))
+                                {
+                                    // Connect via LAN
+                                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                    stream = client.GetStream();
+                                }
+                                else
+                                {
+                                    // Connect via Bluetooth dengan retry policy
+                                    if (!await RetryPolicyAsync(async () =>
+                                    {
+                                        // Connect via Bluetooth
+                                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                        if (printerDevice == null)
+                                        {
+                                            return false;
+                                        }
+
+                                        BluetoothClient client = new BluetoothClient();
+                                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                        {
+                                            return false;
+                                        }
+
+                                        client.Connect(endpoint);
+                                        stream = client.GetStream();
+
+                                        return true;
+                                    }, maxRetries: 3))
+                                    {
+                                        continue;
+                                    }
+                                }
+
                                 PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails, BarCancelItems, totalTransactions, "Makanan");
                             }
-                        }
-                        if (BarCartDetails.Any() || BarCancelItems.Any())
-                        {
-                            if (ShouldPrint(printerId, "Minuman"))
+                            finally
                             {
-                                PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails, BarCancelItems, totalTransactions, "Minuman");
-                            }
-                        }
-                        if (KitchenCartDetails.Any() || KitchenCancelItems.Any() || BarCartDetails.Any() || BarCancelItems.Any())
-                        {
-                            if (ShouldPrint(printerId, "Checker"))
-                            {
-                                PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails, BarCancelItems, totalTransactions, "Checker");
+                                if (stream != null)
+                                {
+                                    stream.Close();
+                                }
                             }
                         }
                     }
-                    finally
+
+                    if (BarCartDetails.Any() || BarCancelItems.Any())
                     {
-                        if (stream != null)
+                        if (ShouldPrint(printerId, "Minuman"))
                         {
-                            stream.Close();
+                            System.IO.Stream stream = Stream.Null;
+
+                            try
+                            {
+                                if (System.Net.IPAddress.TryParse(printerName, out _))
+                                {
+                                    // Connect via LAN
+                                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                    stream = client.GetStream();
+                                }
+                                else
+                                {
+                                    // Connect via Bluetooth dengan retry policy
+                                    if (!await RetryPolicyAsync(async () =>
+                                    {
+                                        // Connect via Bluetooth
+                                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                        if (printerDevice == null)
+                                        {
+                                            return false;
+                                        }
+
+                                        BluetoothClient client = new BluetoothClient();
+                                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                        {
+                                            return false;
+                                        }
+
+                                        client.Connect(endpoint);
+                                        stream = client.GetStream();
+
+                                        return true;
+                                    }, maxRetries: 3))
+                                    {
+                                        continue;
+                                    }
+                                }
+
+                                PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails, BarCancelItems, totalTransactions, "Minuman");
+                            }
+                            finally
+                            {
+                                if (stream != null)
+                                {
+                                    stream.Close();
+                                }
+                            }
+                        }
+                    }
+                    if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
+                    {
+                        if (ShouldPrint(printerId, "Checker"))
+                        {
+                            System.IO.Stream stream = Stream.Null;
+
+                            try
+                            {
+                                if (System.Net.IPAddress.TryParse(printerName, out _))
+                                {
+                                    // Connect via LAN
+                                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                    stream = client.GetStream();
+                                }
+                                else
+                                {
+                                    // Connect via Bluetooth dengan retry policy
+                                    if (!await RetryPolicyAsync(async () =>
+                                    {
+                                        // Connect via Bluetooth
+                                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                        if (printerDevice == null)
+                                        {
+                                             
+                                            return false;
+                                        }
+
+                                        BluetoothClient client = new BluetoothClient();
+                                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                        {
+                                             
+                                            return false;
+                                        }
+
+                                        client.Connect(endpoint);
+                                        stream = client.GetStream();
+
+                                        return true;
+                                    }, maxRetries: 3))
+                                    {
+                                        continue;
+                                    }
+                                }
+
+                                PrintSimpanReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails, BarCancelItems, totalTransactions, "Checker");
+                            }
+                            finally
+                            {
+                                if (stream != null)
+                                {
+                                    stream.Close();
+                                }
+                            }
                         }
                     }
                 }
@@ -4756,170 +4939,8 @@ namespace KASIR.Printer
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        private async Task<ConnectionResult> TryBluetoothConnection(string printerName)
-        {
-            try
-            {
-                System.IO.Stream stream = null;
-                if (System.Net.IPAddress.TryParse(printerName, out _))
-                {
-                    // Koneksi via LAN dengan retry policy
-                    bool lanConnectionSuccess = await RetryPolicyAsync(async () =>
-                    {
-                        try
-                        {
-                            var client = new System.Net.Sockets.TcpClient(printerName, 9100);
-                            stream = client.GetStream();
-                            return true;
-                        }
-                        catch (Exception)
-                        {
-                            stream = null;
-                            return false;
-                        }
-                    }, maxRetries: 3);
-
-                    if (!lanConnectionSuccess)
-                    {
-                        return new ConnectionResult
-                        {
-                            IsSuccess = false,
-                            ErrorMessage = $"LAN connection failed for printer: {printerName}"
-                        };
-                    }
-                }
-                else
-                {
-                    // Koneksi via Bluetooth dengan strategi bertingkat
-                    ConnectionResult bluetoothResult = await TryBluetoothConnectionWithFallback(printerName);
-
-                    if (!bluetoothResult.IsSuccess)
-                    {
-                        return bluetoothResult;
-                    }
-
-                    stream = bluetoothResult.Stream;
-                }
-
-                return new ConnectionResult
-                {
-                    IsSuccess = true,
-                    Stream = stream
-                };
-            }
-            catch (Exception ex)
-            {
-                return new ConnectionResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = ex.Message
-                };
-            }
-        }
-
-        private async Task<ConnectionResult> TryBluetoothConnectionWithFallback(string printerName)
-        {
-            // Strategi pertama: Koneksi standar dengan 3x retry
-            bool standardConnectionSuccess = await RetryPolicyAsync(async () =>
-            {
-                try
-                {
-                    BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                    if (printerDevice == null)
-                    {
-                        return false;
-                    }
-
-                    BluetoothClient client = new BluetoothClient();
-                    BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                    {
-                        return false;
-                    }
-
-                    client.Connect(endpoint);
-                    return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }, maxRetries: 3);
-
-            // Jika koneksi standar gagal, gunakan strategi alternatif
-            if (!standardConnectionSuccess)
-            {
-                return await TryAlternativeBluetoothConnection(printerName);
-            }
-
-            // Jika berhasil, kembalikan hasil koneksi
-            return new ConnectionResult
-            {
-                IsSuccess = true
-            };
-        }
-
-        private async Task<ConnectionResult> TryAlternativeBluetoothConnection(string printerName)
-        {
-            try
-            {
-                // Strategi alternatif 1: Hapus dan pasang ulang perangkat
-                BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-
-                // Hapus perangkat sebelumnya
-                BluetoothSecurity.RemoveDevice(printerDevice.DeviceAddress);
-
-                // Coba pasangkan ulang dengan metode berbeda
-                bool pairingResult = BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "");
-                if (!pairingResult)
-                {
-                    pairingResult = BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, null);
-                }
-
-                if (!pairingResult)
-                {
-                    return new ConnectionResult
-                    {
-                        IsSuccess = false,
-                        ErrorMessage = $"Alternative Bluetooth pairing failed for printer: {printerName}"
-                    };
-                }
-
-                // Strategi alternatif 2: Coba koneksi dengan pengaturan berbeda
-                BluetoothClient client = new BluetoothClient();
-                BluetoothEndPoint endpoint = new BluetoothEndPoint(
-                    printerDevice.DeviceAddress,
-                    BluetoothService.SerialPort
-                );
-
-                client.Connect(endpoint);
-
-                return new ConnectionResult
-                {
-                    IsSuccess = true,
-                    Stream = client.GetStream()
-                };
-            }
-            catch (Exception ex)
-            {
-                return new ConnectionResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = $"Alternative Bluetooth connection failed: {ex.Message}"
-                };
-            }
-        }
-
-        // Kelas untuk hasil koneksi
-        private class ConnectionResult
-        {
-            public bool IsSuccess { get; set; }
-            public System.IO.Stream Stream { get; set; }
-            public string ErrorMessage { get; set; }
-        }
-
         // Struct Payform
+
         public async Task PrintModelPayform(
     GetStrukCustomerTransaction datas,
     List<CartDetailStrukCustomerTransaction> cartDetails,
@@ -4948,86 +4969,269 @@ namespace KASIR.Printer
                     {
                         continue;
                     }
-
-                    // Tambahkan metode TryBluetoothConnection untuk mencoba koneksi
-                    var connectionResult = await TryBluetoothConnection(printerName);
-                    if (!connectionResult.IsSuccess)
-                    {
-                        LoggerUtil.LogWarning($"Bluetooth connection failed for printer: {printerName}. Reason: {connectionResult.ErrorMessage}");
-                        continue;
-                    }
-
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
                         await Ex_PrintModelPayform(
-                            datas, cartDetails, KitchenCartDetails, BarCartDetails,
-                            KitchenCancelItems, BarCancelItems, totalTransactions, Kakimu,
-                            printerId, printerName
-                        );
+                    datas, cartDetails, KitchenCartDetails, BarCartDetails,
+                    KitchenCancelItems, BarCancelItems, totalTransactions, Kakimu,
+                    printerId, printerName
+                );
                         continue;
                     }
-
-                    // Gunakan stream dari connectionResult
-                    System.IO.Stream stream = connectionResult.Stream;
-
-                    try
+                    // Struct Customer ====
+                    if (ShouldPrint(printerId, "Kasir"))
                     {
-                        // Struct Customer ====
-                        if (ShouldPrint(printerId, "Kasir"))
+                        System.IO.Stream stream = Stream.Null;
+
+                        try
                         {
+                            if (System.Net.IPAddress.TryParse(printerName, out _))
+                            {
+                                // Connect via LAN
+                                var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                stream = client.GetStream();
+                            }
+                            else
+                            {
+                                // Connect via Bluetooth dengan retry policy
+                                if (!await RetryPolicyAsync(async () =>
+                                {
+                                    // Connect via Bluetooth
+                                    BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                    if (printerDevice == null)
+                                    {
+                                         
+                                        return false;
+                                    }
+
+                                    BluetoothClient client = new BluetoothClient();
+                                    BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                    {
+                                         
+                                        return false;
+                                    }
+
+                                    client.Connect(endpoint);
+                                    stream = client.GetStream();
+
+                                    return true;
+                                }, maxRetries: 3))
+                                {
+                                    continue;
+                                }
+                            }
+
                             // Setelah koneksi berhasil, cetak struk
                             PrintCustomerReceipt(stream, datas, cartDetails, totalTransactions, Kakimu);
-                        }
 
-                        // Struct Checker
-                        if (ShouldPrint(printerId, "Checker"))
+                        }
+                        finally
+                        {
+                            if (stream != null)
+                            {
+                                stream.Close();
+                            }
+                        }
+                    }
+
+                    // Struct Checker
+                    if (ShouldPrint(printerId, "Checker"))
+                    {
+                        System.IO.Stream stream = null;
+
+                        try
                         {
                             // Filter checker cart details yang is_ordered == 1
                             var orderedCheckerItems = cartDetails.Where(x => x.is_ordered != 1).ToList();
 
                             if (orderedCheckerItems.Any())
                             {
+                                if (System.Net.IPAddress.TryParse(printerName, out _))
+                                {
+                                    // Connect via LAN
+                                    var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                    stream = client.GetStream();
+                                }
+                                else
+                                {
+                                    // Connect via Bluetooth dengan retry policy
+                                    if (!await RetryPolicyAsync(async () =>
+                                    {
+                                        // Connect via Bluetooth
+                                        BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                        if (printerDevice == null)
+                                        {
+                                             
+                                            return false;
+                                        }
+
+                                        BluetoothClient client = new BluetoothClient();
+                                        BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                        {
+                                             
+                                            return false;
+                                        }
+
+                                        client.Connect(endpoint);
+                                        stream = client.GetStream();
+
+                                        return true;
+                                    }, maxRetries: 3))
+                                    {
+                                        continue;
+                                    }
+                                }
+
                                 // Setelah koneksi berhasil, cetak struk
                                 PrintCheckerReceipt(stream, datas, cartDetails, totalTransactions);
+
                             }
                         }
-
-                        // Struct Kitchen
-                        if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
+                        finally
                         {
-                            if (ShouldPrint(printerId, "Makanan"))
+                            if (stream != null)
+                            {
+                                stream.Close();
+                            }
+                        }
+                    }
+
+                    // Struct Kitchen
+                    if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
+                    {
+                        if (ShouldPrint(printerId, "Makanan"))
+                        {
+                            System.IO.Stream stream = Stream.Null;
+
+                            try
                             {
                                 // Filter kitchen cart details yang is_ordered == 1
                                 var orderedKitchenItems = KitchenCartDetails.Where(x => x.is_ordered != 1).ToList();
 
                                 if (orderedKitchenItems.Any())
                                 {
+                                    if (System.Net.IPAddress.TryParse(printerName, out _))
+                                    {
+                                        // Connect via LAN
+                                        var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                        stream = client.GetStream();
+                                    }
+                                    else
+                                    {
+                                        // Connect via Bluetooth dengan retry policy
+                                        if (!await RetryPolicyAsync(async () =>
+                                        {
+                                            // Connect via Bluetooth
+                                            BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                            if (printerDevice == null)
+                                            {
+                                                 
+                                                return false;
+                                            }
+
+                                            BluetoothClient client = new BluetoothClient();
+                                            BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                            {
+                                                 
+                                                return false;
+                                            }
+
+                                            client.Connect(endpoint);
+                                            stream = client.GetStream();
+
+                                            return true;
+                                        }, maxRetries: 3))
+                                        {
+                                            continue;
+                                        }
+                                    }
+
                                     // Setelah koneksi berhasil, cetak struk
                                     PrintKitchenOrBarReceipt(stream, datas, KitchenCartDetails, KitchenCancelItems, totalTransactions, "Makanan");
+
+                                }
+                            }
+                            finally
+                            {
+                                if (stream != null)
+                                {
+                                    stream.Close();
                                 }
                             }
                         }
+                    }
 
-                        // Struct Bar
-                        if (BarCartDetails.Any() || BarCancelItems.Any())
+                    // Struct Bar
+                    if (BarCartDetails.Any() || BarCancelItems.Any())
+                    {
+                        if (ShouldPrint(printerId, "Minuman"))
                         {
-                            if (ShouldPrint(printerId, "Minuman"))
+                            System.IO.Stream stream = Stream.Null;
+
+                            try
                             {
                                 // Filter bar cart details yang is_ordered == 1
                                 var orderedBarItems = BarCartDetails.Where(x => x.is_ordered != 1).ToList();
 
                                 if (orderedBarItems.Any())
                                 {
+                                    if (System.Net.IPAddress.TryParse(printerName, out _))
+                                    {
+                                        // Connect via LAN
+                                        var client = new System.Net.Sockets.TcpClient(printerName, 9100);
+                                        stream = client.GetStream();
+                                    }
+                                    else
+                                    {
+                                        // Connect via Bluetooth dengan retry policy
+                                        if (!await RetryPolicyAsync(async () =>
+                                        {
+                                            // Connect via Bluetooth
+                                            BluetoothDeviceInfo printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+                                            if (printerDevice == null)
+                                            {
+                                                 
+                                                return false;
+                                            }
+
+                                            BluetoothClient client = new BluetoothClient();
+                                            BluetoothEndPoint endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+                                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                            {
+                                                 
+                                                return false;
+                                            }
+
+                                            client.Connect(endpoint);
+                                            stream = client.GetStream();
+
+                                            return true;
+                                        }, maxRetries: 3))
+                                        {
+                                            continue;
+                                        }
+                                    }
+
                                     // Setelah koneksi berhasil, cetak struk
                                     PrintKitchenOrBarReceipt(stream, datas, BarCartDetails, BarCancelItems, totalTransactions, "Minuman");
+
+                                }
+                            }
+                            finally
+                            {
+                                if (stream != null)
+                                {
+                                    stream.Close();
                                 }
                             }
                         }
-                    }
-                    finally
-                    {
-                        // Tutup stream setelah semua pencetakan selesai
-                        stream?.Close();
                     }
                 }
             }
@@ -5113,17 +5317,20 @@ namespace KASIR.Printer
             byte[] buffer1 = System.Text.Encoding.UTF8.GetBytes(NomorUrut);
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
+            // Menulis ke stream
             stream.Write(buffer1, 0, buffer1.Length);
             PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
             stream.Write(buffer, 0, buffer.Length);
             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
-            //strukText = "\n\n\n\n\n";
-            strukText = "--------------------------------";
 
+            // Menambahkan QR code
+            strukText = "--------------------------------\n\n\n"; // Menambahkan newline untuk jarak sebelum QR code
+            PrintLogo(stream, "icon\\QRcode.bmp", logoSize);
+
+            // Menambahkan buffer yang diperlukan
             buffer = System.Text.Encoding.UTF8.GetBytes(strukText);
 
             stream.Write(buffer, 0, buffer.Length);
-
             stream.Flush();
         }
 
@@ -6136,15 +6343,7 @@ namespace KASIR.Printer
 
             // Log details error
             Util util = new Util();
-            // More detailed error message
-            string errorDetails = lastException != null
-                ? $"Error Type: {lastException.GetType().Name}, Message: {lastException.Message}"
-                : "Tidak diketahui penyebab kegagalan bluetooth";
-
-            //MessageBox.Show($"Semua {maxRetries}x percobaan gagal. Error terakhir: {errorDetails}", "Bluetooth Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            LoggerUtil.LogWarning($"Semua {maxRetries}x percobaan gagal. Error terakhir: {errorDetails}");
-
-            util.sendLogTelegramNetworkError($"Semua {maxRetries}x percobaan gagal. Error terakhir: {errorDetails}");
+            util.sendLogTelegramNetworkError($"All {maxRetries} attempts failed. Last error: {lastException?.ToString()}");
             return false;
         }
 

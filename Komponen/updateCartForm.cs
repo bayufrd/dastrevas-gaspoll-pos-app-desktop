@@ -10,7 +10,6 @@ namespace KASIR.Komponen
         private List<Button> radioButtonsList = new List<Button>();
         string idmenu;
         private DataMenuDetail datas;
-        private Label dynamicLabel;
         public string btnServingType;
         public string cartdetail;
         private readonly string baseOutlet;

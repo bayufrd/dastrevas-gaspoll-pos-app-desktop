@@ -131,6 +131,10 @@ namespace KASIR.Komponen
             pictureBox.SizeMode = PictureBoxSizeMode.StretchImage; // Atur ukuran gambar agar sesuai dengan PictureBox
             try
             {
+                if (!File.Exists("icon\\OutletLogo.bmp"))
+                {
+                    return;
+                }
                 using (FileStream fs = new FileStream("icon\\OutletLogo.bmp", FileMode.Open, FileAccess.Read))
                 {
                     pictureBox.Image = Image.FromStream(fs);

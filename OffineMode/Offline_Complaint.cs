@@ -12,7 +12,6 @@ namespace KASIR.OffineMode
         public bool ReloadDataInBaseForm { get; private set; }
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
-        GetTransactionDetail dataTransaction;
         private readonly ILogger _log = LoggerService.Instance._log;
         public Offline_Complaint()
         {

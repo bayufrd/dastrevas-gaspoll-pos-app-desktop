@@ -446,7 +446,6 @@ namespace KASIR.OfflineMode
             // sButton1
             // 
             sButton1.AutoSize = true;
-            sButton1.Enabled = false;
             sButton1.Location = new Point(8, 3);
             sButton1.MinimumSize = new Size(45, 22);
             sButton1.Name = "sButton1";
@@ -466,9 +465,9 @@ namespace KASIR.OfflineMode
             label7.ForeColor = Color.Black;
             label7.Location = new Point(60, 8);
             label7.Name = "label7";
-            label7.Size = new Size(171, 15);
+            label7.Size = new Size(114, 15);
             label7.TabIndex = 4;
-            label7.Text = "MEMBERSHIP AREA (Disabled)";
+            label7.Text = "MEMBERSHIP AREA";
             // 
             // panel2
             // 

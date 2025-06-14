@@ -37,6 +37,7 @@ namespace KASIR.OffineMode
         private async Task LoadShiftDataButtons()
         {
             string directoryPath = @"DT-Cache\Transaction\ShiftDataTransaction";
+            string shiftDataPath = @"DT-Cache\Transaction\ShiftData.data"; // Path for ShiftData.data file
 
             // Clear the existing controls in the panel
             panelHistory.Controls.Clear();
@@ -106,9 +107,43 @@ namespace KASIR.OffineMode
             }
             else
             {
-                MessageBox.Show("The specified directory does not exist.");
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            // Now, let's read the ShiftData.data file and add a button for it
+            if (File.Exists(shiftDataPath))
+            {
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(shiftDataPath);
+
+                // Create a button for the ShiftData.data file
+                Button shiftDataButton = new Button
+                {
+                    Text = "ShiftData (Latest)", // A generic name for the button
+                    Width = totalWidth * 98 / 100,
+                    ForeColor = Color.Black,
+                    Height = 40,
+                    FlatStyle = FlatStyle.Flat,
+                    TextAlign = ContentAlignment.MiddleLeft
+                };
+
+                shiftDataButton.Click += async (sender, e) =>
+                {
+                    // Deserialize the ShiftData.data file
+                    var shiftDataList = await ReadShiftDataFromFile(shiftDataPath);
+
+                    // Bind the shift data to the DataGridView
+                    BindShiftDataToDataGridView(shiftDataList);
+                };
+
+                // Add the button for ShiftData.data to the FlowLayoutPanel
+                flowPanel.Controls.Add(shiftDataButton);
+            }
+            else
+            {
+                MessageBox.Show("The ShiftData.data file does not exist.");
             }
         }
+
 
         private async Task<List<ShiftData>> ReadShiftDataFromFile(string filePath)
         {

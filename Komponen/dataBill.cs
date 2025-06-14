@@ -23,7 +23,6 @@ namespace KASIR.Komponen
         private readonly string BaseOutletName;
 
         private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
-        private List<ListBill> Model;
         int nomor = 0;
 
         public bool ReloadDataInBaseForm { get; private set; }
@@ -256,7 +255,6 @@ namespace KASIR.Komponen
                     {
                         printerModel.PrintModelDataBill(datas, cartDetails, canceledItems, AntrianSaveBill);
                     });
-                    //await printerModel.PrintModelDataBill(datas, cartDetails, canceledItems, AntrianSaveBill);
                 }
                 else
                 {

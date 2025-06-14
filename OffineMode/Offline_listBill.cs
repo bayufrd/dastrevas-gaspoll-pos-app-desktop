@@ -3,15 +3,22 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using KASIR.Model;
 using KASIR.Printer;
+using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
 
 namespace KASIR.OffineMode
 {
     public partial class Offline_listBill : Form
     {
         private readonly string baseOutlet;
+
+        public Offline_listBill()
+        {
+            baseOutlet = Settings.Default.BaseOutlet;
+            InitializeComponent();
+            dataGridView1.CellFormatting += DataGridView1_CellFormatting;
+        }
 
         public List<CartDetail> cart_details { get; set; }
 
@@ -22,13 +29,7 @@ namespace KASIR.OffineMode
         public List<CanceledItem> canceled_items { get; set; }
 
         public bool ReloadDataInBaseForm { get; private set; }
-        public Offline_listBill()
-        {
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
-            InitializeComponent();
-            dataGridView1.CellFormatting += DataGridView1_CellFormatting;
 
-        }
         private void DataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex >= 0) // Memastikan kita hanya memformat sel data
@@ -43,6 +44,7 @@ namespace KASIR.OffineMode
                 }
             }
         }
+
         public async Task LoadData()
         {
             try
@@ -52,24 +54,25 @@ namespace KASIR.OffineMode
                 if (!File.Exists(transactionDataPath))
                 {
                     return;
-                    this.Close();
+                    Close();
                 }
+
                 string transactionJson = File.ReadAllText(transactionDataPath);
-                var transactionData = JsonConvert.DeserializeObject<JObject>(transactionJson);
+                JObject? transactionData = JsonConvert.DeserializeObject<JObject>(transactionJson);
 
                 // Ambil array data transaksi
-                var transactionDetails = transactionData["data"] as JArray;
+                JArray? transactionDetails = transactionData["data"] as JArray;
 
                 // Begin Counting Transaction Queue
                 int numberQueue = transactionDetails.Count + 1; // Start queue number
-                var reversedTransactionDetails = transactionDetails.Reverse().ToList();
+                List<JToken> reversedTransactionDetails = transactionDetails.Reverse().ToList();
                 /*
                                 IApiService apiService = new ApiService();
                                 string response = await apiService.GetListBill("/transaction?outlet_id=", baseOutlet);
 
                                 ListBillModel menuModel = JsonConvert.DeserializeObject<ListBillModel>(response);
                                 List<ListBill> menuList = menuModel.data.ToList();*/
-                DataTable dataTable = new DataTable();
+                DataTable dataTable = new();
                 dataTable.Columns.Add("ID", typeof(int));
                 dataTable.Columns.Add("Nama", typeof(string));
                 dataTable.Columns.Add("Seat", typeof(string));
@@ -79,21 +82,22 @@ namespace KASIR.OffineMode
 
                 string format = "dddd, dd MMMM yyyy - HH:mm";
                 // Loop through each transaction to fill the DataTable
-                foreach (var transaction in reversedTransactionDetails)
+                foreach (JToken transaction in reversedTransactionDetails)
                 {
                     numberQueue -= 1; // Decrease number for the next entry
 
                     // Parsing tanggal dari string API dan format ulang
                     DateTime updatedAt;
                     // Parsing tanggal menggunakan format yang sesuai
-                    if (DateTime.TryParseExact(transaction["updated_at"]?.ToString(), format, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out updatedAt))
+                    if (DateTime.TryParseExact(transaction["updated_at"]?.ToString(), format,
+                            CultureInfo.InvariantCulture, DateTimeStyles.None, out updatedAt))
                     {
                         // Format ulang menjadi lebih singkat, misalnya "19 Oct 2024, 10:38"
                         string formattedDate = updatedAt.ToString("dd MMM yyyy, HH:mm");
                         dataTable.Rows.Add(
                             transaction["transaction_id"]?.ToString(),
-                            numberQueue.ToString() + "." + transaction["customer_name"].ToString(),
-                            transaction["customer_seat"].ToString().ToString(),
+                            numberQueue + "." + transaction["customer_name"],
+                            transaction["customer_seat"].ToString(),
                             formattedDate);
                     }
                     else
@@ -101,19 +105,19 @@ namespace KASIR.OffineMode
                         // Jika parsing gagal, tampilkan seperti apa adanya
                         dataTable.Rows.Add(
                             transaction["transaction_id"]?.ToString(),
-                            numberQueue.ToString() + "." + transaction["customer_name"].ToString(),
-                            transaction["customer_seat"].ToString().ToString(),
-                            transaction["updated_at"].ToString().ToString());
+                            numberQueue + "." + transaction["customer_name"],
+                            transaction["customer_seat"].ToString(),
+                            transaction["updated_at"].ToString());
                     }
                 }
 
                 dataGridView1.DataSource = dataTable;
-                DataGridViewButtonColumn buttonColumn = new DataGridViewButtonColumn();
+                DataGridViewButtonColumn buttonColumn = new();
                 buttonColumn.HeaderText = "Pilih Bill";
                 buttonColumn.Text = "Pilih";
                 buttonColumn.FlatStyle = FlatStyle.Flat;
                 buttonColumn.UseColumnTextForButtonValue = true; // Displays the "Add to Cart" text on the button
-                DataGridViewButtonColumn buttonColumn1 = new DataGridViewButtonColumn();
+                DataGridViewButtonColumn buttonColumn1 = new();
                 buttonColumn1.HeaderText = "Struk";
                 buttonColumn1.Text = "Cetak";
                 buttonColumn1.FlatStyle = FlatStyle.Flat;
@@ -127,6 +131,7 @@ namespace KASIR.OffineMode
                     {
                         dataGridView1.Columns["ID"].Visible = false;
                     }
+
                     // Pastikan kolom "ID" ada dalam DataGridView sebelum mencoba mengaksesnya
                     if (dataGridView1.Columns.Contains("NumberQueue"))
                     {
@@ -136,7 +141,8 @@ namespace KASIR.OffineMode
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -151,7 +157,7 @@ namespace KASIR.OffineMode
         {
             DialogResult = DialogResult.OK;
 
-            this.Close();
+            Close();
         }
 
         private async void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
@@ -164,7 +170,7 @@ namespace KASIR.OffineMode
 
             if (dataGridView1.Columns[e.ColumnIndex].HeaderText == "Pilih Bill" && e.RowIndex >= 0)
             {
-                var cellValue = dataGridView1.Rows[e.RowIndex].Cells["ID"].Value;
+                object? cellValue = dataGridView1.Rows[e.RowIndex].Cells["ID"].Value;
                 if (cellValue == null)
                 {
                     MessageBox.Show("Invalid cell value", "Error");
@@ -179,7 +185,6 @@ namespace KASIR.OffineMode
                     DialogResult = DialogResult.OK;
 
                     Close();
-
                 }
                 catch (Exception ex)
                 {
@@ -191,8 +196,8 @@ namespace KASIR.OffineMode
             }
             else if (dataGridView1.Columns[e.ColumnIndex].HeaderText == "Struk" && e.RowIndex >= 0)
             {
-                PrinterModel printerModel = new PrinterModel();
-                var cellValue = dataGridView1.Rows[e.RowIndex].Cells["ID"].Value;
+                PrinterModel printerModel = new();
+                object? cellValue = dataGridView1.Rows[e.RowIndex].Cells["ID"].Value;
                 if (cellValue == null)
                 {
                     MessageBox.Show("Invalid cell value", "Error");
@@ -201,13 +206,13 @@ namespace KASIR.OffineMode
 
                 int selectedId = Convert.ToInt32(cellValue);
 
-                var antrianCell = dataGridView1.Rows[e.RowIndex].Cells["NumberQueue"].Value;
+                object? antrianCell = dataGridView1.Rows[e.RowIndex].Cells["NumberQueue"].Value;
                 int AntrianSaveBill = 0;
 
                 if (antrianCell != null)
                 {
                     // Mencari angka sebelum titik menggunakan regex
-                    Regex regex = new Regex(@"^\d+"); // Mencocokkan angka di awal string
+                    Regex regex = new(@"^\d+"); // Mencocokkan angka di awal string
                     Match match = regex.Match(antrianCell.ToString());
 
                     if (match.Success)
@@ -226,22 +231,24 @@ namespace KASIR.OffineMode
                         return;
                     }
 
-                    var transactionData = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(cartDataPath));
+                    JObject? transactionData = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(cartDataPath));
 
                     // Get the array of transaction data
-                    var transactionDetails = transactionData["data"] as JArray;
+                    JArray? transactionDetails = transactionData["data"] as JArray;
 
                     // Filter the transaction based on selectedId
-                    var cartData = transactionDetails.FirstOrDefault(t => t["transaction_id"]?.ToString() == selectedId.ToString());
+                    JToken? cartData =
+                        transactionDetails.FirstOrDefault(t =>
+                            t["transaction_id"]?.ToString() == selectedId.ToString());
                     // Extract cart details from the transaction
-                    var cartDetails = cartData["cart_details"] as JArray;
+                    JArray? cartDetails = cartData["cart_details"] as JArray;
 
                     // Membaca file JSON
                     string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
                     // Deserialize JSON ke object CartDataCache
-                    var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
+                    CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
                     // Konversi ke format GetStrukCustomerTransaction
-                    var strukCustomerTransaction = new GetStrukCustomerTransaction
+                    GetStrukCustomerTransaction strukCustomerTransaction = new()
                     {
                         code = 201,
                         message = "Transaksi Sukses!",
@@ -251,42 +258,61 @@ namespace KASIR.OffineMode
                             outlet_address = dataOutlet.data.address,
                             outlet_phone_number = dataOutlet.data.phone_number,
                             outlet_footer = dataOutlet.data.footer,
-                            transaction_id = int.TryParse(cartData["transaction_id"]?.ToString(), out var transId) ? transId : 0,
+                            transaction_id =
+                                int.TryParse(cartData["transaction_id"]?.ToString(), out int transId)
+                                    ? transId
+                                    : 0,
                             receipt_number = cartData["receipt_number"]?.ToString(),
                             invoice_due_date = cartData["invoice_due_date"]?.ToString(),
                             customer_name = cartData["customer_name"]?.ToString(),
-                            customer_seat = int.TryParse(cartData["customer_seat"]?.ToString(), out var seat) ? seat : 0,
-                            customer_change = int.TryParse(cartData["customer_change"]?.ToString(), out var change) ? change : 0,
+                            customer_seat =
+                                int.TryParse(cartData["customer_seat"]?.ToString(), out int seat) ? seat : 0,
+                            customer_change =
+                                int.TryParse(cartData["customer_change"]?.ToString(), out int change)
+                                    ? change
+                                    : 0,
                             payment_type = cartData["payment_type"]?.ToString(),
                             delivery_type = null,
                             delivery_note = null,
                             cart_id = 0,
-                            subtotal = int.TryParse(cartData["subtotal"]?.ToString(), out var subTotal) ? subTotal : 0,
-                            total = int.TryParse(cartData["total"]?.ToString(), out var total) ? total : 0,
-                            discount_id = int.TryParse(cartData["discount_id"]?.ToString(), out var discountId) && discountId != 0 ? discountId : 0,
+                            subtotal =
+                                int.TryParse(cartData["subtotal"]?.ToString(), out int subTotal) ? subTotal : 0,
+                            total = int.TryParse(cartData["total"]?.ToString(), out int total) ? total : 0,
+                            discount_id =
+                                int.TryParse(cartData["discount_id"]?.ToString(), out int discountId) &&
+                                discountId != 0
+                                    ? discountId
+                                    : 0,
                             discount_code = cartData["discount_code"]?.ToString(),
-                            discounts_value = int.TryParse(cartData["discounts_value"]?.ToString(), out var discountValue) ? discountValue : 0,
+                            discounts_value =
+                                int.TryParse(cartData["discounts_value"]?.ToString(), out int discountValue)
+                                    ? discountValue
+                                    : 0,
                             discounts_is_percent = cartData["discounts_is_percent"]?.ToString(),
                             cart_details = new List<CartDetailStrukCustomerTransaction>(),
                             canceled_items = new List<CanceledItemStrukCustomerTransaction>(),
                             kitchenBarCartDetails = new List<KitchenAndBarCartDetails>(),
                             kitchenBarCanceledItems = new List<KitchenAndBarCanceledItems>(),
-                            customer_cash = int.TryParse(cartData["customer_cash"]?.ToString(), out var customerCash) ? customerCash : 0,
+                            customer_cash =
+                                int.TryParse(cartData["customer_cash"]?.ToString(), out int customerCash)
+                                    ? customerCash
+                                    : 0,
                             member_name = null,
                             member_phone_number = null
                         }
                     };
 
-                    foreach (var item in cartDetails)
+                    foreach (JToken item in cartDetails)
                     {
                         // Cast the JToken to JObject
-                        var cartDetailObject = item as JObject;
+                        JObject? cartDetailObject = item as JObject;
 
 
                         // Membuat objek CartDetailStrukCustomerTransaction
-                        var cartDetail = new CartDetailStrukCustomerTransaction
+                        CartDetailStrukCustomerTransaction cartDetail = new()
                         {
-                            cart_detail_id = int.Parse(cartDetailObject["cart_detail_id"].ToString()), // Mengonversi string ke int
+                            cart_detail_id =
+                                int.Parse(cartDetailObject["cart_detail_id"].ToString()), // Mengonversi string ke int
                             menu_id = int.Parse(cartDetailObject["menu_id"].ToString()), // Mengonversi string ke int
                             menu_name = cartDetailObject["menu_name"]?.ToString(),
                             menu_type = cartDetailObject["menu_type"]?.ToString(),
@@ -299,12 +325,22 @@ namespace KASIR.OffineMode
                             discounts_value = null,
                             discounted_price = 0,
                             discounts_is_percent = null,
-                            price = int.Parse(cartDetailObject["price"]?.ToString() ?? "0"), // Mengonversi string ke int
-                            total_price = int.Parse(cartDetailObject["price"]?.ToString() ?? "0") * int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
-                            subtotal = int.Parse(cartDetailObject["price"]?.ToString() ?? "0") * int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
-                            subtotal_price = int.Parse(cartDetailObject["price"]?.ToString() ?? "0") * int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
+                            price =
+                                int.Parse(cartDetailObject["price"]?.ToString() ?? "0"), // Mengonversi string ke int
+                            total_price =
+                                int.Parse(cartDetailObject["price"]?.ToString() ?? "0") *
+                                int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
+                            subtotal =
+                                int.Parse(cartDetailObject["price"]?.ToString() ?? "0") *
+                                int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
+                            subtotal_price =
+                                int.Parse(cartDetailObject["price"]?.ToString() ?? "0") *
+                                int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
                             qty = int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
-                            note_item = string.IsNullOrEmpty(cartDetailObject["note_item"]?.ToString()) ? "" : cartDetailObject["note_item"].ToString(),
+                            note_item =
+                                string.IsNullOrEmpty(cartDetailObject["note_item"]?.ToString())
+                                    ? ""
+                                    : cartDetailObject["note_item"].ToString(),
                             is_ordered = int.Parse(cartDetailObject["is_ordered"]?.ToString() ?? "0")
                         };
 
@@ -312,7 +348,7 @@ namespace KASIR.OffineMode
                         strukCustomerTransaction.data.cart_details.Add(cartDetail);
 
                         // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
-                        var kitchenAndBarCartDetail = new KitchenAndBarCartDetails
+                        KitchenAndBarCartDetails kitchenAndBarCartDetail = new()
                         {
                             cart_detail_id = cartDetail.cart_detail_id,
                             menu_id = cartDetail.menu_id,
@@ -348,17 +384,18 @@ namespace KASIR.OffineMode
                     }
                     else
                     {
-                        MessageBox.Show("Gagal memproses transaksi. Silahkan coba lagi.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
+                        MessageBox.Show("Gagal memproses transaksi. Silahkan coba lagi.", "Gaspol",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Gagal cetak ulang struk " + ex.ToString(), "Gaspol");
+                    MessageBox.Show("Gagal cetak ulang struk " + ex, "Gaspol");
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
         }
+
         private void loadBill(string id)
         {
             try
@@ -374,29 +411,31 @@ namespace KASIR.OffineMode
                     return;
                 }
 
-                var transactionData = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(saveBillDataPath));
+                JObject? transactionData = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(saveBillDataPath));
 
                 // Ambil array data transaksi
-                var transactionDetails = transactionData["data"] as JArray;
+                JArray? transactionDetails = transactionData["data"] as JArray;
 
                 // Filter transaksi berdasarkan transaction_id
-                var filteredTransaction = transactionDetails.FirstOrDefault(t => t["transaction_id"]?.ToString() == id);
+                JToken? filteredTransaction =
+                    transactionDetails.FirstOrDefault(t => t["transaction_id"]?.ToString() == id);
 
                 if (filteredTransaction != null)
                 {
                     // Ambil cart_details dari transaksi
-                    var cartDetails = filteredTransaction["cart_details"] as JArray;
+                    JArray? cartDetails = filteredTransaction["cart_details"] as JArray;
 
                     // Check if canceled_items exists, if not create it
                     if (filteredTransaction["canceled_items"] == null)
                     {
                         filteredTransaction["canceled_items"] = new JArray();
                     }
-                    var cancelDetails = filteredTransaction["canceled_items"] as JArray;
+
+                    JArray? cancelDetails = filteredTransaction["canceled_items"] as JArray;
 
 
                     // Buat format JSON baru
-                    var newTransaction = new JObject
+                    JObject newTransaction = new()
                     {
                         ["transaction_ref"] = filteredTransaction["transaction_ref"]?.ToString(),
                         ["transaction_id"] = int.Parse(filteredTransaction["transaction_id"]?.ToString()),
@@ -412,7 +451,9 @@ namespace KASIR.OffineMode
                         ["customer_change"] = int.Parse(filteredTransaction["customer_change"]?.ToString()),
                         ["subtotal"] = cartDetails.Sum(cart => (int)cart["subtotal_price"]),
                         ["total"] = int.Parse(filteredTransaction["total"]?.ToString()),
-                        ["created_at"] = filteredTransaction["created_at"]?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                        ["created_at"] =
+                            filteredTransaction["created_at"]?.ToString() ??
+                            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         ["updated_at"] = filteredTransaction["updated_at"]?.ToString(),
                         ["deleted_at"] = filteredTransaction["deleted_at"]?.ToString(),
                         ["is_refund"] = filteredTransaction["is_refund"]?.ToString(),
@@ -451,6 +492,7 @@ namespace KASIR.OffineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         private void DeleteTransactionFromSaveBill(string transactionId)
         {
             try
@@ -464,13 +506,14 @@ namespace KASIR.OffineMode
                     return;
                 }
 
-                var transactionData = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(saveBillDataPath));
+                JObject? transactionData = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(saveBillDataPath));
 
                 // Ambil array data transaksi
-                var transactionDetails = transactionData["data"] as JArray;
+                JArray? transactionDetails = transactionData["data"] as JArray;
 
                 // Filter transaksi yang tidak memiliki transaction_id yang sesuai
-                var remainingTransactions = transactionDetails.Where(t => t["transaction_id"]?.ToString() != transactionId).ToArray();
+                JToken[] remainingTransactions = transactionDetails
+                    .Where(t => t["transaction_id"]?.ToString() != transactionId).ToArray();
 
                 // Update data transaksi setelah penghapusan
                 transactionData["data"] = new JArray(remainingTransactions);
@@ -486,11 +529,11 @@ namespace KASIR.OffineMode
 
         private async Task HandleSuccessfulTransaction(string response, int AntrianSaveBill)
         {
-            CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)); // 30-second timeout
+            CancellationTokenSource cts = new(TimeSpan.FromSeconds(30)); // 30-second timeout
 
             try
             {
-                PrinterModel printerModel = new PrinterModel();
+                PrinterModel printerModel = new();
                 RestrukModel restrukModel = JsonConvert.DeserializeObject<RestrukModel>(response);
 
                 if (restrukModel == null)
@@ -505,7 +548,8 @@ namespace KASIR.OffineMode
                 }
 
                 List<CartDetailRestruk> cartDetails = data.cart_details ?? new List<CartDetailRestruk>();
-                List<CanceledItemStrukCustomerRestruk> canceledItems = data.canceled_items ?? new List<CanceledItemStrukCustomerRestruk>();
+                List<CanceledItemStrukCustomerRestruk> canceledItems =
+                    data.canceled_items ?? new List<CanceledItemStrukCustomerRestruk>();
 
                 if (printerModel != null)
                 {
@@ -540,17 +584,19 @@ namespace KASIR.OffineMode
                             try
                             {
                                 // Use a new printer model instance to avoid shared state issues
-                                PrinterModel backgroundPrinterModel = new PrinterModel();
+                                PrinterModel backgroundPrinterModel = new();
 
                                 // Retry the print operation in background
-                                await backgroundPrinterModel.PrintModelDataBill(data, cartDetails, canceledItems, AntrianSaveBill);
+                                await backgroundPrinterModel.PrintModelDataBill(data, cartDetails, canceledItems,
+                                    AntrianSaveBill);
 
                                 // If successful, remove the saved print job
                                 RemoveSavedDataBillPrintJob(AntrianSaveBill);
                             }
                             catch (Exception ex)
                             {
-                                LoggerUtil.LogError(ex, "Background data bill printing failed: {ErrorMessage}", ex.Message);
+                                LoggerUtil.LogError(ex, "Background data bill printing failed: {ErrorMessage}",
+                                    ex.Message);
                             }
                         });
 
@@ -565,7 +611,8 @@ namespace KASIR.OffineMode
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred during data bill printing: {ErrorMessage}", ex.Message);
-                MessageBox.Show($"Terjadi kesalahan saat mencetak: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Terjadi kesalahan saat mencetak: {ex.Message}", "Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
             finally
             {
@@ -585,7 +632,7 @@ namespace KASIR.OffineMode
                 string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs", "DataBills");
                 Directory.CreateDirectory(printJobsDir);
 
-                var dataBillPrintJob = new DataBillPrintJob
+                DataBillPrintJob dataBillPrintJob = new()
                 {
                     Data = data,
                     CartDetails = cartDetails,
@@ -594,7 +641,8 @@ namespace KASIR.OffineMode
                     Timestamp = DateTime.Now
                 };
 
-                string filename = Path.Combine(printJobsDir, $"DataBillPrintJob_{antrianNumber}_{DateTime.Now.Ticks}.json");
+                string filename = Path.Combine(printJobsDir,
+                    $"DataBillPrintJob_{antrianNumber}_{DateTime.Now.Ticks}.json");
                 File.WriteAllText(filename, JsonConvert.SerializeObject(dataBillPrintJob, Formatting.Indented));
             }
             catch (Exception ex)
@@ -611,7 +659,7 @@ namespace KASIR.OffineMode
                 if (Directory.Exists(printJobsDir))
                 {
                     string pattern = $"DataBillPrintJob_{antrianNumber}_*.json";
-                    foreach (var file in Directory.GetFiles(printJobsDir, pattern))
+                    foreach (string file in Directory.GetFiles(printJobsDir, pattern))
                     {
                         File.Delete(file);
                     }

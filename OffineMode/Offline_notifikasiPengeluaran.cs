@@ -1,21 +1,25 @@
 ﻿using System.Data;
+using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using KASIR.Model;
-using KASIR.Network;
+using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
+
 namespace KASIR.Komponen
 {
     public partial class Offline_notifikasiPengeluaran : Form
     {
+        private readonly ILogger _log = LoggerService.Instance._log;
+
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
-        private readonly ILogger _log = LoggerService.Instance._log;
+
         public Offline_notifikasiPengeluaran()
         {
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
+            baseOutlet = Settings.Default.BaseOutlet;
             InitializeComponent();
             txtNotes.PlaceholderText = "Tujuan Pengeluaran?";
             button2.Enabled = false;
@@ -28,9 +32,10 @@ namespace KASIR.Komponen
             try
             {
                 // Read the expenditure data from the file
-                var expenditures = ReadExpendituresFromFile("DT-Cache\\Transaction\\expenditure.data");
+                List<ExpenditureStrukShift>? expenditures =
+                    ReadExpendituresFromFile("DT-Cache\\Transaction\\expenditure.data");
 
-                var dataTable = new DataTable();
+                DataTable dataTable = new();
                 dataTable.Columns.Add("ID", typeof(string));
                 dataTable.Columns.Add("DATA", typeof(string));
                 dataTable.Columns.Add("Detail", typeof(string));
@@ -43,16 +48,14 @@ namespace KASIR.Komponen
                     dataTable.Rows.Add(null, "EXPENSE", null, null);
                     foreach (var expense in expenditures)
                     {
-                        dataTable.Rows.Add(null, expense?.description ?? "No description", $"Rp. {expense?.nominal:n0},-", expense?.created_at.ToString() ?? "NoTime");
+                        dataTable.Rows.Add(null, expense?.description ?? "No description",
+                            $"Rp. {expense?.nominal:n0},-", expense?.created_at ?? "NoTime");
                     }
                 }
 
                 dataGridView1.DataSource = dataTable;
 
-                var boldStyle = new DataGridViewCellStyle
-                {
-                    Font = new Font(dataGridView1.Font, FontStyle.Italic)
-                };
+                DataGridViewCellStyle boldStyle = new() { Font = new Font(dataGridView1.Font, FontStyle.Italic) };
                 dataGridView1.Columns["DATA"].DefaultCellStyle = boldStyle;
                 dataGridView1.Columns["ID"].Visible = false;
 
@@ -87,8 +90,8 @@ namespace KASIR.Komponen
         {
             try
             {
-                var fileContent = File.ReadAllText(filePath);
-                var expenditureData = JsonConvert.DeserializeObject<ExpenditureData>(fileContent);
+                string fileContent = File.ReadAllText(filePath);
+                ExpenditureData? expenditureData = JsonConvert.DeserializeObject<ExpenditureData>(fileContent);
                 return expenditureData?.data ?? new List<ExpenditureStrukShift>();
             }
             catch (Exception ex)
@@ -110,14 +113,15 @@ namespace KASIR.Komponen
             }
 
             // Tambahkan PictureBox untuk gambar
-            PictureBox pictureBox = new PictureBox();
+            PictureBox pictureBox = new();
             pictureBox.Name = "ErrorImg";
             pictureBox.Size = new Size(100, 100); // Sesuaikan ukuran gambar
-            pictureBox.Location = new Point((this.ClientSize.Width - pictureBox.Width) / 2, (this.ClientSize.Height - pictureBox.Height) / 2 - 110); // Posisi di atas tombol
+            pictureBox.Location = new Point((ClientSize.Width - pictureBox.Width) / 2,
+                ((ClientSize.Height - pictureBox.Height) / 2) - 110); // Posisi di atas tombol
             pictureBox.SizeMode = PictureBoxSizeMode.StretchImage; // Atur ukuran gambar agar sesuai dengan PictureBox
             try
             {
-                using (FileStream fs = new FileStream("icon\\OutletLogo.bmp", FileMode.Open, FileAccess.Read))
+                using (FileStream fs = new("icon\\OutletLogo.bmp", FileMode.Open, FileAccess.Read))
                 {
                     pictureBox.Image = Image.FromStream(fs);
                 }
@@ -129,19 +133,20 @@ namespace KASIR.Komponen
             }
 
             // Tambahkan tombol retry
-            System.Windows.Forms.Button btnRetry = new System.Windows.Forms.Button();
+            Button btnRetry = new();
             btnRetry.Name = "btnRetry";
             btnRetry.Text = "Retry Load Data\nOut of Service";
             btnRetry.Size = new Size(190, 60);
-            btnRetry.Location = new Point((this.ClientSize.Width - btnRetry.Width) / 2, (this.ClientSize.Height - btnRetry.Height) / 2);
+            btnRetry.Location = new Point((ClientSize.Width - btnRetry.Width) / 2,
+                (ClientSize.Height - btnRetry.Height) / 2);
             btnRetry.BackColor = Color.FromArgb(30, 31, 68);
             btnRetry.FlatStyle = FlatStyle.Flat;
             btnRetry.Font = new Font("Arial", 10, FontStyle.Bold);
             btnRetry.ForeColor = Color.White; // Mengatur warna teks tombol menjadi putih
-            btnRetry.Click += new EventHandler(BtnRetry_Click);
+            btnRetry.Click += BtnRetry_Click;
 
             // Membuat sudut membulat
-            System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+            GraphicsPath path = new();
             path.AddArc(0, 0, 20, 20, 180, 90);
             path.AddArc(btnRetry.Width - 20, 0, 20, 20, 270, 90);
             path.AddArc(btnRetry.Width - 20, btnRetry.Height - 20, 20, 20, 0, 90);
@@ -150,20 +155,21 @@ namespace KASIR.Komponen
             btnRetry.Region = new Region(path);
 
             // Menambahkan label di bawah tombol
-            Label lblInfo = new Label();
+            Label lblInfo = new();
             lblInfo.Name = "ErrorMsg";
-            lblInfo.Text = ex.ToString(); // Teks yang ingin ditampilkan
+            lblInfo.Text = ex; // Teks yang ingin ditampilkan
             lblInfo.Font = new Font("Arial", 9, FontStyle.Regular);
             lblInfo.ForeColor = Color.Black; // Warna teks label
             lblInfo.AutoSize = true; // Agar label menyesuaikan ukuran teks
 
             // Mengatur posisi label agar berada di tengah
-            lblInfo.Location = new Point((this.ClientSize.Width - lblInfo.Width) / 4, btnRetry.Bottom + 10); // Posisi di bawah tombol
+            lblInfo.Location =
+                new Point((ClientSize.Width - lblInfo.Width) / 4, btnRetry.Bottom + 10); // Posisi di bawah tombol
 
             // Menambahkan kontrol ke form
-            this.Controls.Add(pictureBox); // Menambahkan PictureBox ke form
-            this.Controls.Add(btnRetry);
-            this.Controls.Add(lblInfo); // Menambahkan label ke form
+            Controls.Add(pictureBox); // Menambahkan PictureBox ke form
+            Controls.Add(btnRetry);
+            Controls.Add(lblInfo); // Menambahkan label ke form
 
             btnRetry.BringToFront();
         }
@@ -171,22 +177,22 @@ namespace KASIR.Komponen
         private void BtnRetry_Click(object sender, EventArgs e)
         {
             // Hapus tombol retry
-            if (sender is System.Windows.Forms.Button btnRetry)
+            if (sender is Button btnRetry)
             {
-                this.Controls.Remove(btnRetry);
+                Controls.Remove(btnRetry);
             }
 
             // Hapus label informasi jika ada
-            var lblInfo = this.Controls.OfType<Label>().FirstOrDefault(lbl => lbl.Name == "ErrorMsg");
+            Label? lblInfo = Controls.OfType<Label>().FirstOrDefault(lbl => lbl.Name == "ErrorMsg");
             if (lblInfo != null)
             {
-                this.Controls.Remove(lblInfo);
+                Controls.Remove(lblInfo);
             }
 
-            var ErrImg = this.Controls.OfType<PictureBox>().FirstOrDefault(lbl => lbl.Name == "ErrorImg");
+            PictureBox? ErrImg = Controls.OfType<PictureBox>().FirstOrDefault(lbl => lbl.Name == "ErrorImg");
             if (ErrImg != null)
             {
-                this.Controls.Remove(ErrImg);
+                Controls.Remove(ErrImg);
             }
 
             // Muat data kembali
@@ -195,28 +201,25 @@ namespace KASIR.Komponen
 
         private void btnKeluar_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             // KeluarButtonPrintReportShiftClicked = true;
-            this.Close();
+            Close();
         }
+
         private void AddItem(string name, string amount)
         {
-
-
         }
 
         private void panel4_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
         private void panel13_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
         private async void btnSaveExpenditure(object sender, EventArgs e)
@@ -224,30 +227,37 @@ namespace KASIR.Komponen
             string fulus = Regex.Replace(txtNominal.Text, "[^0-9]", "");
             try
             {
-                if (fulus == null || fulus.ToString() == "")
+                if (fulus == null || fulus == "")
                 {
-                    MessageBox.Show("Format nominal kurang tepat", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Format nominal kurang tepat", "Gaspol", MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                     return;
                 }
 
                 if (txtNotes.Text == null || txtNotes.ToString() == "")
                 {
-                    MessageBox.Show("Format notes kurang tepat", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Format notes kurang tepat", "Gaspol", MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                     return;
                 }
-                DialogResult yakin = MessageBox.Show($"Yakin menambahkan Expenditure Rp.{txtNominal.Text},- dengan tujuan \n {txtNotes.Text} ?", "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                DialogResult yakin =
+                    MessageBox.Show(
+                        $"Yakin menambahkan Expenditure Rp.{txtNominal.Text},- dengan tujuan \n {txtNotes.Text} ?",
+                        "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (yakin != DialogResult.Yes)
                 {
                     MessageBox.Show("Penambahan Expenditure Shift diCancel");
                     return;
-                    this.Close();
+                    Close();
                 }
+
                 var expenditureData = new
                 {
-                    nominal = int.Parse(fulus.ToString()),
-                    description = txtNotes.Text.ToString(),
+                    nominal = int.Parse(fulus),
+                    description = txtNotes.Text,
                     outlet_id = baseOutlet,
-                    
+
                     //adding for cache details
 
                     created_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
@@ -256,12 +266,12 @@ namespace KASIR.Komponen
 
                 // Save transaction data to transaction.data
                 string expenditureDataPath = "DT-Cache\\Transaction\\expenditure.data";
-                JArray expenditureDataArray = new JArray();
+                JArray expenditureDataArray = new();
                 if (File.Exists(expenditureDataPath))
                 {
                     // If the transaction file exists, read and append the new transaction
                     string existingData = File.ReadAllText(expenditureDataPath);
-                    var existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
+                    JObject? existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
                     expenditureDataArray = existingTransactions["data"] as JArray ?? new JArray();
                 }
 
@@ -269,15 +279,18 @@ namespace KASIR.Komponen
                 expenditureDataArray.Add(JToken.FromObject(expenditureData));
 
                 // Serialize and save back to transaction.data
-                var newTransactionData = new JObject { { "data", expenditureDataArray } };
-                File.WriteAllText(expenditureDataPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
+                JObject newTransactionData = new() { { "data", expenditureDataArray } };
+                File.WriteAllText(expenditureDataPath,
+                    JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
 
-                DialogResult result = MessageBox.Show("Input notifikasi pengeluaran berhasil", "Gaspol", MessageBoxButtons.OK);
+                DialogResult result = MessageBox.Show("Input notifikasi pengeluaran berhasil", "Gaspol",
+                    MessageBoxButtons.OK);
                 if (result == DialogResult.OK)
                 {
-                    this.Close(); // Close the payForm
+                    Close(); // Close the payForm
                 }
-                this.DialogResult = result;
+
+                DialogResult = result;
             }
             catch (TaskCanceledException ex)
             {
@@ -287,35 +300,35 @@ namespace KASIR.Komponen
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
-
         }
 
         private void txtJumlahCicil_TextChanged(object sender, EventArgs e)
         {
-
         }
 
         private void dateTimePicker1_ValueChanged(object sender, EventArgs e)
         {
-
         }
+
         private void txtSelesaiShift_TextChanged(object sender, EventArgs e)
         {
-
         }
 
         private void txtNotes_TextChanged(object sender, EventArgs e)
         {
-
         }
 
         private void txtNominal_TextChanged(object sender, EventArgs e)
         {
-            if (txtNominal.Text == "" || txtNominal.Text == "0") return;
+            if (txtNominal.Text == "" || txtNominal.Text == "0")
+            {
+                return;
+            }
+
             decimal number;
             try
             {
-                number = decimal.Parse(txtNominal.Text, System.Globalization.NumberStyles.Currency);
+                number = decimal.Parse(txtNominal.Text, NumberStyles.Currency);
             }
             catch (FormatException)
             {
@@ -330,10 +343,9 @@ namespace KASIR.Komponen
 
                 return;
             }
+
             txtNominal.Text = number.ToString("#,#");
             txtNominal.SelectionStart = txtNominal.Text.Length;
         }
     }
-
 }
-

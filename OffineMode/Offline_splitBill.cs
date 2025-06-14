@@ -1,27 +1,29 @@
-﻿
-
-using System.Data;
+﻿using System.Data;
 using System.Globalization;
 using KASIR.Model;
+using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+
 namespace KASIR.OffineMode
 {
     public partial class Offline_splitBill : Form
     {
         private readonly string baseOutlet;
+        private string cart_id;
+        private readonly List<RequestCartModel> cartDetails = new();
         private DataTable dataTable2;
-        private Dictionary<int, int> originalQuantities = new Dictionary<int, int>();
-        List<RequestCartModel> cartDetails = new List<RequestCartModel>();
-        public bool ReloadDataInBaseForm { get; private set; }
-        string cart_id;
+        private readonly Dictionary<int, int> originalQuantities = new();
+
         public Offline_splitBill(string cartID)
         {
             cart_id = cartID;
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
+            baseOutlet = Settings.Default.BaseOutlet;
             InitializeComponent();
             Openform();
         }
+
+        public bool ReloadDataInBaseForm { get; private set; }
 
         private async void Openform()
         {
@@ -37,8 +39,9 @@ namespace KASIR.OffineMode
         {
             DialogResult = DialogResult.OK;
 
-            this.Close();
+            Close();
         }
+
         public async Task LoadCart()
         {
             try
@@ -50,18 +53,19 @@ namespace KASIR.OffineMode
                 if (File.Exists(cacheFilePath))
                 {
                     string cartJson = File.ReadAllText(cacheFilePath);
-                    var cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
+                    JObject? cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
 
                     // Ensure dataModel and its properties are not null
                     if (cartData["cart_details"] != null || cartData["cart_details"].Count() != 0)
                     {
-                        var cartDetails = cartData["cart_details"] as JArray;
+                        JArray? cartDetails = cartData["cart_details"] as JArray;
                         // Set the first cart_detail_id as cart_id
-                        var cartDetail = cartDetails.FirstOrDefault();
-                        cart_id = cartDetail?["cart_detail_id"].ToString() ?? "null"; // Get first cart_detail_id for cart_id
+                        JToken? cartDetail = cartDetails.FirstOrDefault();
+                        cart_id = cartDetail?["cart_detail_id"].ToString() ??
+                                  "null"; // Get first cart_detail_id for cart_id
 
                         // Initialize the DataTable for the DataGridView
-                        DataTable dataTable = new DataTable();
+                        DataTable dataTable = new();
                         dataTable.Columns.Add("MenuID", typeof(string));
                         dataTable.Columns.Add("CartDetailID", typeof(int));
                         dataTable.Columns.Add("Jenis", typeof(string));
@@ -73,7 +77,7 @@ namespace KASIR.OffineMode
                         dataTable.Columns.Add("Hasil", typeof(string));
                         dataTable.Columns.Add("Plus", typeof(string));
 
-                        foreach (var menu in cartDetails)
+                        foreach (JToken menu in cartDetails)
                         {
                             int quantity = menu["qty"] != null ? (int)menu["qty"] : 0;
                             decimal price = menu["price"] != null ? decimal.Parse(menu["price"].ToString()) : 0;
@@ -85,7 +89,7 @@ namespace KASIR.OffineMode
                                 menu["menu_id"].ToString(),
                                 menu["cart_detail_id"],
                                 menu["serving_type_name"].ToString(),
-                                menu["menu_name"].ToString() + " " + menu["cart_detail_name"],
+                                menu["menu_name"] + " " + menu["cart_detail_name"],
                                 "x" + menu["qty"] != null ? (int)menu["qty"] : 0,
                                 "Rp " + totprice,
                                 null,
@@ -95,7 +99,8 @@ namespace KASIR.OffineMode
 
                             if (!string.IsNullOrEmpty(noteItem))
                             {
-                                dataTable.Rows.Add(null, null, null, "*catatan : " + noteItem, null, null, null, null, null, null);
+                                dataTable.Rows.Add(null, null, null, "*catatan : " + noteItem, null, null, null, null,
+                                    null, null);
                             }
                         }
 
@@ -110,14 +115,17 @@ namespace KASIR.OffineMode
                             {
                                 dataGridView1.Columns["MenuID"].Visible = false;
                             }
+
                             if (dataGridView1.Columns.Contains("CartDetailID"))
                             {
                                 dataGridView1.Columns["CartDetailID"].Visible = false;
                             }
+
                             if (dataGridView1.Columns.Contains("Jenis"))
                             {
                                 dataGridView1.Columns["Jenis"].Visible = false;
                             }
+
                             if (dataGridView1.Columns.Contains("Note"))
                             {
                                 dataGridView1.Columns["Note"].Visible = false;
@@ -130,14 +138,14 @@ namespace KASIR.OffineMode
                             {
                                 if (row.Cells["Jenis"].Value != null) // Check if the row is not a separator row
                                 {
-                                    DataGridViewTextBoxCell minusButtonCell = new DataGridViewTextBoxCell();
+                                    DataGridViewTextBoxCell minusButtonCell = new();
                                     minusButtonCell.Value = "-";
                                     minusButtonCell.Style.Font = new Font("Arial", 10, FontStyle.Bold);
                                     minusButtonCell.Style.ForeColor = Color.Red;
 
                                     row.Cells[minusColumn] = minusButtonCell;
 
-                                    DataGridViewTextBoxCell plusButtonCell = new DataGridViewTextBoxCell();
+                                    DataGridViewTextBoxCell plusButtonCell = new();
                                     plusButtonCell.Value = "+";
                                     plusButtonCell.Style.Font = new Font("Arial", 10, FontStyle.Bold);
                                     plusButtonCell.Style.ForeColor = Color.Green;
@@ -148,7 +156,7 @@ namespace KASIR.OffineMode
 
                             for (int rowIndex = 0; rowIndex < dataGridView1.Rows.Count; rowIndex++)
                             {
-                                var menuValue = dataGridView1.Rows[rowIndex].Cells[3].Value?.ToString();
+                                string? menuValue = dataGridView1.Rows[rowIndex].Cells[3].Value?.ToString();
 
                                 if (menuValue != null && (menuValue.EndsWith("s") || menuValue.StartsWith("*")))
                                 {
@@ -169,14 +177,8 @@ namespace KASIR.OffineMode
                             dataGridView1.Columns["Hasil"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
                         }
                     }
-                    else
-                    {
-
-                        // Log or handle the case where cart_details is null or dataModel is invalid
-                        /*MessageBox.Show("Data not found or in unexpected format.");*/
-                        return; // Exit the function as the data format is incorrect
-                    }
-
+                    // Log or handle the case where cart_details is null or dataModel is invalid
+                    /*MessageBox.Show("Data not found or in unexpected format.");*/
                 }
                 else
                 {
@@ -187,20 +189,20 @@ namespace KASIR.OffineMode
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
-
         }
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
             try
             {
-
-
-                if (e.RowIndex >= 0 && (e.ColumnIndex == dataGridView1.Columns["Minus"].Index || e.ColumnIndex == dataGridView1.Columns["Plus"].Index))
+                if (e.RowIndex >= 0 && (e.ColumnIndex == dataGridView1.Columns["Minus"].Index ||
+                                        e.ColumnIndex == dataGridView1.Columns["Plus"].Index))
                 {
-                    var cartDetailId = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["CartDetailID"].Value);
-                    var qtyToSplitCell = dataGridView1.Rows[e.RowIndex].Cells["Hasil"]; // Access the QtyToSplit column
-                    var jumlahCell = dataGridView1.Rows[e.RowIndex].Cells["Jumlah"]; // Access the Jumlah column
+                    int cartDetailId = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["CartDetailID"].Value);
+                    DataGridViewCell?
+                        qtyToSplitCell = dataGridView1.Rows[e.RowIndex].Cells["Hasil"]; // Access the QtyToSplit column
+                    DataGridViewCell?
+                        jumlahCell = dataGridView1.Rows[e.RowIndex].Cells["Jumlah"]; // Access the Jumlah column
 
                     if (!originalQuantities.ContainsKey(cartDetailId))
                     {
@@ -243,7 +245,8 @@ namespace KASIR.OffineMode
                         qtyToSplitCell.Value = currentQuantity.ToString();
 
                         // Update or add the item to the cartDetails list
-                        var existingItem = cartDetails.FirstOrDefault(item => int.Parse(item.cart_detail_id) == cartDetailId);
+                        RequestCartModel? existingItem =
+                            cartDetails.FirstOrDefault(item => int.Parse(item.cart_detail_id) == cartDetailId);
                         if (existingItem != null)
                         {
                             existingItem.qty_to_split = currentQuantity.ToString();
@@ -254,7 +257,7 @@ namespace KASIR.OffineMode
                             {
                                 cart_detail_id = cartDetailId.ToString(),
                                 qty_to_split = currentQuantity.ToString(),
-                                originQty = maxQuantity.ToString(),
+                                originQty = maxQuantity.ToString()
                             });
                         }
                     }
@@ -288,17 +291,18 @@ namespace KASIR.OffineMode
 
                 // Membaca data dari file Cart.data (yang lama)
                 string cartJson = File.ReadAllText(source);
-                var cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
+                JObject? cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
 
                 // List untuk menampung item yang telah dipecah
-                List<JObject> splitItems = new List<JObject>();
+                List<JObject> splitItems = new();
                 // List untuk menampung item sisa
-                List<JObject> remainingItems = new List<JObject>();
+                List<JObject> remainingItems = new();
 
-                foreach (var cartItem in cartData["cart_details"])
+                foreach (JToken cartItem in cartData["cart_details"])
                 {
                     int cartDetailId = cartItem["cart_detail_id"].ToObject<int>();
-                    var splitItem = cartDetails.FirstOrDefault(item => item.cart_detail_id == cartDetailId.ToString());
+                    RequestCartModel? splitItem =
+                        cartDetails.FirstOrDefault(item => item.cart_detail_id == cartDetailId.ToString());
 
                     if (splitItem != null) // Jika item ada dalam cartDetails yang dipecah
                     {
@@ -308,7 +312,8 @@ namespace KASIR.OffineMode
 
                         // Update nilai pada cartItem untuk item yang dipecah
                         cartItem["qty"] = newQty;
-                        cartItem["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                        cartItem["updated_at"] =
+                            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                         cartItem["total_price"] = newQty * cartItem["price"].ToObject<int>();
 
                         // Simpan item yang dipecah ke list baru (cart.data)
@@ -319,7 +324,7 @@ namespace KASIR.OffineMode
                         if (remainingQty > 0)
                         {
                             // Buat item sisa
-                            var remainingItem = cartItem.DeepClone() as JObject;
+                            JObject? remainingItem = cartItem.DeepClone() as JObject;
                             remainingItem["qty"] = remainingQty;
                             remainingItem["total_price"] = remainingQty * cartItem["price"].ToObject<int>();
                             remainingItems.Add(remainingItem);
@@ -333,13 +338,14 @@ namespace KASIR.OffineMode
                 }
 
                 // Menyimpan data yang telah dipecah ke file Cart.data
-                var splitCartData = new JObject
+                JObject splitCartData = new()
                 {
                     ["cart_details"] = new JArray(splitItems),
                     ["subtotal"] = splitItems.Sum(item => item["total_price"].ToObject<int>()),
                     ["total"] = splitItems.Sum(item => item["total_price"].ToObject<int>()),
                     ["transaction_ref_split"] = cartData["transaction_ref"].ToString(),
-                    ["transaction_ref"] = $"{baseOutlet}-{DateTime.Now.ToString("yyyyMMdd-HHmmss")}-{GenerateRandomName()}",
+                    ["transaction_ref"] =
+                        $"{baseOutlet}-{DateTime.Now.ToString("yyyyMMdd-HHmmss")}-{GenerateRandomName()}",
                     ["is_splitted"] = 1
                 };
 
@@ -347,7 +353,7 @@ namespace KASIR.OffineMode
                 File.WriteAllText(new_cart, JsonConvert.SerializeObject(splitCartData, Formatting.Indented));
 
                 // Menyimpan data sisa ke Cart_main_split.data
-                var remainingCartData = new JObject
+                JObject remainingCartData = new()
                 {
                     ["cart_details"] = new JArray(remainingItems),
                     ["subtotal"] = remainingItems.Sum(item => item["total_price"].ToObject<int>()),
@@ -360,7 +366,7 @@ namespace KASIR.OffineMode
                 File.WriteAllText(main_split_cart, JsonConvert.SerializeObject(remainingCartData, Formatting.Indented));
 
                 // Log dan konfirmasi
-                this.Close(); // Tutup form
+                Close(); // Tutup form
             }
             catch (Exception ex)
             {
@@ -373,21 +379,25 @@ namespace KASIR.OffineMode
 
         private string GenerateRandomName()
         {
-            Random random = new Random();
-            string[] consonants = { "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z" };
+            Random random = new();
+            string[] consonants =
+            {
+                "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y",
+                "z"
+            };
             string[] vowels = { "a", "e", "i", "o", "u" };
 
-            string randomName = "";  // Initialize the randomName
+            string randomName = ""; // Initialize the randomName
             int nameLength = random.Next(3, 10);
 
             for (int i = 0; i < nameLength; i++)
             {
-                randomName += i % 2 == 0 ? consonants[random.Next(consonants.Length)] : vowels[random.Next(vowels.Length)];
+                randomName += i % 2 == 0
+                    ? consonants[random.Next(consonants.Length)]
+                    : vowels[random.Next(vowels.Length)];
             }
 
-            return char.ToUpper(randomName[0]) + randomName.Substring(1);  // Capitalize the first letter
+            return char.ToUpper(randomName[0]) + randomName.Substring(1); // Capitalize the first letter
         }
-
-
     }
 }

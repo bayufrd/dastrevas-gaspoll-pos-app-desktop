@@ -1,26 +1,24 @@
-﻿
-
-using System.Data;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 using KASIR.Model;
-using Newtonsoft.Json;
+using KASIR.Properties;
 using Newtonsoft.Json.Linq;
+
 namespace KASIR.OffineMode
 {
     public partial class Offline_HistoryShift : Form
     {
         private readonly string baseOutlet;
-        public ShiftData SelectedShift { get; private set; } // Property to hold the selected shift data
 
         public Offline_HistoryShift()
         {
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
+            baseOutlet = Settings.Default.BaseOutlet;
             InitializeComponent();
 
             Openform();
         }
+
+        public ShiftData SelectedShift { get; private set; } // Property to hold the selected shift data
 
         private async void Openform()
         {
@@ -32,8 +30,9 @@ namespace KASIR.OffineMode
         {
             DialogResult = DialogResult.Cancel;
 
-            this.Close();
+            Close();
         }
+
         private async Task LoadShiftDataButtons()
         {
             string directoryPath = @"DT-Cache\Transaction\ShiftDataTransaction";
@@ -44,12 +43,9 @@ namespace KASIR.OffineMode
             panelHistory.AutoScroll = true;
 
             // Create the FlowLayoutPanel
-            FlowLayoutPanel flowPanel = new FlowLayoutPanel
+            FlowLayoutPanel flowPanel = new()
             {
-                Dock = DockStyle.Top,
-                AutoScroll = true,
-                FlowDirection = FlowDirection.TopDown,
-                WrapContents = false
+                Dock = DockStyle.Top, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false
             };
 
             panelHistory.Controls.Add(flowPanel);
@@ -62,14 +58,14 @@ namespace KASIR.OffineMode
                 // Get all .data files in the directory
                 string[] files = Directory.GetFiles(directoryPath, "*.data");
 
-                foreach (var file in files)
+                foreach (string file in files)
                 {
                     // Extract the file name without extension
                     string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file);
 
                     // Using regular expression to capture the date part from the filename
-                    var regex = new Regex(@"History_.*_DT-\d+_(\d{8})");
-                    var match = regex.Match(fileNameWithoutExtension);
+                    Regex regex = new(@"History_.*_DT-\d+_(\d{8})");
+                    Match match = regex.Match(fileNameWithoutExtension);
 
                     if (match.Success)
                     {
@@ -77,10 +73,11 @@ namespace KASIR.OffineMode
                         string datePart = match.Groups[1].Value; // This will be the date in yyyyMMdd format
 
                         DateTime fileDate;
-                        if (DateTime.TryParseExact(datePart, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out fileDate))
+                        if (DateTime.TryParseExact(datePart, "yyyyMMdd", CultureInfo.InvariantCulture,
+                                DateTimeStyles.None, out fileDate))
                         {
                             // Create a button for this file
-                            Button fileButton = new Button
+                            Button fileButton = new()
                             {
                                 Text = fileDate.ToString("yyyy-MM-dd"), // Display only the date
                                 Width = totalWidth * 98 / 100,
@@ -93,7 +90,7 @@ namespace KASIR.OffineMode
                             fileButton.Click += async (sender, e) =>
                             {
                                 // Deserialize the .data file to ShiftData objects
-                                var shiftDataList = await ReadShiftDataFromFile(file);
+                                List<ShiftData> shiftDataList = await ReadShiftDataFromFile(file);
 
                                 // Bind the shift data to the DataGridView
                                 BindShiftDataToDataGridView(shiftDataList);
@@ -116,7 +113,7 @@ namespace KASIR.OffineMode
                 string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(shiftDataPath);
 
                 // Create a button for the ShiftData.data file
-                Button shiftDataButton = new Button
+                Button shiftDataButton = new()
                 {
                     Text = "ShiftData (Latest)", // A generic name for the button
                     Width = totalWidth * 98 / 100,
@@ -129,7 +126,7 @@ namespace KASIR.OffineMode
                 shiftDataButton.Click += async (sender, e) =>
                 {
                     // Deserialize the ShiftData.data file
-                    var shiftDataList = await ReadShiftDataFromFile(shiftDataPath);
+                    List<ShiftData> shiftDataList = await ReadShiftDataFromFile(shiftDataPath);
 
                     // Bind the shift data to the DataGridView
                     BindShiftDataToDataGridView(shiftDataList);
@@ -166,13 +163,14 @@ namespace KASIR.OffineMode
 
             return shiftDataList;
         }
+
         private void BindShiftDataToDataGridView(List<ShiftData> shiftDataList)
         {
             // Clear the existing controls in the panel
             panelHistory.Controls.Clear();
 
             // Create the DataGridView for displaying shift data
-            DataGridView dataGridView = new DataGridView
+            DataGridView dataGridView = new()
             {
                 Dock = DockStyle.Fill,
                 AutoGenerateColumns = false,
@@ -192,37 +190,25 @@ namespace KASIR.OffineMode
 
             dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "ShiftNumber",
-                HeaderText = "Shift Number",
-                DataPropertyName = "ShiftNumber",
-                Width = 100
+                Name = "ShiftNumber", HeaderText = "Shift Number", DataPropertyName = "ShiftNumber", Width = 100
             });
 
             dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "CasherName",
-                HeaderText = "Name",
-                DataPropertyName = "CasherName",
-                Width = 150
+                Name = "CasherName", HeaderText = "Name", DataPropertyName = "CasherName", Width = 150
             });
 
             // Add a button column for "Pilih"
-            DataGridViewButtonColumn pilihColumn = new DataGridViewButtonColumn
+            DataGridViewButtonColumn pilihColumn = new()
             {
-                Name = "Pilih",
-                HeaderText = "Pilih",
-                Text = "Pilih",
-                UseColumnTextForButtonValue = true
+                Name = "Pilih", HeaderText = "Pilih", Text = "Pilih", UseColumnTextForButtonValue = true
             };
             dataGridView.Columns.Add(pilihColumn);
 
             // Add a button column for "Print"
-            DataGridViewButtonColumn printColumn = new DataGridViewButtonColumn
+            DataGridViewButtonColumn printColumn = new()
             {
-                Name = "Print",
-                HeaderText = "Print",
-                Text = "Print",
-                UseColumnTextForButtonValue = true
+                Name = "Print", HeaderText = "Print", Text = "Print", UseColumnTextForButtonValue = true
             };
             dataGridView.Columns.Add(printColumn);
 
@@ -240,7 +226,7 @@ namespace KASIR.OffineMode
             {
                 if (e.RowIndex >= 0)
                 {
-                    var selectedRow = dataGridView.Rows[e.RowIndex];
+                    DataGridViewRow selectedRow = dataGridView.Rows[e.RowIndex];
 
                     if (e.ColumnIndex == dataGridView.Columns["Pilih"].Index)
                     {
@@ -251,8 +237,8 @@ namespace KASIR.OffineMode
                         SelectedShift = selectedShift;
 
                         // Close the form and pass back the data
-                        this.DialogResult = DialogResult.OK;
-                        this.Close();
+                        DialogResult = DialogResult.OK;
+                        Close();
                     }
                     else if (e.ColumnIndex == dataGridView.Columns["Print"].Index)
                     {
@@ -263,8 +249,8 @@ namespace KASIR.OffineMode
                         SelectedShift = selectedShift;
 
                         // Close the form and pass back the data
-                        this.DialogResult = DialogResult.Continue;
-                        this.Close();
+                        DialogResult = DialogResult.Continue;
+                        Close();
                     }
                 }
             };
@@ -280,7 +266,7 @@ namespace KASIR.OffineMode
             dataGridView.AllowUserToResizeRows = false;
 
             // Set the default style for the cells
-            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle
+            DataGridViewCellStyle dataGridViewCellStyle1 = new()
             {
                 Alignment = DataGridViewContentAlignment.MiddleLeft,
                 BackColor = Color.White,
@@ -298,7 +284,7 @@ namespace KASIR.OffineMode
             dataGridView.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
 
             // Column header style
-            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle
+            DataGridViewCellStyle dataGridViewCellStyle2 = new()
             {
                 Alignment = DataGridViewContentAlignment.MiddleLeft,
                 BackColor = Color.FromArgb(31, 30, 68),
@@ -314,7 +300,7 @@ namespace KASIR.OffineMode
             dataGridView.ColumnHeadersVisible = true; // Keep column headers visible
 
             // Cell style
-            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle
+            DataGridViewCellStyle dataGridViewCellStyle3 = new()
             {
                 Alignment = DataGridViewContentAlignment.MiddleLeft,
                 BackColor = Color.White,
@@ -327,7 +313,7 @@ namespace KASIR.OffineMode
             dataGridView.DefaultCellStyle = dataGridViewCellStyle3;
 
             // Row headers style
-            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle
+            DataGridViewCellStyle dataGridViewCellStyle4 = new()
             {
                 Alignment = DataGridViewContentAlignment.MiddleLeft,
                 BackColor = Color.White,
@@ -342,7 +328,7 @@ namespace KASIR.OffineMode
             dataGridView.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
 
             // Row style
-            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle
+            DataGridViewCellStyle dataGridViewCellStyle5 = new()
             {
                 Alignment = DataGridViewContentAlignment.MiddleLeft,
                 BackColor = Color.White,
@@ -362,7 +348,5 @@ namespace KASIR.OffineMode
             dataGridView.GridColor = Color.FromArgb(31, 30, 68);
             dataGridView.ImeMode = ImeMode.NoControl;
         }
-
-
     }
 }

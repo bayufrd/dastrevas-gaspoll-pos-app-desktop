@@ -1,12 +1,15 @@
 ﻿using System.Diagnostics;
+using System.Net;
 using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
 using System.Timers;
 using System.Windows;
 using KASIR.Network;
 using KASIR.Printer;
+using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Application = System.Windows.Forms.Application;
 using CheckBox = System.Windows.Forms.CheckBox;
 using Color = System.Drawing.Color;
 using ComboBox = System.Windows.Forms.ComboBox;
@@ -18,13 +21,13 @@ namespace KASIR.Komponen
 {
     public partial class SettingsForm : Form
     {
-        public Form1 MainForm { get; set; }
+        private readonly string baseOutlet = Settings.Default.BaseOutlet;
+        private readonly string configFolderPath = "setting";
         private PrinterModel printerModel;
-        private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet;
-        private string configFolderPath = "setting";
+
         public SettingsForm(Form1 mainForm)
         {
-            this.ControlBox = false;
+            ControlBox = false;
             InitializeComponent();
             MainForm = mainForm;
             LoadConfig();
@@ -33,27 +36,30 @@ namespace KASIR.Komponen
             cekUpdate();
         }
 
+        public Form1 MainForm { get; set; }
+
         private void InitializeUpdateSettings()
         {
             lblNewVersion.Visible = true;
             lblNewVersionNow.Visible = true;
             btnUpdate.Text = "Repair";
-            lblVersion.Text = Properties.Settings.Default.Version.ToString();
+            lblVersion.Text = Settings.Default.Version;
             printerModel = new PrinterModel(); // Initialize printerModel
         }
+
         // Metode untuk memuat pengaturan printer dan checkbox
         public async Task LoadPrintersAndSettings()
         {
-            List<ComboBox> comboBoxes = new List<ComboBox> { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
+            List<ComboBox> comboBoxes = new() { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
 
-            foreach (var comboBox in comboBoxes)
+            foreach (ComboBox comboBox in comboBoxes)
             {
                 comboBox.Items.Clear();
                 comboBox.SelectedIndexChanged -= ComboBoxPrinter_SelectedIndexChanged; // Drum handler pertama
 
                 try
                 {
-                    var printers = await printerModel.GetAvailablePrinters();
+                    List<PrinterItem> printers = await printerModel.GetAvailablePrinters();
                     comboBox.Items.Add(new PrinterItem("Mac Address Manual", null));
                     comboBox.Items.AddRange(printers.ToArray());
 
@@ -85,7 +91,8 @@ namespace KASIR.Komponen
             else
             {
                 SetSelectedPrinter(comboBox, savedPrinterId);
-                TextBox associatedTextBox = Controls.Find($"txtPrinter{comboBoxName.Last()}", true).FirstOrDefault() as TextBox;
+                TextBox associatedTextBox =
+                    Controls.Find($"txtPrinter{comboBoxName.Last()}", true).FirstOrDefault() as TextBox;
                 if (associatedTextBox != null)
                 {
                     associatedTextBox.Text = savedPrinterId; // Update associated TextBox
@@ -95,7 +102,8 @@ namespace KASIR.Komponen
 
         private void HandlePrinterLoadingError(ComboBox comboBox, Exception ex)
         {
-            MessageBox.Show($"Error loading printers for {comboBox.Name}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Error loading printers for {comboBox.Name}: {ex.Message}", "Error", MessageBoxButton.OK,
+                MessageBoxImage.Error);
             LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             comboBox.Items.Add(new PrinterItem("Mac Address Manual", null));
             comboBox.SelectedIndex = 0; // Set default item on error
@@ -103,24 +111,24 @@ namespace KASIR.Komponen
 
         public async Task CheckAndUpdateCheckboxStates()
         {
-            List<ComboBox> comboBoxes = new List<ComboBox> { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
-            List<TextBox> textBoxes = new List<TextBox> { txtPrinter1, txtPrinter2, txtPrinter3 };
+            List<ComboBox> comboBoxes = new() { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
+            List<TextBox> textBoxes = new() { txtPrinter1, txtPrinter2, txtPrinter3 };
 
             for (int i = 0; i < comboBoxes.Count; i++)
             {
-                var comboBox = comboBoxes[i];
-                var textBox = textBoxes[i];
+                ComboBox? comboBox = comboBoxes[i];
+                TextBox? textBox = textBoxes[i];
                 int printerNumber = i + 1;
                 string comboBoxName = $"inter{printerNumber}";
 
                 // Dapatkan daftar checkbox untuk printer ini
-                List<CheckBox> checkBoxes = new List<CheckBox>
-        {
-            Controls.Find($"checkBoxKasirPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
-            Controls.Find($"checkBoxCheckerPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
-            Controls.Find($"checkBoxMakananPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
-            Controls.Find($"checkBoxMinumanPrinter{printerNumber}", true).FirstOrDefault() as CheckBox
-        };
+                List<CheckBox> checkBoxes = new()
+                {
+                    Controls.Find($"checkBoxKasirPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+                    Controls.Find($"checkBoxCheckerPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+                    Controls.Find($"checkBoxMakananPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+                    Controls.Find($"checkBoxMinumanPrinter{printerNumber}", true).FirstOrDefault() as CheckBox
+                };
 
                 // Filter out null checkboxes
                 checkBoxes = checkBoxes.Where(cb => cb != null).ToList();
@@ -141,7 +149,7 @@ namespace KASIR.Komponen
                     string.IsNullOrEmpty(textBox.Text))
                 {
                     // Uncheck semua checkbox untuk printer ini
-                    foreach (var checkBox in checkBoxes)
+                    foreach (CheckBox checkBox in checkBoxes)
                     {
                         checkBox.Checked = false;
                         await printerModel.SaveCheckBoxSettingAsync(checkBox.Name, false);
@@ -181,33 +189,34 @@ namespace KASIR.Komponen
                     }
 
                     // Simpan status checkbox
-                    foreach (var checkBox in checkBoxes)
+                    foreach (CheckBox checkBox in checkBoxes)
                     {
                         await printerModel.SaveCheckBoxSettingAsync(checkBox.Name, checkBox.Checked);
                     }
                 }
             }
         }
+
         public async Task CleanupPrinterSettings()
         {
-            List<ComboBox> comboBoxes = new List<ComboBox> { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
-            List<TextBox> textBoxes = new List<TextBox> { txtPrinter1, txtPrinter2, txtPrinter3 };
+            List<ComboBox> comboBoxes = new() { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
+            List<TextBox> textBoxes = new() { txtPrinter1, txtPrinter2, txtPrinter3 };
 
             for (int i = 0; i < comboBoxes.Count; i++)
             {
-                var comboBox = comboBoxes[i];
-                var textBox = textBoxes[i];
+                ComboBox comboBox = comboBoxes[i];
+                TextBox textBox = textBoxes[i];
                 int printerNumber = i + 1;
                 string comboBoxName = $"inter{printerNumber}";
 
                 // Dapatkan daftar checkbox untuk printer ini
-                List<CheckBox> checkBoxes = new List<CheckBox>
-        {
-            Controls.Find($"checkBoxKasirPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
-            Controls.Find($"checkBoxCheckerPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
-            Controls.Find($"checkBoxMakananPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
-            Controls.Find($"checkBoxMinumanPrinter{printerNumber}", true).FirstOrDefault() as CheckBox
-        };
+                List<CheckBox> checkBoxes = new()
+                {
+                    Controls.Find($"checkBoxKasirPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+                    Controls.Find($"checkBoxCheckerPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+                    Controls.Find($"checkBoxMakananPrinter{printerNumber}", true).FirstOrDefault() as CheckBox,
+                    Controls.Find($"checkBoxMinumanPrinter{printerNumber}", true).FirstOrDefault() as CheckBox
+                };
 
                 // Filter out null checkboxes
                 checkBoxes = checkBoxes.Where(cb => cb != null).ToList();
@@ -228,7 +237,7 @@ namespace KASIR.Komponen
                 else if (anyCheckboxChecked && string.IsNullOrEmpty(textBox.Text))
                 {
                     // Uncheck semua checkbox
-                    foreach (var checkBox in checkBoxes)
+                    foreach (CheckBox checkBox in checkBoxes)
                     {
                         checkBox.Checked = false;
                         await printerModel.SaveCheckBoxSettingAsync(checkBox.Name, false);
@@ -236,9 +245,11 @@ namespace KASIR.Komponen
                 }
             }
         }
+
         private async Task LoadCheckBoxStates(string comboBoxName)
         {
-            List<CheckBox> checkBoxes = new List<CheckBox> {
+            List<CheckBox> checkBoxes = new()
+            {
                 checkBoxKasirPrinter1,
                 checkBoxCheckerPrinter1,
                 checkBoxMakananPrinter1,
@@ -250,10 +261,10 @@ namespace KASIR.Komponen
                 checkBoxKasirPrinter3,
                 checkBoxCheckerPrinter3,
                 checkBoxMakananPrinter3,
-                checkBoxMinumanPrinter3,
+                checkBoxMinumanPrinter3
             };
 
-            foreach (var checkBox in checkBoxes)
+            foreach (CheckBox checkBox in checkBoxes)
             {
                 string checkBoxName = checkBox.Name;
                 bool isChecked = await printerModel.LoadCheckBoxSettingAsync(checkBoxName);
@@ -263,7 +274,7 @@ namespace KASIR.Komponen
 
         private async void CheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            var checkBox = (CheckBox)sender;
+            CheckBox checkBox = (CheckBox)sender;
             string checkBoxName = checkBox.Name;
             bool isChecked = checkBox.Checked;
 
@@ -273,7 +284,8 @@ namespace KASIR.Komponen
 
         private List<CheckBox> FindCheckBoxesByPrefix(string prefix)
         {
-            List<CheckBox> checkBoxes = new List<CheckBox> {
+            List<CheckBox> checkBoxes = new()
+            {
                 checkBoxKasirPrinter1,
                 checkBoxCheckerPrinter1,
                 checkBoxMakananPrinter1,
@@ -285,7 +297,7 @@ namespace KASIR.Komponen
                 checkBoxKasirPrinter3,
                 checkBoxCheckerPrinter3,
                 checkBoxMakananPrinter3,
-                checkBoxMinumanPrinter3,
+                checkBoxMinumanPrinter3
             };
 
             return checkBoxes;
@@ -293,12 +305,11 @@ namespace KASIR.Komponen
 
         private async void ComboBoxPrinter_SelectedIndexChanged(object sender, EventArgs e)
         {
-            var comboBox = (ComboBox)sender;
-            var selectedPrinter = (PrinterItem)comboBox.SelectedItem;
+            ComboBox comboBox = (ComboBox)sender;
+            PrinterItem? selectedPrinter = (PrinterItem)comboBox.SelectedItem;
 
             if (selectedPrinter.ToString() == "Mac Address Manual")
             {
-
                 string comboBoxName = comboBox.Name.Substring(10); // Mengambil angka dari nama comboBox
                 await printerModel.DelPrinterSettings(comboBoxName);
 
@@ -354,19 +365,22 @@ namespace KASIR.Komponen
                     return; // Exit as soon as we find and set the item
                 }
             }
+
             // If no match found, select the default item
             comboBox.SelectedIndex = 0;
         }
+
         private async Task savingSettings()
         {
             // Assuming ComboBoxPrinter and txtPrinter are arrays or lists containing the ComboBoxes and TextBoxes
-            List<ComboBox> comboBoxPrinters = new List<ComboBox> { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
-            List<TextBox> txtPrinters = new List<TextBox> { txtPrinter1, txtPrinter2, txtPrinter3 };
+            List<ComboBox> comboBoxPrinters = new() { ComboBoxPrinter1, ComboBoxPrinter2, ComboBoxPrinter3 };
+            List<TextBox> txtPrinters = new() { txtPrinter1, txtPrinter2, txtPrinter3 };
 
             for (int i = 0; i < comboBoxPrinters.Count; i++) // Loop through 0 to 2 for three printers
             {
                 string comboBoxName = "inter" + (i + 1); // Adjust to match naming convention if needed
-                if (comboBoxPrinters[i].SelectedItem.ToString() == "Mac Address Manual" && !string.IsNullOrEmpty(txtPrinters[i].Text))
+                if (comboBoxPrinters[i].SelectedItem.ToString() == "Mac Address Manual" &&
+                    !string.IsNullOrEmpty(txtPrinters[i].Text))
                 {
                     string printerId = txtPrinters[i].Text;
                     if (printerModel.IsBluetoothPrinter(txtPrinters[i].Text))
@@ -381,10 +395,12 @@ namespace KASIR.Komponen
                 }
                 else
                 {
-                    var selectedPrinter = (PrinterItem)comboBoxPrinters[i].SelectedItem;
+                    PrinterItem? selectedPrinter = (PrinterItem)comboBoxPrinters[i].SelectedItem;
 
                     // Simpan pengaturan printer terpilih
-                    string printerId = selectedPrinter?.PrinterId; // Use null-conditional operator to prevent null reference
+                    string
+                        printerId = selectedPrinter
+                            ?.PrinterId; // Use null-conditional operator to prevent null reference
                     if (!string.IsNullOrEmpty(printerId) && printerId != "Mac Address Manual")
                     {
                         await printerModel.SavePrinterSettings(comboBoxName, printerId);
@@ -392,6 +408,7 @@ namespace KASIR.Komponen
                 }
             }
         }
+
         public string ConvertMacAddressFormat(string macAddress)
         {
             // Use Regex to replace all colons with hyphens
@@ -407,6 +424,7 @@ namespace KASIR.Komponen
         {
             await File.WriteAllTextAsync("setting\\RunningText.data", data);
         }
+
         private async void btnSave_Click(object sender, EventArgs e)
         {
             try
@@ -419,11 +437,13 @@ namespace KASIR.Komponen
                     string data = txtFooter.Text;
                     await SaveFooterStruk(data);
                 }
+
                 if (!string.IsNullOrEmpty(txtRunningText.Text))
                 {
                     string data = txtRunningText.Text;
                     await SaveRunningText(data);
                 }
+
                 string allSettingsData = await File.ReadAllTextAsync("setting\\configDualMonitor.data");
                 if (allSettingsData == "ON")
                 {
@@ -431,6 +451,7 @@ namespace KASIR.Komponen
                     Thread.Sleep(3000);
                     radioDualMonitor.Checked = true;
                 }
+
                 Close();
             }
             catch (Exception ex)
@@ -447,20 +468,20 @@ namespace KASIR.Komponen
         }
 
 
-
         private bool IsInternetConnected()
         {
             try
             {
                 // Ping a well-known server, such as Google's public DNS server (8.8.8.8)
-                Ping ping = new Ping();
+                Ping ping = new();
                 PingReply reply = ping.Send("8.8.8.8", 1000); // 1000 milliseconds timeout
 
                 return reply != null && reply.Status == IPStatus.Success;
             }
             catch (PingException)
             {
-                System.Windows.Forms.MessageBox.Show("Koneksi bermasalah", "Kesalahan", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                System.Windows.Forms.MessageBox.Show("Koneksi bermasalah", "Kesalahan", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogWarning("No koneksi");
 
                 // Handle exception (no internet connection or other issues)
@@ -472,17 +493,17 @@ namespace KASIR.Komponen
         {
             try
             {
-                using (var httpClient = new HttpClient())
+                using (HttpClient httpClient = new())
                 {
-                    var urlVersion = Properties.Settings.Default.BaseAddressVersion.ToString();
-                    var newVersion = await httpClient.GetStringAsync(urlVersion);
-                    string currentVersion = Properties.Settings.Default.Version.ToString();
+                    string? urlVersion = Settings.Default.BaseAddressVersion;
+                    string newVersion = await httpClient.GetStringAsync(urlVersion);
+                    string currentVersion = Settings.Default.Version;
 
                     newVersion = newVersion.Replace(".", "");
                     currentVersion = currentVersion.Replace(".", "");
 
                     // Fetch the version string for display
-                    var displayVersion = await httpClient.GetStringAsync(urlVersion);
+                    string displayVersion = await httpClient.GetStringAsync(urlVersion);
 
                     if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
                     {
@@ -517,27 +538,30 @@ namespace KASIR.Komponen
         public string GetOutletNameFromFile(string filePath)
         {
             string fileContent = File.ReadAllText(filePath);
-            var outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
+            JObject? outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
             return outletData["data"]?["name"]?.ToString();
         }
+
         public async Task<string> GetOutletNameFromApi()
         {
             IApiService apiService = new ApiService();
             string response = await apiService.CekShift("/outlet/" + baseOutlet);
             if (response != null)
             {
-                var apiResponse = JsonConvert.DeserializeObject<JObject>(response);
+                JObject? apiResponse = JsonConvert.DeserializeObject<JObject>(response);
                 File.WriteAllText($"DT-Cache\\DataOutlet{baseOutlet}.data", JsonConvert.SerializeObject(response));
 
                 return apiResponse["data"]?["name"]?.ToString();
             }
+
             return null;
         }
+
         public async void btnUpdate_Click(object sender, EventArgs e)
         {
             string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
             string outletName = await GetOrCreateOutletName(filePath);
-            Util n = new Util();
+            Util n = new();
             n.sendLogTelegramNetworkError("Open Updater Manual" + outletName);
             btnUpdate.Enabled = false;
 
@@ -557,36 +581,40 @@ namespace KASIR.Komponen
             {
                 return GetOutletNameFromFile(filePath);
             }
+
             string outletName = await GetOutletNameFromApi();
             if (outletName != null)
             {
                 // Simpan data ke file jika berhasil mendapatkan nama outlet
-                await File.WriteAllTextAsync(filePath, JsonConvert.SerializeObject(new { data = new { name = outletName } }));
+                await File.WriteAllTextAsync(filePath,
+                    JsonConvert.SerializeObject(new { data = new { name = outletName } }));
                 return outletName;
             }
+
             return " (Hybrid)";
         }
 
         private async Task StartUpdaterProcess()
         {
-            if (File.Exists(System.Windows.Forms.Application.StartupPath + "update\\update.exe"))
+            if (File.Exists(Application.StartupPath + "update\\update.exe"))
             {
                 if (IsInternetConnected())
                 {
                     LoggerUtil.LogWarning("Open Update.exe");
                     Process.Start(new ProcessStartInfo
                     {
-                        FileName = System.Windows.Forms.Application.StartupPath + "update\\update.exe",
+                        FileName = Application.StartupPath + "update\\update.exe",
                         UseShellExecute = false,
                         CreateNoWindow = false,
                         Verb = "runas"
                     });
-                    System.Windows.Forms.Application.Exit();
+                    Application.Exit();
                 }
             }
             else
             {
-                System.Windows.Forms.MessageBox.Show("File tidak ditemukan", "Kesalahan", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                System.Windows.Forms.MessageBox.Show("File tidak ditemukan", "Kesalahan", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogWarning("File not found");
             }
         }
@@ -606,6 +634,7 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         public async Task OpenDualMonitor()
         {
             try
@@ -614,10 +643,10 @@ namespace KASIR.Komponen
                 await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
 
                 //System.Windows.MessageBox.Show("Contact PM Project.");
-                string path = System.Windows.Forms.Application.StartupPath + "KASIRDualMonitor\\KASIR Dual Monitor.exe";
+                string path = Application.StartupPath + "KASIRDualMonitor\\KASIR Dual Monitor.exe";
                 //OpenApplicationOnSecondMonitor(System.Windows.Forms.Application.StartupPath + @"KASIRDualMonitor\\KASIR Dual Monitor.exe");
 
-                Process p = new Process();
+                Process p = new();
                 p.StartInfo.FileName = path;
                 p.StartInfo.Arguments = "";
                 p.StartInfo.UseShellExecute = false;
@@ -627,23 +656,24 @@ namespace KASIR.Komponen
                 p.Start();
 
                 Thread.Sleep(1000);
-
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         private async void radioDualMonitor_CheckedChanged(object sender, EventArgs e)
         {
             try
             {
                 string allSettingsData = await File.ReadAllTextAsync("setting\\configDualMonitor.data");
 
-                if (radioDualMonitor.Checked == true && allSettingsData == "OFF")
+                if (radioDualMonitor.Checked && allSettingsData == "OFF")
                 {
                     await OpenDualMonitor();
                 }
+
                 if (radioDualMonitor.Checked == false && allSettingsData == "ON")
                 {
                     string data = "OFF";
@@ -656,6 +686,7 @@ namespace KASIR.Komponen
                 MessageBox.Show($"{ex}");
             }
         }
+
         private static void OnTimedEvent(object source, ElapsedEventArgs e)
         {
             try
@@ -674,22 +705,21 @@ namespace KASIR.Komponen
             }
             catch (Exception)
             {
-
             }
         }
 
         private void Redownload_Click(object sender, EventArgs e)
         {
-            DialogResult yakin = System.Windows.Forms.MessageBox.Show("Reset / Redownload Data lokal Cache ?", "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            DialogResult yakin = System.Windows.Forms.MessageBox.Show("Reset / Redownload Data lokal Cache ?",
+                "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (yakin != DialogResult.Yes)
             {
-                return;
             }
             else
             {
                 string TypeCacheEksekusi = "Reset";
-                CacheDataApp form3 = new CacheDataApp(TypeCacheEksekusi);
-                this.Close();
+                CacheDataApp form3 = new(TypeCacheEksekusi);
+                Close();
                 form3.Show();
             }
         }
@@ -697,15 +727,11 @@ namespace KASIR.Komponen
 
         private void UpdateInfo_Click(object sender, EventArgs e)
         {
-
-
-            UpdateInformation u = new UpdateInformation();
-            this.Close();
+            UpdateInformation u = new();
+            Close();
 
             u.Show();
-
         }
-
 
 
         private void CacheApp_Click(object sender, EventArgs e)
@@ -713,15 +739,16 @@ namespace KASIR.Komponen
             try
             {
                 string TypeCacheEksekusi = "Sync";
-                CacheDataApp form3 = new CacheDataApp(TypeCacheEksekusi);
-                this.Close();
+                CacheDataApp form3 = new(TypeCacheEksekusi);
+                Close();
                 form3.Show();
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Gagal Download Data : {ex}");
+                MessageBox.Show($"Gagal Download Data : {ex}");
             }
         }
+
         public async Task LoadConfig()
         {
             if (!Directory.Exists(configFolderPath))
@@ -763,13 +790,15 @@ namespace KASIR.Komponen
                 }
             }
         }
+
         private async void sButtonListMenu_CheckedChanged(object sender, EventArgs e)
         {
             if (!Directory.Exists(configFolderPath))
             {
                 Directory.CreateDirectory(configFolderPath);
             }
-            if (sButtonListMenu.Checked == true)
+
+            if (sButtonListMenu.Checked)
             {
                 string data = "ON";
                 await File.WriteAllTextAsync("setting\\configListMenu.data", data);
@@ -783,7 +812,7 @@ namespace KASIR.Komponen
 
         private void txtPrinter1_TextChanged(object sender, EventArgs e)
         {
-            if (System.Net.IPAddress.TryParse(txtPrinter1.Text, out _))
+            if (IPAddress.TryParse(txtPrinter1.Text, out _))
             {
                 // Connect via LAN
                 lblBluetooth1.Text = "IP Address Detected";
@@ -796,7 +825,7 @@ namespace KASIR.Komponen
 
         private void txtPrinter2_TextChanged(object sender, EventArgs e)
         {
-            if (System.Net.IPAddress.TryParse(txtPrinter2.Text, out _))
+            if (IPAddress.TryParse(txtPrinter2.Text, out _))
             {
                 // Connect via LAN
                 lblBluetooth2.Text = "IP Address Detected";
@@ -809,7 +838,7 @@ namespace KASIR.Komponen
 
         private void txtPrinter3_TextChanged(object sender, EventArgs e)
         {
-            if (System.Net.IPAddress.TryParse(txtPrinter3.Text, out _))
+            if (IPAddress.TryParse(txtPrinter3.Text, out _))
             {
                 // Connect via LAN
                 lblBluetooth3.Text = "IP Address Detected";
@@ -822,16 +851,16 @@ namespace KASIR.Komponen
 
         private void iconDual_Click(object sender, EventArgs e)
         {
+            SettingsDual u = new();
 
-            SettingsDual u = new SettingsDual();
-
-            this.Close();
+            Close();
 
             u.Show();
         }
+
         public static void OpenFolder(string folderPath)
         {
-            if (!System.IO.Directory.Exists(folderPath))
+            if (!Directory.Exists(folderPath))
             {
                 MessageBox.Show("Folder tidak ditemukan.");
                 return;
@@ -844,9 +873,10 @@ namespace KASIR.Komponen
                 Verb = "open"
             });
         }
+
         private void iconButton1_Click(object sender, EventArgs e)
         {
-            Form passwordForm = new Form
+            Form passwordForm = new()
             {
                 Text = "Autentikasi",
                 Width = 300,
@@ -858,7 +888,7 @@ namespace KASIR.Komponen
                 Owner = this // Set the owner to establish parent-child relationship
             };
 
-            Label lblStatus = new Label
+            Label lblStatus = new()
             {
                 Text = "Masukkan Password:",
                 Location = new Point(20, 20), // Sekarang menggunakan System.Drawing.Point
@@ -866,21 +896,19 @@ namespace KASIR.Komponen
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
-            TextBox txtPassword = new TextBox
+            TextBox txtPassword = new()
             {
                 Location = new Point(20, 50), // Sekarang menggunakan System.Drawing.Point
                 Width = 260,
                 UseSystemPasswordChar = true
             };
 
-            Button btnSubmit = new Button
+            Button btnSubmit = new()
             {
-                Text = "Submit",
-                Location = new Point(100, 100),
-                DialogResult = DialogResult.OK
+                Text = "Submit", Location = new Point(100, 100), DialogResult = DialogResult.OK
             };
 
-            Label lblError = new Label
+            Label lblError = new()
             {
                 Text = "",
                 Location = new Point(20, 130),
@@ -889,7 +917,7 @@ namespace KASIR.Komponen
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
-            this.Close();
+            Close();
             //this.Hide(); // Hide rather than close immediately
             btnSubmit.Click += (s, ev) =>
             {
@@ -914,7 +942,7 @@ namespace KASIR.Komponen
 
             if (passwordForm.ShowDialog() == DialogResult.OK)
             {
-                SettingsConfig u = new SettingsConfig();
+                SettingsConfig u = new();
                 u.Show();
             }
         }
@@ -925,10 +953,11 @@ namespace KASIR.Komponen
             {
                 Directory.CreateDirectory(configFolderPath);
             }
+
             string data, Config = "setting\\OfflineMode.data";
             string allSettingsData = await File.ReadAllTextAsync(Config);
 
-            if (sButtonOffline.Checked == true && allSettingsData == "OFF")
+            if (sButtonOffline.Checked && allSettingsData == "OFF")
             {
                 data = "ON";
                 await File.WriteAllTextAsync(Config, data);
@@ -937,8 +966,8 @@ namespace KASIR.Komponen
                 MainForm.UpdateContent(); // Mengupdate konten pada Form1 yang sudah ada
 
                 string TypeCacheEksekusi = "Sync";
-                CacheDataApp form3 = new CacheDataApp(TypeCacheEksekusi);
-                this.Close();
+                CacheDataApp form3 = new(TypeCacheEksekusi);
+                Close();
                 form3.Show();
             }
 
@@ -948,10 +977,8 @@ namespace KASIR.Komponen
                 await File.WriteAllTextAsync(Config, data);
 
                 MainForm.UpdateContent(); // Mengupdate konten pada Form1 yang sudah ada
-                this.Close();
-
+                Close();
             }
         }
-
     }
 }

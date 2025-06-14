@@ -28,8 +28,8 @@ namespace KASIR
         private Panel leftBorderBtn;
         private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet.ToString();
 
-        string DownloadPath, VersionUpdaterApp, PathKasir, baseOutletName;
-        private static Random random = new Random();
+        private string DownloadPath, VersionUpdaterApp, PathKasir, baseOutletName;
+        private static Random random = new();
 
         public Form1()
         {
@@ -37,15 +37,15 @@ namespace KASIR
             SetDoubleBufferedForAllControls(this);
             //this.Height = 768;
             //this.Width = 1024;
-            this.Load += btnMaximize_Click;
-            this.Text = string.Empty;
-            this.ControlBox = false;
-            this.DoubleBuffered = true;
-            this.MaximizedBounds = Screen.FromHandle(this.Handle).WorkingArea;
+            Load += btnMaximize_Click;
+            Text = string.Empty;
+            ControlBox = false;
+            DoubleBuffered = true;
+            MaximizedBounds = Screen.FromHandle(Handle).WorkingArea;
             leftBorderBtn = new Panel();
             leftBorderBtn.Size = new Size(7, 60);
             panel2.Controls.Add(leftBorderBtn);
-            this.Height += 100;
+            Height += 100;
             button2.Visible = true;
             StarterApp();
             if (baseOutlet != "4")
@@ -53,7 +53,7 @@ namespace KASIR
                 btnDev.Visible = false;
             }
 
-            this.Shown += Form1_Shown; // Tambahkan ini
+            Shown += Form1_Shown; // Tambahkan ini
         }
 
         private void Form1_Shown(object sender, EventArgs e)
@@ -63,13 +63,13 @@ namespace KASIR
 
         private void RefreshIconButtons()
         {
-            this.SuspendLayout();
-            foreach (Control c in this.Controls)
+            SuspendLayout();
+            foreach (Control c in Controls)
             {
                 RecursiveRefreshIcons(c);
             }
 
-            this.ResumeLayout(true);
+            ResumeLayout(true);
         }
 
         // Method untuk recursive refresh
@@ -141,7 +141,7 @@ namespace KASIR
 
         private async Task LoadOfflineMasterPos()
         {
-            Offline_masterPos offlineMasterPos = new Offline_masterPos { TopLevel = false, Dock = DockStyle.Fill };
+            Offline_masterPos offlineMasterPos = new() { TopLevel = false, Dock = DockStyle.Fill };
 
             RemoveExistingForm<masterPos>();
             panel1.Controls.Add(offlineMasterPos);
@@ -152,7 +152,7 @@ namespace KASIR
 
         private async Task LoadMasterPos()
         {
-            masterPos m = new masterPos { TopLevel = false, Dock = DockStyle.Fill };
+            masterPos m = new() { TopLevel = false, Dock = DockStyle.Fill };
 
             RemoveExistingForm<Offline_masterPos>();
             panel1.Controls.Add(m);
@@ -186,38 +186,6 @@ namespace KASIR
             SignalPing.IconColor = DrawingColor.White;
         }
 
-        public static void DuplicateTemp()
-        {
-            if (!File.Exists("icon\\OutletLogo.bmp"))
-            {
-                return;
-            }
-
-            string outletLogoPath = "icon\\OutletLogo.bmp";
-            string tempCopyPath = "icon\\TempCopy.bmp";
-
-            try
-            {
-                if (!File.Exists(tempCopyPath))
-                {
-                    File.Copy(outletLogoPath, tempCopyPath);
-                }
-                else
-                {
-                    File.Delete(outletLogoPath);
-                    File.Copy(tempCopyPath, outletLogoPath);
-                }
-            }
-            catch (IOException ioEx)
-            {
-                LoggerUtil.LogError(ioEx, "Terjadi kesalahan IO: {ioEx.Message}", ioEx.Message);
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "Terjadi kesalahan:", ex.Message);
-            }
-        }
-
         public async Task OpenDualMonitor()
         {
             try
@@ -226,10 +194,10 @@ namespace KASIR
                 await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
 
                 //System.Windows.MessageBox.Show("Contact PM Project.");
-                string path = System.Windows.Forms.Application.StartupPath + "KASIRDualMonitor\\KASIR Dual Monitor.exe";
+                string path = Application.StartupPath + "KASIRDualMonitor\\KASIR Dual Monitor.exe";
                 //OpenApplicationOnSecondMonitor(System.Windows.Forms.Application.StartupPath + @"KASIRDualMonitor\\KASIR Dual Monitor.exe");
 
-                Process p = new Process();
+                Process p = new();
                 p.StartInfo.FileName = path;
                 p.StartInfo.Arguments = "";
                 p.StartInfo.UseShellExecute = false;
@@ -248,7 +216,7 @@ namespace KASIR
 
         private async void StarterApp()
         {
-            SettingsForm c = new SettingsForm(this);
+            SettingsForm c = new(this);
             await c.LoadConfig();
             await headerOutletName("");
             initPingTest();
@@ -285,7 +253,7 @@ namespace KASIR
             {
                 string TypeCacheEksekusi = "Sync";
 
-                CacheDataApp CacheDataApp = new CacheDataApp(TypeCacheEksekusi);
+                CacheDataApp CacheDataApp = new(TypeCacheEksekusi);
                 CacheDataApp.Show();
             }
 
@@ -298,11 +266,11 @@ namespace KASIR
             if (allSettingsData == "ON")
             {
                 // Create an instance of transactionFileMover and then call the method
-                var fileMover = new transactionFileMover();
+                transactionFileMover fileMover = new();
                 await fileMover.refreshCacheTransaction();
             }
 
-            SettingsForm clean = new SettingsForm(this);
+            SettingsForm clean = new(this);
             await clean.CleanupPrinterSettings();
         }
 
@@ -333,7 +301,10 @@ namespace KASIR
 
         public async Task headerOutletName(string text)
         {
-            if (string.IsNullOrWhiteSpace(text)) return; // Avoid null or empty
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return; // Avoid null or empty
+            }
 
             if (lblNamaOutlet.InvokeRequired)
             {
@@ -399,11 +370,14 @@ namespace KASIR
             {
                 await headerOutletName("Checking New Updater...");
 
-                using (var httpClient = new HttpClient())
+                using (HttpClient httpClient = new())
                 {
                     string urlVersion = "https://raw.githubusercontent.com/bayufrd/update/main/updaterVersionApp.txt";
                     string newVersion = await httpClient.GetStringAsync(urlVersion);
-                    if (string.IsNullOrWhiteSpace(newVersion)) throw new Exception("Version data is empty.");
+                    if (string.IsNullOrWhiteSpace(newVersion))
+                    {
+                        throw new Exception("Version data is empty.");
+                    }
 
                     string changeVersion = newVersion.Trim();
                     await headerOutletName($"New Version Updater is {changeVersion}");
@@ -453,9 +427,9 @@ namespace KASIR
                 Directory.CreateDirectory(extractDirectory);
 
                 // Extract RAR file
-                using (var archive = ArchiveFactory.Open(rarFilePath))
+                using (IArchive archive = ArchiveFactory.Open(rarFilePath))
                 {
-                    foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
+                    foreach (IArchiveEntry entry in archive.Entries.Where(e => !e.IsDirectory))
                     {
                         entry.WriteToDirectory(extractDirectory,
                             new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
@@ -527,7 +501,7 @@ namespace KASIR
         }
 
 
-        static bool IsValidVersion(string version)
+        private static bool IsValidVersion(string version)
         {
             // Memastikan hanya angka dan maksimal 5 digit
             return Regex.IsMatch(version, @"^\d{1,5}$");
@@ -539,7 +513,7 @@ namespace KASIR
             {
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
                 // Deserialize JSON ke object CartDataCache
-                var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
+                CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
 
                 var json = new
                 {
@@ -550,7 +524,7 @@ namespace KASIR
                 };
                 // Mengubah objek menjadi string JSON
                 string jsonString =
-                    JsonConvert.SerializeObject(json, Newtonsoft.Json.Formatting.Indented); // Tidak ada indentasi
+                    JsonConvert.SerializeObject(json, Formatting.Indented); // Tidak ada indentasi
                 IApiService apiService = new ApiService();
                 HttpResponseMessage response =
                     await apiService.notifikasiPengeluaran(jsonString, $"/update-confirm?outlet_id={baseOutlet}");
@@ -578,10 +552,10 @@ namespace KASIR
                     return;
                 }
 
-                using (var httpClient = new HttpClient())
+                using (HttpClient httpClient = new())
                 {
-                    var urlVersion = Properties.Settings.Default.BaseAddressVersion.ToString();
-                    var newVersion = await httpClient.GetStringAsync(urlVersion);
+                    string urlVersion = Properties.Settings.Default.BaseAddressVersion.ToString();
+                    string newVersion = await httpClient.GetStringAsync(urlVersion);
                     string currentVersion = Properties.Settings.Default.Version.ToString();
 
                     await headerOutletName($"Current Version is {currentVersion}, New is {newVersion}");
@@ -601,12 +575,12 @@ namespace KASIR
                     {
                         // Ambil data focus outlet
                         string originalUrl = Properties.Settings.Default.BaseAddressDev.ToString();
-                        var urlOutletFocus = RemoveApiPrefix(originalUrl);
-                        var focusOutletData =
+                        string urlOutletFocus = RemoveApiPrefix(originalUrl);
+                        string focusOutletData =
                             await httpClient.GetStringAsync($"{urlOutletFocus}/update/outletUpdate.txt");
 
                         // Parsing data focus outlet
-                        var focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
+                        string[] focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
                             .Split(',')
                             .Select(s => s.Trim()) // Menghapus spasi di sekitar
                             .ToArray();
@@ -668,7 +642,7 @@ namespace KASIR
                     return;
                 }
 
-                ProcessStartInfo startInfo = new ProcessStartInfo
+                ProcessStartInfo startInfo = new()
                 {
                     FileName = updatePath, Arguments = "", UseShellExecute = true, Verb = "runas"
                 };
@@ -733,7 +707,7 @@ namespace KASIR
         public string GetOutletNameFromFile(string filePath)
         {
             string fileContent = File.ReadAllText(filePath);
-            var outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
+            JObject? outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
             return outletData["data"]?["name"]?.ToString();
         }
 
@@ -743,7 +717,7 @@ namespace KASIR
             string response = await apiService.CekShift("/outlet/" + baseOutlet);
             if (response != null)
             {
-                var apiResponse = JsonConvert.DeserializeObject<JObject>(response);
+                JObject? apiResponse = JsonConvert.DeserializeObject<JObject>(response);
                 File.WriteAllText($"DT-Cache\\DataOutlet{baseOutlet}.data", JsonConvert.SerializeObject(response));
 
                 return apiResponse["data"]?["name"]?.ToString();
@@ -846,7 +820,7 @@ namespace KASIR
                     iconButton1.Enabled = false;
                     iconButton2.Enabled = false;
                     // If OfflineMode is ON, load the Offline_masterPos form
-                    Offline_masterPos offlineMasterPos = new Offline_masterPos();
+                    Offline_masterPos offlineMasterPos = new();
                     offlineMasterPos.TopLevel = false;
                     offlineMasterPos.Dock = DockStyle.Fill;
 
@@ -873,7 +847,7 @@ namespace KASIR
                 else
                 {
                     // If OfflineMode is OFF, load the masterPos form
-                    masterPos m = new masterPos();
+                    masterPos m = new();
                     m.TopLevel = false;
                     m.Dock = DockStyle.Fill;
 
@@ -938,7 +912,7 @@ namespace KASIR
                     btnShiftLaporan.Enabled = false;
                     iconButton1.Enabled = false;
                     iconButton2.Enabled = false;
-                    Offline_successTransaction c = new Offline_successTransaction();
+                    Offline_successTransaction c = new();
                     if (c == null)
                     {
                         MessageBox.Show("Terjadi kesalah coba restart aplikasi", "Error", MessageBoxButtons.OK,
@@ -959,7 +933,7 @@ namespace KASIR
                 }
                 else
                 {
-                    successTransaction c = new successTransaction();
+                    successTransaction c = new();
 
                     if (c == null)
                     {
@@ -985,15 +959,15 @@ namespace KASIR
 
         //Drag Form
         [DllImport("user32.DLL", EntryPoint = "ReleaseCapture")]
-        private extern static void ReleaseCapture();
+        private static extern void ReleaseCapture();
 
         [DllImport("user32.DLL", EntryPoint = "SendMessage")]
-        private extern static void SendMessage(System.IntPtr hWnd, int wMsg, int wParam, int lParam);
+        private static extern void SendMessage(IntPtr hWnd, int wMsg, int wParam, int lParam);
 
         private void panelTitleBar_MouseDown(object sender, MouseEventArgs e)
         {
             ReleaseCapture();
-            SendMessage(this.Handle, 0x112, 0xf012, 0);
+            SendMessage(Handle, 0x112, 0xf012, 0);
         }
 
         //Close-Maximize-Minimize
@@ -1008,9 +982,13 @@ namespace KASIR
         private void btnMaximize_Click(object sender, EventArgs e)
         {
             if (WindowState == FormWindowState.Normal)
+            {
                 WindowState = FormWindowState.Maximized;
+            }
             else
+            {
                 WindowState = FormWindowState.Normal;
+            }
         }
 
         private void btnMinimize_Click(object sender, EventArgs e)
@@ -1024,9 +1002,13 @@ namespace KASIR
             ////LoggerUtil.LogPrivateMethod(nameof(FormMainMenu_Resize));
 
             if (WindowState == FormWindowState.Maximized)
+            {
                 FormBorderStyle = FormBorderStyle.None;
+            }
             else
+            {
                 FormBorderStyle = FormBorderStyle.Sizable;
+            }
         }
 
         private void btnEditSettings_Click(object sender, EventArgs e)
@@ -1034,7 +1016,7 @@ namespace KASIR
             Form background = CreateOverlayForm();
 
             // Create the SettingsForm
-            using (SettingsForm settingsForm = new SettingsForm(this))
+            using (SettingsForm settingsForm = new(this))
             {
                 // Set the position of the SettingsForm manually
                 settingsForm.StartPosition = FormStartPosition.CenterParent;
@@ -1135,7 +1117,7 @@ namespace KASIR
             // Check if OfflineMode is ON
             if (allSettingsData == "ON")
             {
-                using (shiftReport c = new shiftReport())
+                using (shiftReport c = new())
                 {
                     // Set background operation flag to true 
                     // karena tidak menampilkan form
@@ -1156,7 +1138,7 @@ namespace KASIR
             SignalPing.IconColor = color;
         }
 
-        public static readonly object FileLock = new object();
+        public static readonly object FileLock = new();
 
         private async void btnTestSpeed_Click(object sender, EventArgs e)
         {
@@ -1182,7 +1164,7 @@ namespace KASIR
 
         private async Task<int> TestPing(string host)
         {
-            Ping pingSender = new Ping();
+            Ping pingSender = new();
             PingReply reply = await pingSender.SendPingAsync(host);
 
             if (reply.Status == IPStatus.Success)
@@ -1224,10 +1206,10 @@ namespace KASIR
         {
             // Get the screen dimensions
             Screen[] screens = Screen.AllScreens;
-            System.Drawing.Rectangle secondScreen = screens[1].Bounds;
+            Rectangle secondScreen = screens[1].Bounds;
 
             // Open the application with the specified path and position
-            ProcessStartInfo startInfo = new ProcessStartInfo(path);
+            ProcessStartInfo startInfo = new(path);
             startInfo.WindowStyle = ProcessWindowStyle.Normal;
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = false;
@@ -1274,7 +1256,7 @@ namespace KASIR
 
         private async Task LoadOfflineSuccessTransaction()
         {
-            Offline_shiftReport offlineTransaction = new Offline_shiftReport();
+            Offline_shiftReport offlineTransaction = new();
             offlineTransaction.Dock = DockStyle.Fill;
 
             panel1.Controls.Add(offlineTransaction);
@@ -1285,7 +1267,7 @@ namespace KASIR
 
         private async Task LoadOnlineSuccessTransaction()
         {
-            shiftReport onlineTransaction = new shiftReport();
+            shiftReport onlineTransaction = new();
             onlineTransaction.Dock = DockStyle.Fill;
 
             panel1.Controls.Add(onlineTransaction);
@@ -1304,7 +1286,7 @@ namespace KASIR
                 BackColor = Color.Black,
                 WindowState = FormWindowState.Maximized,
                 TopMost = true,
-                Location = this.Location,
+                Location = Location,
                 ShowInTaskbar = false
             };
         }
@@ -1313,7 +1295,7 @@ namespace KASIR
         {
             Form background = CreateOverlayForm();
 
-            using (Offline_Complaint c = new Offline_Complaint())
+            using (Offline_Complaint c = new())
             {
                 c.Owner = background;
 
@@ -1329,7 +1311,7 @@ namespace KASIR
         {
             ActivateButton(sender, RGBColors.color4);
 
-            DevMonitor c = new DevMonitor();
+            DevMonitor c = new();
 
             c.Dock = DockStyle.Fill;
             panel1.Controls.Add(c);

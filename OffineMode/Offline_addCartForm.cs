@@ -1,36 +1,34 @@
-﻿using System.Data;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Reflection;
 using FontAwesome.Sharp;
 using KASIR.Komponen;
 using KASIR.Model;
+using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
-
 
 namespace KASIR.OfflineMode
 {
     [Serializable]
     public partial class Offline_addCartForm : Form
     {
-        private List<Button> radioButtonsList = new List<Button>();
-        string idmenu;
-        private DataMenuDetail datas;
-        public string btnServingType;
-        public int selectedServingTypeall { get; set; }
-        public bool ReloadDataInBaseForm { get; private set; }
-        private readonly string baseOutlet;
-        List<MenuDetailDataCart> menuDetailDataCarts;
-        List<DataDiscountCart> dataDiskonList;
-        List<ServingType> servingType;
         private readonly ILogger _log = LoggerService.Instance._log;
-        string namelabel;
-        int servingtypeall;
-        string folder = "DT-Cache\\addCartForm";
+        private readonly string baseOutlet;
+        public string btnServingType;
+        private List<DataDiscountCart> dataDiskonList;
+        private DataMenuDetail datas;
+        private string folder = "DT-Cache\\addCartForm";
+        private string idmenu;
+        private List<MenuDetailDataCart> menuDetailDataCarts;
+        private string namelabel;
+        private List<Button> radioButtonsList = new();
+        private List<ServingType> servingType;
+        private int servingtypeall;
+
         public Offline_addCartForm(string id, string name, int selectedServingTypeall)
         {
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
+            baseOutlet = Settings.Default.BaseOutlet;
             InitializeComponent();
             SetDoubleBufferedForAllControls(this);
 
@@ -41,16 +39,17 @@ namespace KASIR.OfflineMode
             txtKuantitas.Text = "1";
             idmenu = id;
             servingtypeall = selectedServingTypeall;
-            foreach (var button in radioButtonsList)
+            foreach (Button button in radioButtonsList)
             {
                 button.Click += RadioButton_Click;
             }
+
             cmbVarian.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbVarian.DrawMode = DrawMode.OwnerDrawVariable;
             cmbVarian.DrawItem += CmbVarian_DrawItem;
 
             cmbVarian.ItemHeight = 25; // Set the desired item height
-            namelabel = name.ToString();
+            namelabel = name;
 
             cmbDiskon.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbDiskon.DrawMode = DrawMode.OwnerDrawVariable;
@@ -62,22 +61,29 @@ namespace KASIR.OfflineMode
 
             lblNameCart.TextAlign = ContentAlignment.MiddleCenter;
 
-            this.Shown += Form1_Shown; // Tambahkan ini
+            Shown += Form1_Shown; // Tambahkan ini
         }
+
+        public int selectedServingTypeall { get; set; }
+
+        public bool ReloadDataInBaseForm { get; private set; }
+
         // Event handler untuk form shown
         private void Form1_Shown(object sender, EventArgs e)
         {
             RefreshIconButtons();
         }
+
         // Method untuk refresh icon buttons
         private void RefreshIconButtons()
         {
-            this.SuspendLayout();
-            foreach (Control c in this.Controls)
+            SuspendLayout();
+            foreach (Control c in Controls)
             {
                 RecursiveRefreshIcons(c);
             }
-            this.ResumeLayout(true);
+
+            ResumeLayout(true);
         }
 
         // Method untuk recursive refresh
@@ -93,6 +99,7 @@ namespace KASIR.OfflineMode
                 RecursiveRefreshIcons(child);
             }
         }
+
         // Tambahkan method ini di Form1
         public static void SetDoubleBufferedForAllControls(Control control)
         {
@@ -116,11 +123,12 @@ namespace KASIR.OfflineMode
             {
                 try
                 {
-                    string json = File.ReadAllText(folder + "\\LoadDataVarian_" + idmenu + "_Outlet_" + baseOutlet + ".data");
+                    string json =
+                        File.ReadAllText(folder + "\\LoadDataVarian_" + idmenu + "_Outlet_" + baseOutlet + ".data");
                     GetMenuDetailCartModel menuModel = JsonConvert.DeserializeObject<GetMenuDetailCartModel>(json);
                     DataMenuDetail data = menuModel.data;
 
-                    var options = data.menu_details.Where(x => x.menu_detail_id != 0).ToList();
+                    List<MenuDetailDataCart> options = data.menu_details.Where(x => x.menu_detail_id != 0).ToList();
                     options.Insert(0, new MenuDetailDataCart { index = -1, varian = "Normal" });
                     cmbVarian.DataSource = options;
                     cmbVarian.DisplayMember = "varian";
@@ -137,11 +145,12 @@ namespace KASIR.OfflineMode
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
+
             try
             {
                 MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
-                CacheDataApp form3 = new CacheDataApp("Sync");
-                this.Close();
+                CacheDataApp form3 = new("Sync");
+                Close();
                 form3.Show();
             }
             catch (TaskCanceledException ex)
@@ -150,12 +159,11 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-
                 MessageBox.Show("Gagal tampil data " + ex, "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
-
         }
+
         private async void LoadDataServingType()
         {
             if (!Directory.Exists(folder)) { Directory.CreateDirectory(folder); }
@@ -165,10 +173,11 @@ namespace KASIR.OfflineMode
             {
                 try
                 {
-                    string json = File.ReadAllText(folder + "\\LoadDataServingType_" + idmenu + "_Outlet_" + baseOutlet + ".data");
+                    string json = File.ReadAllText(folder + "\\LoadDataServingType_" + idmenu + "_Outlet_" +
+                                                   baseOutlet + ".data");
                     GetMenuByIdModel menuModel = JsonConvert.DeserializeObject<GetMenuByIdModel>(json);
                     DataMenu data = menuModel.data;
-                    var options = data.serving_types;
+                    List<ServingType> options = data.serving_types;
                     // Set the selected item of cmbVarian
                     cmbVarian.SelectedItem = 1;
 
@@ -194,6 +203,7 @@ namespace KASIR.OfflineMode
                     {
                         SetComboBoxSelectionByName(data.serving_types, comboBox1, servingtypeall);
                     }
+
                     return;
                 }
                 catch (Exception ex)
@@ -206,14 +216,14 @@ namespace KASIR.OfflineMode
             try
             {
                 MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
-                CacheDataApp form3 = new CacheDataApp("Sync");
-                this.Close();
+                CacheDataApp form3 = new("Sync");
+                Close();
                 form3.Show();
-
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -221,13 +231,14 @@ namespace KASIR.OfflineMode
                 MessageBox.Show("Gagal tampil data tipe serving " + ex, "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
-
         } // Helper method to set ComboBox selection by name (search by name/text)
+
         private void SetComboBoxSelectionByName(List<ServingType> serving_types, ComboBox comboBox, int servingTypeName)
         {
             for (int i = 0; i < comboBox.Items.Count; i++)
             {
-                var item = (ServingType)comboBox.Items[i];  // Assumed ServingType is the type of items in comboBox1
+                ServingType
+                    item = (ServingType)comboBox.Items[i]; // Assumed ServingType is the type of items in comboBox1
                 if (item.id == servingTypeName) // Compare by name
                 {
                     comboBox.SelectedIndex = i;
@@ -235,10 +246,12 @@ namespace KASIR.OfflineMode
                 }
             }
         }
+
         private async Task<string> returnPriceByServingTypeAsync(string serving_type_id, string varian)
         {
             // Membaca data dari file cache
-            string cachedData = File.ReadAllText(folder + "\\LoadDataServingType_" + idmenu + "_Outlet_" + baseOutlet + ".data");
+            string cachedData =
+                File.ReadAllText(folder + "\\LoadDataServingType_" + idmenu + "_Outlet_" + baseOutlet + ".data");
 
             // Deserialize data dari cache
             GetMenuByIdModel menuModel = JsonConvert.DeserializeObject<GetMenuByIdModel>(cachedData);
@@ -256,7 +269,7 @@ namespace KASIR.OfflineMode
             if (string.IsNullOrEmpty(varian) || varian == "0")
             {
                 // Cari harga berdasarkan serving_type_id di menu_prices
-                var menuPrice = data.menu_prices
+                MenuPrice? menuPrice = data.menu_prices
                     .FirstOrDefault(price => price.serving_type_id == int.Parse(serving_type_id));
 
                 if (menuPrice != null)
@@ -272,14 +285,15 @@ namespace KASIR.OfflineMode
                 if (varianId != -1)
                 {
                     // Cari menu_detail yang memiliki menu_detail_id yang sesuai dengan varian
-                    var menuDetail = menuDetailDataList
+                    MenuDetailS? menuDetail = menuDetailDataList
                         .FirstOrDefault(detail => detail.menu_detail_id == varianId); // Mencocokkan menu_detail_id
 
                     if (menuDetail != null)
                     {
                         // Cari harga berdasarkan serving_type_id dari menu_prices dalam menu_detail
-                        var menuPrice = menuDetail.menu_prices
-                            .FirstOrDefault(price => price.serving_type_id == int.Parse(serving_type_id)); // Mencocokkan serving_type_id
+                        MenuPrice? menuPrice = menuDetail.menu_prices
+                            .FirstOrDefault(price =>
+                                price.serving_type_id == int.Parse(serving_type_id)); // Mencocokkan serving_type_id
 
                         if (menuPrice != null)
                         {
@@ -306,13 +320,15 @@ namespace KASIR.OfflineMode
             {
                 if (quantity <= 0)
                 {
-                    MessageBox.Show("Masukan jumlah kuantitas!", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Masukan jumlah kuantitas!", "Gaspol", MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                     return false;
                 }
             }
             else
             {
-                MessageBox.Show("Masukan jumlah kuantitas yang valid!", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Masukan jumlah kuantitas yang valid!", "Gaspol", MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
                 return false;
             }
 
@@ -324,7 +340,7 @@ namespace KASIR.OfflineMode
             if (diskon != -1)
             {
                 int diskonMinimum = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.min_purchase ?? -1;
-                if (diskonMinimum > (price * quantity))
+                if (diskonMinimum > price * quantity)
                 {
                     int resultDiskon = diskonMinimum - (price * quantity);
                     MessageBox.Show("Minimum diskon kurang Rp " + resultDiskon + " lagi", "Gaspol");
@@ -335,7 +351,8 @@ namespace KASIR.OfflineMode
             return true;
         }
 
-        private async Task SendDataAsync(int serving_type, string pricefix, int diskon, int quantity, string notes, int? selectedVarian)
+        private async Task SendDataAsync(int serving_type, string pricefix, int diskon, int quantity, string notes,
+            int? selectedVarian)
         {
             try
             {
@@ -343,23 +360,26 @@ namespace KASIR.OfflineMode
                 lblNameCart.Text = "Membuat Data...";
 
                 // Path for LoadServingType data
-                string servingTypeFilePath = "DT-Cache/addCartForm/LoadDataServingType_" + datas.id + "_Outlet_" + baseOutlet + ".data";
+                string servingTypeFilePath = "DT-Cache/addCartForm/LoadDataServingType_" + datas.id + "_Outlet_" +
+                                             baseOutlet + ".data";
 
                 // Read the LoadServingType.data file if it exists
-                string servingTypeJson = File.Exists(servingTypeFilePath) ? File.ReadAllText(servingTypeFilePath) : "{}";
-                var servingTypeData = JsonConvert.DeserializeObject<JObject>(servingTypeJson);
+                string servingTypeJson =
+                    File.Exists(servingTypeFilePath) ? File.ReadAllText(servingTypeFilePath) : "{}";
+                JObject? servingTypeData = JsonConvert.DeserializeObject<JObject>(servingTypeJson);
 
                 // Find the menu and serving type information from the loaded data
-                var menuData = servingTypeData["data"];
-                var menuDetails = menuData["menu_details"] as JArray;
-                var servingTypes = menuData["serving_types"] as JArray;
+                JToken? menuData = servingTypeData["data"];
+                JArray? menuDetails = menuData["menu_details"] as JArray;
+                JArray? servingTypes = menuData["serving_types"] as JArray;
 
                 // Get menu detail name based on selected variant
-                var selectedMenuDetail = menuDetails.FirstOrDefault(detail => (int)detail["menu_detail_id"] == selectedVarian);
+                JToken? selectedMenuDetail =
+                    menuDetails.FirstOrDefault(detail => (int)detail["menu_detail_id"] == selectedVarian);
                 string menuDetailName = selectedMenuDetail?["varian"]?.ToString();
 
                 // Get the serving type name based on the serving_type_id
-                var selectedServingType = servingTypes.FirstOrDefault(type => (int)type["id"] == serving_type);
+                JToken? selectedServingType = servingTypes.FirstOrDefault(type => (int)type["id"] == serving_type);
                 string servingTypeName = selectedServingType?["name"]?.ToString();
                 int subtotal_item = int.Parse(pricefix) * quantity;
                 int price_item = int.Parse(pricefix);
@@ -375,6 +395,7 @@ namespace KASIR.OfflineMode
                 {
                     discountId = diskon;
                 }
+
                 if (diskon != -1)
                 {
                     discountPercent = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.is_percent ?? 0;
@@ -398,6 +419,7 @@ namespace KASIR.OfflineMode
                         {
                             discountedPrice = tempTotal; // Potongan diskon sesuai persen
                         }
+
                         total_item_withDiscount = subtotal_item - discountedPrice; // Total setelah diskon
                         discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
                     }
@@ -413,30 +435,34 @@ namespace KASIR.OfflineMode
                         {
                             discountedPrice = subtotal_item - tempTotal; // Potongan diskon tetap
                         }
+
                         total_item_withDiscount = subtotal_item - discountedPrice; // Total setelah diskon
                         discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
                     }
                 }
+
                 string created_atTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                 // Prepare the new item for cart_details
-                var newItem = new JObject
+                JObject newItem = new()
                 {
-                    { "cart_detail_id", int.Parse(baseOutlet + DateTime.Now.ToString("HHmmss")) },  // Unique ID based on timestamp
+                    {
+                        "cart_detail_id", int.Parse(baseOutlet + DateTime.Now.ToString("HHmmss"))
+                    }, // Unique ID based on timestamp
                     { "menu_id", datas.id },
-                    { "menu_name", menuData["name"] },  // Menu name from the loaded data
-                    { "menu_type", menuData["menu_type"] },  // Menu type from the loaded data
+                    { "menu_name", menuData["name"] }, // Menu name from the loaded data
+                    { "menu_type", menuData["menu_type"] }, // Menu type from the loaded data
                     { "menu_detail_id", selectedVarian ?? null },
-                    { "menu_detail_name", menuDetailName },  // Varian name
-                    { "varian", menuDetailName },  // Varian name
+                    { "menu_detail_name", menuDetailName }, // Varian name
+                    { "varian", menuDetailName }, // Varian name
                     { "is_ordered", 0 },
                     { "serving_type_id", serving_type },
-                    { "serving_type_name", servingTypeName },  // Serving type name
+                    { "serving_type_name", servingTypeName }, // Serving type name
                     { "price", price_item },
                     { "qty", quantity },
                     { "note_item", notes },
-                    { "created_at", created_atTime  },
+                    { "created_at", created_atTime },
                     { "updated_at", created_atTime },
-                    { "discount_id", discountId},
+                    { "discount_id", discountId },
                     { "discount_code", discountCode },
                     { "discounts_value", discountValue },
                     { "discounted_price", discountedPrice },
@@ -451,7 +477,7 @@ namespace KASIR.OfflineMode
                 string currentCartJson = File.Exists(cacheFilePath) ? File.ReadAllText(cacheFilePath) : "{}";
 
                 // Deserialize existing cart data
-                var cartData = JsonConvert.DeserializeObject<JObject>(currentCartJson);
+                JObject? cartData = JsonConvert.DeserializeObject<JObject>(currentCartJson);
 
                 // If cart_details array doesn't exist, create it
                 if (cartData["cart_details"] == null)
@@ -460,12 +486,12 @@ namespace KASIR.OfflineMode
                 }
 
                 // Add the new item to the cart_details array
-                var cartDetailsArray = (JArray)cartData["cart_details"];
+                JArray? cartDetailsArray = (JArray)cartData["cart_details"];
                 cartDetailsArray.Add(newItem);
 
                 // Update the subtotal and total based on cart details
-                var subtotal = cartDetailsArray.Sum(item => (int)item["price"] * (int)item["qty"]);
-                var total = cartDetailsArray.Sum(item => (int)item["total_price"]);
+                int subtotal = cartDetailsArray.Sum(item => (int)item["price"] * (int)item["qty"]);
+                int total = cartDetailsArray.Sum(item => (int)item["total_price"]);
 
                 cartData["subtotal"] = int.Parse(subtotal.ToString());
                 cartData["total"] = int.Parse(total.ToString());
@@ -478,6 +504,7 @@ namespace KASIR.OfflineMode
                     string transaction_ref_time = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                     cartData["transaction_ref"] = $"{baseOutlet}-{transaction_ref_time}-{randomName}";
                 }
+
                 // Serialize the updated cart data back to JSON
                 string updatedJsonString = JsonConvert.SerializeObject(cartData, Formatting.Indented);
 
@@ -485,7 +512,6 @@ namespace KASIR.OfflineMode
                 await SaveToCache(updatedJsonString);
 
                 // Optionally, send the updated data to the server
-
             }
             catch (TaskCanceledException ex)
             {
@@ -498,23 +524,31 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        private void generateRandomFill(ref string randomName)  // 'ref' allows modification of the value
-        {
-            Random random = new Random();
 
-            string[] consonants = { "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z" };
+        private void generateRandomFill(ref string randomName) // 'ref' allows modification of the value
+        {
+            Random random = new();
+
+            string[] consonants =
+            {
+                "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y",
+                "z"
+            };
             string[] vowels = { "a", "e", "i", "o", "u" };
 
-            randomName = "";  // Initialize the randomName
+            randomName = ""; // Initialize the randomName
 
             int nameLength = random.Next(3, 10);
             for (int i = 0; i < nameLength; i++)
             {
-                randomName += i % 2 == 0 ? consonants[random.Next(consonants.Length)] : vowels[random.Next(vowels.Length)];
+                randomName += i % 2 == 0
+                    ? consonants[random.Next(consonants.Length)]
+                    : vowels[random.Next(vowels.Length)];
             }
 
-            randomName = char.ToUpper(randomName[0]) + randomName.Substring(1);  // Capitalize the first letter
+            randomName = char.ToUpper(randomName[0]) + randomName.Substring(1); // Capitalize the first letter
         }
+
         private async Task SaveToCache(string jsonString)
         {
             try
@@ -532,7 +566,6 @@ namespace KASIR.OfflineMode
                 // Save the jsonString to the cache file
                 File.WriteAllText(cacheFilePath, jsonString);
                 //MessageBox.Show("File saved successfully at: " + cacheFilePath);
-
             }
             catch (Exception ex)
             {
@@ -553,12 +586,16 @@ namespace KASIR.OfflineMode
                     return;
                 }
 
-                int selectedVarian = int.TryParse(cmbVarian.SelectedValue?.ToString(), out var varianResult) ? varianResult : -1;
-                int selectedDiskon = int.TryParse(cmbDiskon.SelectedValue?.ToString(), out var diskonResult) ? diskonResult : -1;
+                int selectedVarian = int.TryParse(cmbVarian.SelectedValue?.ToString(), out int varianResult)
+                    ? varianResult
+                    : -1;
+                int selectedDiskon = int.TryParse(cmbDiskon.SelectedValue?.ToString(), out int diskonResult)
+                    ? diskonResult
+                    : -1;
                 int diskon = 0;
 
                 int serving_type = int.Parse(comboBox1.SelectedValue?.ToString() ?? "0");
-                int quantity = int.TryParse(txtKuantitas.Text, out var qtyResult) ? qtyResult : 0;
+                int quantity = int.TryParse(txtKuantitas.Text, out int qtyResult) ? qtyResult : 0;
                 string notes = txtNotes.Text ?? string.Empty;
                 string pricefix = "0";
 
@@ -580,6 +617,7 @@ namespace KASIR.OfflineMode
                         return;
                     }
                 }
+
                 // Call SendDataAsync without awaiting it
                 //_ = SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
                 await SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
@@ -601,12 +639,11 @@ namespace KASIR.OfflineMode
 
         private void RadioButton_Click(object sender, EventArgs e)
         {
-            var clickedButton = (Button)sender;
+            Button clickedButton = (Button)sender;
             ////LoggerUtil.LogPrivateMethod(nameof(RadioButton_Click));
 
-            foreach (var button in radioButtonsList)
+            foreach (Button button in radioButtonsList)
             {
-
                 button.BackColor = SystemColors.ControlDark;
             }
 
@@ -618,18 +655,16 @@ namespace KASIR.OfflineMode
 
         private void label1_Click_2(object sender, EventArgs e)
         {
-
         }
 
         private void flowLayoutPanel1_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
         private void btnKeluar_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.OK;
-            this.Close();
+            Close();
         }
 
         private void btnTambah_Click(object sender, EventArgs e)
@@ -660,27 +695,22 @@ namespace KASIR.OfflineMode
 
         private void panel1_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
         private void btnShopeeFood_Click(object sender, EventArgs e)
         {
-
         }
 
         private void btnTakeaway_Click(object sender, EventArgs e)
         {
-
         }
 
         private void addCartForm_Click(object sender, EventArgs e)
         {
-
         }
 
         private void panel2_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
         private async void LoadDataDiscount()
@@ -692,10 +722,11 @@ namespace KASIR.OfflineMode
             {
                 try
                 {
-                    string json = File.ReadAllText(folder + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data");
+                    string json =
+                        File.ReadAllText(folder + "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data");
                     DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(json);
                     List<DataDiscountCart> data = menuModel.data;
-                    var options = data;
+                    List<DataDiscountCart> options = data;
                     dataDiskonList = data;
                     options.Insert(0, new DataDiscountCart { id = -1, code = "Pilih Diskon" });
                     cmbDiskon.DataSource = options;
@@ -711,11 +742,12 @@ namespace KASIR.OfflineMode
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
+
             try
             {
                 MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
-                CacheDataApp form3 = new CacheDataApp("Sync");
-                this.Close();
+                CacheDataApp form3 = new("Sync");
+                Close();
                 form3.Show();
             }
             catch (TaskCanceledException ex)
@@ -725,11 +757,9 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-
                 MessageBox.Show("Gagal tampil data diskon " + ex.Message, "Gaspol");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
-
         }
 
         private void CmbVarian_DrawItem(object sender, DrawItemEventArgs e)
@@ -741,11 +771,12 @@ namespace KASIR.OfflineMode
                 int verticalMargin = 5;
                 string itemText = cmbVarian.GetItemText(cmbVarian.Items[e.Index]);
 
-                e.Graphics.DrawString(itemText, e.Font, Brushes.Black, new Rectangle(e.Bounds.Left, e.Bounds.Top + verticalMargin, e.Bounds.Width, e.Bounds.Height - verticalMargin));
+                e.Graphics.DrawString(itemText, e.Font, Brushes.Black,
+                    new Rectangle(e.Bounds.Left, e.Bounds.Top + verticalMargin, e.Bounds.Width,
+                        e.Bounds.Height - verticalMargin));
 
                 e.DrawFocusRectangle();
             }
-
         }
 
         private void CmbDiskon_DrawItem(object sender, DrawItemEventArgs e)
@@ -757,7 +788,9 @@ namespace KASIR.OfflineMode
                 int verticalMargin = 5;
                 string itemText = cmbDiskon.GetItemText(cmbDiskon.Items[e.Index]);
 
-                e.Graphics.DrawString(itemText, e.Font, Brushes.Black, new Rectangle(e.Bounds.Left, e.Bounds.Top + verticalMargin, e.Bounds.Width, e.Bounds.Height - verticalMargin));
+                e.Graphics.DrawString(itemText, e.Font, Brushes.Black,
+                    new Rectangle(e.Bounds.Left, e.Bounds.Top + verticalMargin, e.Bounds.Width,
+                        e.Bounds.Height - verticalMargin));
 
                 e.DrawFocusRectangle();
             }
@@ -765,27 +798,22 @@ namespace KASIR.OfflineMode
 
         private void cmbDiskon_SelectedIndexChanged(object sender, EventArgs e)
         {
-
         }
 
         private void panel3_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-
         }
 
         private void panel12_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
         private void iconButton1_Click(object sender, EventArgs e)
         {
-
         }
     }
 }

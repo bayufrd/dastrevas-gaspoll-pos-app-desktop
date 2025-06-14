@@ -1,17 +1,19 @@
 ﻿using System.Globalization;
 using System.Text.RegularExpressions;
+using KASIR.Properties;
 using Newtonsoft.Json.Linq;
 
 namespace KASIR.OffineMode
 {
     public class transactionFileMover
     {
-        private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet;
+        private readonly string baseOutlet = Settings.Default.BaseOutlet;
 
         public async Task refreshCacheTransaction()
         {
             string sourceDirectory = "DT-Cache\\Transaction\\transaction.data"; // Path to source
-            string transactionHistoryDirectory = "DT-Cache\\Transaction\\HistoryTransaction"; // Path to transaction history
+            string transactionHistoryDirectory =
+                "DT-Cache\\Transaction\\HistoryTransaction"; // Path to transaction history
 
             try
             {
@@ -47,15 +49,16 @@ namespace KASIR.OffineMode
                     await ClearSourceFile(sourceDirectory);
 
                     // 7. Archive shift data
-                    await ArchiveData("DT-Cache\\Transaction\\shiftData.data", "DT-Cache\\Transaction\\ShiftDataTransaction");
+                    await ArchiveData("DT-Cache\\Transaction\\shiftData.data",
+                        "DT-Cache\\Transaction\\ShiftDataTransaction");
 
                     // 8. Archive expenditure data
-                    await ArchiveData("DT-Cache\\Transaction\\expenditure.data", "DT-Cache\\Transaction\\ExpendituresTransaction");
+                    await ArchiveData("DT-Cache\\Transaction\\expenditure.data",
+                        "DT-Cache\\Transaction\\ExpendituresTransaction");
 
                     await ClearSourceFile("DT-Cache\\Transaction\\shiftData.data");
 
                     await ClearSourceFile("DT-Cache\\Transaction\\expenditure.data");
-
                 }
             }
             catch (Exception ex)
@@ -66,8 +69,8 @@ namespace KASIR.OffineMode
 
         public async Task<string> ReadJsonFileAsync(string filePath)
         {
-            using (FileStream sourceStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (StreamReader reader = new StreamReader(sourceStream))
+            using (FileStream sourceStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (StreamReader reader = new(sourceStream))
             {
                 return await reader.ReadToEndAsync();
             }
@@ -79,13 +82,15 @@ namespace KASIR.OffineMode
             if (firstTransaction["created_at"] != null)
             {
                 string createdAt = firstTransaction["created_at"].ToString();
-                createdAt = Regex.Replace(createdAt, @"(\d)\.(\d)", "$1:$2");  // Replace dot with colon for time format
+                createdAt = Regex.Replace(createdAt, @"(\d)\.(\d)", "$1:$2"); // Replace dot with colon for time format
 
-                if (DateTime.TryParseExact(createdAt, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
+                if (DateTime.TryParseExact(createdAt, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture,
+                        DateTimeStyles.None, out DateTime parsedDate))
                 {
                     return parsedDate;
                 }
             }
+
             return null;
         }
 
@@ -93,9 +98,11 @@ namespace KASIR.OffineMode
         {
             DateTime previousDay = DateTime.Now.AddDays(-1);
 
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension("DT-Cache\\Transaction\\transaction.data");
+            string fileNameWithoutExtension =
+                Path.GetFileNameWithoutExtension("DT-Cache\\Transaction\\transaction.data");
             string fileExtension = Path.GetExtension("DT-Cache\\Transaction\\transaction.data");
-            string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{previousDay:yyyyMMdd}{fileExtension}";
+            string newFileName =
+                $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{previousDay:yyyyMMdd}{fileExtension}";
             string destinationPath = Path.Combine(historyDirectory, newFileName);
 
             // Ensure destination directory exists
@@ -132,8 +139,8 @@ namespace KASIR.OffineMode
 
         public async Task WriteJsonToFile(string filePath, string jsonData)
         {
-            using (FileStream writeStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
-            using (StreamWriter writer = new StreamWriter(writeStream))
+            using (FileStream writeStream = new(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (StreamWriter writer = new(writeStream))
             {
                 await writer.WriteAsync(jsonData);
             }
@@ -141,7 +148,7 @@ namespace KASIR.OffineMode
 
         public async Task ClearSourceFile(string sourcePath)
         {
-            JObject emptyJson = new JObject();
+            JObject emptyJson = new();
             emptyJson["data"] = new JArray();
 
             try
@@ -162,12 +169,14 @@ namespace KASIR.OffineMode
             {
                 Directory.CreateDirectory(archiveDirectory);
             }
+
             // Get current date and subtract one day
             DateTime previousDay = DateTime.Now.AddDays(-1);
 
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourceFilePath);
             string fileExtension = Path.GetExtension(sourceFilePath);
-            string newFileName = $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{previousDay:yyyyMMdd}{fileExtension}";
+            string newFileName =
+                $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{previousDay:yyyyMMdd}{fileExtension}";
             string destinationPath = Path.Combine(archiveDirectory, newFileName);
 
             if (File.Exists(destinationPath))
@@ -195,6 +204,5 @@ namespace KASIR.OffineMode
                 await WriteJsonToFile(destinationPath, sourceData);
             }
         }
-
     }
 }

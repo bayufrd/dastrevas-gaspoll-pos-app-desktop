@@ -1,28 +1,27 @@
 ﻿using KASIR.Network;
+using KASIR.Properties;
 using Newtonsoft.Json;
 using Serilog;
+
 namespace KASIR.komponen
 {
     public partial class Offline_MemberCustom : Form
     {
-        private masterPos MasterPosForm { get; set; }
-        private List<System.Windows.Forms.Button> radioButtonsList = new List<System.Windows.Forms.Button>();
-        public string btnPayType;
-        private readonly string baseOutlet;
         private readonly ILogger _log = LoggerService.Instance._log;
-        public bool KeluarButtonClicked { get; private set; }
+        private readonly string baseOutlet;
+        public string btnPayType;
+        private readonly int idid;
+        private readonly string Options;
+        private List<Button> radioButtonsList = new();
 
-        public bool ReloadDataInBaseForm { get; private set; }
-        string Options;
-        int idid;
 
-
-        public Offline_MemberCustom(string customMember, int idMember, string namaMember, string hpMember, string emailMember)
+        public Offline_MemberCustom(string customMember, int idMember, string namaMember, string hpMember,
+            string emailMember)
         {
             InitializeComponent();
             btnSimpan.Enabled = false;
             hapusButton.Visible = false;
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
+            baseOutlet = Settings.Default.BaseOutlet;
             Options = customMember;
             if (Options == "Edit")
             {
@@ -40,8 +39,12 @@ namespace KASIR.komponen
                 btnSimpan.Enabled = true;
                 btnSimpan.Text = "Tambah";
             }
-
         }
+
+        private masterPos MasterPosForm { get; set; }
+        public bool KeluarButtonClicked { get; private set; }
+
+        public bool ReloadDataInBaseForm { get; private set; }
 
         private async void btnSimpan_Click(object sender, EventArgs e)
         {
@@ -50,16 +53,16 @@ namespace KASIR.komponen
                 MessageBox.Show("Nama / Nomor Handphone masih kosong!");
                 return;
             }
+
             if (Options == "Tambah")
             {
-
-                Dictionary<string, object> json = new Dictionary<string, object>
+                Dictionary<string, object> json = new()
                 {
-                { "name", txtNama.Text },
-                { "phone_number", txtPhone.Text },
-                { "outlet_id", baseOutlet },
-                { "email", txtEmail.Text }
-                  };
+                    { "name", txtNama.Text },
+                    { "phone_number", txtPhone.Text },
+                    { "outlet_id", baseOutlet },
+                    { "email", txtEmail.Text }
+                };
 
                 string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
                 IApiService apiService = new ApiService();
@@ -82,23 +85,22 @@ namespace KASIR.komponen
                 }
                 else
                 {
-                    MessageBox.Show("Gagal tambah data silahkan coba ulang" + response.ToString(), "Gaspol");
+                    MessageBox.Show("Gagal tambah data silahkan coba ulang" + response, "Gaspol");
                     DialogResult = DialogResult.Cancel;
                 }
             }
             else
             {
-
                 IApiService apiService = new ApiService();
 
                 string patchUrl = $"/membership/{idid}";
-                Dictionary<string, object> json = new Dictionary<string, object>
+                Dictionary<string, object> json = new()
                 {
-                { "name", txtNama.Text },
-                { "phone_number", txtPhone.Text },
-                { "outlet_id", baseOutlet },
-                { "email", txtEmail.Text }
-                  };
+                    { "name", txtNama.Text },
+                    { "phone_number", txtPhone.Text },
+                    { "outlet_id", baseOutlet },
+                    { "email", txtEmail.Text }
+                };
 
                 string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
                 HttpResponseMessage response = await apiService.EditMember(jsonString, $"/membership/{idid}");
@@ -109,7 +111,6 @@ namespace KASIR.komponen
                         DialogResult = DialogResult.OK;
                         MessageBox.Show("Data berhasil diEdit");
                         Close();
-
                     }
                     else
                     {
@@ -120,7 +121,7 @@ namespace KASIR.komponen
                 }
                 else
                 {
-                    MessageBox.Show("Gagal memperbarui data, silahkan coba ulang" + response.ToString(), "Gaspol");
+                    MessageBox.Show("Gagal memperbarui data, silahkan coba ulang" + response, "Gaspol");
                     DialogResult = DialogResult.Cancel;
                 }
             }
@@ -131,7 +132,7 @@ namespace KASIR.komponen
             //KeluarButtonClicked = true;
             DialogResult = DialogResult.OK;
 
-            this.Close();
+            Close();
         }
 
         private async void hapusButton_Click(object sender, EventArgs e)

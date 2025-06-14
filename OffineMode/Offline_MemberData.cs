@@ -6,27 +6,27 @@ using KASIR.Network;
 using Newtonsoft.Json;
 using Serilog;
 
-
 namespace KASIR.Komponen
 {
     public partial class Offline_MemberData : Form
     {
         private readonly ILogger _log = LoggerService.Instance._log;
-        int idMember, items, idid;
+        private string customMember;
+        private int idMember, items, idid;
         private DataTable originalDataTable, listDataTable;
-        string customMember;
 
-        public string namaMember { get; private set; }
-        public string emailMember { get; private set; }
-        public string hpMember { get; private set; }
-        public int SelectedId { get; private set; }
         public Offline_MemberData()
         {
             InitializeComponent();
             loadDataMember();
             dataGridView1.CellFormatting += DataGridView1_CellFormatting;
-
         }
+
+        public string namaMember { get; private set; }
+        public string emailMember { get; private set; }
+        public string hpMember { get; private set; }
+        public int SelectedId { get; private set; }
+
         private void DataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex >= 0) // Memastikan kita hanya memformat sel data
@@ -41,10 +41,11 @@ namespace KASIR.Komponen
                 }
             }
         }
+
         private void TambahMember_Click(object sender, EventArgs e)
         {
             customMember = "Tambah";
-            Form background = new Form
+            Form background = new()
             {
                 StartPosition = FormStartPosition.Manual,
                 FormBorderStyle = FormBorderStyle.None,
@@ -52,11 +53,11 @@ namespace KASIR.Komponen
                 BackColor = Color.Black,
                 WindowState = FormWindowState.Maximized,
                 TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
+                Location = Location,
+                ShowInTaskbar = false
             };
 
-            using (Offline_MemberCustom addMember = new Offline_MemberCustom(customMember, idMember, namaMember, hpMember, emailMember))
+            using (Offline_MemberCustom addMember = new(customMember, idMember, namaMember, hpMember, emailMember))
             {
                 addMember.Owner = background;
                 background.Show();
@@ -81,7 +82,9 @@ namespace KASIR.Komponen
             try
             {
                 if (listDataTable == null)
+                {
                     return;
+                }
 
                 string searchTerm = txtCariMenuList.Text.ToLower();
 
@@ -95,6 +98,7 @@ namespace KASIR.Komponen
                     filteredDataTable.ImportRow(row);
                     items++;
                 }
+
                 lblCountingItems.Text = $"{items} Member ditemukan.";
 
                 dataGridView1.DataSource = filteredDataTable;
@@ -111,7 +115,9 @@ namespace KASIR.Komponen
             {
                 if (!NetworkInterface.GetIsNetworkAvailable())
                 {
-                    MessageBox.Show("No network connection available. Please check your internet connection and try again.", "Network Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(
+                        "No network connection available. Please check your internet connection and try again.",
+                        "Network Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
@@ -125,14 +131,12 @@ namespace KASIR.Komponen
                 GetMemberModel member = JsonConvert.DeserializeObject<GetMemberModel>(response);
                 List<Member> memberList = member.data.ToList();
 
-                DataTable dataTable = new DataTable();
+                DataTable dataTable = new();
                 dataTable.Columns.Add("ID", typeof(int));
                 dataTable.Columns.Add("Nama", typeof(string));
                 dataTable.Columns.Add("No. HP", typeof(string));
                 dataTable.Columns.Add("Email", typeof(string));
                 items = 0;
-
-
 
 
                 foreach (Member data in memberList)
@@ -142,12 +146,12 @@ namespace KASIR.Komponen
                 }
 
                 dataGridView1.DataSource = dataTable;
-                DataGridViewButtonColumn buttonColumn = new DataGridViewButtonColumn();
+                DataGridViewButtonColumn buttonColumn = new();
                 buttonColumn.HeaderText = "Pilih";
                 buttonColumn.Text = "Pilih";
                 buttonColumn.FlatStyle = FlatStyle.Flat;
                 buttonColumn.UseColumnTextForButtonValue = true; // Displays the "Add to Cart" text on the button
-                DataGridViewButtonColumn buttonColumn1 = new DataGridViewButtonColumn();
+                DataGridViewButtonColumn buttonColumn1 = new();
                 buttonColumn1.HeaderText = "Edit";
                 buttonColumn1.Text = "Edit";
                 buttonColumn1.FlatStyle = FlatStyle.Flat;
@@ -159,6 +163,7 @@ namespace KASIR.Komponen
                 {
                     dataGridView1.Columns["ID"].Visible = false;
                 }
+
                 lblCountingItems.Text = $"{items} Member ditemukan.";
 
                 dataGridView1.DataSource = dataTable;
@@ -173,10 +178,8 @@ namespace KASIR.Komponen
 
         private async void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-
             if (dataGridView1.Columns[e.ColumnIndex].HeaderText == "Pilih" && e.RowIndex >= 0)
             {
-
                 //int selectedId = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["ID"].Value);
                 try
                 {
@@ -195,9 +198,6 @@ namespace KASIR.Komponen
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                     Close();
                 }
-
-
-
             }
 
             if (dataGridView1.Columns[e.ColumnIndex].HeaderText == "Edit" && e.RowIndex >= 0)
@@ -211,7 +211,7 @@ namespace KASIR.Komponen
 
                 try
                 {
-                    Form background = new Form
+                    Form background = new()
                     {
                         StartPosition = FormStartPosition.Manual,
                         FormBorderStyle = FormBorderStyle.None,
@@ -219,11 +219,12 @@ namespace KASIR.Komponen
                         BackColor = Color.Black,
                         WindowState = FormWindowState.Maximized,
                         TopMost = true,
-                        Location = this.Location,
-                        ShowInTaskbar = false,
+                        Location = Location,
+                        ShowInTaskbar = false
                     };
 
-                    using (Offline_MemberCustom addMember = new Offline_MemberCustom(customMember, idMember, namaMember, hpMember, emailMember))
+                    using (Offline_MemberCustom addMember = new(customMember, idMember, namaMember, hpMember,
+                               emailMember))
                     {
                         addMember.Owner = background;
 
@@ -254,6 +255,7 @@ namespace KASIR.Komponen
                 }
             }
         }
+
         private void txtCariMenuList_TextChanged(object sender, EventArgs e)
         {
             PerformSearchList();

@@ -1,23 +1,26 @@
 ﻿using System.Globalization;
 using KASIR.Model;
 using KASIR.Network;
+using KASIR.Properties;
 using Newtonsoft.Json;
 using Serilog;
+
 namespace KASIR.OffineMode
 {
     public partial class Offline_Complaint : Form
     {
-        private readonly string BaseOutletName;
-        private readonly string Version;
-        public bool ReloadDataInBaseForm { get; private set; }
+        private readonly ILogger _log = LoggerService.Instance._log;
+
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
-        private readonly ILogger _log = LoggerService.Instance._log;
+        private readonly string BaseOutletName;
+        private readonly string Version;
+
         public Offline_Complaint()
         {
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
-            BaseOutletName = Properties.Settings.Default.BaseOutletName;
-            Version = Properties.Settings.Default.Version;
+            baseOutlet = Settings.Default.BaseOutlet;
+            BaseOutletName = Settings.Default.BaseOutletName;
+            Version = Settings.Default.Version;
 
             InitializeComponent();
             txtNotes.PlaceholderText = "Deskripsi Masalah?";
@@ -25,36 +28,33 @@ namespace KASIR.OffineMode
             txtNotes.PlaceholderText += "\nSaat Melakukan/Mengakses tombol : ";
             txtNotes.PlaceholderText += "\nKesalahan yang terjadi : ";
             txtNotes.PlaceholderText += "\nSeharusnya yang terjadi : ";
-            txtNotes.PlaceholderText += "\n\nMohon maaf atas ketidak nyamanannya dan \nTerimakasih, dengan support ini akan membantu agar lebih maju \ndan berkembang kedepannya. \n\nGaspoll Management. x Dastrevas";
-
-
-
+            txtNotes.PlaceholderText +=
+                "\n\nMohon maaf atas ketidak nyamanannya dan \nTerimakasih, dengan support ini akan membantu agar lebih maju \ndan berkembang kedepannya. \n\nGaspoll Management. x Dastrevas";
         }
+
+        public bool ReloadDataInBaseForm { get; private set; }
 
         private void btnKeluar_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             // KeluarButtonPrintReportShiftClicked = true;
-            this.Close();
+            Close();
         }
+
         private void AddItem(string name, string amount)
         {
-
-
         }
 
         private void panel4_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
         private void panel13_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
         private async void button2_Click(object sender, EventArgs e)
@@ -64,36 +64,37 @@ namespace KASIR.OffineMode
             {
                 if (lblNama.Text == null || lblNama.Text == "")
                 {
-                    MessageBox.Show("Format nama kurang tepat", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Format nama kurang tepat", "Gaspol", MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                     return;
                 }
 
                 if (txtNotes.Text == null || txtNotes.ToString() == "")
                 {
-                    MessageBox.Show("Format notes kurang tepat", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Format notes kurang tepat", "Gaspol", MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                     return;
                 }
+
                 string NameKasir = lblNama.Text;
                 string messagesKasir = txtNotes.Text;
                 SendingComplaint(NameKasir, messagesKasir);
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 btnSimpan.Enabled = true;
-
             }
             finally
             {
                 btnSimpan.Enabled = true;
-
             }
-
         }
 
         public async void SendingComplaint(string NameKasir, string messagesKasir)
@@ -103,8 +104,8 @@ namespace KASIR.OffineMode
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
 
                 // Deserialize JSON ke object CartDataCache
-                var dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
-                string BaseOutletNameID = dataOutlet?.data?.name?.ToString() ?? "";
+                CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
+                string BaseOutletNameID = dataOutlet?.data?.name ?? "";
 
                 string formatDate = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
 
@@ -123,22 +124,26 @@ namespace KASIR.OffineMode
 
                 // Path untuk berbagai file log cache
                 string FolderLogCache_transaction = Path.Combine(FolderCache, "transaction.data");
-                string FolderLogCache_failed_transaction = Path.Combine(FolderCache, "FailedSyncTransaction", $"{baseOutlet}_SyncFailed_{formatDate}.data");
-                string FolderLogCache_success_transaction = Path.Combine(FolderCache, "SyncSuccessTransaction", $"{baseOutlet}_SyncSuccess_{formatDate}.data");
-                string FolderLogCache_history_transaction = Path.Combine(FolderCache, "HistoryTransaction", $"History_transaction_DT-{baseOutlet}_{previousDayString}.data");
+                string FolderLogCache_failed_transaction = Path.Combine(FolderCache, "FailedSyncTransaction",
+                    $"{baseOutlet}_SyncFailed_{formatDate}.data");
+                string FolderLogCache_success_transaction = Path.Combine(FolderCache, "SyncSuccessTransaction",
+                    $"{baseOutlet}_SyncSuccess_{formatDate}.data");
+                string FolderLogCache_history_transaction = Path.Combine(FolderCache, "HistoryTransaction",
+                    $"History_transaction_DT-{baseOutlet}_{previousDayString}.data");
 
                 // Membaca isi file log cache atau mengembalikan "{}" jika file tidak ada
 
                 string LogCacheData =
-                ReadFileContentAsPlainText(FolderLogCacheData) != "{}"
-                ? ReadFileContentAsPlainText(FolderLogCacheData)
-                : ReadFileContentAsPlainText($"log\\{baseOutlet}_unknown_log{formatDate}.txt");
+                    ReadFileContentAsPlainText(FolderLogCacheData) != "{}"
+                        ? ReadFileContentAsPlainText(FolderLogCacheData)
+                        : ReadFileContentAsPlainText($"log\\{baseOutlet}_unknown_log{formatDate}.txt");
                 string Cache_transaction = ReadFileContentWithRetry(FolderLogCache_transaction);
                 string Cache_failed_transaction = ReadFileContentWithRetry(FolderLogCache_failed_transaction);
                 string Cache_success_transaction = ReadFileContentWithRetry(FolderLogCache_success_transaction);
                 string Cache_history_transaction = ReadFileContentWithRetry(FolderLogCache_history_transaction);
 
-                string nameID = $"{baseOutlet}_{DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}_{BaseOutletNameID}_{Version}_{NameKasir.ToString()}";
+                string nameID =
+                    $"{baseOutlet}_{DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}_{BaseOutletNameID}_{Version}_{NameKasir}";
 
                 var json = new
                 {
@@ -158,7 +163,8 @@ namespace KASIR.OffineMode
                 string jsonString = JsonConvert.SerializeObject(json, Formatting.None); // Tidak ada indentasi
                 IApiService apiService = new ApiService();
 
-                HttpResponseMessage response = await apiService.notifikasiPengeluaran(jsonString, $"/complaint?outlet_id={baseOutlet}");
+                HttpResponseMessage response =
+                    await apiService.notifikasiPengeluaran(jsonString, $"/complaint?outlet_id={baseOutlet}");
 
                 if (response != null)
                 {
@@ -167,14 +173,15 @@ namespace KASIR.OffineMode
                         DialogResult result = MessageBox.Show("Berhasil dikirim", "Gaspol", MessageBoxButtons.OK);
                         if (result == DialogResult.OK)
                         {
-                            this.Close(); // Close the payForm
+                            Close(); // Close the payForm
                         }
-                        this.DialogResult = result;
+
+                        DialogResult = result;
                     }
                     else
                     {
                         MessageBox.Show("Gagal dikirim, Coba cek koneksi internet ulang " + response.StatusCode);
-                        _log.Error("Gagal dikirim, Coba cek koneksi internet ulang " + response.ToString());
+                        _log.Error("Gagal dikirim, Coba cek koneksi internet ulang " + response);
                     }
                 }
             }
@@ -183,14 +190,15 @@ namespace KASIR.OffineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         private static string ReadFileContentAsPlainText(string filePath)
         {
             if (File.Exists(filePath))
             {
                 try
                 {
-                    using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    using (StreamReader reader = new StreamReader(fs))
+                    using (FileStream fs = new(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (StreamReader reader = new(fs))
                     {
                         string content = reader.ReadToEnd();
 
@@ -218,8 +226,10 @@ namespace KASIR.OffineMode
                     return "{}"; // Mengembalikan objek JSON kosong dalam kasus kesalahan
                 }
             }
+
             return "{}"; // Mengembalikan objek JSON kosong jika file tidak ada
         }
+
         private static string ReadFileContentWithRetry(string filePath)
         {
             int maxRetries = 3;
@@ -236,6 +246,7 @@ namespace KASIR.OffineMode
                     Thread.Sleep(500); // Wait for 500 ms before retrying
                 }
             }
+
             return "{}"; // Return empty JSON if all retries fail
         }
 
@@ -245,51 +256,45 @@ namespace KASIR.OffineMode
             {
                 try
                 {
-                    using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    using (StreamReader reader = new StreamReader(fs))
+                    using (FileStream fs = new(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (StreamReader reader = new(fs))
                     {
                         string jsonContent = reader.ReadToEnd();
                         // Deserialisasi JSON dan serialisasi kembali
-                        var parsedJson = JsonConvert.DeserializeObject(jsonContent);
-                        return JsonConvert.SerializeObject(parsedJson, Formatting.None, new JsonSerializerSettings
-                        {
-                            StringEscapeHandling = StringEscapeHandling.EscapeHtml
-                        });
+                        object? parsedJson = JsonConvert.DeserializeObject(jsonContent);
+                        return JsonConvert.SerializeObject(parsedJson, Formatting.None,
+                            new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeHtml });
                     }
                 }
                 catch (IOException ioEx)
                 {
                     // Log the error (you can add more specific error messages if needed)
                     LoggerUtil.LogError(ioEx, "Error accessing file {FilePath}", filePath);
-                    return "{}";  // Return empty JSON in case of failure
+                    return "{}"; // Return empty JSON in case of failure
                 }
             }
-            return "{}";  // Return "{}" if file doesn't exist
+
+            return "{}"; // Return "{}" if file doesn't exist
         }
 
         private void txtJumlahCicil_TextChanged(object sender, EventArgs e)
         {
-
         }
 
         private void dateTimePicker1_ValueChanged(object sender, EventArgs e)
         {
-
         }
+
         private void txtSelesaiShift_TextChanged(object sender, EventArgs e)
         {
-
         }
 
         private void txtNotes_TextChanged(object sender, EventArgs e)
         {
-
         }
 
         private void txtNominal_TextChanged(object sender, EventArgs e)
         {
         }
     }
-
 }
-

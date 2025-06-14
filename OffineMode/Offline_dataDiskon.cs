@@ -1,25 +1,27 @@
 ﻿using System.Data;
 using KASIR.Model;
 using KASIR.Network;
+using KASIR.Properties;
 using Newtonsoft.Json;
 using Serilog;
+
 namespace KASIR.OfflineMode
 {
     public partial class Offline_dataDiskon : Form
     {
-        private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet;
-        private readonly ILogger _log = LoggerService.Instance._log;
-        public bool ReloadDataInBaseForm { get; private set; }
         private const string CacheFolder = "DT-Cache";
-        string CacheFileName;
+        private readonly ILogger _log = LoggerService.Instance._log;
+        private readonly string baseOutlet = Settings.Default.BaseOutlet;
+        private readonly string CacheFileName;
 
         public Offline_dataDiskon()
         {
             InitializeComponent();
             CacheFileName = "\\LoadDataDiscountItem_" + "Outlet_" + baseOutlet + ".data";
             LoadData();
-
         }
+
+        public bool ReloadDataInBaseForm { get; private set; }
 
         private async void LoadData()
         {
@@ -44,7 +46,8 @@ namespace KASIR.OfflineMode
             catch (JsonException jsonEx)
             {
                 MessageBox.Show("Gagal memproses data dari API: " + jsonEx.Message, "Gaspol");
-                LoggerUtil.LogError(jsonEx, "An error occurred during JSON deserialization: {ErrorMessage}", jsonEx.Message);
+                LoggerUtil.LogError(jsonEx, "An error occurred during JSON deserialization: {ErrorMessage}",
+                    jsonEx.Message);
             }
             catch (Exception ex)
             {
@@ -67,6 +70,7 @@ namespace KASIR.OfflineMode
                     LoggerUtil.LogError(ex, "Failed to read from cache: {ErrorMessage}", ex.Message);
                 }
             }
+
             return null;
         }
 
@@ -102,7 +106,7 @@ namespace KASIR.OfflineMode
         private void PopulateDataGridView(DiscountCartModel menuModel)
         {
             List<DataDiscountCart> menuList = menuModel.data.ToList();
-            DataTable dataTable = new DataTable();
+            DataTable dataTable = new();
             dataTable.Columns.Add("ID", typeof(int));
             dataTable.Columns.Add("Kode", typeof(string));
             dataTable.Columns.Add("Nilai", typeof(string));
@@ -131,13 +135,9 @@ namespace KASIR.OfflineMode
         }
 
 
-
-
         private void btnKeluar_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
-
-
     }
 }

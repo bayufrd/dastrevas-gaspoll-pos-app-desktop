@@ -2,7 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Windows;
-using Newtonsoft.Json;
+using KASIR.Properties;
 using Polly;
 using MessageBox = System.Windows.MessageBox;
 
@@ -10,16 +10,16 @@ namespace KASIR.Network
 {
     public class ApiService : IApiService
     {
-        private readonly HttpClient httpClient;
         private readonly string baseAddress;
+        private readonly IAsyncPolicy<HttpResponseMessage> combinedPolicy;
+        private readonly HttpClient httpClient;
         private readonly IAsyncPolicy<HttpResponseMessage> retryPolicy;
         private readonly IAsyncPolicy<HttpResponseMessage> timeoutPolicy;
-        private readonly IAsyncPolicy<HttpResponseMessage> combinedPolicy;
 
         public ApiService()
         {
-            baseAddress = Properties.Settings.Default.BaseAddress;
-            httpClient = new HttpClient()
+            baseAddress = Settings.Default.BaseAddress;
+            httpClient = new HttpClient
             {
                 Timeout = TimeSpan.FromSeconds(300) // 5 menit = 300 detik
             };
@@ -35,66 +35,6 @@ namespace KASIR.Network
                 .TimeoutAsync<HttpResponseMessage>(300); // Set the timeout duration to 10 seconds, adjust as needed
 
             combinedPolicy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
-        }
-
-        // Utility method to send requests with retry and timeout policy
-        private async Task<HttpResponseMessage> SendRequestAsync(Func<Task<HttpResponseMessage>> requestFunc)
-        {
-            try
-            {
-                var response = await combinedPolicy.ExecuteAsync(requestFunc);
-                //response.EnsureSuccessStatusCode();
-                return response;
-            }
-            catch (HttpRequestException ex)
-            {
-                LoggerUtil.LogError(ex, "Terjadi kesalahan jaringan: {ErrorMessage}", ex.Message);
-                throw; // rethrow the exception to maintain the original behavior
-            }
-            catch (TaskCanceledException ex)
-            {
-                // Handle TaskCanceledException, e.g., notify the user
-
-                if (ex.CancellationToken.IsCancellationRequested)
-                {
-                    LoggerUtil.LogError(ex, "Operasi dibatalkan, ada yang salah saat penginputan: {ErrorMessage} - Canceled", ex.Message);
-                }
-                else
-                {
-                    //MessageBox.Show("Waktu koneksi berakhir, telah dicoba sebanyak 3x. Silakan periksa koneksi internet Anda dan coba lagi.", "Timeout Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    LoggerUtil.LogError(ex, "Waktu koneksi berakhir, telah dicoba sebanyak 3x: {ErrorMessage} - Timeout", ex.Message);
-                }
-                throw; // rethrow the exception to maintain the original behavior
-            }
-            catch (Exception ex)
-            {
-                if (ex is HttpRequestException && ((HttpRequestException)ex).StatusCode == HttpStatusCode.InternalServerError)
-                {
-                    MessageBoxResult result = MessageBox.Show("Terjadi kesalahan pada server (500 Internal Server Error). Apakah Anda ingin mencoba lagi?", "Server Error", MessageBoxButton.YesNo, MessageBoxImage.Error);
-                    if (result == MessageBoxResult.Yes)
-                    {
-                        // Retry logic
-                        try
-                        {
-                            var response = await combinedPolicy.ExecuteAsync(requestFunc);
-                            return response;
-                        }
-                        catch (Exception retryEx)
-                        {
-                            LoggerUtil.LogError(retryEx, "Retry attempt failed: {Message}", retryEx.Message);
-                            throw;
-                        }
-                    }
-                    else
-                    {
-                        throw; // rethrow the exception to maintain the original behavior
-                    }
-                }
-                else
-                {
-                    throw; // rethrow the exception to maintain the original behavior
-                }
-            }
         }
 
         //Menu
@@ -118,14 +58,14 @@ namespace KASIR.Network
 
         public async Task<HttpResponseMessage> PostAddMenu(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return response;
         }
 
         public async Task<HttpResponseMessage> UpdateMenu(string url, string id, string jsonString)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PatchAsync(url + "/" + id, content));
             return response;
         }
@@ -151,7 +91,7 @@ namespace KASIR.Network
 
         public async Task<HttpResponseMessage> CreateCart(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return response;
         }
@@ -176,21 +116,21 @@ namespace KASIR.Network
 
         public async Task<HttpResponseMessage> PayBill(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return response;
         }
 
         public async Task<string> PayBillTransaction(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return await response.Content.ReadAsStringAsync();
         }
 
         public async Task<string> SaveBill(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return await response.Content.ReadAsStringAsync();
         }
@@ -203,7 +143,7 @@ namespace KASIR.Network
 
         public async Task<HttpResponseMessage> UpdateCart(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PatchAsync(url, content));
             return response;
         }
@@ -216,7 +156,7 @@ namespace KASIR.Network
 
         public async Task<HttpResponseMessage> UseDiscount(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return response;
         }
@@ -241,14 +181,14 @@ namespace KASIR.Network
 
         public async Task<string> Refund(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return await response.Content.ReadAsStringAsync();
         }
 
         public async Task<HttpResponseMessage> inputPin(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return response;
         }
@@ -261,14 +201,14 @@ namespace KASIR.Network
 
         public async Task<HttpResponseMessage> cicilRefund(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return response;
         }
 
         public async Task<string> CetakLaporanShift(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return await response.Content.ReadAsStringAsync();
         }
@@ -294,14 +234,14 @@ namespace KASIR.Network
 
         public async Task<HttpResponseMessage> CreateMember(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return response;
         }
 
         public async Task<HttpResponseMessage> EditMember(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PatchAsync(url, content));
             return response;
         }
@@ -314,14 +254,14 @@ namespace KASIR.Network
 
         public async Task<HttpResponseMessage> notifikasiPengeluaran(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return response;
         }
 
         public async Task<HttpResponseMessage> deleteCart(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return response;
         }
@@ -334,35 +274,98 @@ namespace KASIR.Network
 
         public async Task<string> SplitBill(string jsonString, string url)
         {
-            StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            StringContent content = new(jsonString, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
             return await response.Content.ReadAsStringAsync();
         }
+
         public async Task<HttpResponseMessage> SyncTransaction(string jsonString, string url)
         {
             try
             {
                 // Log detail payload
-                LoggerUtil.LogWarning($"Sync Transaction Payload Size: {jsonString.Length} bytes, Timestamp: {DateTime.Now}");
+                LoggerUtil.LogWarning(
+                    $"Sync Transaction Payload Size: {jsonString.Length} bytes, Timestamp: {DateTime.Now}");
 
-                StringContent content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+                StringContent content = new(jsonString, Encoding.UTF8, "application/json");
                 HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
 
                 // Log response details
-                LoggerUtil.LogWarning($"Sync Transaction Response Status: {response.StatusCode}, Reason: {response.ReasonPhrase}");
+                LoggerUtil.LogWarning(
+                    $"Sync Transaction Response Status: {response.StatusCode}, Reason: {response.ReasonPhrase}");
 
                 return response;
             }
             catch (Exception ex)
             {
                 // Log comprehensive error details
-                LoggerUtil.LogError(ex, $"Sync Transaction Error: {ex.Message}", new
-                {
-                    ExceptionType = ex.GetType().Name,
-                    InnerExceptionMessage = ex.InnerException?.Message
-                });
+                LoggerUtil.LogError(ex, $"Sync Transaction Error: {ex.Message}",
+                    new { ExceptionType = ex.GetType().Name, InnerExceptionMessage = ex.InnerException?.Message });
 
                 throw;
+            }
+        }
+
+        // Utility method to send requests with retry and timeout policy
+        private async Task<HttpResponseMessage> SendRequestAsync(Func<Task<HttpResponseMessage>> requestFunc)
+        {
+            try
+            {
+                HttpResponseMessage? response = await combinedPolicy.ExecuteAsync(requestFunc);
+                //response.EnsureSuccessStatusCode();
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                LoggerUtil.LogError(ex, "Terjadi kesalahan jaringan: {ErrorMessage}", ex.Message);
+                throw; // rethrow the exception to maintain the original behavior
+            }
+            catch (TaskCanceledException ex)
+            {
+                // Handle TaskCanceledException, e.g., notify the user
+
+                if (ex.CancellationToken.IsCancellationRequested)
+                {
+                    LoggerUtil.LogError(ex,
+                        "Operasi dibatalkan, ada yang salah saat penginputan: {ErrorMessage} - Canceled", ex.Message);
+                }
+                else
+                {
+                    //MessageBox.Show("Waktu koneksi berakhir, telah dicoba sebanyak 3x. Silakan periksa koneksi internet Anda dan coba lagi.", "Timeout Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    LoggerUtil.LogError(ex,
+                        "Waktu koneksi berakhir, telah dicoba sebanyak 3x: {ErrorMessage} - Timeout", ex.Message);
+                }
+
+                throw; // rethrow the exception to maintain the original behavior
+            }
+            catch (Exception ex)
+            {
+                if (ex is HttpRequestException &&
+                    ((HttpRequestException)ex).StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    MessageBoxResult result =
+                        MessageBox.Show(
+                            "Terjadi kesalahan pada server (500 Internal Server Error). Apakah Anda ingin mencoba lagi?",
+                            "Server Error", MessageBoxButton.YesNo, MessageBoxImage.Error);
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        // Retry logic
+                        try
+                        {
+                            HttpResponseMessage? response = await combinedPolicy.ExecuteAsync(requestFunc);
+                            return response;
+                        }
+                        catch (Exception retryEx)
+                        {
+                            LoggerUtil.LogError(retryEx, "Retry attempt failed: {Message}", retryEx.Message);
+                            throw;
+                        }
+                    }
+
+                    throw; // rethrow the exception to maintain the original behavior
+                }
+
+                throw; // rethrow the exception to maintain the original behavior
             }
         }
     }

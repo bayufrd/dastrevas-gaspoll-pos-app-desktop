@@ -7,6 +7,7 @@ using FontAwesome.Sharp;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
+using KASIR.Properties;
 using Newtonsoft.Json;
 using Serilog;
 using Menu = KASIR.Model.Menu;
@@ -17,54 +18,59 @@ namespace KASIR.komponen
     public partial class masterPos : Form
     {
         private readonly ILogger _log = LoggerService.Instance._log;
-
-        private ApiService apiService;
-        private DataTable listDataTable;
-        string totalCart;
-        string cartID;
-        string customer_name;
-        string customer_seat;
         private readonly string baseOutlet;
         private readonly string baseUrl;
-        private BindingSource bindingSource = new BindingSource();
-        private DataTable dataTable2;
-        List<DataDiscountCart> dataDiscountListCart;
-        int subTotalPrice;
-        // List<DataTable> dataList;
-        Dictionary<Menu, Image> menuImageDictionary = new Dictionary<Menu, Image>();
-        public bool ReloadDataInBaseForm { get; private set; }
+        private bool allDataLoaded;
+        private List<Menu> allMenuItems;
 
-        //untuk search
-        private Dictionary<string, DataGridViewRow> nameToRowMap;
+        private readonly ApiService apiService;
+        private readonly BindingSource bindingSource = new();
+        private string cartID;
+        private readonly string configFilePath = "setting\\configListMenu.data";
 
-        //untuk delete
-        Dictionary<string, object> jsondict;
-        int isSplitted = 0, diskonID = 0;
-        // Declare a private field to store the original data source
-
-        // Create two separate FlowLayoutPanels
-        List<Panel> originalPanelControls;
-        //hitung items
-        int items = 0;
-
-        private string configFolderPath = "setting";
-        private string configFilePath = "setting\\configListMenu.data";
+        private readonly string configFolderPath = "setting";
 
         //for paging
         private int currentPageIndex = 1;
-        private int pageSize = 35;
-        private int totalPageCount = 0;
-        private List<Menu> allMenuItems;
-        private bool isLoading = false;
-        private bool allDataLoaded = false;
+        private string customer_name;
+        private string customer_seat;
+        private List<DataDiscountCart> dataDiscountListCart;
+        private DataTable dataTable2;
+        private bool isLoading;
+
+        private int isSplitted, diskonID;
+
+        //hitung items
+        private int items;
+
+        //untuk delete
+        private Dictionary<string, object> jsondict;
+
+        private DataTable listDataTable;
+
+        // List<DataTable> dataList;
+        private readonly Dictionary<Menu, Image> menuImageDictionary = new();
+
+        private Dictionary<string, Control> nameToControlMap;
+
+        //untuk search
+        private Dictionary<string, DataGridViewRow> nameToRowMap;
+        // Declare a private field to store the original data source
+
+        // Create two separate FlowLayoutPanels
+        private List<Panel> originalPanelControls;
+        private readonly int pageSize = 35;
+        private int subTotalPrice;
+        private string totalCart;
+        private int totalPageCount;
 
         public masterPos()
         {
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
-            baseUrl = Properties.Settings.Default.BaseAddress;
+            baseOutlet = Settings.Default.BaseOutlet;
+            baseUrl = Settings.Default.BaseAddress;
             InitializeComponent();
             apiService = new ApiService();
-            panel8.Margin = new Padding(0, 0, 0, 0);       // No margin at the bottom
+            panel8.Margin = new Padding(0, 0, 0, 0); // No margin at the bottom
             dataGridView3.Margin = new Padding(0, 0, 0, 0);
             LoadCart();
 
@@ -78,7 +84,7 @@ namespace KASIR.komponen
             dataGridView3.Scroll += dataGridView3_Scroll;
 
             //peging end
-            this.Shown += MasterPos_ShownWrapper; //LoadData();
+            Shown += MasterPos_ShownWrapper; //LoadData();
 
             cmbFilter.SelectedIndexChanged += cmbFilter_SelectedIndexChanged;
 
@@ -93,13 +99,16 @@ namespace KASIR.komponen
             KeyPreview = true;
             KeyDown += YourForm_KeyDown;
         }
+
+        public bool ReloadDataInBaseForm { get; private set; }
+
         private void YourForm_KeyDown(object sender, KeyEventArgs e)
         {
             // Periksa apakah Ctrl dan Space ditekan bersamaan
             if (e.Control && e.KeyCode == Keys.F)
             {
                 // Mengatur fokus ke CariMenu
-                if (txtCariMenu.Visible == true)
+                if (txtCariMenu.Visible)
                 {
                     txtCariMenu.Focus();
 
@@ -109,7 +118,6 @@ namespace KASIR.komponen
                     // Memindahkan kursor ke akhir teks di CariMenu
                     txtCariMenu.SelectionStart = txtCariMenu.Text.Length;
                     txtCariMenu.SelectionLength = 0;
-
                 }
                 else
                 {
@@ -125,13 +133,13 @@ namespace KASIR.komponen
 
                 //e.Handled = true; // Menandai event sudah ditangani
             }
-
         }
 
         // Pagenation Begin
         private async Task LoadDataWithPagingAsync()
         {
             if (!Directory.Exists("DT-Cache")) { Directory.CreateDirectory("DT-Cache"); }
+
             // Load all menu data
             if (File.Exists($"DT-Cache\\menu_outlet_id_{baseOutlet}.data"))
             {
@@ -144,22 +152,24 @@ namespace KASIR.komponen
                 string response = await apiService.Get("/menu?outlet_id=" + baseOutlet);
                 GetMenuModel menuModel = JsonConvert.DeserializeObject<GetMenuModel>(response);
                 allMenuItems = menuModel.data.ToList();
-                File.WriteAllText($"DT-Cache\\menu_outlet_id_{baseOutlet}.data", JsonConvert.SerializeObject(menuModel));
+                File.WriteAllText($"DT-Cache\\menu_outlet_id_{baseOutlet}.data",
+                    JsonConvert.SerializeObject(menuModel));
             }
 
             totalPageCount = (int)Math.Ceiling((double)allMenuItems.Count / pageSize);
 
             await LoadCurrentPage();
         }
+
         private async Task LoadCurrentPage()
         {
             isLoading = true;
 
-            var pagedData = allMenuItems.Skip((currentPageIndex - 1) * pageSize).Take(pageSize).ToList();
+            List<Menu> pagedData = allMenuItems.Skip((currentPageIndex - 1) * pageSize).Take(pageSize).ToList();
             dataGridView3.SuspendLayout();
             items = 0;
 
-            foreach (var menu in pagedData)
+            foreach (Menu menu in pagedData)
             {
                 items += 1;
                 Panel tileButton = CreateTileButton(menu);
@@ -167,7 +177,7 @@ namespace KASIR.komponen
 
                 if (menu != pagedData.First())
                 {
-                    Panel spacerPanel = new Panel { Dock = DockStyle.Top, Height = 110, Width = 10 };
+                    Panel spacerPanel = new() { Dock = DockStyle.Top, Height = 110, Width = 10 };
                     dataGridView3.Controls.Add(spacerPanel);
                 }
 
@@ -193,37 +203,30 @@ namespace KASIR.komponen
         {
             if (e.ScrollOrientation == ScrollOrientation.VerticalScroll && !isLoading && !allDataLoaded)
             {
-                if (dataGridView3.VerticalScroll.Value + dataGridView3.VerticalScroll.LargeChange >= dataGridView3.VerticalScroll.Maximum)
+                if (dataGridView3.VerticalScroll.Value + dataGridView3.VerticalScroll.LargeChange >=
+                    dataGridView3.VerticalScroll.Maximum)
                 {
                     currentPageIndex++;
                     LoadCurrentPage();
                 }
             }
         }
+
         private Panel CreateTileButton(Menu menu)
         {
-            Panel tileButton = new Panel
-            {
-                Width = 90,
-                Height = 120
-            };
+            Panel tileButton = new() { Width = 90, Height = 120 };
 
-            Panel pictureBoxPanel = new Panel
-            {
-                Dock = DockStyle.Fill
-            };
+            Panel pictureBoxPanel = new() { Dock = DockStyle.Fill };
 
-            PictureBox pictureBox = new PictureBox
+            PictureBox pictureBox = new()
             {
-                SizeMode = PictureBoxSizeMode.Zoom,
-                Dock = DockStyle.Fill,
-                BorderStyle = BorderStyle.None
+                SizeMode = PictureBoxSizeMode.Zoom, Dock = DockStyle.Fill, BorderStyle = BorderStyle.None
             };
 
             pictureBoxPanel.Controls.Add(pictureBox);
             tileButton.Controls.Add(pictureBoxPanel);
 
-            Label nameLabel = new Label
+            Label nameLabel = new()
             {
                 Text = menu.name,
                 ForeColor = Color.FromArgb(30, 31, 68),
@@ -233,7 +236,7 @@ namespace KASIR.komponen
             };
             tileButton.Controls.Add(nameLabel);
 
-            Label typeLabel = new Label
+            Label typeLabel = new()
             {
                 Text = menu.menu_type,
                 Dock = DockStyle.Bottom,
@@ -242,7 +245,7 @@ namespace KASIR.komponen
             };
             tileButton.Controls.Add(typeLabel);
 
-            Label priceLabel = new Label
+            Label priceLabel = new()
             {
                 Text = string.Format("Rp. {0:n0},-", menu.price),
                 ForeColor = Color.FromArgb(30, 31, 68),
@@ -256,21 +259,22 @@ namespace KASIR.komponen
 
             return tileButton;
         }
+
         private async void UpdateDisplayWithSearchResults(List<Menu> searchResults)
         {
             dataGridView3.SuspendLayout();
             dataGridView3.Controls.Clear();
             items = 0;
 
-            foreach (var menu in searchResults)
+            foreach (Menu menu in searchResults)
             {
                 items += 1;
-                Panel tileButton = CreateTileButton(menu);  // Pastikan metode ini dipanggil dengan benar
+                Panel tileButton = CreateTileButton(menu); // Pastikan metode ini dipanggil dengan benar
                 dataGridView3.Controls.Add(tileButton);
 
                 if (menu != searchResults.First())
                 {
-                    Panel spacerPanel = new Panel { Dock = DockStyle.Top, Height = 110, Width = 10 };
+                    Panel spacerPanel = new() { Dock = DockStyle.Top, Height = 110, Width = 10 };
                     dataGridView3.Controls.Add(spacerPanel);
                 }
 
@@ -285,6 +289,7 @@ namespace KASIR.komponen
             originalPanelControls = dataGridView3.Controls.OfType<Panel>().ToList();
             txtCariMenu.PlaceholderText = "Cari Menu Items...";
         }
+
         private async Task ReloadImageToPictureBox(PictureBox pictureBox, Menu menu)
         {
             Image cachedImage = await LoadImageFromCache(menu.id.ToString());
@@ -338,7 +343,7 @@ namespace KASIR.komponen
 
         private async Task HandlePictureBoxClick(Menu menu)
         {
-            Form background = new Form
+            Form background = new()
             {
                 StartPosition = FormStartPosition.Manual,
                 FormBorderStyle = FormBorderStyle.None,
@@ -346,11 +351,11 @@ namespace KASIR.komponen
                 BackColor = Color.Black,
                 WindowState = FormWindowState.Maximized,
                 TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
+                Location = Location,
+                ShowInTaskbar = false
             };
 
-            using (addCartForm addCartForm = new addCartForm(menu.id.ToString(), menu.name.ToString()))
+            using (addCartForm addCartForm = new(menu.id.ToString(), menu.name))
             {
                 addCartForm.Owner = background;
                 background.Show();
@@ -397,7 +402,6 @@ namespace KASIR.komponen
                     if (allSettingsData == "ON")
                     {
                         await OnListView();
-
                     }
                     else
                     {
@@ -429,7 +433,6 @@ namespace KASIR.komponen
         }
 
 
-
         private async Task OfflistView()
         {
             dataGridView3.Enabled = true;
@@ -441,6 +444,7 @@ namespace KASIR.komponen
             //loadDataAsync();
             await LoadDataWithPagingAsync();
         }
+
         private void DataGridView2_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex >= 0) // Memastikan kita hanya memformat sel data
@@ -469,7 +473,7 @@ namespace KASIR.komponen
                 // Do any long-running work here
 
                 // Invoke the MasterPos_Shown method on the UI thread
-                this.Invoke((MethodInvoker)delegate
+                Invoke((MethodInvoker)delegate
                 {
                     MasterPos_Shown(sender, e);
                 });
@@ -484,7 +488,7 @@ namespace KASIR.komponen
 
         public void RoundedPanel(Panel panel)
         {
-            GraphicsPath path = new GraphicsPath();
+            GraphicsPath path = new();
             int radius = 20; // adjust the radius value to change the roundness of the corners
             path.AddLine(panel.Left, panel.Top + radius, panel.Left, panel.Top);
             path.AddArc(panel.Left, panel.Top, radius, radius, 180, 90);
@@ -506,6 +510,7 @@ namespace KASIR.komponen
 
             loadDataAsync();
         }
+
         private void InitializeComboBox()
         {
             cmbFilter.Items.Add("Semua");
@@ -515,7 +520,6 @@ namespace KASIR.komponen
             cmbFilter.Items.Add("Additional Minuman");
             cmbFilter.SelectedIndex = 0;
             /*          cmbFilter.Items.Add("Dessert");*/
-
         }
 
         private void CmbFilter_DrawItem(object sender, DrawItemEventArgs e)
@@ -527,28 +531,31 @@ namespace KASIR.komponen
                 int verticalMargin = 5;
                 string itemText = cmbFilter.GetItemText(cmbFilter.Items[e.Index]);
 
-                e.Graphics.DrawString(itemText, e.Font, Brushes.Black, new Rectangle(e.Bounds.Left, e.Bounds.Top + verticalMargin, e.Bounds.Width, e.Bounds.Height - verticalMargin));
+                e.Graphics.DrawString(itemText, e.Font, Brushes.Black,
+                    new Rectangle(e.Bounds.Left, e.Bounds.Top + verticalMargin, e.Bounds.Width,
+                        e.Bounds.Height - verticalMargin));
 
                 e.DrawFocusRectangle();
-
             }
         }
 
         private async Task LoadDataDiscount()
         {
-
             try
             {
                 string folderAddCartForm = "DT-Cache\\addCartForm";
                 if (!Directory.Exists("DT-Cache")) { Directory.CreateDirectory("DT-Cache"); }
+
                 if (!Directory.Exists(folderAddCartForm)) { Directory.CreateDirectory(folderAddCartForm); }
+
                 // Load all menu data
                 if (File.Exists($"{folderAddCartForm}\\LoadDataDiscountItem_Outlet_{baseOutlet}.data"))
                 {
-                    string json = File.ReadAllText("DT-Cache" + "\\LoadDiscountPerCart_" + "Outlet_" + baseOutlet + ".data");
+                    string json =
+                        File.ReadAllText("DT-Cache" + "\\LoadDiscountPerCart_" + "Outlet_" + baseOutlet + ".data");
                     DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(json);
                     List<DataDiscountCart> data = menuModel.data;
-                    var options = data;
+                    List<DataDiscountCart> options = data;
                     dataDiscountListCart = data;
                     options.Insert(0, new DataDiscountCart { id = -1, code = "Tidak ada Diskon" });
                     cmbDiskon.DataSource = options;
@@ -558,24 +565,27 @@ namespace KASIR.komponen
                 else
                 {
                     IApiService apiService = new ApiService();
-                    string response = await apiService.GetDiscount($"/discount?outlet_id={baseOutlet}&is_discount_cart=", "1");
+                    string response =
+                        await apiService.GetDiscount($"/discount?outlet_id={baseOutlet}&is_discount_cart=", "1");
                     DiscountCartModel menuModel = JsonConvert.DeserializeObject<DiscountCartModel>(response);
-                    File.WriteAllText("DT-Cache" + "\\LoadDiscountPerCart_" + "Outlet_" + baseOutlet + ".data", JsonConvert.SerializeObject(menuModel));
+                    File.WriteAllText("DT-Cache" + "\\LoadDiscountPerCart_" + "Outlet_" + baseOutlet + ".data",
+                        JsonConvert.SerializeObject(menuModel));
                     List<DataDiscountCart> data = menuModel.data;
-                    var options = data;
+                    List<DataDiscountCart> options = data;
                     dataDiscountListCart = data;
                     options.Insert(0, new DataDiscountCart { id = -1, code = "Tidak ada Diskon" });
                     cmbDiskon.DataSource = options;
                     cmbDiskon.DisplayMember = "code";
                     cmbDiskon.ValueMember = "id";
                 }
+
                 string searchText = diskonID.ToString() ?? "";
                 if (searchText != "0")
                 {
                     for (int kimak = 0; kimak < cmbDiskon.Items.Count; kimak++)
                     {
                         cmbDiskon.SelectedIndex = kimak;
-                        if (cmbDiskon.Text.ToString() == searchText)
+                        if (cmbDiskon.Text == searchText)
                         {
                             cmbDiskon.SelectedIndex = kimak;
                             break;
@@ -585,7 +595,8 @@ namespace KASIR.komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -593,22 +604,19 @@ namespace KASIR.komponen
                 MessageBox.Show("Gagal tampil data diskon " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
-
         }
 
         private void label2_Click(object sender, EventArgs e)
         {
-
         }
 
         private void label1_Click(object sender, EventArgs e)
         {
-
         }
 
         private async void txtCariMenu_TextChanged(object sender, EventArgs e)
         {
-            if (dataGridView3.Visible == true)
+            if (dataGridView3.Visible)
             {
                 if (txtCariMenu.Text != "" && txtCariMenu.Text != null)
                 {
@@ -621,19 +629,22 @@ namespace KASIR.komponen
                 }
                 //PerformSearch();
             }
-            if (dataGridView2.Visible == true)
+
+            if (dataGridView2.Visible)
             {
                 PerformSearchList();
             }
             ////LoggerUtil.LogPrivateMethod(nameof(txtCariMenu_TextChanged));
-
         }
+
         private void PerformSearchList()
         {
             try
             {
                 if (listDataTable == null)
+                {
                     return;
+                }
 
                 string searchTerm = txtCariMenu.Text.ToLower();
 
@@ -647,6 +658,7 @@ namespace KASIR.komponen
                     filteredDataTable.ImportRow(row);
                     items++;
                 }
+
                 lblCountingItems.Text = $"{items} items";
 
                 dataGridView2.DataSource = filteredDataTable;
@@ -656,8 +668,6 @@ namespace KASIR.komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
-        private Dictionary<string, Control> nameToControlMap;
 
         private void InitializeNameToControlMap(FlowLayoutPanel panel)
         {
@@ -677,6 +687,7 @@ namespace KASIR.komponen
                 }
             }
         }
+
         private void PerformSearch()
         {
             string searchQuery = txtCariMenu.Text.ToLower();
@@ -685,7 +696,7 @@ namespace KASIR.komponen
                 if (allMenuItems != null)
                 {
                     // Filter the allMenuItems based on the search query
-                    var searchResults = allMenuItems.Where(menu =>
+                    List<Menu> searchResults = allMenuItems.Where(menu =>
                         menu.name.ToLower().Contains(searchQuery) ||
                         menu.menu_type.ToLower().Contains(searchQuery) ||
                         string.Format("Rp. {0:n0},-", menu.price).ToLower().Contains(searchQuery)
@@ -693,10 +704,6 @@ namespace KASIR.komponen
 
                     // Update the display with the search results
                     UpdateDisplayWithSearchResults(searchResults);
-                }
-                else
-                {
-                    return;
                 }
             }
             /*
@@ -758,15 +765,12 @@ namespace KASIR.komponen
         }
 
 
-
-
-
-
         private async Task EmptyCart()
         {
             try
             {
-                HttpResponseMessage responseMessage = await apiService.DeleteCart("/empty-cart?outlet_id=" + baseOutlet, "cart_id=" + cartID);
+                HttpResponseMessage responseMessage =
+                    await apiService.DeleteCart("/empty-cart?outlet_id=" + baseOutlet, "cart_id=" + cartID);
 
                 if (responseMessage.IsSuccessStatusCode)
                 {
@@ -781,13 +785,13 @@ namespace KASIR.komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
             }
         }
 
@@ -813,7 +817,9 @@ namespace KASIR.komponen
                 }
 
                 cartID = dataModel.data.cart_id.ToString();
-                CheckIsOrderedModel data = JsonConvert.DeserializeObject<CheckIsOrderedModel>(await apiService.CheckIsOrdered("/check-ordered-cart?outlet_id=", baseOutlet));
+                CheckIsOrderedModel data =
+                    JsonConvert.DeserializeObject<CheckIsOrderedModel>(
+                        await apiService.CheckIsOrdered("/check-ordered-cart?outlet_id=", baseOutlet));
                 if (data.data?.is_ordered != 1)
                 {
                     await EmptyCart(); //API Empty
@@ -822,18 +828,18 @@ namespace KASIR.komponen
 
                 ////API DeleteCart
 
-                using (var background = new Form
-                {
-                    StartPosition = FormStartPosition.Manual,
-                    FormBorderStyle = FormBorderStyle.None,
-                    Opacity = 0.7d,
-                    BackColor = Color.Black,
-                    WindowState = FormWindowState.Maximized,
-                    TopMost = true,
-                    Location = this.Location,
-                    ShowInTaskbar = false,
-                })
-                using (var deleteForm = new deleteForm(cartID.ToString()))
+                using (Form background = new()
+                       {
+                           StartPosition = FormStartPosition.Manual,
+                           FormBorderStyle = FormBorderStyle.None,
+                           Opacity = 0.7d,
+                           BackColor = Color.Black,
+                           WindowState = FormWindowState.Maximized,
+                           TopMost = true,
+                           Location = Location,
+                           ShowInTaskbar = false
+                       })
+                using (deleteForm deleteForm = new(cartID))
                 {
                     deleteForm.Owner = background;
                     background.Show();
@@ -857,24 +863,26 @@ namespace KASIR.komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-
                 MessageBox.Show("An error occurred while retrieving data: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
             }
         }
+
         public async Task LoadDataListby()
         {
             if (!NetworkInterface.GetIsNetworkAvailable())
             {
-                MessageBox.Show("No network connection available. Please check your internet connection and try again.", "Network Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("No network connection available. Please check your internet connection and try again.",
+                    "Network Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
+
             try
             {
                 //dataGridView3.Enabled = false;
@@ -887,10 +895,10 @@ namespace KASIR.komponen
                 if (!File.Exists($"DT-Cache\\menu_outlet_id_{baseOutlet}.data"))
                 {
                     json = await apiService.Get("/menu?outlet_id=" + baseOutlet);
-                    var apiMenuModel = JsonConvert.DeserializeObject<GetMenuModel>(json);
+                    GetMenuModel? apiMenuModel = JsonConvert.DeserializeObject<GetMenuModel>(json);
 
-                    File.WriteAllText($"DT-Cache\\menu_outlet_id_{baseOutlet}.data", JsonConvert.SerializeObject(apiMenuModel));
-
+                    File.WriteAllText($"DT-Cache\\menu_outlet_id_{baseOutlet}.data",
+                        JsonConvert.SerializeObject(apiMenuModel));
                 }
                 else
                 {
@@ -903,22 +911,23 @@ namespace KASIR.komponen
 
                 dataGridView2.Controls.Clear();
 
-                DataTable dataTable2 = new DataTable();
+                DataTable dataTable2 = new();
 
                 dataTable2.Columns.Add("MenuID", typeof(int));
                 dataTable2.Columns.Add("Nama Menu", typeof(string)); // Change this line
                 dataTable2.Columns.Add("Menu Type", typeof(string));
                 dataTable2.Columns.Add("Menu Price", typeof(string));
 
-                foreach (var Menu in menuList)
+                foreach (Menu Menu in menuList)
                 {
-                    this.Invoke((MethodInvoker)delegate
+                    Invoke((MethodInvoker)delegate
                     {
                         txtCariMenu.PlaceholderText = $"Downloading Data...[{items} / {menuModel.data.Count}]";
                     });
-                    dataTable2.Rows.Add(Menu.id, Menu.name.ToString(), Menu.menu_type.ToString(), string.Format("Rp. {0:n0},-", Menu.price));
+                    dataTable2.Rows.Add(Menu.id, Menu.name, Menu.menu_type, string.Format("Rp. {0:n0},-", Menu.price));
                     items++;
                 }
+
                 // Set the column header name
                 dataTable2.Columns["Nama Menu"].ColumnName = "Nama Menu";
 
@@ -927,7 +936,7 @@ namespace KASIR.komponen
 
                 dataGridView2.Columns["MenuID"].Visible = false;
                 dataGridView2.Columns["Nama Menu"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-                this.Invoke((MethodInvoker)delegate
+                Invoke((MethodInvoker)delegate
                 {
                     txtCariMenu.PlaceholderText = "Cari menu items...";
                     lblCountingItems.Text = $"{items} items";
@@ -935,15 +944,14 @@ namespace KASIR.komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
                 MessageBox.Show("An error occurred while retrieving data: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
-
             }
         }
 
@@ -962,12 +970,12 @@ namespace KASIR.komponen
                 //var selectedMenu = menuList[e.RowIndex];
 
                 CartDetailClick(id, nama);
-
             }
         }
+
         private void CartDetailClick(string id, string nama)
         {
-            Form background = new Form
+            Form background = new()
             {
                 StartPosition = FormStartPosition.Manual,
                 FormBorderStyle = FormBorderStyle.None,
@@ -975,11 +983,11 @@ namespace KASIR.komponen
                 BackColor = Color.Black,
                 WindowState = FormWindowState.Maximized,
                 TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
+                Location = Location,
+                ShowInTaskbar = false
             };
 
-            using (addCartForm addCartForm = new addCartForm(id.ToString(), nama.ToString()))
+            using (addCartForm addCartForm = new(id, nama))
             {
                 addCartForm.Owner = background;
 
@@ -989,14 +997,12 @@ namespace KASIR.komponen
 
                 if (result == DialogResult.OK)
                 {
-
                     background.Dispose();
                     LoadCart();
                     // Settings were successfully updated, perform any necessary actions
                 }
                 else
                 {
-
                     MessageBox.Show("Gagal Menambahkan item, silahkan coba lagi");
                     ReloadCart();
                     LoadCart();
@@ -1008,7 +1014,6 @@ namespace KASIR.komponen
 
         public async Task loadDataAsync()
         {
-
             if (!Directory.Exists("DT-Cache")) { Directory.CreateDirectory("DT-Cache"); }
 
             // Load menu data from local file if available
@@ -1028,21 +1033,21 @@ namespace KASIR.komponen
                         // ... same code as before to create and add controls ...
                         items += 1;
                         // Use BeginInvoke to marshal the call to the UI thread
-                        this.BeginInvoke((MethodInvoker)delegate
+                        BeginInvoke((MethodInvoker)delegate
                         {
                             txtCariMenu.PlaceholderText = $"Loading Data...[{items} / {menuModel.data.Count}]";
                         });
 
                         // Use EndInvoke to release the delegate when the call is complete
-                        this.EndInvoke(this.BeginInvoke((MethodInvoker)delegate
+                        EndInvoke(BeginInvoke((MethodInvoker)delegate
                         {
                             txtCariMenu.PlaceholderText = $"Loading Data...[{items} / {menuModel.data.Count}]";
                         }));
-                        Panel tileButton = new Panel();//Panel tileButton = new Panel();
+                        Panel tileButton = new(); //Panel tileButton = new Panel();
                         tileButton.Width = 90;
                         tileButton.Height = 120;
 
-                        Panel pictureBoxPanel = new Panel();
+                        Panel pictureBoxPanel = new();
                         pictureBoxPanel.Dock = DockStyle.Fill;
 
 
@@ -1051,7 +1056,7 @@ namespace KASIR.komponen
                         //RoundedPanel(pictureBoxPanel);
                         //pictureBoxPanel.BorderStyle = BorderStyle.None; // Add this line to set the border style
 
-                        PictureBox pictureBox = new PictureBox();
+                        PictureBox pictureBox = new();
                         pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
                         pictureBox.Dock = DockStyle.Fill;
                         pictureBox.BorderStyle = BorderStyle.None; // Add this line to set the border style
@@ -1060,7 +1065,7 @@ namespace KASIR.komponen
                         tileButton.Controls.Add(pictureBoxPanel); // Add the PictureBox to the Panel
 
                         //AutoSizeLabel nameLabel = new AutoSizeLabel();
-                        Label nameLabel = new Label();
+                        Label nameLabel = new();
                         nameLabel.Text = menu.name;
                         nameLabel.ForeColor = Color.FromArgb(30, 31, 68);
                         nameLabel.Dock = DockStyle.Bottom;
@@ -1070,14 +1075,14 @@ namespace KASIR.komponen
 
                         tileButton.Controls.Add(nameLabel);
 
-                        Label typeLabel = new Label();
+                        Label typeLabel = new();
                         typeLabel.Text = menu.menu_type;
                         typeLabel.Dock = DockStyle.Bottom;
                         typeLabel.TextAlign = ContentAlignment.MiddleCenter;
                         tileButton.Controls.Add(typeLabel);
                         //tileButton.Controls.Add(pictureBoxPanel); // Add the PictureBox to the Panel
 
-                        Label priceLabel = new Label();
+                        Label priceLabel = new();
                         priceLabel.Text = string.Format("Rp. {0:n0},-", menu.price);
                         priceLabel.ForeColor = Color.FromArgb(30, 31, 68);
                         priceLabel.Dock = DockStyle.Bottom;
@@ -1090,10 +1095,10 @@ namespace KASIR.komponen
                         pictureBox.SendToBack();
                         if (menu != menuList.First())
                         {
-                            Panel spacerPanel = new Panel();
+                            Panel spacerPanel = new();
                             spacerPanel.Dock = DockStyle.Top;
                             spacerPanel.Height = 110;
-                            spacerPanel.Width = 10;// Set the height of the spacer panel
+                            spacerPanel.Width = 10; // Set the height of the spacer panel
                             dataGridView3.Controls.Add(spacerPanel);
                         }
 
@@ -1104,7 +1109,7 @@ namespace KASIR.komponen
                         //{
                         pictureBox.Click += async (sender, e) =>
                         {
-                            Form background = new Form
+                            Form background = new()
                             {
                                 StartPosition = FormStartPosition.Manual,
                                 FormBorderStyle = FormBorderStyle.None,
@@ -1112,12 +1117,12 @@ namespace KASIR.komponen
                                 BackColor = Color.Black,
                                 WindowState = FormWindowState.Maximized,
                                 TopMost = true,
-                                Location = this.Location,
-                                ShowInTaskbar = false,
+                                Location = Location,
+                                ShowInTaskbar = false
                             };
 
                             // Create the addCartForm on the UI thread
-                            using (addCartForm addCartForm = new addCartForm(menu.id.ToString(), menu.name.ToString()))
+                            using (addCartForm addCartForm = new(menu.id.ToString(), menu.name))
                             {
                                 addCartForm.Owner = background;
 
@@ -1152,13 +1157,13 @@ namespace KASIR.komponen
                         await LoadImageToPictureBox(pictureBox, menu);
 
                         // Use BeginInvoke to marshal the call to the UI thread
-                        this.BeginInvoke((MethodInvoker)delegate
+                        BeginInvoke((MethodInvoker)delegate
                         {
                             lblCountingItems.Text = $"{items} items";
                         });
 
                         // Use EndInvoke to release the delegate when the call is complete
-                        this.EndInvoke(this.BeginInvoke((MethodInvoker)delegate
+                        EndInvoke(BeginInvoke((MethodInvoker)delegate
                         {
                             lblCountingItems.Text = $"{items} items";
                         }));
@@ -1175,16 +1180,14 @@ namespace KASIR.komponen
 
                     // Initialize the original data source
                     originalPanelControls = dataGridView3.Controls.OfType<Panel>().ToList();
-                    this.BeginInvoke((MethodInvoker)delegate
+                    BeginInvoke((MethodInvoker)delegate
                     {
                         txtCariMenu.PlaceholderText = "Cari Menu Items...";
-
                     });
                     // Use EndInvoke to release the delegate when the call is complete
-                    this.EndInvoke(this.BeginInvoke((MethodInvoker)delegate
+                    EndInvoke(BeginInvoke((MethodInvoker)delegate
                     {
                         txtCariMenu.PlaceholderText = "Cari Menu Items...";
-
                     }));
                     //LoadCart();
                     cmbFilter.SelectedIndex = 0;
@@ -1193,7 +1196,8 @@ namespace KASIR.komponen
                 }
                 catch (TaskCanceledException ex)
                 {
-                    MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
                 catch (Exception ex)
@@ -1212,9 +1216,8 @@ namespace KASIR.komponen
                         MessageBox.Show("Data rusak, Silahkan Reset Cache di setting.");
                     }
                 }
-
-
             }
+
             try
             {
                 if (!NetworkInterface.GetIsNetworkAvailable())
@@ -1230,7 +1233,8 @@ namespace KASIR.komponen
                 List<Menu> menuList = menuModel.data.ToList();
 
                 // Save the menu data to a local file
-                File.WriteAllText($"DT-Cache\\menu_outlet_id_{baseOutlet}.data", JsonConvert.SerializeObject(menuModel));
+                File.WriteAllText($"DT-Cache\\menu_outlet_id_{baseOutlet}.data",
+                    JsonConvert.SerializeObject(menuModel));
 
                 // Clear the existing controls and add new ones
                 dataGridView3.SuspendLayout();
@@ -1240,22 +1244,22 @@ namespace KASIR.komponen
                     // ... same code as before to create and add controls ...
                     items += 1;
                     // Use BeginInvoke to marshal the call to the UI thread
-                    this.BeginInvoke((MethodInvoker)delegate
+                    BeginInvoke((MethodInvoker)delegate
                     {
                         txtCariMenu.PlaceholderText = $"Loading Data...[{items} / {menuModel.data.Count}]";
                     });
 
                     // Use EndInvoke to release the delegate when the call is complete
-                    this.EndInvoke(this.BeginInvoke((MethodInvoker)delegate
+                    EndInvoke(BeginInvoke((MethodInvoker)delegate
                     {
                         txtCariMenu.PlaceholderText = $"Loading Data...[{items} / {menuModel.data.Count}]";
                     }));
 
-                    Panel tileButton = new Panel();//Panel tileButton = new Panel();
+                    Panel tileButton = new(); //Panel tileButton = new Panel();
                     tileButton.Width = 90;
                     tileButton.Height = 120;
 
-                    Panel pictureBoxPanel = new Panel();
+                    Panel pictureBoxPanel = new();
                     pictureBoxPanel.Dock = DockStyle.Fill;
 
 
@@ -1264,7 +1268,7 @@ namespace KASIR.komponen
                     //RoundedPanel(pictureBoxPanel);
                     //pictureBoxPanel.BorderStyle = BorderStyle.None; // Add this line to set the border style
 
-                    PictureBox pictureBox = new PictureBox();
+                    PictureBox pictureBox = new();
                     pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
                     pictureBox.Dock = DockStyle.Fill;
                     pictureBox.BorderStyle = BorderStyle.None; // Add this line to set the border style
@@ -1273,7 +1277,7 @@ namespace KASIR.komponen
                     tileButton.Controls.Add(pictureBoxPanel); // Add the PictureBox to the Panel
 
                     //AutoSizeLabel nameLabel = new AutoSizeLabel();
-                    Label nameLabel = new Label();
+                    Label nameLabel = new();
                     nameLabel.Text = menu.name;
                     nameLabel.ForeColor = Color.FromArgb(30, 31, 68);
                     nameLabel.Dock = DockStyle.Bottom;
@@ -1283,14 +1287,14 @@ namespace KASIR.komponen
 
                     tileButton.Controls.Add(nameLabel);
 
-                    Label typeLabel = new Label();
+                    Label typeLabel = new();
                     typeLabel.Text = menu.menu_type;
                     typeLabel.Dock = DockStyle.Bottom;
                     typeLabel.TextAlign = ContentAlignment.MiddleCenter;
                     tileButton.Controls.Add(typeLabel);
                     //tileButton.Controls.Add(pictureBoxPanel); // Add the PictureBox to the Panel
 
-                    Label priceLabel = new Label();
+                    Label priceLabel = new();
                     priceLabel.Text = string.Format("Rp. {0:n0},-", menu.price);
                     priceLabel.ForeColor = Color.FromArgb(30, 31, 68);
                     priceLabel.Dock = DockStyle.Bottom;
@@ -1303,10 +1307,10 @@ namespace KASIR.komponen
                     pictureBox.SendToBack();
                     if (menu != menuList.First())
                     {
-                        Panel spacerPanel = new Panel();
+                        Panel spacerPanel = new();
                         spacerPanel.Dock = DockStyle.Top;
                         spacerPanel.Height = 110;
-                        spacerPanel.Width = 10;// Set the height of the spacer panel
+                        spacerPanel.Width = 10; // Set the height of the spacer panel
                         dataGridView3.Controls.Add(spacerPanel);
                     }
 
@@ -1317,7 +1321,7 @@ namespace KASIR.komponen
                     //{
                     pictureBox.Click += async (sender, e) =>
                     {
-                        Form background = new Form
+                        Form background = new()
                         {
                             StartPosition = FormStartPosition.Manual,
                             FormBorderStyle = FormBorderStyle.None,
@@ -1325,12 +1329,12 @@ namespace KASIR.komponen
                             BackColor = Color.Black,
                             WindowState = FormWindowState.Maximized,
                             TopMost = true,
-                            Location = this.Location,
-                            ShowInTaskbar = false,
+                            Location = Location,
+                            ShowInTaskbar = false
                         };
 
                         // Create the addCartForm on the UI thread
-                        using (addCartForm addCartForm = new addCartForm(menu.id.ToString(), menu.name.ToString()))
+                        using (addCartForm addCartForm = new(menu.id.ToString(), menu.name))
                         {
                             addCartForm.Owner = background;
 
@@ -1365,18 +1369,18 @@ namespace KASIR.komponen
                     await LoadImageToPictureBox(pictureBox, menu);
 
                     // Use BeginInvoke to marshal the call to the UI thread
-                    this.BeginInvoke((MethodInvoker)delegate
+                    BeginInvoke((MethodInvoker)delegate
                     {
                         lblCountingItems.Text = $"{items} items";
                     });
 
                     // Use EndInvoke to release the delegate when the call is complete
-                    this.EndInvoke(this.BeginInvoke((MethodInvoker)delegate
+                    EndInvoke(BeginInvoke((MethodInvoker)delegate
                     {
                         lblCountingItems.Text = $"{items} items";
                     }));
-
                 }
+
                 // Initialize the nameToControlMap dictionary after the dataGridView3 is populated
                 InitializeNameToControlMap(dataGridView3);
 
@@ -1389,26 +1393,23 @@ namespace KASIR.komponen
                 // Initialize the original data source
                 originalPanelControls = dataGridView3.Controls.OfType<Panel>().ToList();
 
-                this.BeginInvoke((MethodInvoker)delegate
+                BeginInvoke((MethodInvoker)delegate
                 {
                     txtCariMenu.PlaceholderText = "Cari Menu Items...";
-
                 });
                 // Use EndInvoke to release the delegate when the call is complete
-                this.EndInvoke(this.BeginInvoke((MethodInvoker)delegate
+                EndInvoke(BeginInvoke((MethodInvoker)delegate
                 {
                     txtCariMenu.PlaceholderText = "Cari Menu Items...";
-
                 }));
 
                 //LoadCart();
                 cmbFilter.SelectedIndex = 0;
-
-
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -1418,17 +1419,13 @@ namespace KASIR.komponen
 
                 MessageBox.Show("An error occurred while retrieving data: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
             }
-
         }
-
 
 
         // Fungsi untuk memuat gambar ke PictureBox dengan mengambil dari cache atau unduh jika tidak ada di cache
         private async Task LoadImageToPictureBox(PictureBox pictureBox, Menu menu)
         {
-
             if (!menuImageDictionary.ContainsKey(menu))
             {
                 menuImageDictionary.Add(menu, LoadPlaceholderImage(70, 70)); // Placeholder image initially
@@ -1437,26 +1434,27 @@ namespace KASIR.komponen
 
                 if (cachedImage != null)
                 {
-
                     try //just add try for error except
                     {
-
                         using (Graphics graphics = Graphics.FromHwnd(pictureBox.Handle))
                         {
-                            Rectangle rect = new Rectangle(0, 0, pictureBox.Width, pictureBox.Height);
+                            Rectangle rect = new(0, 0, pictureBox.Width, pictureBox.Height);
                             graphics.FillRectangle(new SolidBrush(Color.White), rect);
                             graphics.SmoothingMode = SmoothingMode.HighQuality;
 
                             // Create a GraphicsPath object for the rounded rectangle
-                            GraphicsPath path = new GraphicsPath();
+                            GraphicsPath path = new();
                             path.AddArc(rect.X, rect.Y, rect.Width / 2, rect.Height / 2, 180, 90);
-                            path.AddArc(rect.Right - rect.Width / 2, rect.Y, rect.Width / 2, rect.Height / 2, 270, 90);
-                            path.AddArc(rect.Right - rect.Width / 2, rect.Bottom - rect.Height / 2, rect.Width / 2, rect.Height / 2, 0, 90);
-                            path.AddArc(rect.X, rect.Bottom - rect.Height / 2, rect.Width / 2, rect.Height / 2, 90, 90);
+                            path.AddArc(rect.Right - (rect.Width / 2), rect.Y, rect.Width / 2, rect.Height / 2, 270,
+                                90);
+                            path.AddArc(rect.Right - (rect.Width / 2), rect.Bottom - (rect.Height / 2), rect.Width / 2,
+                                rect.Height / 2, 0, 90);
+                            path.AddArc(rect.X, rect.Bottom - (rect.Height / 2), rect.Width / 2, rect.Height / 2, 90,
+                                90);
                             path.CloseFigure();
 
                             // Create a new Region object based on the GraphicsPath object
-                            Region region = new Region(path);
+                            Region region = new(path);
 
                             // Set the PictureBox region to the rounded rectangle
                             pictureBox.Region = region;
@@ -1471,7 +1469,6 @@ namespace KASIR.komponen
                         // Handle the error by displaying a message or logging the error
                         Console.WriteLine($"Error: {ex.Message}");
                         LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
                     }
                 }
                 else
@@ -1505,11 +1502,11 @@ namespace KASIR.komponen
                         }
                         catch (ArgumentException ex)
                         {
-
                             // Handle the error by displaying a message or logging the error
                             Console.WriteLine($"Error: {ex.Message}");
                             LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                         }
+
                         // Save the downloaded image to cache
                         SaveImageToCache(downloadedImage, menu.id.ToString());
                     }
@@ -1536,9 +1533,9 @@ namespace KASIR.komponen
             height = image.Height * deviden;
             width = image.Width * deviden;
 
-            var finalImage = new Bitmap(width, height);
+            Bitmap finalImage = new(width, height);
 
-            using (var graphics = Graphics.FromImage(finalImage))
+            using (Graphics graphics = Graphics.FromImage(finalImage))
             {
                 // Set the background color to white
                 graphics.Clear(Color.White);
@@ -1569,7 +1566,6 @@ namespace KASIR.komponen
             if (imageSize.Width > 150 || imageSize.Height > 150)
             {
                 throw new ArgumentException("The image size is too large for the PictureBox.");
-
             }
         }
         //======================================resize image
@@ -1586,7 +1582,7 @@ namespace KASIR.komponen
             {
                 try
                 {
-                    using (FileStream stream = new FileStream(localImagePath, FileMode.Open, FileAccess.Read))
+                    using (FileStream stream = new(localImagePath, FileMode.Open, FileAccess.Read))
                     {
                         return Image.FromStream(stream);
                     }
@@ -1616,25 +1612,26 @@ namespace KASIR.komponen
                 Directory.CreateDirectory(localDirectory);
 
                 string localImagePath = Path.Combine(localDirectory, imageName + ".Jpeg"); //before jpg
-                                                                                           // Generate a random pastel color
+                // Generate a random pastel color
 
                 // Generate a random pastel color
-                Random rand = new Random();
+                Random rand = new();
                 int r = rand.Next(200, 255);
                 int g = rand.Next(200, 255);
                 int b = rand.Next(200, 255);
                 Color pastelColor = Color.FromArgb(r, g, b);
 
                 // Create a new bitmap with the pastel color background
-                Bitmap bmp = new Bitmap(image.Width, image.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                Bitmap bmp = new(image.Width, image.Height, PixelFormat.Format32bppArgb);
                 using (Graphics graphic = Graphics.FromImage(bmp))
                 {
                     graphic.Clear(pastelColor);
-                    graphic.DrawImage(image, new Rectangle(new Point(), image.Size), new Rectangle(new Point(), image.Size), GraphicsUnit.Pixel);
+                    graphic.DrawImage(image, new Rectangle(new Point(), image.Size),
+                        new Rectangle(new Point(), image.Size), GraphicsUnit.Pixel);
                 }
 
                 // Save the new image
-                using (FileStream stream = new FileStream(localImagePath, FileMode.Create, FileAccess.Write))
+                using (FileStream stream = new(localImagePath, FileMode.Create, FileAccess.Write))
                 {
                     bmp.Save(stream, ImageFormat.Jpeg);
                 }
@@ -1649,9 +1646,9 @@ namespace KASIR.komponen
             {
                 //Console.WriteLine($"Error saving image to cache: {ex.Message}");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
             }
         }
+
         private async Task<Image> LoadImageAsync(Menu menu)
         {
             try
@@ -1660,7 +1657,7 @@ namespace KASIR.komponen
                 string imageUrl = baseUrl + "/" + menu.image_url;
 
 
-                HttpClient httpClient = new HttpClient();
+                HttpClient httpClient = new();
                 HttpResponseMessage response = await httpClient.GetAsync(imageUrl);
                 response.EnsureSuccessStatusCode();
 
@@ -1676,7 +1673,7 @@ namespace KASIR.komponen
                     Image originalImage = Image.FromStream(stream);
 
                     // Generate a random pastel color
-                    Random rand = new Random();
+                    Random rand = new();
                     int r = rand.Next(200, 255);
                     int g = rand.Next(200, 255);
                     int b = rand.Next(200, 255);
@@ -1687,7 +1684,7 @@ namespace KASIR.komponen
                     int height = Math.Min(70, originalImage.Height);
                     int left = (70 - width) / 2;
                     int top = (70 - height) / 2;
-                    Bitmap bmp = new Bitmap(70, 70, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                    Bitmap bmp = new(70, 70, PixelFormat.Format32bppArgb);
                     using (Graphics graphic = Graphics.FromImage(bmp))
                     {
                         graphic.Clear(pastelColor);
@@ -1695,7 +1692,6 @@ namespace KASIR.komponen
                     }
 
                     return bmp;
-
                 }
             }
             catch (Exception ex)
@@ -1703,7 +1699,6 @@ namespace KASIR.komponen
                 // Console.WriteLine($"Error downloading image: {ex.Message}");
                 return LoadPlaceholderImage(70, 70);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
             }
         }
 
@@ -1726,10 +1721,8 @@ namespace KASIR.komponen
                     Image resizedPlaceholder = new Bitmap(placeholderImage, new Size(width, height));
                     return resizedPlaceholder;
                 }
-                else
-                {
-                    Console.WriteLine("Placeholder image not found at: " + placeholderImagePath);
-                }
+
+                Console.WriteLine("Placeholder image not found at: " + placeholderImagePath);
             }
             catch (Exception ex)
             {
@@ -1738,11 +1731,11 @@ namespace KASIR.komponen
             }
 
             // If the image file is not found or an error occurs, use the generated placeholder logic
-            Bitmap placeholder = new Bitmap(width, height);
+            Bitmap placeholder = new(width, height);
             using (Graphics graphics = Graphics.FromImage(placeholder))
             {
                 // Generate a random pastel color
-                Random Rand = new Random();
+                Random Rand = new();
                 int r = Rand.Next(128, 255); // Random red value between 128 and 255
                 int g = Rand.Next(128, 255); // Random green value between 128 and 255
                 int b = Rand.Next(128, 255); // Random blue value between 128 and 255
@@ -1755,8 +1748,10 @@ namespace KASIR.komponen
                 int y = (height - 35) / 2;
 
                 // Draw the placeholder text at the center point
-                graphics.DrawString("Image\nTidak\nDiUpload", SystemFonts.DefaultFont, new SolidBrush(Color.FromArgb(30, 31, 68)), new PointF(x, y));
+                graphics.DrawString("Image\nTidak\nDiUpload", SystemFonts.DefaultFont,
+                    new SolidBrush(Color.FromArgb(30, 31, 68)), new PointF(x, y));
             }
+
             return placeholder;
         }
 
@@ -1767,8 +1762,10 @@ namespace KASIR.komponen
             {
                 Directory.CreateDirectory("C:\\Temp");
             }
+
             File.WriteAllText("C:\\Temp\\reload_signal.txt", "ReloadChart");
         }
+
         public async Task SaveCartDataLocally(GetCartModel json)
         {
             try
@@ -1786,19 +1783,19 @@ namespace KASIR.komponen
                 }
 
                 // Menyimpan JSON ke file
-                using (StreamWriter writer = new StreamWriter(filePath))
+                using (StreamWriter writer = new(filePath))
                 {
                     string jsonData = JsonConvert.SerializeObject(json);
                     writer.Write(jsonData);
                 }
                 //sender.SendSignal("ReloadChart");
-
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         public async Task Ex_LoadCart()
         {
             int retryCount = 3; // Maksimal 3 kali percobaan
@@ -1871,8 +1868,12 @@ namespace KASIR.komponen
             }
 
             // Update UI untuk total, subtotal, dan diskon
-            lblDetailKeranjang.Text = "Keranjang: " + (string.IsNullOrEmpty(dataModel.data.customer_name) ? "name?" : dataModel.data.customer_name) +
-                                      " - " + (string.IsNullOrEmpty(dataModel.data.customer_seat) ? "seat?" : dataModel.data.customer_seat);
+            lblDetailKeranjang.Text = "Keranjang: " + (string.IsNullOrEmpty(dataModel.data.customer_name)
+                                          ? "name?"
+                                          : dataModel.data.customer_name) +
+                                      " - " + (string.IsNullOrEmpty(dataModel.data.customer_seat)
+                                          ? "seat?"
+                                          : dataModel.data.customer_seat);
             int result = dataModel.data.total - dataModel.data.subtotal;
             lblDiskon1.Text = string.Format("Rp. {0:n0},-", result);
             lblSubTotal1.Text = string.Format("Rp. {0:n0},-", dataModel.data.subtotal);
@@ -1881,7 +1882,7 @@ namespace KASIR.komponen
             subTotalPrice = dataModel.data.subtotal;
 
             // Proses detail keranjang ke dalam DataTable
-            DataTable dataTable = new DataTable();
+            DataTable dataTable = new();
             dataTable.Columns.Add("MenuID", typeof(string));
             dataTable.Columns.Add("CartDetailID", typeof(int));
             dataTable.Columns.Add("Jenis", typeof(string));
@@ -1889,7 +1890,7 @@ namespace KASIR.komponen
             dataTable.Columns.Add("Total Harga", typeof(string));
             dataTable.Columns.Add("Note", typeof(string));
 
-            Dictionary<string, List<DetailCart>> menuGroups = new Dictionary<string, List<DetailCart>>();
+            Dictionary<string, List<DetailCart>> menuGroups = new();
 
             foreach (DetailCart menu in dataModel.data.cart_details)
             {
@@ -1898,10 +1899,11 @@ namespace KASIR.komponen
                 {
                     menuGroups[servingTypeName] = new List<DetailCart>();
                 }
+
                 menuGroups[servingTypeName].Add(menu);
             }
 
-            foreach (var group in menuGroups)
+            foreach (KeyValuePair<string, List<DetailCart>> group in menuGroups)
             {
                 AddSeparatorRow(dataTable, group.Key, dataGridView1);
 
@@ -1915,7 +1917,8 @@ namespace KASIR.komponen
                         menu.menu_id ?? 0,
                         menu.cart_detail_id,
                         menu.serving_type_name ?? "",
-                        (menu.qty > 0 ? menu.qty.ToString() : "0") + "X " + (menu.is_ordered == "1" ? "(Ordered) " : "") + menu.menu_name + " " + menu.varian,
+                        (menu.qty > 0 ? menu.qty.ToString() : "0") + "X " +
+                        (menu.is_ordered == "1" ? "(Ordered) " : "") + menu.menu_name + " " + menu.varian,
                         string.Format("Rp. {0:n0},-", menu.total_price),
                         menu.note_item
                     );
@@ -1941,7 +1944,7 @@ namespace KASIR.komponen
             dataGridView1.Columns["Jenis"].Visible = false;
             dataGridView1.Columns["Note"].Visible = false;
 
-            DataGridViewCellStyle boldStyle = new DataGridViewCellStyle();
+            DataGridViewCellStyle boldStyle = new();
             boldStyle.Font = new Font(dataGridView1.Font, FontStyle.Italic);
             dataGridView1.Columns["Menu"].DefaultCellStyle = boldStyle;
             dataGridView1.Columns["Menu"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
@@ -1955,6 +1958,7 @@ namespace KASIR.komponen
             await LoadDataDiscount();
             autoFillDiskon();
         }
+
         public async Task LoadCart()
         {
             iconButton1.Enabled = false;
@@ -1969,9 +1973,9 @@ namespace KASIR.komponen
             iconButton2.Enabled = true;
             button7.Enabled = true;
         }
+
         public async Task LoadCartData()
         {
-
             try
             {
                 string response = await apiService.Get("/cart?outlet_id=" + baseOutlet);
@@ -2003,15 +2007,18 @@ namespace KASIR.komponen
                     }
                     else
                     {
-                        customer_seat = dataModel.data.customer_seat.ToString();
-                        customer_name = dataModel.data.customer_name.ToString();
+                        customer_seat = dataModel.data.customer_seat;
+                        customer_name = dataModel.data.customer_name;
                         int result = dataModel.data.total - dataModel.data.subtotal;
                         lblDiskon1.Text = string.Format("Rp. {0:n0},-", result);
                         subTotalPrice = dataModel.data.subtotal;
                         lblSubTotal1.Text = string.Format("Rp. {0:n0},-", dataModel.data.subtotal);
                         lblTotal1.Text = string.Format("Rp. {0:n0},-", dataModel.data.total);
                         iconButton1.Text = string.Format("Bayar Rp. {0:n0},-", dataModel.data.total);
-                        lblDetailKeranjang.Text = "Keranjang: " + (string.IsNullOrEmpty(customer_name) ? "name?" : customer_name) + " - " + (string.IsNullOrEmpty(customer_seat) ? "seat?" : customer_seat);
+                        lblDetailKeranjang.Text = "Keranjang: " +
+                                                  (string.IsNullOrEmpty(customer_name) ? "name?" : customer_name) +
+                                                  " - " +
+                                                  (string.IsNullOrEmpty(customer_seat) ? "seat?" : customer_seat);
                     }
 
                     totalCart = dataModel.data.total.ToString();
@@ -2020,7 +2027,7 @@ namespace KASIR.komponen
                     diskonID = dataModel.data.discount_id;
                     List<DetailCart> cartList = dataModel.data.cart_details;
 
-                    Dictionary<string, List<DetailCart>> menuGroups = new Dictionary<string, List<DetailCart>>();
+                    Dictionary<string, List<DetailCart>> menuGroups = new();
 
                     foreach (DetailCart menu in cartList)
                     {
@@ -2028,10 +2035,11 @@ namespace KASIR.komponen
                         {
                             menuGroups[menu.serving_type_name] = new List<DetailCart>();
                         }
+
                         menuGroups[menu.serving_type_name].Add(menu);
                     }
 
-                    DataTable dataTable = new DataTable();
+                    DataTable dataTable = new();
                     dataTable.Columns.Add("MenuID", typeof(string));
                     dataTable.Columns.Add("CartDetailID", typeof(int));
                     dataTable.Columns.Add("Jenis", typeof(string));
@@ -2039,7 +2047,7 @@ namespace KASIR.komponen
                     //dataTable.Columns.Add("Jumlah", typeof(string));
                     dataTable.Columns.Add("Total Harga", typeof(string));
                     dataTable.Columns.Add("Note", typeof(string));
-                    foreach (var group in menuGroups)
+                    foreach (KeyValuePair<string, List<DetailCart>> group in menuGroups)
                     {
                         // Panggil metode untuk menambahkan separator row
                         AddSeparatorRow(dataTable, group.Key, dataGridView1);
@@ -2050,16 +2058,15 @@ namespace KASIR.komponen
                         {
                             if (menu.is_ordered == "1")
                             {
-
                                 dataTable.Rows.Add(
-                                menu.menu_id ?? 0,  // Ensure menu_id is always non-null
-                                menu.cart_detail_id,
-                                menu.serving_type_name ?? "",  // Ensure serving_type_name is non-null
-                                (menu.qty > 0 ? menu.qty.ToString() : "0") + "X " + "(Ordered) " + (menu.menu_name ?? "Unknown") + " " + (menu.varian ?? "No variant"),
-                                string.Format("Rp. {0:n0},-", menu.total_price),
-                                menu.note_item ?? ""  // Ensure note_item is always non-null
-                            );
-
+                                    menu.menu_id ?? 0, // Ensure menu_id is always non-null
+                                    menu.cart_detail_id,
+                                    menu.serving_type_name ?? "", // Ensure serving_type_name is non-null
+                                    (menu.qty > 0 ? menu.qty.ToString() : "0") + "X " + "(Ordered) " +
+                                    (menu.menu_name ?? "Unknown") + " " + (menu.varian ?? "No variant"),
+                                    string.Format("Rp. {0:n0},-", menu.total_price),
+                                    menu.note_item ?? "" // Ensure note_item is always non-null
+                                );
                             }
                             else
                             {
@@ -2071,6 +2078,7 @@ namespace KASIR.komponen
                                     string.Format("Rp. {0:n0},-", menu.total_price),
                                     null);
                             }
+
                             if (menu.discounted_price != 0)
                             {
                                 if (!string.IsNullOrEmpty(menu.note_item))
@@ -2080,7 +2088,9 @@ namespace KASIR.komponen
                                         null,
                                         null,
                                         "  *catatan : " + (menu.note_item ?? ""),
-                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code),
+                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code)
+                                            ? "No code"
+                                            : menu.discount_code),
                                         null);
                                 }
                                 else
@@ -2090,7 +2100,9 @@ namespace KASIR.komponen
                                         null,
                                         null,
                                         null,
-                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code) ? "No code" : menu.discount_code),
+                                        "*Discount :" + (string.IsNullOrEmpty(menu.discount_code)
+                                            ? "No code"
+                                            : menu.discount_code),
                                         null);
                                 }
                             }
@@ -2114,11 +2126,13 @@ namespace KASIR.komponen
 
                     dataTable2 = dataTable.Copy();
                     dataGridView1.Columns["MenuID"].Visible = false;
-                    DataGridViewCellStyle boldStyle = new DataGridViewCellStyle();
+                    DataGridViewCellStyle boldStyle = new();
                     boldStyle.Font = new Font(dataGridView1.Font, FontStyle.Italic);
                     dataGridView1.Columns["Menu"].DefaultCellStyle = boldStyle;
-                    dataGridView1.Columns["Menu"].DefaultCellStyle.WrapMode = DataGridViewTriState.True; // Enable text wrapping
-                    dataGridView1.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells; // Auto size rows to fit text
+                    dataGridView1.Columns["Menu"].DefaultCellStyle.WrapMode =
+                        DataGridViewTriState.True; // Enable text wrapping
+                    dataGridView1.AutoSizeRowsMode =
+                        DataGridViewAutoSizeRowsMode.AllCells; // Auto size rows to fit text
                     dataGridView1.Columns["Menu"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
                     dataGridView1.Columns["CartDetailID"].Visible = false;
                     dataGridView1.Columns["Jenis"].Visible = false;
@@ -2129,11 +2143,13 @@ namespace KASIR.komponen
 
                     autoFillDiskon();
                 }
+
                 await SignalReload();
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -2141,6 +2157,7 @@ namespace KASIR.komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
         private void DataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex >= 0) // Memastikan kita hanya memformat sel data
@@ -2155,6 +2172,7 @@ namespace KASIR.komponen
                 }
             }
         }
+
         private void Ex_AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
         {
             // Tambahkan separator row ke DataTable
@@ -2170,6 +2188,7 @@ namespace KASIR.komponen
             int[] cellIndexesToStyle = { 3, 4, 5 }; // Indeks kolom yang ingin diatur
             SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
         }
+
         private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
         {
             // Tambahkan baris separator ke DataTable
@@ -2195,6 +2214,7 @@ namespace KASIR.komponen
                 }
             }
         }
+
         private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)
         {
             foreach (int index in cellIndexes)
@@ -2203,6 +2223,7 @@ namespace KASIR.komponen
                 row.Cells[index].Style.Font = new Font(dataGridView1.Font, fontStyle);
             }
         }
+
         private void autoFillDiskon()
         {
             // Mengambil ID diskon yang dipilih
@@ -2226,17 +2247,15 @@ namespace KASIR.komponen
         }
 
 
-
         private void DataGridView1_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
         {
-
         }
 
         private void ReloadData()
         {
             loadDataAsync();
-
         }
+
         public void ReloadData2()
         {
             loadDataAsync();
@@ -2257,7 +2276,6 @@ namespace KASIR.komponen
 
         private void masterPos_Load(object sender, EventArgs e)
         {
-
         }
 
         //reload dual monitor pembayaran
@@ -2267,14 +2285,17 @@ namespace KASIR.komponen
             {
                 Directory.CreateDirectory("C:\\Temp");
             }
+
             File.WriteAllText("C:\\Temp\\payment_signal.txt", "Payment");
         }
+
         public void SignalReloadPayformDone()
         {
             if (!Directory.Exists("C:\\Temp"))
             {
                 Directory.CreateDirectory("C:\\Temp");
             }
+
             File.WriteAllText("C:\\Temp\\payment_signal.txt", "PaymentDone");
         }
 
@@ -2288,7 +2309,7 @@ namespace KASIR.komponen
             }
             ////LoggerUtil.LogPrivateMethod(nameof(button1_Click));
 
-            Form background = new Form
+            Form background = new()
             {
                 StartPosition = FormStartPosition.Manual,
                 FormBorderStyle = FormBorderStyle.None,
@@ -2296,11 +2317,12 @@ namespace KASIR.komponen
                 BackColor = Color.Black,
                 WindowState = FormWindowState.Maximized,
                 TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
+                Location = Location,
+                ShowInTaskbar = false
             };
 
-            using (payForm payForm = new payForm(baseOutlet, cartID, totalCart, lblTotal1.Text.ToString(), customer_seat, customer_name, this))
+            using (payForm payForm = new(baseOutlet, cartID, totalCart, lblTotal1.Text, customer_seat, customer_name,
+                       this))
             {
                 SignalReloadPayform();
 
@@ -2324,7 +2346,6 @@ namespace KASIR.komponen
                     // Settings were successfully updated, perform any necessary actions
                     SignalReloadPayformDone();
                     //pengirim.SendSignal("Payment");
-
                 }
                 else
                 {
@@ -2336,13 +2357,10 @@ namespace KASIR.komponen
                     LoadCart();
                 }
             }
-
-
         }
 
         private void panel3_Paint(object sender, PaintEventArgs e)
         {
-
         }
 
         private void txtCariMenu_TextChanged_1(object sender, EventArgs e)
@@ -2382,7 +2400,7 @@ namespace KASIR.komponen
                         return;
                     }
 
-                    Form background = new Form
+                    Form background = new()
                     {
                         StartPosition = FormStartPosition.Manual,
                         FormBorderStyle = FormBorderStyle.None,
@@ -2390,12 +2408,12 @@ namespace KASIR.komponen
                         BackColor = Color.Black,
                         WindowState = FormWindowState.Maximized,
                         TopMost = true,
-                        Location = this.Location,
-                        ShowInTaskbar = false,
+                        Location = Location,
+                        ShowInTaskbar = false
                     };
-                    this.Invoke((MethodInvoker)delegate
+                    Invoke((MethodInvoker)delegate
                     {
-                        using (updateCartForm updateCartForm = new updateCartForm(id.ToString(), cartdetailid.ToString()))
+                        using (updateCartForm updateCartForm = new(id.ToString(), cartdetailid.ToString()))
                         {
                             updateCartForm.Owner = background;
 
@@ -2423,12 +2441,9 @@ namespace KASIR.komponen
                 catch (Exception ex)
                 {
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                    return;
                 }
             }
         }
-
-
 
 
         private void button2_Click(object sender, EventArgs e)
@@ -2439,7 +2454,8 @@ namespace KASIR.komponen
                 MessageBox.Show("Keranjang masih kosong!", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            Form background = new Form
+
+            Form background = new()
             {
                 StartPosition = FormStartPosition.Manual,
                 FormBorderStyle = FormBorderStyle.None,
@@ -2447,22 +2463,19 @@ namespace KASIR.komponen
                 BackColor = Color.Black,
                 WindowState = FormWindowState.Maximized,
                 TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
+                Location = Location,
+                ShowInTaskbar = false
             };
 
             ////LoggerUtil.LogPrivateMethod(nameof(button2_Click));
             if (isSplitted != 0)
             {
-                MessageBox.Show("Keranjang ini telah di Split! tidak bisa diSimpan.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
+                MessageBox.Show("Keranjang ini telah di Split! tidak bisa diSimpan.", "Gaspol", MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
             else
             {
-
-
-
-                using (saveBill saveBill = new saveBill(cartID, customer_name, customer_seat))
+                using (saveBill saveBill = new(cartID, customer_name, customer_seat))
                 {
                     saveBill.Owner = background;
 
@@ -2491,14 +2504,17 @@ namespace KASIR.komponen
                 }
             }
         }
+
         private async void btnGet_Click(object sender, EventArgs e)
         {
             ////LoggerUtil.LogPrivateMethod(nameof(btnGet_Click));
             if (string.IsNullOrEmpty(cartID) || dataDiscountListCart == null || !dataDiscountListCart.Any())
             {
-                MessageBox.Show("Keranjang kosong. Silakan tambahkan item ke keranjang sebelum menerapkan diskon.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Keranjang kosong. Silakan tambahkan item ke keranjang sebelum menerapkan diskon.",
+                    "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+
             int selectedDiskon = (int)cmbDiskon.SelectedValue;
 
             if (diskonID != 0) // Jika diskon sudah diterapkan, maka hapus diskon
@@ -2509,15 +2525,18 @@ namespace KASIR.komponen
             {
                 if (selectedDiskon == -1)
                 {
-                    MessageBox.Show("Diskon belum dipilih !", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Diskon belum dipilih !", "Gaspol", MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                     return;
                 }
 
-                int diskonMinimum = dataDiscountListCart.FirstOrDefault(d => d.id == selectedDiskon)?.min_purchase ?? -1;
+                int diskonMinimum = dataDiscountListCart.FirstOrDefault(d => d.id == selectedDiskon)?.min_purchase ??
+                                    -1;
                 if (diskonMinimum > subTotalPrice)
                 {
                     int resultDiskon = diskonMinimum - subTotalPrice;
-                    MessageBox.Show("Minimum diskon kurang " + string.Format("Rp. {0:n0},-", resultDiskon) + " lagi", "Gaspol");
+                    MessageBox.Show("Minimum diskon kurang " + string.Format("Rp. {0:n0},-", resultDiskon) + " lagi",
+                        "Gaspol");
                     return;
                 }
             }
@@ -2529,11 +2548,7 @@ namespace KASIR.komponen
                     MessageBox.Show("Memasang Diskon Cart, Diskon peritem akan dilepas");
                 }
 
-                var json = new
-                {
-                    cart_id = cartID,
-                    discount_id = selectedDiskon
-                };
+                var json = new { cart_id = cartID, discount_id = selectedDiskon };
 
                 string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
                 HttpResponseMessage response = await apiService.PayBill(jsonString, "/discount-transaction");
@@ -2553,13 +2568,15 @@ namespace KASIR.komponen
                     {
                         string responseContent = await response.Content.ReadAsStringAsync();
                         PostModel responseModel = JsonConvert.DeserializeObject<PostModel>(responseContent);
-                        MessageBox.Show(responseModel.message, "Pesan", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(responseModel.message, "Pesan", MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
                     }
                 }
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -2590,7 +2607,8 @@ namespace KASIR.komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -2604,7 +2622,6 @@ namespace KASIR.komponen
 
         private void lblSubTotal1_Click(object sender, EventArgs e)
         {
-
         }
 
 
@@ -2612,7 +2629,7 @@ namespace KASIR.komponen
         {
             ////LoggerUtil.LogPrivateMethod(nameof(listBill_Click));
 
-            Form background = new Form
+            Form background = new()
             {
                 StartPosition = FormStartPosition.Manual,
                 FormBorderStyle = FormBorderStyle.None,
@@ -2620,11 +2637,11 @@ namespace KASIR.komponen
                 BackColor = Color.Black,
                 WindowState = FormWindowState.Maximized,
                 TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
+                Location = Location,
+                ShowInTaskbar = false
             };
 
-            using (dataBill dataBill = new dataBill())
+            using (dataBill dataBill = new())
             {
                 dataBill.Owner = background;
 
@@ -2651,8 +2668,6 @@ namespace KASIR.komponen
                     background.Dispose();
                 }
             }
-
-
         }
 
         private void FilterMenuItems(string selectedMenuType)
@@ -2661,14 +2676,15 @@ namespace KASIR.komponen
 
 
             // Create a copy of the original data source
-            var clonedDataGridViewControls = new List<Control>(dataGridView3.Controls.OfType<Control>());
+            List<Control> clonedDataGridViewControls = new(dataGridView3.Controls.OfType<Control>());
 
             // Filter the cloned data source based on the selected menu type
-            var filteredDataGridViewControls = clonedDataGridViewControls.OfType<Panel>().Where(panel =>
+            List<Panel> filteredDataGridViewControls = clonedDataGridViewControls.OfType<Panel>().Where(panel =>
             {
                 if (panel.Controls.OfType<Label>().Any())
                 {
-                    var typeLabel = panel.Controls.OfType<Label>().FirstOrDefault(label => label.Name == "typeLabel");
+                    Label? typeLabel = panel.Controls.OfType<Label>()
+                        .FirstOrDefault(label => label.Name == "typeLabel");
                     if (typeLabel != null)
                     {
                         // Check if the selected menu type matches the typeLabel's text
@@ -2676,6 +2692,7 @@ namespace KASIR.komponen
                         return string.IsNullOrEmpty(selectedMenuType) || itemName.Contains(selectedMenuType.ToLower());
                     }
                 }
+
                 return false;
             }).ToList();
 
@@ -2683,11 +2700,10 @@ namespace KASIR.komponen
             dataGridView3.Controls.Clear();
 
             // Add the filtered items to the original data source
-            foreach (var panelControl in filteredDataGridViewControls)
+            foreach (Panel panelControl in filteredDataGridViewControls)
             {
                 dataGridView3.Controls.Add(panelControl);
             }
-
         }
 
         private async void cmbFilter_SelectedIndexChanged(object sender, EventArgs e)
@@ -2703,11 +2719,12 @@ namespace KASIR.komponen
                 string config = File.ReadAllText(configFilePath);
                 // Iterate through the items in FlowLayoutPanel and filter based on menu_type
 
-                if (dataGridView1.Visible == true && selectedFilter == "Semua")
+                if (dataGridView1.Visible && selectedFilter == "Semua")
                 {
                     await LoadDataListby();
                     return;
                 }
+
                 if (selectedFilter != "Semua")
                 {
                     searchSemua(selectedFilter);
@@ -2726,19 +2743,16 @@ namespace KASIR.komponen
                                 string menuType = typeLabel.Text;
 
                                 // Determine whether to show or hide the item based on the filter
-                                bool showItem = (selectedFilter == "Semua");
+                                bool showItem = selectedFilter == "Semua";
                                 control.Visible = showItem;
 
                                 //counter items
                                 items++;
                                 lblCountingItems.Text = items + " items";
-
                             }
                         }
                     }
                 }
-
-
             }
             catch (Exception ex)
             {
@@ -2747,7 +2761,6 @@ namespace KASIR.komponen
                 //Application.Restart();
                 //Environment.Exit(0);
             }
-
         }
 
         private async void searchSemua(string selectedFilter)
@@ -2760,9 +2773,9 @@ namespace KASIR.komponen
                 ListHidup();
 
                 // Filter data based on Menu Type column
-                var filteredData = from row in listDataTable.AsEnumerable()
-                                   where row.Field<string>("Menu Type") == selectedFilter
-                                   select row;
+                EnumerableRowCollection<DataRow> filteredData = from row in listDataTable.AsEnumerable()
+                    where row.Field<string>("Menu Type") == selectedFilter
+                    select row;
 
                 DataTable filteredTable = filteredData.CopyToDataTable();
                 dataGridView2.DataSource = filteredTable;
@@ -2782,6 +2795,7 @@ namespace KASIR.komponen
             dataGridView2.Enabled = true;
             dataGridView2.Visible = true;
         }
+
         private void ListMati()
         {
             dataGridView3.Enabled = true;
@@ -2789,16 +2803,16 @@ namespace KASIR.komponen
             dataGridView2.Enabled = false;
             dataGridView2.Visible = false;
         }
+
         private void lblTotal1_Click(object sender, EventArgs e)
         {
-
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
             ////LoggerUtil.LogPrivateMethod(nameof(button3_Click));
 
-            Form background = new Form
+            Form background = new()
             {
                 StartPosition = FormStartPosition.Manual,
                 FormBorderStyle = FormBorderStyle.None,
@@ -2806,11 +2820,11 @@ namespace KASIR.komponen
                 BackColor = Color.Black,
                 WindowState = FormWindowState.Maximized,
                 TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
+                Location = Location,
+                ShowInTaskbar = false
             };
 
-            using (dataDiskon dataDiskon = new dataDiskon())
+            using (dataDiskon dataDiskon = new())
             {
                 dataDiskon.Owner = background;
 
@@ -2829,18 +2843,17 @@ namespace KASIR.komponen
 
         private void cmbDiskon_SelectedIndexChanged(object sender, EventArgs e)
         {
-
         }
 
         private void button7_Click(object sender, EventArgs e)
         {
-
             if (string.IsNullOrEmpty(cartID))
             {
                 MessageBox.Show("Keranjang masih kosong ");
                 return;
             }
-            Form background = new Form
+
+            Form background = new()
             {
                 StartPosition = FormStartPosition.Manual,
                 FormBorderStyle = FormBorderStyle.None,
@@ -2848,11 +2861,11 @@ namespace KASIR.komponen
                 BackColor = Color.Black,
                 WindowState = FormWindowState.Maximized,
                 TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
+                Location = Location,
+                ShowInTaskbar = false
             };
             ////LoggerUtil.LogPrivateMethod(nameof(button7_Click));
-            using (splitBill splitBill = new splitBill(cartID))
+            using (splitBill splitBill = new(cartID))
             {
                 splitBill.Owner = background;
 
@@ -2883,13 +2896,13 @@ namespace KASIR.komponen
 
         private void iconButton4_Click(object sender, EventArgs e)
         {
-
             if (string.IsNullOrEmpty(cartID))
             {
                 MessageBox.Show("Keranjang masih kosong ");
                 return;
             }
-            Form background = new Form
+
+            Form background = new()
             {
                 StartPosition = FormStartPosition.Manual,
                 FormBorderStyle = FormBorderStyle.None,
@@ -2897,14 +2910,13 @@ namespace KASIR.komponen
                 BackColor = Color.Black,
                 WindowState = FormWindowState.Maximized,
                 TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
+                Location = Location,
+                ShowInTaskbar = false
             };
             ////LoggerUtil.LogPrivateMethod(nameof(iconButton4_Click));
 
-            using (splitBill splitBill = new splitBill(cartID))
+            using (splitBill splitBill = new(cartID))
             {
-
                 splitBill.Owner = background;
 
                 background.Show();
@@ -2934,7 +2946,6 @@ namespace KASIR.komponen
 
         private void iconButton4_Click_1(object sender, EventArgs e)
         {
-
         }
 
         private async void lblDetailKeranjang_Click(object sender, EventArgs e)
@@ -2998,13 +3009,11 @@ namespace KASIR.komponen
             }
             catch (Exception)
             {
-
             }
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-
         }
 
         private void btnCari_Click(object sender, EventArgs e)
@@ -3020,8 +3029,5 @@ namespace KASIR.komponen
                 PerformSearch(); // Panggil metode yang diinginkan
             }
         }
-
-
-
     }
 }

@@ -2,14 +2,16 @@
 using KASIR.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+
 namespace KASIR.OfflineMode
 {
     public partial class Offline_deletePerItemForm : Form
     {
-        //private successTransaction SuccessTransaction { get; set; }
-        private List<CartDetailTransaction> item = new List<CartDetailTransaction>();
-        private List<RefundModel> refundItems = new List<RefundModel>();
-        string cart_detail;
+        private readonly string cart_detail;
+
+        private List<CartDetailTransaction> item = new();
+        private List<RefundModel> refundItems = new();
+
         public Offline_deletePerItemForm(string cartDetail)
         {
             cart_detail = cartDetail;
@@ -19,7 +21,7 @@ namespace KASIR.OfflineMode
 
         private void btnKeluar_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -27,34 +29,21 @@ namespace KASIR.OfflineMode
             // KeluarButtonPrintReportShiftClicked = true;
             DialogResult = DialogResult.OK;
 
-            this.Close();
+            Close();
         }
-        private void AddItem(string name, string amount)
-        {
-
-
-        }
-
-        private void panel4_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
-
-        private void panel13_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
-
         private async void button2_Click(object sender, EventArgs e)
         {
-            if (txtReason.Text == null || txtReason.Text.ToString() == "")
+            if (txtReason.Text == null || txtReason.Text == "")
             {
-                MessageBox.Show("Masukkan alasan hapus item", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Masukkan alasan hapus item", "Gaspol", MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
                 return;
             }
-            if (textPin.Text.ToString() == "" || textPin.Text == null)
+
+            if (textPin.Text == "" || textPin.Text == null)
             {
-                MessageBox.Show("Masukan pin terlebih dahulu", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Masukan pin terlebih dahulu", "Gaspol", MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
                 return;
             }
 
@@ -72,21 +61,23 @@ namespace KASIR.OfflineMode
 
                     // Find and remove the item with the matching cart_detail_id
                     JArray cartDetails = (JArray)cartData["cart_details"];
-                    var itemToRemove = cartDetails.FirstOrDefault(item => item["cart_detail_id"].ToString() == cart_detail);
+                    JToken? itemToRemove =
+                        cartDetails.FirstOrDefault(item => item["cart_detail_id"].ToString() == cart_detail);
 
                     if (itemToRemove != null)
                     {
-
-                        itemToRemove["edited_reason"] = txtReason.Text.ToString() ?? "";
+                        itemToRemove["edited_reason"] = txtReason.Text ?? "";
 
                         // Check if canceled_items exists, if not create it
                         if (cartData["canceled_items"] == null)
                         {
                             cartData["canceled_items"] = new JArray();
                         }
-                        var cancelDetails = cartData["canceled_items"] as JArray;
 
-                        int discounted_priceFix = int.Parse(itemToRemove["price"].ToString()) - int.Parse(itemToRemove["discounted_item_price"].ToString());
+                        JArray? cancelDetails = cartData["canceled_items"] as JArray;
+
+                        int discounted_priceFix = int.Parse(itemToRemove["price"].ToString()) -
+                                                  int.Parse(itemToRemove["discounted_item_price"].ToString());
                         int total_priceCanceled = discounted_priceFix * int.Parse(itemToRemove["qty"].ToString());
 
                         cancelDetails.Add(new JObject
@@ -104,24 +95,28 @@ namespace KASIR.OfflineMode
                             ["price"] = itemToRemove["price"],
                             ["qty"] = itemToRemove["qty"],
                             ["note_item"] = itemToRemove["note_item"],
-                            ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
-                            ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                            ["created_at"] =
+                                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                            ["updated_at"] =
+                                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                             ["discount_id"] = int.Parse(itemToRemove["discount_id"]?.ToString()),
                             ["discount_code"] = itemToRemove["discount_code"]?.ToString() ?? null,
                             ["discounts_value"] = int.Parse(itemToRemove["discounts_value"]?.ToString()),
                             ["discounted_price"] = int.Parse(itemToRemove["discounted_price"]?.ToString()),
                             ["discounts_is_percent"] = int.Parse(itemToRemove["discounts_is_percent"]?.ToString()),
-                            ["discounted_item_price"] = int.Parse(itemToRemove["discounted_item_price"]?.ToString()),
-                            ["cancel_reason"] = txtReason.Text.ToString(),
+                            ["discounted_item_price"] =
+                                int.Parse(itemToRemove["discounted_item_price"]?.ToString()),
+                            ["cancel_reason"] = txtReason.Text,
                             ["subtotal_price"] = itemToRemove["subtotal_price"],
                             ["total_price"] = itemToRemove["total_price"]
                         });
 
-                        itemToRemove["deleted_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                        itemToRemove["deleted_at"] =
+                            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                         itemToRemove["qty"] = 0;
                         // Recalculate subtotal and total
                         int subtotal = 0;
-                        foreach (var item in cartDetails)
+                        foreach (JToken item in cartDetails)
                         {
                             subtotal += (int)item["total_price"];
                         }
@@ -136,8 +131,7 @@ namespace KASIR.OfflineMode
                         File.WriteAllText(configCart, cartData.ToString(Formatting.Indented));
                         DialogResult = DialogResult.OK;
 
-                        this.Close();
-
+                        Close();
                     }
                     else
                     {
@@ -149,38 +143,22 @@ namespace KASIR.OfflineMode
             {
                 if (ex.CancellationToken.IsCancellationRequested)
                 {
-                    MessageBox.Show("PIN salah atau koneksi tidak stabil. Silakan coba beberapa saat lagi.", "Timeout/Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("PIN salah atau koneksi tidak stabil. Silakan coba beberapa saat lagi.",
+                        "Timeout/Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 else
                 {
-                    MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Gagal hapus data {ex.ToString()}" + ex.Message);
+                MessageBox.Show($"Gagal hapus data {ex}" + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
-
-        private void txtJumlahCicil_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void dateTimePicker1_ValueChanged(object sender, EventArgs e)
-        {
-
-        }
-        private void txtSelesaiShift_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-
     }
-
 }
-

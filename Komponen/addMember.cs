@@ -5,12 +5,8 @@ namespace KASIR.komponen
 {
     public partial class addMember : Form
     {
-        private masterPos _masterPos;
-        private masterPos MasterPosForm { get; set; }
-        private List<System.Windows.Forms.Button> radioButtonsList = new List<System.Windows.Forms.Button>();
         public string btnPayType;
         private readonly string baseOutlet;
-        private readonly ILogger _log = LoggerService.Instance._log;
         public bool KeluarButtonClicked { get; private set; }
 
         public bool ReloadDataInBaseForm { get; private set; }

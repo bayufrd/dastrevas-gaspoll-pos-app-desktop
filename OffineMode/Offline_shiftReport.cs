@@ -19,7 +19,6 @@ namespace KASIR.Komponen
         private CancellationTokenSource cts;
         private Label loadingLabel;
 
-        // Add these to the class fields
         private Panel loadingPanel;
         private ProgressBar progressBar;
 
@@ -141,7 +140,6 @@ namespace KASIR.Komponen
             catch (Exception) { }
         }
 
-        // Function to determine the start_at based on shift data file
         private string GetStartAt()
         {
             string shiftDataPath = @"DT-Cache\Transaction\shiftData.data";
@@ -199,12 +197,10 @@ namespace KASIR.Komponen
 
                 int shiftNumber = GetShiftNumber();
                 string startAt = GetStartAt();
-                DateTime akhirshift = DateTime.Now; // Use DateTime directly for current time
+                DateTime akhirshift = DateTime.Now;
 
-                // Convert startAt to DateTime, assuming startAt is in a valid DateTime format (parse if necessary)
                 DateTime startAtDateTime = DateTime.Parse(startAt);
 
-                // Calculate the time difference
                 TimeSpan timeDifference = akhirshift - startAtDateTime;
                 /*if (timeDifference.TotalHours < 1)
                 {
@@ -242,22 +238,18 @@ namespace KASIR.Komponen
                         is_sync = 0
                     };
 
-                    // Simpan data transaksi
                     string shiftPath = "DT-Cache\\Transaction\\shiftData.data";
 
                     JArray shiftDataArray = new();
                     if (File.Exists(shiftPath))
                     {
-                        // Jika file transaksi ada, baca dan tambahkan transaksi baru
                         string existingData = File.ReadAllText(shiftPath);
                         JObject? existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
                         shiftDataArray = existingTransactions["data"] as JArray ?? new JArray();
                     }
 
-                    // Tambahkan transaksi baru
                     shiftDataArray.Add(JToken.FromObject(json));
 
-                    // Serialize dan simpan kembali ke shiftData.data
                     JObject newTransactionData = new() { { "data", shiftDataArray } };
                     await GenerateShiftReport(generateIDshift);
 
@@ -285,50 +277,42 @@ namespace KASIR.Komponen
         {
             try
             {
-                // File paths for input data
                 string transactionFilePath = @"DT-Cache\Transaction\transaction.data";
                 string expenditureFilePath = @"DT-Cache\Transaction\expenditure.data";
                 string savebillFilePath = @"DT-Cache\Transaction\saveBill.data";
                 string outletFilePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
 
-                // Read and deserialize input files
                 string transactionJson = await File.ReadAllTextAsync(transactionFilePath);
                 string expenditureJson = await File.ReadAllTextAsync(expenditureFilePath);
                 string outletJson = await File.ReadAllTextAsync(outletFilePath);
 
-                // Deserialize the JSON data
                 TransactionData transactionDataRaw = JsonConvert.DeserializeObject<TransactionData>(transactionJson);
                 ExpenditureData expendituresDataRaw = JsonConvert.DeserializeObject<ExpenditureData>(expenditureJson);
 
                 OutletData outletData = JsonConvert.DeserializeObject<OutletData>(outletJson);
 
-                // Read and deserialize the savebill file content correctly
                 string savebillJson = await File.ReadAllTextAsync(savebillFilePath);
                 TransactionData transactionDataSavebill = JsonConvert.DeserializeObject<TransactionData>(savebillJson);
 
-                // Extract necessary details from outlet data
                 string outletName = outletData?.Data.Name ?? "Unknown Outlet";
                 string outletAddress = outletData?.Data.Address ?? "Unknown Address";
                 string outletPhoneNumber = outletData?.Data.PhoneNumber ?? "Unknown Phone";
 
-                // Extract shift number and other transaction data
                 string startAt = GetStartAt();
 
-                int shiftNumber = GetShiftNumber(); // Implement this method to get the current shift number
-                string startDate = startAt; // Example, get this dynamically if needed
-                DateTime akhirshift = DateTime.Now; // Use DateTime directly for current time
-                string endDate = akhirshift.ToString("yyyy-MM-dd HH:mm:ss"); // Example, get this dynamically if needed
+                int shiftNumber = GetShiftNumber(); 
+                string startDate = startAt; 
+                DateTime akhirshift = DateTime.Now; 
+                string endDate = akhirshift.ToString("yyyy-MM-dd HH:mm:ss"); 
 
                 DateTime startAtDateTime = DateTime.Parse(startAt);
-                // Get the start and last shift based on transaction times
 
                 //filtering
-                // Memfilter transaksi berdasarkan created_at
                 List<Transaction> transactionDataRawFiltered = transactionDataRaw.data
-                    .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt > startAtDateTime)
+                    .Where(t => DateTime.TryParse(t.updated_at, out DateTime createdAt) && createdAt > startAtDateTime)
                     .ToList();
 
-                // Memfilter pengeluaran berdasarkan created_at
+                // Memfilter pengeluaran berdasarkan updated_at
                 List<ExpenditureStrukShift> expendituresDataRawFiltered = expendituresDataRaw.data
                     .Where(e => DateTime.TryParse(e.created_at, out DateTime expenditureCreatedAt) &&
                                 expenditureCreatedAt > startAtDateTime)
@@ -339,35 +323,33 @@ namespace KASIR.Komponen
 
                 ExpenditureData expenditureData = new() { data = expendituresDataRawFiltered };
 
-                // Prepare expenditures
                 var expenditures = expenditureData.data.Select(e => new { e.description, e.nominal }).ToList();
 
                 int totalExpenditure = expenditures.Sum(e => e.nominal);
 
                 var successfulCartDetails = transactionData.data.SelectMany(t => t.cart_details)
-                    .Where(cd => cd.qty > 0) // Hanya ambil item dengan qty lebih dari 0
+                    .Where(cd => cd.qty > 0) 
                     .GroupBy(cd =>
-                        new { cd.menu_id, cd.menu_detail_id }) // Mengelompokkan berdasarkan menu_id dan menu_detail_id
+                        new { cd.menu_id, cd.menu_detail_id }) 
                     .Select(g => new
                     {
                         g.Key.menu_id,
                         g.Key.menu_detail_id,
-                        g.First().menu_name, // Mengambil satu nilai menu_name dari salah satu item
-                        g.First().menu_type, // Mengambil satu nilai menu_type dari salah satu item
+                        g.First().menu_name, 
+                        g.First().menu_type, 
                         varian =
-                            g.First().menu_detail_name, // Mengambil satu nilai menu_detail_name dari salah satu item
-                        qty = g.Sum(cd => cd.qty), // Menjumlahkan qty
-                        total_price = g.Sum(cd => cd.total_price) // Menjumlahkan total_price
+                            g.First().menu_detail_name, 
+                        qty = g.Sum(cd => cd.qty), 
+                        total_price = g.Sum(cd => cd.total_price) 
                     })
                     .ToList();
 
                 int totalSuccessfulAmount = successfulCartDetails.Sum(cd => cd.total_price);
 
-                // Mengambil detail cart yang pending
                 var pendingCartDetails = transactionDataSavebill.data.SelectMany(t => t.cart_details)
-                    .Where(cd => cd.qty > 0) // Hanya ambil item dengan qty lebih dari 0
+                    .Where(cd => cd.qty > 0) 
                     .GroupBy(cd =>
-                        new { cd.menu_id, cd.menu_detail_id }) // Mengelompokkan berdasarkan menu_id dan menu_detail_id
+                        new { cd.menu_id, cd.menu_detail_id }) 
                     .Select(g => new
                     {
                         g.Key.menu_id,
@@ -453,16 +435,36 @@ namespace KASIR.Komponen
                 foreach (var payment in groupedPayments)
                 {
                     var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
-                    int totalRefund = refund?.TotalRefund ?? 0; // Gunakan 0 jika tidak ada refund yang ditemukan
+                    int totalRefund = refund?.TotalRefund ?? 0; // Use 0 if no refund is found
 
+                    // Calculate netAmount considering transaction-level refunds
                     int netAmount = payment.TotalAmount - totalRefund;
 
+                    // Match the payment category by name considering both payment type name and refund payment type
+                    var matchingRefunds = refundDetails
+                        .Where(rd => rd.menu_name.Equals(payment.PaymentTypeName, StringComparison.OrdinalIgnoreCase) ||
+                                     rd.menu_type.Equals(payment.PaymentTypeName, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+
+                    // Sum item-level refunds related to this payment type
+                    int totalItemRefund = matchingRefunds.Sum(rd => rd.total_refund_price);
+
+                    // Update netAmount to consider both transaction refunds and item-level refunds
+                    netAmount -= totalItemRefund;
+
+                    // Check if the payment type is "Tunai"
+                    if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
+                    {
+                        netAmount -= totalExpenditure; // Deduct total expenditures if payment type is "Tunai"
+                    }
+
+                    // Add constructed result object
                     paymentDetails.Add(new
                     {
-                        payment_category = payment.PaymentTypeName, // Ganti ke format yang diinginkan
-                        payment_type_detail = new List<dynamic>(), // Inisialisasi sebagai array kosong
+                        payment_category = payment.PaymentTypeName, // Use the formatted payment category
+                        payment_type_detail = new List<dynamic>(), // Initialize as an empty array
                         total_amount = netAmount,
-                        payment_category_id = categoryId++ // Increment ID kategori untuk setiap entri
+                        payment_category_id = categoryId++ // Increment category ID for each entry
                     });
                 }
 
@@ -486,7 +488,7 @@ namespace KASIR.Komponen
                     .Sum(cd => cd.total_price); // Menjumlahkan total_price untuk setiap CartDetails
 
                 grandTotal -= totalRefundAmount;
-                int totalTransaction = grandTotal;
+                int totalTransaction = grandTotal - totalExpenditure;
 
                 int cash_difference = int.Parse(actual_cash) - int.Parse(ending_cash.ToString());
 
@@ -866,13 +868,10 @@ namespace KASIR.Komponen
         private int GetShiftNumber()
         {
             string shiftPath = "DT-Cache\\Transaction\\shiftData.data";
-
-            // Check if the shift data file exists
             if (File.Exists(shiftPath))
             {
                 try
                 {
-                    // Read the existing shift data from the file
                     string existingData = File.ReadAllText(shiftPath);
                     JObject? existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
 
@@ -988,7 +987,7 @@ namespace KASIR.Komponen
 
             // Memfilter transaksi berdasarkan created_at
             List<Transaction> transactionDataFiltered = transactionData.data
-                .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt > startAtDateTime)
+                .Where(t => DateTime.TryParse(t.updated_at, out DateTime createdAt) && createdAt > startAtDateTime)
                 .ToList();
 
             // Memfilter pengeluaran berdasarkan created_at
@@ -1014,8 +1013,12 @@ namespace KASIR.Komponen
             // Process the cart details
             ProcessCartDetails(filteredTransactions, dataTable, "SOLD ITEMS");
 
+            decimal totalProcessedCartQty = CalculateTotalProcessCartDetailsQty(filteredTransactions);
+            dataTable.Rows.Add("Total Qty Sold Items", $"{totalProcessedCartQty}");
+
             decimal totalProcessedCart = CalculateTotalProcessCartDetails(filteredTransactions);
             dataTable.Rows.Add("Total Sold Items", $"{totalProcessedCart:n0}");
+
 
             dataTable.Rows.Add("", "");
 
@@ -1056,7 +1059,7 @@ namespace KASIR.Komponen
             dataTable.Rows.Add("", "");
 
             // Process payment details
-            ProcessPaymentDetails(filteredTransactions, dataTable);
+            ProcessPaymentDetails(filteredTransactions, dataTable, totalExpenditureItems);
 
             dataTable.Rows.Add("", "");
 
@@ -1067,6 +1070,7 @@ namespace KASIR.Komponen
 
             AddSeparatorRowBold(dataTable, "GRAND TOTAL", dataGridView1);
             grandTotal -= totalRefundAmount;
+            totalProcessedCart -= totalExpenditureItems;
             dataTable.Rows.Add("Total Transactions", $"{totalProcessedCart:n0}");
 
             // Display data in DataGridView
@@ -1125,6 +1129,15 @@ namespace KASIR.Komponen
                 .SelectMany(t => t.cart_details) // Flatten the cart details
                 .Where(cd => cd.qty > 0) // Filter only items with quantity > 0
                 .Sum(cd => cd.total_price); // Sum the total_price of each cart detail
+
+            return totalProcessedCart;
+        }
+        private decimal CalculateTotalProcessCartDetailsQty(TransactionData transactionData)
+        {
+            decimal totalProcessedCart = transactionData.data
+                .SelectMany(t => t.cart_details) // Flatten the cart details
+                .Where(cd => cd.qty > 0) // Filter only items with quantity > 0
+                .Sum(cd => cd.qty); // Sum the total_price of each cart detail
 
             return totalProcessedCart;
         }
@@ -1218,37 +1231,65 @@ namespace KASIR.Komponen
                 .Sum(t => t.refund_details.Sum(rd => rd.refund_total));
         }
 
-        private void ProcessPaymentDetails(TransactionData transactionData, DataTable dataTable)
+        private void ProcessPaymentDetails(TransactionData transactionData, DataTable dataTable, decimal expenditures)
         {
             AddSeparatorRowBold(dataTable, "PAYMENT DETAILS", dataGridView1);
             List<PaymentType> paymentTypes = LoadPaymentTypes();
+
+            // Group payments by type
             var groupedPayments = transactionData.data
                 .GroupBy(t => t.payment_type_id)
                 .Select(g => new
                 {
                     PaymentTypeId = g.Key,
-                    PaymentTypeName =
-                        paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ??
-                        "Unknown", // Match payment type ID to name
-                    TotalAmount = g.Sum(x => x.total) // Sum the total amount for each payment type
+                    PaymentTypeName = paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ?? "Unknown",
+                    TotalAmount = g.Sum(x => x.total)
                 }).ToList();
+
+            // Group refunds by payment type ID for transaction-level refunds
             var groupedRefunds = transactionData.data
-                .Where(t => t.is_refund_all == 1) // Consider only transactions marked as "all refunded"
+                .Where(t => t.is_refund_all == 1)  // Only transactions marked as fully refunded
                 .Select(t => new
                 {
-                    PaymentTypeId = t.refund_payment_id_all, // Refund ID is on the transaction level
-                    TotalRefund = t.total_refund // Use total_refund for the entire transaction
-                })
-                .ToList();
+                    PaymentTypeId = t.refund_payment_id_all,
+                    TotalRefund = t.total_refund
+                }).ToList();
+
+            // Group item-level refunds
+            var groupedItemRefunds = transactionData.data
+                .SelectMany(t => t.refund_details.Select(r => new
+                {
+                    PaymentTypeId = r.refund_payment_type_id_item,
+                    RefundTotal = r.refund_total
+                }))
+                .GroupBy(r => r.PaymentTypeId)
+                .Select(g => new
+                {
+                    PaymentTypeId = g.Key,
+                    TotalItemRefund = g.Sum(x => x.RefundTotal)
+                }).ToList();
+
             foreach (var payment in groupedPayments)
             {
+                // Get transaction-level refund for the current payment type
                 var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
-                decimal totalRefund = refund?.TotalRefund ?? 0; // Default to 0 if no refund is found
-                decimal netAmount = payment.TotalAmount - totalRefund;
+                decimal totalRefund = refund?.TotalRefund ?? 0; // Default to 0 if not found
+
+                // Get item-level refunds for the current payment type
+                var itemRefund = groupedItemRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
+                decimal totalItemRefund = itemRefund?.TotalItemRefund ?? 0; // Default to 0 if not found
+
+                // Calculate the net amount considering both total refunds
+                decimal netAmount = payment.TotalAmount - totalRefund + totalItemRefund;
+
+                // Add the results to the data table
                 dataTable.Rows.Add(payment.PaymentTypeName, $"{netAmount:n0}");
+
+                // Check for cash payment to update actual cash
                 if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
                 {
-                    txtActualCash.Text = $"{netAmount:n0}"; // Set the "Tunai" value to the net amount
+                    netAmount -= expenditures;
+                    txtActualCash.Text = $"{netAmount:n0}"; // Set cash value to the net amount
                 }
             }
         }
@@ -1333,7 +1374,6 @@ namespace KASIR.Komponen
                 default: return 5; // Default for unknown types
             }
         }
-
         private void AddSeparatorRowBold(DataTable dataTable, string text, DataGridView dataGridView)
         {
             // Create a new row

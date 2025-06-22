@@ -29,8 +29,6 @@ namespace KASIR.komponen
         private DataTable originalDataTable;
         int customePrice = 0;
         int SelectedId, totalTransactions;
-        string hpMember;
-
         public payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat, string name, masterPos masterPosForm)
         {
             InitializeComponent();

@@ -54,6 +54,8 @@ namespace KASIR.OfflineMode
             cmbPayform = new ComboBox();
             label6 = new Label();
             panel4 = new Panel();
+            lblUsePoint = new Label();
+            ButtonSwitchUsePoint = new Model.SButton();
             lblPoint = new Label();
             btnDataMember = new IconButton();
             panel14 = new Panel();
@@ -140,7 +142,6 @@ namespace KASIR.OfflineMode
             txtSeat.PlaceholderText = "Masukan Nomor Seat ...";
             txtSeat.Size = new Size(246, 16);
             txtSeat.TabIndex = 0;
-            txtSeat.TextChanged += txtSeat_TextChanged;
             // 
             // label5
             // 
@@ -338,6 +339,8 @@ namespace KASIR.OfflineMode
             // 
             // panel4
             // 
+            panel4.Controls.Add(lblUsePoint);
+            panel4.Controls.Add(ButtonSwitchUsePoint);
             panel4.Controls.Add(lblPoint);
             panel4.Controls.Add(btnDataMember);
             panel4.Controls.Add(panel14);
@@ -349,6 +352,34 @@ namespace KASIR.OfflineMode
             panel4.Name = "panel4";
             panel4.Size = new Size(592, 102);
             panel4.TabIndex = 12;
+            // 
+            // lblUsePoint
+            // 
+            lblUsePoint.AutoSize = true;
+            lblUsePoint.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            lblUsePoint.ForeColor = Color.Black;
+            lblUsePoint.Location = new Point(466, 66);
+            lblUsePoint.Name = "lblUsePoint";
+            lblUsePoint.Size = new Size(67, 15);
+            lblUsePoint.TabIndex = 31;
+            lblUsePoint.Text = "USE POINT";
+            lblUsePoint.Visible = false;
+            // 
+            // ButtonSwitchUsePoint
+            // 
+            ButtonSwitchUsePoint.AutoSize = true;
+            ButtonSwitchUsePoint.Location = new Point(539, 63);
+            ButtonSwitchUsePoint.MinimumSize = new Size(45, 22);
+            ButtonSwitchUsePoint.Name = "ButtonSwitchUsePoint";
+            ButtonSwitchUsePoint.OffBackColor = Color.Gray;
+            ButtonSwitchUsePoint.OffToggleColor = Color.Gainsboro;
+            ButtonSwitchUsePoint.OnBackColor = Color.MediumSlateBlue;
+            ButtonSwitchUsePoint.OnToggleColor = Color.WhiteSmoke;
+            ButtonSwitchUsePoint.Size = new Size(45, 22);
+            ButtonSwitchUsePoint.TabIndex = 30;
+            ButtonSwitchUsePoint.UseVisualStyleBackColor = true;
+            ButtonSwitchUsePoint.Visible = false;
+            ButtonSwitchUsePoint.CheckedChanged += ButtonSwitchUsePoint_CheckedChanged;
             // 
             // lblPoint
             // 
@@ -375,7 +406,7 @@ namespace KASIR.OfflineMode
             btnDataMember.IconSize = 25;
             btnDataMember.Location = new Point(535, 31);
             btnDataMember.Name = "btnDataMember";
-            btnDataMember.Size = new Size(50, 47);
+            btnDataMember.Size = new Size(50, 24);
             btnDataMember.TabIndex = 25;
             btnDataMember.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnDataMember.UseVisualStyleBackColor = false;
@@ -478,7 +509,6 @@ namespace KASIR.OfflineMode
             panel2.Name = "panel2";
             panel2.Size = new Size(598, 70);
             panel2.TabIndex = 2;
-            panel2.Paint += panel2_Paint;
             // 
             // btnSimpan
             // 
@@ -605,7 +635,6 @@ namespace KASIR.OfflineMode
         private TextBox txtNama;
         private Label label4;
         private Panel panel3;
-        private Button btnKurang;
         private Panel panel5;
         private TextBox txtKuantitas;
         private Label label1;
@@ -635,5 +664,7 @@ namespace KASIR.OfflineMode
         private Label lblNamaMember;
         private Label lblPoint;
         private Label lblKembalian;
+        private Label lblUsePoint;
+        private Model.SButton ButtonSwitchUsePoint;
     }
 }

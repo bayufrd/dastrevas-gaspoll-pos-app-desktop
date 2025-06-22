@@ -16,13 +16,8 @@ namespace KASIR.Printer
     {
         private readonly string baseDirectory;
         private readonly Dictionary<string, bool> checkBoxSettings = new();
-
-        private readonly Graphics graphics;
-
-        //private readonly Dictionary<string, string> printerSettings = new Dictionary<string, string>();
         private readonly Dictionary<string, string> printerSettings = new();
 
-        // Member variable to store the Kategori value
         private string _kategori;
         private readonly int logoCredit = 75; //default 75 PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit);
 

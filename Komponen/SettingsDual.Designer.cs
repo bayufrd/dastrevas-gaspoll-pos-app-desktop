@@ -125,7 +125,6 @@
             picThumbnailR.SizeMode = PictureBoxSizeMode.Zoom;
             picThumbnailR.TabIndex = 20;
             picThumbnailR.TabStop = false;
-            picThumbnailR.Click += picThumbnailR_Click;
             // 
             // btnUploadR
             // 
@@ -147,6 +146,7 @@
             btnUploadR.Text = "Upload";
             btnUploadR.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnUploadR.UseVisualStyleBackColor = false;
+            btnUploadR.Click += btnUploadR_Click;
             // 
             // label7
             // 
@@ -181,7 +181,6 @@
             picThumbnailM.SizeMode = PictureBoxSizeMode.Zoom;
             picThumbnailM.TabIndex = 20;
             picThumbnailM.TabStop = false;
-            picThumbnailM.Click += picThumbnailM_Click;
             // 
             // btnUploadM
             // 
@@ -203,6 +202,7 @@
             btnUploadM.Text = "Upload";
             btnUploadM.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnUploadM.UseVisualStyleBackColor = false;
+            btnUploadM.Click += btnUploadM_Click;
             // 
             // label5
             // 
@@ -237,7 +237,6 @@
             picThumbnailL.SizeMode = PictureBoxSizeMode.Zoom;
             picThumbnailL.TabIndex = 20;
             picThumbnailL.TabStop = false;
-            picThumbnailL.Click += picThumbnailL_Click;
             // 
             // btnUploadL
             // 
@@ -259,6 +258,7 @@
             btnUploadL.Text = "Upload";
             btnUploadL.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnUploadL.UseVisualStyleBackColor = false;
+            btnUploadL.Click += btnUploadL_Click;
             // 
             // label8
             // 
@@ -350,7 +350,6 @@
             picThumbnail5.SizeMode = PictureBoxSizeMode.Zoom;
             picThumbnail5.TabIndex = 20;
             picThumbnail5.TabStop = false;
-            picThumbnail5.Click += picThumbnail5_Click;
             // 
             // btnUpload5
             // 
@@ -372,6 +371,7 @@
             btnUpload5.Text = "Upload";
             btnUpload5.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnUpload5.UseVisualStyleBackColor = false;
+            btnUpload5.Click += btnUpload5_Click;
             // 
             // label6
             // 

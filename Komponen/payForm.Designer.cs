@@ -606,9 +606,7 @@ namespace KASIR.komponen
         private TextBox txtNama;
         private Label label4;
         private Panel panel3;
-        private Button btnTambah;
         private Panel panel5;
-        private TextBox txtKuantitas;
         private Label label1;
         private Button btnTunai;
         private Label label2;

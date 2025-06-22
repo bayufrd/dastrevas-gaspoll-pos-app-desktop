@@ -249,6 +249,8 @@ namespace KASIR.Model
         public int cart_detail_id { get; set; }
         public int menu_id { get; set; }
         public string menu_name { get; set; }
+        public int refund_payment_type_id_item { get; set; }
+        public string refund_payment_type_name { get; set; }
         public string menu_type { get; set; }
         public string menu_detail_name { get; set; }
         public int refund_qty { get; set; }
@@ -261,6 +263,7 @@ namespace KASIR.Model
         public int payment_type_id { get; set; }
         public int refund_payment_id_all { get; set; }  // This belongs to the Transaction class
         public string created_at { get; set; }
+        public string updated_at { get; set; }
         public string receipt_number { get; set; }
         public string transaction_ref { get; set; }
         public string invoice_number { get; set; }

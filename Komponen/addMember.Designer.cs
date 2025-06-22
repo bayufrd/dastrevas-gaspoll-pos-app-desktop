@@ -325,7 +325,6 @@ namespace KASIR.komponen
         private TextBox txtNama;
         private Label label4;
         private Button btnKurang;
-        private TextBox txtKuantitas;
         private Button btnTunai;
         private Label label2;
         private TextBox txtNotes;

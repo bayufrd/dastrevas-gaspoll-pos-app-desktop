@@ -11,10 +11,7 @@ namespace KASIR.OffineMode
 {
     public partial class Offline_saveBill : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
         private readonly string baseOutlet;
-        private readonly string BaseOutletName;
-        private string cart_id;
         private readonly string name;
         private readonly string seat;
         private int totalTransactions;
@@ -23,13 +20,11 @@ namespace KASIR.OffineMode
         public Offline_saveBill(string cartId, string customerName, string customerSeat)
         {
             baseOutlet = Settings.Default.BaseOutlet;
-            cart_id = cartId;
             name = customerName;
             seat = customerSeat;
             InitializeComponent();
             generateRandomFill();
             baseOutlet = Settings.Default.BaseOutlet;
-            BaseOutletName = Settings.Default.BaseOutletName;
         }
 
         public bool ReloadDataInBaseForm { get; private set; }
@@ -59,7 +54,7 @@ namespace KASIR.OffineMode
 
                 newname = char.ToUpper(newname[0]) + newname.Substring(1);
 
-                txtNama.Text = newname + "(Auto)";
+                txtNama.Text = newname + "DT";
                 txtSeat.Text = "0";
             }
             else
@@ -72,7 +67,6 @@ namespace KASIR.OffineMode
         private void btnKeluar_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.OK;
-
             Close();
         }
 
@@ -80,29 +74,22 @@ namespace KASIR.OffineMode
         {
             try
             {
-                // Path untuk file transaction.data
                 string transactionFilePath = "DT-Cache\\Transaction\\transaction.data";
 
-                // Cek apakah file transaction.data ada
                 if (File.Exists(transactionFilePath))
                 {
-                    // Membaca isi file transaction.data
                     string transactionJson = File.ReadAllText(transactionFilePath);
 
-                    // Deserialize data file transaction.data
                     JObject? transactionData = JsonConvert.DeserializeObject<JObject>(transactionJson);
 
-                    // Pastikan data ada di dalam file
                     if (transactionData["data"] == null)
                     {
                         totalTransactions = 1;
                         return;
                     }
 
-                    // Ambil array data transaksi
                     JArray? transactionDetails = transactionData["data"] as JArray;
 
-                    // Hitung jumlah transaksi berdasarkan transaction_id
                     totalTransactions = transactionDetails.Count + 1;
                 }
                 else
@@ -116,9 +103,6 @@ namespace KASIR.OffineMode
                 totalTransactions = 1;
             }
         }
-
-        // Solusi untuk error pada btnSimpan_Click di Offline_saveBill.cs
-
         private async void btnSimpan_Click(object sender, EventArgs e)
         {
             try
@@ -138,7 +122,6 @@ namespace KASIR.OffineMode
                     return;
                 }
 
-                // Tambahkan validasi format untuk txtSeat
                 if (!int.TryParse(txtSeat.Text.Trim(), out seat))
                 {
                     MessageBox.Show("Seat harus berupa angka", "Gaspol", MessageBoxButtons.OK,
@@ -146,7 +129,6 @@ namespace KASIR.OffineMode
                     return;
                 }
 
-                // Read cart.data to extract cart details and transaction id
                 string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
                 if (!File.Exists(cartDataPath))
                 {
@@ -158,7 +140,6 @@ namespace KASIR.OffineMode
                 loadCountingStruct();
                 string cartDataJson = File.ReadAllText(cartDataPath);
 
-                // Tambahkan validasi untuk JSON yang tidak valid
                 if (string.IsNullOrEmpty(cartDataJson))
                 {
                     MessageBox.Show("Data keranjang kosong atau tidak valid", "Error", MessageBoxButtons.OK,
@@ -198,7 +179,6 @@ namespace KASIR.OffineMode
                     return;
                 }
 
-                // Check if canceled_items exists, if not create it
                 if (cartData["canceled_items"] == null)
                 {
                     cartData["canceled_items"] = new JArray();
@@ -206,17 +186,14 @@ namespace KASIR.OffineMode
 
                 JArray? cancelDetails = cartData["canceled_items"] as JArray;
 
-                // Iterasi setiap transaksi dan hanya perbarui yang statusnya is_sent_sync = 0
                 foreach (JToken items in cartDetails)
                 {
                     if (items["is_ordered"] != null && (int)items["is_ordered"] == 0)
                     {
-                        // Update status menjadi 1 jika transaksi berhasil
                         items["is_ordered"] = 1;
                     }
                 }
 
-                // Validasi cart_detail_id
                 string firstCartDetailId = cartDetails?.FirstOrDefault()?["cart_detail_id"]?.ToString();
                 if (string.IsNullOrEmpty(firstCartDetailId))
                 {
@@ -228,7 +205,6 @@ namespace KASIR.OffineMode
 
                 transactionId = firstCartDetailId;
 
-                // Validasi total dan subtotal
                 int totalCartAmount = 0;
                 if (!int.TryParse(cartData["total"]?.ToString() ?? "0", out totalCartAmount))
                 {
@@ -259,11 +235,9 @@ namespace KASIR.OffineMode
                 string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{formattedreceiptMaker}";
                 string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
 
-                // Validasi transaction_ref
                 string transaction_ref_sent = cartData["transaction_ref"]?.ToString() ?? "";
                 string transaction_ref_splitted = cartData["transaction_ref_split"]?.ToString();
 
-                // Validasi discount fields
                 int discount_idc = 0;
                 if (!int.TryParse(cartData["discount_id"]?.ToString() ?? "0", out discount_idc))
                 {
@@ -280,7 +254,6 @@ namespace KASIR.OffineMode
                     discounted_pricec = 0;
                 }
 
-                // Prepare transaction data
                 var transactionData = new
                 {
                     transaction_id = int.Parse(transactionId),
@@ -326,7 +299,6 @@ namespace KASIR.OffineMode
                     canceled_items = cancelDetails
                 };
 
-                // Save transaction data to transaction.data
                 string saveBillPath = "DT-Cache\\Transaction\\saveBill.data";
                 JArray saveBillDataArray = new();
 
@@ -334,23 +306,19 @@ namespace KASIR.OffineMode
                 {
                     try
                     {
-                        // If the transaction file exists, read and append the new transaction
                         string existingData = File.ReadAllText(saveBillPath);
                         JObject? existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
                         saveBillDataArray = existingTransactions["data"] as JArray ?? new JArray();
                     }
                     catch (Exception ex)
                     {
-                        // Jika file ada tapi tidak bisa dibaca/diparse, buat array baru
                         LoggerUtil.LogError(ex, "Error reading saveBill.data: {ErrorMessage}", ex.Message);
                         saveBillDataArray = new JArray();
                     }
                 }
 
-                // Add new transaction
                 saveBillDataArray.Add(JToken.FromObject(transactionData));
 
-                // Serialize and save back to transaction.data
                 JObject newTransactionData = new() { { "data", saveBillDataArray } };
                 File.WriteAllText(saveBillPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
 
@@ -384,7 +352,6 @@ namespace KASIR.OffineMode
         {
             try
             {
-                // Read cart.data to extract cart details and transaction id
                 string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
                 if (!File.Exists(cartDataPath))
                 {
@@ -394,14 +361,10 @@ namespace KASIR.OffineMode
                 }
 
                 string cartDataJson = File.ReadAllText(cartDataPath);
-                // Deserialize cart data
                 CartDataCache? cartData = JsonConvert.DeserializeObject<CartDataCache>(cartDataJson);
 
-                // Membaca file JSON
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
-                // Deserialize JSON ke object CartDataCache
                 CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
-                // Konversi ke format GetStrukCustomerTransaction
                 GetStrukCustomerTransaction strukCustomerTransaction = new()
                 {
                     code = 201,
@@ -450,8 +413,6 @@ namespace KASIR.OffineMode
                     }
                 };
 
-                // Mengisi cart_details
-                // Mengisi cart_details dan kitchenBarCartDetails
                 foreach (CartDetail item in cartData.cart_details)
                 {
                     if (item.is_ordered == 1 || item.is_printed == 1)
@@ -459,7 +420,6 @@ namespace KASIR.OffineMode
                         continue;
                     }
 
-                    // Membuat objek CartDetailStrukCustomerTransaction
                     CartDetailStrukCustomerTransaction cartDetail = new()
                     {
                         cart_detail_id = int.Parse(item.cart_detail_id), // Mengonversi string ke int
@@ -484,10 +444,8 @@ namespace KASIR.OffineMode
                         is_ordered = item.is_ordered
                     };
 
-                    // Menambahkan ke cart_details
                     strukCustomerTransaction.data.cart_details.Add(cartDetail);
 
-                    // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
                     KitchenAndBarCartDetails kitchenAndBarCartDetail = new()
                     {
                         cart_detail_id = cartDetail.cart_detail_id,
@@ -510,7 +468,6 @@ namespace KASIR.OffineMode
                         is_ordered = cartDetail.is_ordered
                     };
 
-                    // Menambahkan ke kitchenBarCartDetails
                     strukCustomerTransaction.data.kitchenBarCartDetails.Add(kitchenAndBarCartDetail);
                 }
 
@@ -523,7 +480,6 @@ namespace KASIR.OffineMode
                             continue;
                         }
 
-                        // Membuat objek CartDetailStrukCustomerTransaction
                         CanceledItemStrukCustomerTransaction cartDetail = new()
                         {
                             cart_detail_id = int.Parse(item.cart_detail_id.ToString()), // Mengonversi string ke int
@@ -548,10 +504,8 @@ namespace KASIR.OffineMode
                             is_ordered = item.is_ordered
                         };
 
-                        // Menambahkan ke cart_details
                         strukCustomerTransaction.data.canceled_items.Add(cartDetail);
 
-                        // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
                         KitchenAndBarCanceledItems kitchenAndBarCartDetail = new()
                         {
                             cart_detail_id = cartDetail.cart_detail_id,
@@ -574,20 +528,17 @@ namespace KASIR.OffineMode
                             is_ordered = cartDetail.is_ordered
                         };
 
-                        // Menambahkan ke kitchenBarCartDetails
                         strukCustomerTransaction.data.kitchenBarCanceledItems.Add(kitchenAndBarCartDetail);
                     }
                 }
 
 
-                // Serialisasi ke JSON
                 string response = JsonConvert.SerializeObject(strukCustomerTransaction);
                 HandleSuccessfulTransaction(response, totalTransactions);
 
                 DialogResult = DialogResult.OK;
 
                 Offline_masterPos offline_MasterPos = new();
-                //offline_MasterPos.DeleteCartFile();
                 offline_MasterPos.ClearCartFile();
 
                 string saveBillPath = "DT-Cache\\Transaction\\saveBill.data";
@@ -606,27 +557,22 @@ namespace KASIR.OffineMode
         {
             try
             {
-                // 1. Baca file JSON
                 string jsonData = File.ReadAllText(filePath);
                 JObject data = JObject.Parse(jsonData);
 
-                // 2. Dapatkan array "data"
                 JArray transactions = (JArray)data["data"];
 
-                // 3. Iterasi setiap transaksi dan hapus elemen yang tidak diperlukan
                 for (int i = transactions.Count - 1;
                      i >= 0;
                      i--) // Iterasi mundur untuk menghindari masalah saat menghapus
                 {
                     JObject transaction = (JObject)transactions[i];
-                    // Iterasi ke cart_details dan refund_details untuk menghapus field yang tidak dibutuhkan
                     JArray cartDetails = (JArray)transaction["cart_details"];
                     foreach (JObject cartItem in cartDetails)
                     {
                         cartItem["is_printed"] = 1;
                     }
 
-                    // Hapus field yang tidak diperlukan di refund_details jika ada
                     JArray canceledDetails = (JArray)transaction["refund_details"];
                     if (canceledDetails != null && canceledDetails.Count > 0)
                     {
@@ -637,7 +583,6 @@ namespace KASIR.OffineMode
                     }
                 }
 
-                // 4. Simpan data yang sudah disederhanakan ke file baru atau file yang sama
                 File.WriteAllText(filePath, data.ToString());
             }
             catch (Exception ex)
@@ -704,7 +649,6 @@ namespace KASIR.OffineMode
 
                 if (printerModel != null)
                 {
-                    // Save print job for potential recovery
                     SaveSaveBillPrintJobForRecovery(menuModel, kitchenItems, canceledKitchenItems, barItems,
                         canceledBarItems, AntrianSaveBill);
 
@@ -716,7 +660,6 @@ namespace KASIR.OffineMode
                                 barItems, canceledBarItems, AntrianSaveBill);
                         }, cts.Token);
 
-                        // If successful, remove the saved print job
                         RemoveSavedSaveBillPrintJob(AntrianSaveBill);
 
                         btnSimpan.Text = "Selesai.";
@@ -724,25 +667,20 @@ namespace KASIR.OffineMode
                     }
                     catch (OperationCanceledException)
                     {
-                        // The operation timed out
                         LoggerUtil.LogWarning("Save bill print operation timed out, will retry in background");
 
                         btnSimpan.Text = "Selesai (Print di background)";
                         btnSimpan.Enabled = true;
 
-                        // Continue printing in background without blocking UI
                         ThreadPool.QueueUserWorkItem(async _ =>
                         {
                             try
                             {
-                                // Use a new instance to avoid any shared state issues
                                 PrinterModel backgroundPrinterModel = new();
 
-                                // Retry the print operation in background
                                 await backgroundPrinterModel.PrinterModelSimpan(menuModel, kitchenItems,
                                     canceledKitchenItems, barItems, canceledBarItems, AntrianSaveBill);
 
-                                // If successful, remove the saved print job
                                 RemoveSavedSaveBillPrintJob(AntrianSaveBill);
                             }
                             catch (Exception ex)
@@ -774,7 +712,6 @@ namespace KASIR.OffineMode
             }
         }
 
-        // Helper methods for save bill print job persistence
         private void SaveSaveBillPrintJobForRecovery(
             GetStrukCustomerTransaction menuModel,
             List<CartDetailStrukCustomerTransaction> kitchenItems,
@@ -828,11 +765,6 @@ namespace KASIR.OffineMode
                 LoggerUtil.LogError(ex, "Failed to remove saved save bill print job");
             }
         }
-
-        private void saveBill_Load(object sender, EventArgs e)
-        {
-        }
-
         private void txtSeat_Enter(object sender, EventArgs e)
         {
             if (txtSeat.Text != null)
@@ -849,7 +781,6 @@ namespace KASIR.OffineMode
             }
         }
 
-        // Class to store save bill print job information
         public class SaveBillPrintJob
         {
             public GetStrukCustomerTransaction MenuModel { get; set; }

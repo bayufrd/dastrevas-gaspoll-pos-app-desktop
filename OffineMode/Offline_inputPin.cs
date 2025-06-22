@@ -10,12 +10,8 @@ namespace KASIR.OfflineMode
     public partial class Offline_inputPin : Form
     {
         private readonly string baseOutlet;
-        private GetTransactionDetail dataTransaction;
 
-        private int idid, urutanRiwayat;
-        private List<CartDetailTransaction> item = new();
-        private List<RefundDetailTransaction> refundDetails = new();
-        private List<RefundModel> refundItems = new();
+        private int urutanRiwayat;
         private readonly int totalTransactions;
         private readonly string transactionId;
 

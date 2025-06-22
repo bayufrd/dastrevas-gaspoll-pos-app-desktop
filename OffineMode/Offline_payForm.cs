@@ -12,38 +12,34 @@ namespace KASIR.OfflineMode
 {
     public partial class Offline_payForm : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
         private readonly string baseOutlet;
-        private Offline_masterPos _masterPos;
-        public string btnPayType;
         private readonly int customePrice;
-        private string Kakimu;
-        private string namaMember, transactionId;
-        private string outletID, cartID;
+        private readonly List<Button> radioButtonsList = new();
         private readonly string totalCart;
         private readonly string ttl2;
-        private readonly List<Button> radioButtonsList = new();
-        private int SelectedId, totalTransactions;
+        public string btnPayType;
+        private string FooterTextStruk;
+        private string namaMember, transactionId;
+        private int totalTransactions;
 
         public Offline_payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat,
             string name, Offline_masterPos masterPosForm)
         {
             InitializeComponent();
+            InitializeButtonListeners();
+
             btnSimpan.Enabled = false;
-            _masterPos = masterPosForm;
             baseOutlet = Settings.Default.BaseOutlet;
             flowLayoutPanel1.FlowDirection = FlowDirection.TopDown;
             flowLayoutPanel1.WrapContents = true;
 
             ttl2 = ttl1;
-            outletID = outlet_id;
-            cartID = cart_id;
             totalCart = total_cart;
             txtJumlahPembayaran.Text = ttl2;
             txtSeat.Text = seat;
             txtNama.Text = name;
             generateRandomFill();
-            string cleanedTtl1 = Regex.Replace(ttl1, "[^0-9]", "");
+            string cleanedTtl1 = CleanInput(ttl1);
             loadFooterStruct();
             loadCountingStruct();
 
@@ -52,6 +48,31 @@ namespace KASIR.OfflineMode
             txtJumlahPembayaran.Text = ttl1;
 
             btnSetPrice1.Text = ttl1;
+            SetButtonPrices(customePrice);
+
+            cmbPayform.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbPayform.DrawMode = DrawMode.OwnerDrawVariable;
+            cmbPayform.DrawItem += CmbPayform_DrawItem;
+
+            cmbPayform.ItemHeight = 25;
+            LoadDataPaymentType();
+
+            txtCash.Text = CleanInput(totalCart);
+
+            panel8.Visible = false;
+            panel13.Visible = false;
+            panel14.Visible = false;
+            btnDataMember.Visible = false;
+            lblPoint.Visible = false;
+
+            txtSeat.KeyPress += txtNumberOnly_KeyPress;
+        }
+        private string CleanInput(string input)
+        {
+            return Regex.Replace(input, "[^0-9]", "");
+        }
+        private void SetButtonPrices(int customePrice)
+        {
             if (customePrice < 10000)
             {
                 btnSetPrice2.Text = "Rp. 10,000,-";
@@ -82,79 +103,59 @@ namespace KASIR.OfflineMode
                 btnSetPrice2.Text = "Rp. 1,000,000,-";
                 btnSetPrice3.Text = "Rp. 1,500,000,-";
             }
-
-
+        }
+        private void InitializeButtonListeners()
+        {
             foreach (Button button in radioButtonsList)
             {
                 button.Click += RadioButton_Click;
             }
-
-            cmbPayform.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbPayform.DrawMode = DrawMode.OwnerDrawVariable;
-            cmbPayform.DrawItem += CmbPayform_DrawItem;
-
-            cmbPayform.ItemHeight = 25;
-            LoadDataPaymentType();
-
-            //auto keisi payment minimum
-            txtCash.Text = Regex.Replace(totalCart, "[^0-9]", "");
-
-            panel8.Visible = false;
-            panel13.Visible = false;
-            panel14.Visible = false;
-            btnDataMember.Visible = false;
-            lblPoint.Visible = false;
-            // Attach the KeyPress event handler
-            txtSeat.KeyPress += txtNumberOnly_KeyPress;
         }
-
         private Offline_masterPos MasterPosForm { get; set; }
         public bool KeluarButtonClicked { get; private set; }
 
         public bool ReloadDataInBaseForm { get; private set; }
 
-        // KeyPress event handler to allow numbers only
         private void txtNumberOnly_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Allow only digits and Backspace (to delete characters)
             if (!char.IsDigit(e.KeyChar) && e.KeyChar != (char)Keys.Back)
             {
-                e.Handled = true; // Prevent non-numeric characters
+                e.Handled = true;
             }
         }
 
         private async void loadFooterStruct()
         {
-            Kakimu = await File.ReadAllTextAsync("setting\\FooterStruk.data");
+            string configFooterStruk = "setting\\FooterStruk.data";
+            if (File.Exists(configFooterStruk))
+            {
+                FooterTextStruk = await File.ReadAllTextAsync(configFooterStruk);
+            }
+            else
+            {
+                FooterTextStruk = "TERIMAKASIH ATAS KUNJUNGANNYA";
+            }
         }
 
         private void loadCountingStruct()
         {
             try
             {
-                // Path untuk file transaction.data
                 string transactionFilePath = "DT-Cache\\Transaction\\transaction.data";
-
-                // Cek apakah file transaction.data ada
                 if (File.Exists(transactionFilePath))
                 {
-                    // Membaca isi file transaction.data
                     string transactionJson = File.ReadAllText(transactionFilePath);
 
-                    // Deserialize data file transaction.data
                     JObject? transactionData = JsonConvert.DeserializeObject<JObject>(transactionJson);
 
-                    // Pastikan data ada di dalam file
                     if (transactionData["data"] == null)
                     {
                         totalTransactions = 1;
                         return;
                     }
 
-                    // Ambil array data transaksi
                     JArray? transactionDetails = transactionData["data"] as JArray;
 
-                    // Hitung jumlah transaksi berdasarkan transaction_id
                     totalTransactions = transactionDetails.Count + 1;
                 }
                 else
@@ -193,7 +194,7 @@ namespace KASIR.OfflineMode
                 }
 
                 name = char.ToUpper(name[0]) + name.Substring(1);
-                txtNama.Text = name + "(Auto)";
+                txtNama.Text = name + "DT";
                 txtSeat.Text = "0";
             }
         }
@@ -258,7 +259,66 @@ namespace KASIR.OfflineMode
                 }
             }
         }
+        private bool ValidateInputs(out string errorMessage)
+        {
+            errorMessage = string.Empty;
 
+            // Check if a member has been selected
+            if (sButton1.Checked && string.IsNullOrEmpty(namaMember))
+                return SetErrorMessage("Member Belum Dipilih!", ref errorMessage);
+
+            // Check if the customer name has been entered
+            if (string.IsNullOrEmpty(txtNama.Text))
+                return SetErrorMessage("Masukan nama pelanggan", ref errorMessage);
+
+            // Validate the seat number
+            if (!int.TryParse(txtSeat.Text, out _))
+                return SetErrorMessage("Masukan seat pelanggan dengan benar", ref errorMessage);
+
+            // Clean and validate the cash input
+            string fulus = CleanInput(txtCash.Text);
+            if (string.IsNullOrWhiteSpace(fulus))
+                return SetErrorMessage("Masukkan harga dengan benar.", ref errorMessage);
+
+            // Validate that fulus can be parsed to an integer
+            if (!int.TryParse(fulus, out int fulusAmount))
+                return SetErrorMessage("Harga tidak valid", ref errorMessage);
+
+            // Validate total cart amount
+            if (!int.TryParse(totalCart, out int totalCartAmount))
+                return SetErrorMessage("Harga gagal diolah", ref errorMessage);
+
+            // Ensure there is enough cash provided
+            if (fulusAmount < totalCartAmount)
+                return SetErrorMessage("Uang belum cukup", ref errorMessage);
+
+            // Ensure a payment type is selected
+            if (cmbPayform.Text == "Pilih Tipe Pembayaran")
+                return SetErrorMessage("Pilih tipe Pembayaran", ref errorMessage);
+
+            // Check for cart data path
+            string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
+            if (!File.Exists(cartDataPath))
+                return SetErrorMessage("Keranjang masih kosong/gagal load keranjang", ref errorMessage);
+
+            return true; // All validations passed.
+        }
+        private bool SetErrorMessage(string message, ref string errorMessage)
+        {
+            errorMessage = message; // Set the error message
+            MessageBox.Show(message, "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            ResetButtonState();
+            return false; // Validation failed
+        }
+        private string GetFormattedReceiptNumber()
+        {
+            string formattedDate = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            return $"DT-{txtNama.Text}-{txtSeat.Text}-{formattedDate}";
+        }
+        private void WriteJsonFile<T>(string filePath, T data)
+        {
+            File.WriteAllText(filePath, JsonConvert.SerializeObject(data, Formatting.Indented));
+        }
         private async void btnSimpan_Click(object sender, EventArgs e)
         {
             btnSimpan.Enabled = false;
@@ -275,85 +335,24 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    string fulus = Regex.Replace(txtCash.Text, "[^0-9]", "");
-                    if (string.IsNullOrEmpty(txtNama.Text))
+                    // Input validation
+                    if (!ValidateInputs(out string errorMessage))
                     {
-                        MessageBox.Show("Masukan nama pelanggan", "Gaspol", MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
-                        ResetButtonState();
                         return;
                     }
 
-                    int seatAmount;
-                    if (!int.TryParse(txtSeat.Text, out seatAmount))
-                    {
-                        MessageBox.Show("Masukan seat pelanggan dengan benar", "Gaspol", MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
-                        ResetButtonState();
-                        return;
-                    }
-
-                    fulus = Regex.Replace(txtCash.Text, "[^0-9]", "");
-                    if (string.IsNullOrWhiteSpace(fulus))
-                    {
-                        MessageBox.Show("Masukkan harga dengan benar.", "Gaspol", MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
-                        ResetButtonState();
-                        return;
-                    }
-
-                    int fulusAmount;
-                    if (!int.TryParse(fulus, out fulusAmount))
-                    {
-                        MessageBox.Show("Harga tidak valid.", "Gaspol", MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
-                        ResetButtonState();
-                        return;
-                    }
-
-                    int totalCartAmount;
-                    if (!int.TryParse(totalCart, out totalCartAmount))
-                    {
-                        MessageBox.Show("Harga gagal diolah.", "Gaspol", MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
-                        ResetButtonState();
-                        return;
-                    }
-
-                    if (fulusAmount < totalCartAmount)
-                    {
-                        MessageBox.Show("Uang anda belum cukup.", "Gaspol", MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
-                        ResetButtonState();
-                        return;
-                    }
-
-                    if (cmbPayform.Text == "Pilih Tipe Pembayaran")
-                    {
-                        MessageBox.Show("Pilih tipe pembayaran", "Gaspol", MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
-                        ResetButtonState();
-                        return;
-                    }
-
+                    string fulus = CleanInput(txtCash.Text);
+                    int fulusAmount = int.Parse(fulus);
+                    int totalCartAmount = int.Parse(totalCart);
                     int change = fulusAmount - totalCartAmount;
 
-                    // Read cart.data to extract cart details and transaction id
                     string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
-                    if (!File.Exists(cartDataPath))
-                    {
-                        MessageBox.Show("Keranjang Masih Kosong", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        ResetButtonState();
-                        return;
-                    }
 
                     string cartDataJson = File.ReadAllText(cartDataPath);
                     JObject? cartData = JsonConvert.DeserializeObject<JObject>(cartDataJson);
 
-                    // Get the first cart_detail_id to set as transaction_id
                     JArray? cartDetails = cartData["cart_details"] as JArray;
 
-                    // Check if canceled_items exists, if not create it
                     if (cartData["canceled_items"] == null)
                     {
                         cartData["canceled_items"] = new JArray();
@@ -372,16 +371,14 @@ namespace KASIR.OfflineMode
                     DateTime invoiceDate;
                     if (DateTime.TryParse(receiptMaker, out invoiceDate))
                     {
-                        // Jika berhasil, format tanggal invoice sesuai kebutuhan
                         formattedreceiptMaker = invoiceDate.ToString("yyyyMMdd-HHmmss");
                     }
                     else
                     {
-                        // Jika parsing gagal, berikan nilai default atau tampilkan error
                         formattedreceiptMaker = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                     }
 
-                    string receipt_numberfix = $"DT-{txtNama.Text}-{txtSeat.Text}-{formattedreceiptMaker}";
+                    string receipt_numberfix = GetFormattedReceiptNumber();
                     string invoiceDue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                     string transaction_ref_sent = cartData["transaction_ref"].ToString();
                     string transaction_ref_splitted = null;
@@ -425,33 +422,33 @@ namespace KASIR.OfflineMode
                         transaction_ref = transaction_ref_sent,
                         transaction_ref_split = transaction_ref_splitted,
                         invoice_number =
-                            $"INV-{invoiceMaker}{paymentTypedId}", // Custom invoice number with formatted date
-                        invoice_due_date = invoiceDue, // Adjust due date as needed
+                            $"INV-{invoiceMaker}{paymentTypedId}",
+                        invoice_due_date = invoiceDue,
                         payment_type_id = paymentTypedId,
                         payment_type_name =
-                            paymentTypeName, // No need for .ToString() if paymentTypeName is already a string
+                            paymentTypeName,
                         customer_name = txtNama.Text,
                         customer_seat = int.Parse(txtSeat.Text),
                         customer_cash = fulusAmount,
                         customer_change = change,
                         total = totalCartAmount,
-                        subtotal = subtotalCart, // You can replace this with actual subtotal if available
+                        subtotal = subtotalCart,
                         created_at =
                             receiptMaker ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
-                        deleted_at = (string)null, // Ensure deleted_at is null, not a string "null"
+                        deleted_at = (string)null,
                         is_refund = 0,
-                        refund_reason = (string)null, // Null if no refund reason
-                        delivery_type = (string)null, // Null value for delivery_type
-                        delivery_note = (string)null, // Null value for delivery_note
+                        refund_reason = (string)null,
+                        delivery_type = (string)null,
+                        delivery_note = (string)null,
                         discount_id = discount_idConv,
                         discount_code = discount_codeConv,
                         discounts_value = discounts_valueConv,
                         discounts_is_percent = discounts_is_percentConv,
                         discounted_price = discounted_price1,
                         discounted_peritem_price = discounted_priceperitem,
-                        member_name = (string)null, // Null if no member name
-                        member_phone_number = (string)null, // Null if no member phone number
+                        member_name = (string)null,
+                        member_phone_number = (string)null,
                         is_refund_all = 0,
                         refund_reason_all = (string)null,
                         refund_payment_id_all = 0,
@@ -462,31 +459,25 @@ namespace KASIR.OfflineMode
                         is_sent_sync = sent_sync,
                         is_savebill = savebill,
                         cart_details = cartDetails,
-                        refund_details = new JArray(), // Empty array for refund_details
-                        canceled_items = cancelDetails // Empty array for canceled_items
+                        refund_details = new JArray(),
+                        canceled_items = cancelDetails
                     };
 
-                    // Save transaction data to transaction.data
                     string transactionDataPath = "DT-Cache\\Transaction\\transaction.data";
                     JArray transactionDataArray = new();
                     if (File.Exists(transactionDataPath))
                     {
-                        // If the transaction file exists, read and append the new transaction
                         string existingData = File.ReadAllText(transactionDataPath);
                         JObject? existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
                         transactionDataArray = existingTransactions["data"] as JArray ?? new JArray();
                     }
 
-                    // Add new transaction
                     transactionDataArray.Add(JToken.FromObject(transactionData));
 
-                    // Serialize and save back to transaction.data
                     JObject newTransactionData = new() { { "data", transactionDataArray } };
-                    File.WriteAllText(transactionDataPath,
-                        JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
+                    WriteJsonFile(transactionDataPath, newTransactionData);
                     convertData(fulus, change, paymentTypeName, receipt_numberfix, invoiceDue, discount_idConv,
                         discount_codeConv, discounts_valueConv, discounts_is_percentConv);
-                    //HandleSuccessfulTransaction(response, fulus);
                 }
             }
             catch (Exception ex)
@@ -504,7 +495,6 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                // Read cart.data to extract cart details and transaction id
                 string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
                 if (!File.Exists(cartDataPath))
                 {
@@ -514,12 +504,9 @@ namespace KASIR.OfflineMode
                 }
 
                 string cartDataJson = File.ReadAllText(cartDataPath);
-                // Deserialize cart data
                 CartDataCache? cartData = JsonConvert.DeserializeObject<CartDataCache>(cartDataJson);
 
-                // Membaca file JSON
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
-                // Deserialize JSON ke object CartDataCache
                 CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
                 int discounts_valueConvIntm = 0;
                 if (!string.IsNullOrEmpty(discounts_valueConv) && discounts_valueConv != "null")
@@ -527,12 +514,10 @@ namespace KASIR.OfflineMode
                     bool isValidDiscount = int.TryParse(discounts_valueConv, out discounts_valueConvIntm);
                     if (!isValidDiscount)
                     {
-                        // Log the issue or set a default value (already set 0 by default)
                         discounts_valueConvIntm = 0;
                     }
                 }
 
-                // Konversi ke format GetStrukCustomerTransaction
                 GetStrukCustomerTransaction strukCustomerTransaction = new()
                 {
                     code = 201,
@@ -569,37 +554,33 @@ namespace KASIR.OfflineMode
                     }
                 };
 
-                // Mengisi cart_details dan kitchenBarCartDetails
                 foreach (CartDetail item in cartData.cart_details)
                 {
-                    // Membuat objek CartDetailStrukCustomerTransaction
                     CartDetailStrukCustomerTransaction cartDetail = new()
                     {
-                        cart_detail_id = int.Parse(item.cart_detail_id), // Mengonversi string ke int
+                        cart_detail_id = int.Parse(item.cart_detail_id),
                         menu_id = item.menu_id,
                         menu_name = item.menu_name,
                         menu_type = item.menu_type,
                         menu_detail_id = item.menu_detail_id,
-                        varian = item.menu_detail_name, // Tidak ada data varian
+                        varian = item.menu_detail_name,
                         serving_type_id = item.serving_type_id,
                         serving_type_name = item.serving_type_name,
-                        discount_id = int.Parse(item.cart_detail_id), // Tidak ada data discount
+                        discount_id = int.Parse(item.cart_detail_id),
                         discount_code = item.discount_code?.ToString(),
                         discounts_value = int.Parse(item.discounts_value.ToString()),
                         discounted_price = int.Parse(item.discounted_price.ToString()),
                         discounts_is_percent = int.Parse(item.discounts_is_percent.ToString()),
-                        price = item.price, // Mengonversi string ke int
-                        total_price = item.price * item.qty, // Total price dihitung dari price * qty
-                        subtotal = item.price * item.qty, // Total price dihitung dari price * qty
-                        subtotal_price = item.price * item.qty, // Total price dihitung dari price * qty
+                        price = item.price,
+                        total_price = item.price * item.qty,
+                        subtotal = item.price * item.qty,
+                        subtotal_price = item.price * item.qty,
                         qty = item.qty,
                         note_item = string.IsNullOrEmpty(item.note_item) ? "" : item.note_item,
                         is_ordered = item.is_ordered
                     };
 
-                    // Menambahkan ke cart_details
                     strukCustomerTransaction.data.cart_details.Add(cartDetail);
-                    // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
 
                     if (item.is_ordered == 0)
                     {
@@ -625,13 +606,10 @@ namespace KASIR.OfflineMode
                             is_ordered = cartDetail.is_ordered
                         };
 
-                        // Menambahkan ke kitchenBarCartDetails
                         strukCustomerTransaction.data.kitchenBarCartDetails.Add(kitchenAndBarCartDetail);
                     }
                 }
 
-
-                // Serialisasi ke JSON
                 string response = JsonConvert.SerializeObject(strukCustomerTransaction);
                 HandleSuccessfulTransaction(response, fulus);
 
@@ -684,15 +662,12 @@ namespace KASIR.OfflineMode
 
                     if (printerModel != null)
                     {
-                        // Create a CancellationTokenSource with timeout
                         using (CancellationTokenSource cts = new(TimeSpan.FromSeconds(30))) // 30-second timeout
                         {
                             try
                             {
-                                // Run the print operation with cancellation support
                                 await Task.Run(async () =>
                                 {
-                                    // Store print job details in case we need to retry later
                                     PrintJob printJob = new()
                                     {
                                         MenuModel = menuModel,
@@ -702,19 +677,16 @@ namespace KASIR.OfflineMode
                                         CanceledKitchenItems = canceledKitchenItems,
                                         CanceledBarItems = canceledBarItems,
                                         TransactionNumber = totalTransactions,
-                                        FooterText = Kakimu
+                                        FooterText = FooterTextStruk
                                     };
 
-                                    // Serialize and save the print job for recovery if needed
                                     SavePrintJobForRecovery(printJob);
 
-                                    // Perform the actual printing with advanced retry logic
                                     await printerModel.PrintModelPayform(
                                         menuModel, cartDetails, kitchenItems, barItems,
                                         canceledKitchenItems, canceledBarItems,
-                                        totalTransactions, Kakimu);
+                                        totalTransactions, FooterTextStruk);
 
-                                    // If successful, remove the saved print job
                                     RemoveSavedPrintJob(printJob);
                                 }, cts.Token);
 
@@ -722,20 +694,17 @@ namespace KASIR.OfflineMode
                             }
                             catch (OperationCanceledException)
                             {
-                                // The operation timed out
                                 LoggerUtil.LogWarning("Print operation timed out, will retry in background");
                                 btnSimpan.Text = "Selesai, print akan dilanjutkan di background.";
 
-                                // Start a background thread that won't block UI
                                 ThreadPool.QueueUserWorkItem(async _ =>
                                 {
                                     try
                                     {
-                                        // Retry the print operation in background with max retries
                                         await printerModel.PrintModelPayform(
                                             menuModel, cartDetails, kitchenItems, barItems,
                                             canceledKitchenItems, canceledBarItems,
-                                            totalTransactions, Kakimu);
+                                            totalTransactions, FooterTextStruk);
                                     }
                                     catch (Exception ex)
                                     {
@@ -754,7 +723,6 @@ namespace KASIR.OfflineMode
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                // Optionally, you can show a message to the user about the error
                 if (btnSimpan != null)
                 {
                     btnSimpan.Text = "Print Ulang,";
@@ -762,8 +730,6 @@ namespace KASIR.OfflineMode
                 }
             }
         }
-
-        // Helper methods for print job persistence
         private void SavePrintJobForRecovery(PrintJob job)
         {
             try
@@ -773,7 +739,7 @@ namespace KASIR.OfflineMode
 
                 string filename = Path.Combine(printJobsDir,
                     $"PrintJob_{job.TransactionNumber}_{DateTime.Now.Ticks}.json");
-                File.WriteAllText(filename, JsonConvert.SerializeObject(job));
+                WriteJsonFile(filename, job);
             }
             catch (Exception ex)
             {
@@ -811,8 +777,6 @@ namespace KASIR.OfflineMode
 
         private void RadioButton_Click(object sender, EventArgs e)
         {
-            ////LoggerUtil.LogPrivateMethod(nameof(RadioButton_Click));
-
             Button clickedButton = (Button)sender;
 
             foreach (Button button in radioButtonsList)
@@ -825,14 +789,8 @@ namespace KASIR.OfflineMode
 
             btnPayType = clickedButton.Tag.ToString();
         }
-
-        private void panel2_Paint(object sender, PaintEventArgs e)
-        {
-        }
-
         private void btnKeluar_Click(object sender, EventArgs e)
         {
-            //KeluarButtonClicked = true;
             DialogResult = DialogResult.OK;
 
             Close();
@@ -840,17 +798,17 @@ namespace KASIR.OfflineMode
 
         private void btnSetPrice1_Click(object sender, EventArgs e)
         {
-            txtCash.Text = Regex.Replace(btnSetPrice1.Text, "[^0-9]", "");
+            txtCash.Text = CleanInput(btnSetPrice1.Text);
         }
 
         private void btnSetPrice2_Click_1(object sender, EventArgs e)
         {
-            txtCash.Text = Regex.Replace(btnSetPrice2.Text, "[^0-9]", "");
+            txtCash.Text = CleanInput(btnSetPrice2.Text);
         }
 
         private void btnSetPrice3_Click(object sender, EventArgs e)
         {
-            txtCash.Text = Regex.Replace(btnSetPrice3.Text, "[^0-9]", "");
+            txtCash.Text = CleanInput(btnSetPrice3.Text);
         }
 
         private void txtCash_TextChanged(object sender, EventArgs e)
@@ -864,22 +822,16 @@ namespace KASIR.OfflineMode
             try
             {
                 number = decimal.Parse(txtCash.Text, NumberStyles.Currency);
-                // Menghitung nilai kembalian
-                int KembalianSekarang = int.Parse(Regex.Replace(txtCash.Text, "[^0-9]", "")) -
-                                        int.Parse(Regex.Replace(ttl2, "[^0-9]", ""));
+                int KembalianSekarang = int.Parse(CleanInput(txtCash.Text)) -
+                                        int.Parse(CleanInput(ttl2));
 
-                // Mengatur format budaya Indonesia
                 CultureInfo culture = new("id-ID");
 
-                // Menampilkan hasil kembalian dalam format mata uang rupiah
                 lblKembalian.Text = "CHANGES \n\n" + KembalianSekarang.ToString("C", culture);
             }
             catch (FormatException)
             {
-                // The text could not be parsed as a decimal number.
-                // You can handle this exception in different ways, such as displaying a message to the user.
                 MessageBox.Show("inputan hanya bisa Numeric");
-                // Remove the last character from the input if it's invalid
                 if (txtCash.Text.Length > 0)
                 {
                     txtCash.Text = txtCash.Text.Substring(0, txtCash.Text.Length - 1);
@@ -903,6 +855,8 @@ namespace KASIR.OfflineMode
                 btnDataMember.Visible = true;
                 lblPoint.Visible = true;
                 txtNama.Enabled = false;
+                ButtonSwitchUsePoint.Visible = true;
+                ButtonSwitchUsePoint.Enabled = false;
             }
             else
             {
@@ -912,6 +866,8 @@ namespace KASIR.OfflineMode
                 btnDataMember.Visible = false;
                 lblPoint.Visible = false;
                 txtNama.Enabled = true;
+                ButtonSwitchUsePoint.Visible = false;
+                ButtonSwitchUsePoint.Enabled = false;
             }
         }
 
@@ -940,12 +896,23 @@ namespace KASIR.OfflineMode
                     DialogResult result = listMember.ShowDialog();
                     if (result == DialogResult.OK)
                     {
-                        SelectedId = listMember.SelectedId;
-                        lblNamaMember.Text = listMember.namaMember;
-                        lblEmailMember.Text = listMember.emailMember;
-                        lblHPMember.Text = listMember.hpMember;
-                        txtNama.Text = listMember.namaMember;
-                        txtNama.Enabled = false;
+                        Member selectedMember = listMember.SelectedMember;
+
+                        if (selectedMember != null)
+                        {
+                            lblNamaMember.Text = selectedMember.member_name; // Get name
+                            lblEmailMember.Text = selectedMember.member_email; // Get email
+                            lblHPMember.Text = selectedMember.member_phone_number; // Get phone number
+
+                            txtNama.Text = selectedMember.member_name;
+                            txtNama.Enabled = false;
+
+                            if (selectedMember.member_points > 0 && selectedMember.member_points != null)
+                            {
+                                ButtonSwitchUsePoint.Enabled = true;
+                            }
+                        }
+
                         background.Dispose();
                     }
                     else
@@ -963,11 +930,6 @@ namespace KASIR.OfflineMode
             }
         }
 
-        private void txtSeat_TextChanged(object sender, EventArgs e)
-        {
-        }
-
-        // Add this class to store print job information
         public class PrintJob
         {
             public GetStrukCustomerTransaction MenuModel { get; set; }
@@ -978,6 +940,11 @@ namespace KASIR.OfflineMode
             public List<KitchenAndBarCanceledItems> CanceledBarItems { get; set; }
             public int TransactionNumber { get; set; }
             public string FooterText { get; set; }
+        }
+
+        private void ButtonSwitchUsePoint_CheckedChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

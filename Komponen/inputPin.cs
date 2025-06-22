@@ -17,7 +17,6 @@ namespace KASIR.Komponen
         private readonly string PinPrinterKasir;
         private readonly string PinPrinterKitchen;
         private readonly string PinPrinterBar;
-        private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
 
         private readonly string BaseOutletName;
         string cartId;

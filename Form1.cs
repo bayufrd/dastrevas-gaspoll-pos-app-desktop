@@ -216,8 +216,8 @@ namespace KASIR
 
         private async void StarterApp()
         {
-            SettingsForm c = new(this);
-            await c.LoadConfig();
+            /*SettingsForm c = new(this);
+            await c.LoadConfig();*/
             await headerOutletName("");
             initPingTest();
 

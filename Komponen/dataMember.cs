@@ -11,9 +11,8 @@ namespace KASIR.Komponen
 {
     public partial class dataMember : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
-        int idMember, items, idid;
-        private DataTable originalDataTable, listDataTable;
+        int idMember, items;
+        private DataTable listDataTable;
         string customMember;
 
         public string namaMember { get; private set; }

@@ -18,7 +18,7 @@ namespace KASIR.OffineMode
             Openform();
         }
 
-        public ShiftData SelectedShift { get; private set; } // Property to hold the selected shift data
+        public ShiftData SelectedShift { get; private set; }
 
         private async void Openform()
         {
@@ -29,7 +29,6 @@ namespace KASIR.OffineMode
         private void btnKeluar_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
-
             Close();
         }
 
@@ -45,7 +44,7 @@ namespace KASIR.OffineMode
             // Create the FlowLayoutPanel
             FlowLayoutPanel flowPanel = new()
             {
-                Dock = DockStyle.Top, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false
+                Dock = DockStyle.Top, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Height = panelHistory.ClientSize.Width, Width = panelHistory.ClientSize.Height
             };
 
             panelHistory.Controls.Add(flowPanel);

@@ -16,5 +16,6 @@ namespace KASIR.Model
         public string member_name { get; set; }
         public string member_email { get; set; }
         public string member_phone_number { get; set; }
+        public int member_points { get; set; }
     }
 }

@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using KASIR.Komponen;
 using KASIR.Model;
+using KASIR.Network;
 using KASIR.Printer;
 using KASIR.Properties;
 using Newtonsoft.Json;
@@ -16,11 +17,12 @@ namespace KASIR.OfflineMode
         private readonly int customePrice;
         private readonly List<Button> radioButtonsList = new();
         private readonly string totalCart;
-        private readonly string ttl2;
+        private string ttl2;
         public string btnPayType;
         private string FooterTextStruk;
         private string namaMember, transactionId;
-        private int totalTransactions;
+        private int totalTransactions, membershipUsingPoint = 0;
+        public Member getMember { get; private set; } = new();
 
         public Offline_payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat,
             string name, Offline_masterPos masterPosForm)
@@ -35,7 +37,6 @@ namespace KASIR.OfflineMode
 
             ttl2 = ttl1;
             totalCart = total_cart;
-            txtJumlahPembayaran.Text = ttl2;
             txtSeat.Text = seat;
             txtNama.Text = name;
             generateRandomFill();
@@ -264,7 +265,7 @@ namespace KASIR.OfflineMode
             errorMessage = string.Empty;
 
             // Check if a member has been selected
-            if (sButton1.Checked && string.IsNullOrEmpty(namaMember))
+            if (sButton1.Checked == true && string.IsNullOrEmpty(getMember.member_id.ToString()))
                 return SetErrorMessage("Member Belum Dipilih!", ref errorMessage);
 
             // Check if the customer name has been entered
@@ -414,6 +415,15 @@ namespace KASIR.OfflineMode
                     int qtyTotal = cartDetails.Sum(item => (int)item["qty"]);
                     int discounted_price1 = subtotalCart - totalCartAmount;
                     int discounted_priceperitem = discounted_price1 / int.Parse(qtyTotal.ToString());
+
+                    if (sButton1.Checked == true && !string.IsNullOrEmpty(getMember.member_id.ToString()) && ButtonSwitchUsePoint.Checked != true)
+                    {
+                        if(getMember.member_id > 0)
+                        {
+                            processMembershipArea(totalCartAmount);
+                        }
+                    }
+
                     // Prepare transaction data
                     var transactionData = new
                     {
@@ -447,8 +457,11 @@ namespace KASIR.OfflineMode
                         discounts_is_percent = discounts_is_percentConv,
                         discounted_price = discounted_price1,
                         discounted_peritem_price = discounted_priceperitem,
-                        member_name = (string)null,
-                        member_phone_number = (string)null,
+                        member_id = getMember?.member_id > 0 ? getMember.member_id : (int?)null,
+                        member_name = !string.IsNullOrEmpty(getMember?.member_name) ? getMember.member_name : (string)null,
+                        member_phone_number = !string.IsNullOrEmpty(getMember?.member_phone_number) ? getMember.member_phone_number : (string)null,
+                        member_point = getMember?.member_points > 0 ? getMember.member_points : (int?)null,
+                        member_use_point = membershipUsingPoint > 0 ? membershipUsingPoint : (int?)null,
                         is_refund_all = 0,
                         refund_reason_all = (string)null,
                         refund_payment_id_all = 0,
@@ -489,6 +502,44 @@ namespace KASIR.OfflineMode
             }
         }
 
+        private async void processMembershipArea(int totalCartAmount)
+        {
+            string pathMembershipPathData = $"DT-Cache\\DataMember_Outlet{baseOutlet}.data";
+            if (!File.Exists(pathMembershipPathData))
+            {
+                string cacheFilePath = $"DT-Cache\\DataMember_Outlet{baseOutlet}.data";
+
+                IApiService apiServiceNew = new ApiService();
+                string apiResponseNew = await apiServiceNew.GetMember("/membership");
+
+                var apiMemberList = JsonConvert.DeserializeObject<GetMemberModel>(apiResponseNew)?.data;
+
+                if (apiMemberList != null)
+                {
+                    List<Member> finalMemberList = new List<Member>();
+                    Offline_MemberData c = new();
+                    c.PopulateMemberList(apiMemberList, finalMemberList, cacheFilePath);
+
+                    File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(new GetMemberModel { data = finalMemberList }));
+                }
+            }
+                int pointMember = totalCartAmount * 1/100;
+                getMember.member_points += pointMember;
+                string json = File.ReadAllText(pathMembershipPathData);
+                JObject memberData = JObject.Parse(json);
+                JArray memberArray = (JArray)memberData["data"];
+                var memberToUpdate = memberArray.FirstOrDefault(m => (int)m["member_id"] == getMember.member_id);
+
+                if (memberToUpdate != null)
+                {
+                    memberToUpdate["member_points"] = (int)memberToUpdate["member_points"] + pointMember;
+                    File.WriteAllText(pathMembershipPathData, memberData.ToString(Formatting.Indented));
+                }
+                else
+                {
+                    MessageBox.Show($"Member with ID {getMember.member_id} not found.");
+                }
+        }
         private async Task convertData(string fulus, int change, string paymentTypeName, string receipt_numberfix,
             string invoiceDue, int discount_idConv, string discount_codeConv, string discounts_valueConv,
             string discounts_is_percentConv)
@@ -824,7 +875,6 @@ namespace KASIR.OfflineMode
                 number = decimal.Parse(txtCash.Text, NumberStyles.Currency);
                 int KembalianSekarang = int.Parse(CleanInput(txtCash.Text)) -
                                         int.Parse(CleanInput(ttl2));
-
                 CultureInfo culture = new("id-ID");
 
                 lblKembalian.Text = "CHANGES \n\n" + KembalianSekarang.ToString("C", culture);
@@ -857,6 +907,7 @@ namespace KASIR.OfflineMode
                 txtNama.Enabled = false;
                 ButtonSwitchUsePoint.Visible = true;
                 ButtonSwitchUsePoint.Enabled = false;
+                lblUsePoint.Visible = true;
             }
             else
             {
@@ -868,6 +919,7 @@ namespace KASIR.OfflineMode
                 txtNama.Enabled = true;
                 ButtonSwitchUsePoint.Visible = false;
                 ButtonSwitchUsePoint.Enabled = false;
+                lblUsePoint.Visible = false;
             }
         }
 
@@ -900,17 +952,33 @@ namespace KASIR.OfflineMode
 
                         if (selectedMember != null)
                         {
-                            lblNamaMember.Text = selectedMember.member_name; // Get name
-                            lblEmailMember.Text = selectedMember.member_email; // Get email
-                            lblHPMember.Text = selectedMember.member_phone_number; // Get phone number
+                            getMember.member_id = selectedMember.member_id;
+                            getMember.member_name = selectedMember.member_name;
+                            getMember.member_email = selectedMember.member_email;
+                            getMember.member_phone_number = selectedMember.member_phone_number;
+                            getMember.member_points = selectedMember.member_points;
 
-                            txtNama.Text = selectedMember.member_name;
+                            lblNamaMember.Text = getMember.member_name;
+                            lblEmailMember.Text = getMember.member_email;
+                            lblHPMember.Text = getMember.member_phone_number;
+                            decimal points = decimal.Parse(getMember.member_points.ToString());
+                            lblPoint.Text = $"Total Point : {points:n0}";
+
+                            txtNama.Text = getMember.member_name;
                             txtNama.Enabled = false;
 
-                            if (selectedMember.member_points > 0 && selectedMember.member_points != null)
+                            if (getMember.member_points > 0 && getMember.member_points != null)
                             {
                                 ButtonSwitchUsePoint.Enabled = true;
                             }
+                            else
+                            {
+                                ButtonSwitchUsePoint.Enabled = false;
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("Member selection was canceled or invalid.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         }
 
                         background.Dispose();
@@ -944,7 +1012,36 @@ namespace KASIR.OfflineMode
 
         private void ButtonSwitchUsePoint_CheckedChanged(object sender, EventArgs e)
         {
+            if (ButtonSwitchUsePoint.Checked == true)
+            {
+                int currentAmount = int.Parse(CleanInput(txtJumlahPembayaran.Text.ToString()));
+                int shouldPayed = currentAmount - getMember.member_points;
 
+                // Make sure the amount doesn't go negative
+                if (shouldPayed < 0) shouldPayed = 0;
+
+                txtJumlahPembayaran.Text = string.Format("Rp. {0:n0},-", shouldPayed);
+
+                // Update ttl2 for calculations
+                ttl2 = string.Format("Rp. {0:n0},-", shouldPayed);
+
+                txtCash.Text = CleanInput(txtJumlahPembayaran.Text);
+                decimal points = 0;
+                lblPoint.Text = $"Total Point : {points:n0}";
+            }
+            else
+            {
+                int currentAmount = int.Parse(CleanInput(txtJumlahPembayaran.Text.ToString()));
+                int shouldPayed = currentAmount + getMember.member_points;
+
+                txtJumlahPembayaran.Text = string.Format("Rp. {0:n0},-", shouldPayed);
+
+                // Update ttl2 for calculations
+                ttl2 = string.Format("Rp. {0:n0},-", shouldPayed);
+
+                txtCash.Text = CleanInput(txtJumlahPembayaran.Text);
+                lblPoint.Text = $"Total Point : {getMember.member_points:n0}";
+            }
         }
     }
 }

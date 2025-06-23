@@ -127,7 +127,24 @@ namespace KASIR.Komponen
             {
                 // Only clear DataGridView DataSource when necessary
                 string cacheFilePath = $"DT-Cache\\DataMember_Outlet{baseOutlet}.data";
+                
+                // Check if network is available
+                if (!NetworkInterface.GetIsNetworkAvailable())
+                {
+                    if (File.Exists(cacheFilePath))
+                    {
+                        string cachedJson = File.ReadAllText(cacheFilePath);
+                        var cachedMembers = JsonConvert.DeserializeObject<GetMemberModel>(cachedJson)?.data;
 
+                                UpdateDataGridView(cachedMembers);
+                                return; // Exit as data is already up-to-date
+                    }
+                    else
+                    {
+                        MessageBox.Show("No Connection Internet to Fetch Membership");
+                    }
+                    return;
+                }
                 // Check if the cache file exists
                 if (File.Exists(cacheFilePath))
                 {
@@ -158,12 +175,6 @@ namespace KASIR.Komponen
                     }
                 }
 
-                // Check if network is available
-                if (!NetworkInterface.GetIsNetworkAvailable())
-                {
-                    MessageBox.Show("No network connection available. Please check your internet connection and try again.", "Network Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
 
                 // Fetch from API if cache is not available or needs updating
                 IApiService apiServiceNew = new ApiService();
@@ -190,7 +201,8 @@ namespace KASIR.Komponen
             }
         }
 
-        private void PopulateMemberList(IEnumerable<Member> apiMemberList, List<Member> finalMemberList, string cacheFilePath)
+
+        public void PopulateMemberList(IEnumerable<Member> apiMemberList, List<Member> finalMemberList, string cacheFilePath)
         {
             // Load existing cached members if any
             if (File.Exists(cacheFilePath))
@@ -261,7 +273,6 @@ namespace KASIR.Komponen
         }
         private void RemoveButtonColumns()
         {
-            // Remove existing button columns to prevent duplications
             if (dataGridView1.Columns.Contains("Pilih"))
             {
                 dataGridView1.Columns.Remove("Pilih");

@@ -368,6 +368,8 @@ namespace KASIR.OfflineMode
             // ButtonSwitchUsePoint
             // 
             ButtonSwitchUsePoint.AutoSize = true;
+            ButtonSwitchUsePoint.Cursor = Cursors.Hand;
+            ButtonSwitchUsePoint.Enabled = false;
             ButtonSwitchUsePoint.Location = new Point(539, 63);
             ButtonSwitchUsePoint.MinimumSize = new Size(45, 22);
             ButtonSwitchUsePoint.Name = "ButtonSwitchUsePoint";
@@ -475,6 +477,7 @@ namespace KASIR.OfflineMode
             // sButton1
             // 
             sButton1.AutoSize = true;
+            sButton1.Cursor = Cursors.Hand;
             sButton1.Location = new Point(8, 3);
             sButton1.MinimumSize = new Size(45, 22);
             sButton1.Name = "sButton1";

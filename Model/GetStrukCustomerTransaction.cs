@@ -131,8 +131,12 @@ namespace KASIR.Model
         public int? customer_change { get; set; }
         public string? invoice_due_date { get; set; }
         //membership
-        public string member_name { get; set; }
-        public string member_phone_number { get; set; }
+        public string? member_name { get; set; }
+        public int? member_id { get; set; }
+        public string? member_phone_number { get; set; }
+        public string? member_email { get; set; }
+        public int? member_point { get; set; }
+        public int? member_use_point { get; set; }
     }
 
     public class GetStrukCustomerTransaction

@@ -3444,17 +3444,8 @@ namespace KASIR.Printer
 
             byte[] InitPrinter = { 0x1B, 0x40 }; // Initialize printer
             byte[] NewLine = { 0x0A }; // New line
-            /*
-                        // Set Line Spacing (perintah ESC/POS untuk line spacing, misalnya 30 dots)
-                        byte[] setLineSpacing = new byte[] { 0x1B, 0x33, 1 }; // Ganti 30 sesuai kebutuhan
-                        stream.Write(setLineSpacing, 0, setLineSpacing.Length); // Mengirim perintah untuk line spacing
-            */
-            // Write initialization bytes
+            
             stream.Write(InitPrinter, 0, InitPrinter.Length);
-
-            // Print logo (assuming logo is already in a proper format for the printer)
-
-            // Print the rest of the receipt
 
             //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
             string strukText = kodeHeksadesimalNormal;
@@ -3469,9 +3460,20 @@ namespace KASIR.Printer
             {
                 strukText += CenterText(datas?.invoice_due_date);
             }
-
-            strukText += "Name: " + datas?.customer_name + "\n";
-
+            if (!string.IsNullOrEmpty(datas?.member_id.ToString()) && !string.IsNullOrEmpty(datas?.member_name.ToString()))
+            {
+                strukText += "Name Member: " + datas?.member_name + "\n";
+                strukText += "Number Member: " + datas?.member_phone_number + "\n";
+                strukText += "Point Member: " + (datas?.member_point.ToString("#,#") ?? "0") + "\n";
+                if (datas?.member_use_point > 0 && !string.IsNullOrEmpty(datas?.member_use_point.ToString()))
+                {
+                    strukText += "Point Member Terpakai: " + datas?.member_use_point + "\n";
+                }
+            }
+            else
+            {
+                strukText += "Name: " + datas?.customer_name + "\n";
+            }
             if (cartDetails.Count != 0)
             {
                 IEnumerable<string> servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
@@ -6371,8 +6373,20 @@ namespace KASIR.Printer
             strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
             strukText += CenterText(datas.data?.invoice_due_date);
-            strukText += "\nName: " + datas.data?.customer_name + "\n";
-
+            if (!string.IsNullOrEmpty(datas.data?.member_id.ToString()) && !string.IsNullOrEmpty(datas.data?.member_name.ToString()))
+            {
+                strukText += "Name Member: " + datas.data?.member_name + "\n";
+                strukText += "Number Member: " + datas.data?.member_phone_number + "\n";
+                strukText += "Point Member: " + (datas.data?.member_point?.ToString("#,#") ?? "0") + "\n";
+                if (datas.data?.member_use_point > 0 && !string.IsNullOrEmpty(datas.data?.member_use_point.ToString()))
+                {
+                    strukText += "Point Member Terpakai: " + datas.data?.member_use_point + "\n";
+                }
+            }
+            else
+            {
+                strukText += "Name: " + datas.data?.customer_name + "\n";
+            }
             if (cartDetails.Count != 0)
             {
                 IEnumerable<string> servingTypes = cartDetails.Select(cd => cd.serving_type_name).Distinct();
@@ -6491,7 +6505,20 @@ namespace KASIR.Printer
             strukText += kodeHeksadesimalNormal;
             //strukText += "--------------------------------\n";
             strukText += CenterText(datas.data?.invoice_due_date);
-            strukText += "Name: " + datas.data?.customer_name + "\n";
+            if(!string.IsNullOrEmpty(datas.data?.member_id.ToString()) && !string.IsNullOrEmpty(datas.data?.member_name.ToString()))
+            {
+                strukText += "Name Member: " + datas.data?.member_name + "\n";
+                strukText += "Number Member: " + datas.data?.member_phone_number + "\n";
+                strukText += "Point Member: " + (datas.data?.member_point?.ToString("#,#") ?? "0") + "\n";
+                if (datas.data?.member_use_point > 0 && !string.IsNullOrEmpty(datas.data?.member_use_point.ToString()))
+                {
+                    strukText += "Point Member Terpakai: " + datas.data?.member_use_point + "\n";
+                }
+            }
+            else
+            {
+                strukText += "Name: " + datas.data?.customer_name + "\n";
+            }
 
             if (cartDetails.Count != 0)
             {

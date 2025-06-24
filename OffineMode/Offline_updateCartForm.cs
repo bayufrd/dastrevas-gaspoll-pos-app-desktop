@@ -15,7 +15,6 @@ namespace KASIR.OfflineMode
         private List<DataDiscountCart> dataDiscount;
         private List<DataDiscountCart> dataDiskonList;
         private DataMenuDetail datas;
-        private Label dynamicLabel;
         private readonly string folder = "DT-Cache\\addCartForm";
         private readonly string idmenu;
         private string is_ordered = "0";

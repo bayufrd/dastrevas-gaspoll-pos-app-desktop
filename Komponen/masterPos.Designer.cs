@@ -861,7 +861,6 @@ namespace KASIR.komponen
         private PictureBox pictureBox2;
         private DataGridView dataGridView2;
         private TextBox txtCariMenuList;
-        private Model.SButton sButton2;
         private Label label5;
         private Label label4;
         private IconButton lblDetailKeranjang;

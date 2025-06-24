@@ -11,15 +11,13 @@ namespace KASIR.OfflineMode
     public partial class Offline_refund : Form
     {
         private readonly string baseOutlet;
-        private string idTransaksi, cartId, paymentodNgentod = "";
-        private List<CartDetailTransaction> item = new();
+        private string cartId, paymentTypeName = "";
         private DataRefundStruk refundData;
 
         // Menyimpan data refund ke model sementara
         private readonly List<RefundDetailStruk> refundDetailStruks = new();
         private readonly List<RefundModel> refundItems = new();
         private int TotalRefunded;
-        private int urutanRiwayat;
         private readonly int Nomortransaks;
         private int isrefundall;
 
@@ -29,7 +27,6 @@ namespace KASIR.OfflineMode
             InitializeComponent();
             btnRefund.Visible = true;
             cartId = transaksiId;
-            idTransaksi = transaksiId;
             Nomortransaks = urutanRiwayat;
             cmbPayform.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbPayform.DrawMode = DrawMode.OwnerDrawVariable;
@@ -100,7 +97,7 @@ namespace KASIR.OfflineMode
                 for (int kimak = 0; kimak <= cmbPayform.Items.Count; kimak++)
                 {
                     cmbPayform.SelectedIndex = kimak;
-                    if (cmbPayform.Text == paymentodNgentod)
+                    if (cmbPayform.Text == paymentTypeName)
                     {
                         cmbPayform.SelectedIndex = kimak;
                         break;
@@ -148,7 +145,7 @@ namespace KASIR.OfflineMode
                     cartId = filteredTransaction["transaction_id"]?.ToString() ?? "0";
                     lblDetailPayment.Text = "Payment Sebelumnya : " + filteredTransaction["payment_type_name"] ?? "-";
                     lblCustomerName.Text = filteredTransaction["customer_name"]?.ToString() ?? "-";
-                    paymentodNgentod = filteredTransaction["payment_type_name"]?.ToString() ?? "-";
+                    paymentTypeName = filteredTransaction["payment_type_name"]?.ToString() ?? "-";
                     JArray? cartDetails = filteredTransaction["cart_details"] as JArray;
                     JArray? refundDetails = filteredTransaction["refund_details"] as JArray;
                     LoadDataPaymentType();

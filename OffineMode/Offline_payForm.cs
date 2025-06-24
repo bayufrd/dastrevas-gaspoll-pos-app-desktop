@@ -460,6 +460,7 @@ namespace KASIR.OfflineMode
                         member_id = getMember?.member_id > 0 ? getMember.member_id : (int?)null,
                         member_name = !string.IsNullOrEmpty(getMember?.member_name) ? getMember.member_name : (string)null,
                         member_phone_number = !string.IsNullOrEmpty(getMember?.member_phone_number) ? getMember.member_phone_number : (string)null,
+                        member_email = !string.IsNullOrEmpty(getMember?.member_email) ? getMember.member_email : (string)null,
                         member_point = getMember?.member_points > 0 ? getMember.member_points : (int?)null,
                         member_use_point = membershipUsingPoint > 0 ? membershipUsingPoint : (int?)null,
                         is_refund_all = 0,
@@ -600,8 +601,12 @@ namespace KASIR.OfflineMode
                         kitchenBarCanceledItems = new List<KitchenAndBarCanceledItems>(),
                         customer_cash = int.Parse(fulus),
                         customer_change = change,
-                        member_name = null,
-                        member_phone_number = null
+                        member_id = getMember?.member_id > 0 ? getMember.member_id : (int?)null,
+                        member_name = !string.IsNullOrEmpty(getMember?.member_name) ? getMember.member_name : (string)null,
+                        member_phone_number = !string.IsNullOrEmpty(getMember?.member_phone_number) ? getMember.member_phone_number : (string)null,
+                        member_email = !string.IsNullOrEmpty(getMember?.member_email) ? getMember.member_email : (string)null,
+                        member_point = getMember?.member_points > 0 ? getMember.member_points : (int?)null,
+                        member_use_point = membershipUsingPoint > 0 ? membershipUsingPoint : (int?)null,
                     }
                 };
 
@@ -885,7 +890,7 @@ namespace KASIR.OfflineMode
                 if (txtCash.Text.Length > 0)
                 {
                     txtCash.Text = txtCash.Text.Substring(0, txtCash.Text.Length - 1);
-                    txtCash.SelectionStart = txtCash.Text.Length; // Move the cursor to the end
+                    txtCash.SelectionStart = txtCash.Text.Length;
                 }
 
                 return;
@@ -1028,6 +1033,7 @@ namespace KASIR.OfflineMode
                 txtCash.Text = CleanInput(txtJumlahPembayaran.Text);
                 decimal points = 0;
                 lblPoint.Text = $"Total Point : {points:n0}";
+                membershipUsingPoint = getMember.member_points;
             }
             else
             {
@@ -1041,6 +1047,7 @@ namespace KASIR.OfflineMode
 
                 txtCash.Text = CleanInput(txtJumlahPembayaran.Text);
                 lblPoint.Text = $"Total Point : {getMember.member_points:n0}";
+                membershipUsingPoint = 0;
             }
         }
     }

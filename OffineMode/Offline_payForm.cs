@@ -16,7 +16,7 @@ namespace KASIR.OfflineMode
         private readonly string baseOutlet;
         private readonly int customePrice;
         private readonly List<Button> radioButtonsList = new();
-        private readonly string totalCart;
+        private string totalCart;
         private string ttl2;
         public string btnPayType;
         private string FooterTextStruk;
@@ -262,10 +262,10 @@ namespace KASIR.OfflineMode
         }
         private bool ValidateInputs(out string errorMessage)
         {
+            int CashCustomer = int.Parse(CleanInput(txtCash.Text));
             errorMessage = string.Empty;
-
             // Check if a member has been selected
-            if (sButton1.Checked == true && string.IsNullOrEmpty(getMember.member_id.ToString()))
+            if (sButton1.Checked && getMember.member_id == 0)
                 return SetErrorMessage("Member Belum Dipilih!", ref errorMessage);
 
             // Check if the customer name has been entered
@@ -277,20 +277,19 @@ namespace KASIR.OfflineMode
                 return SetErrorMessage("Masukan seat pelanggan dengan benar", ref errorMessage);
 
             // Clean and validate the cash input
-            string fulus = CleanInput(txtCash.Text);
-            if (string.IsNullOrWhiteSpace(fulus))
+            if (string.IsNullOrWhiteSpace(CashCustomer.ToString()))
                 return SetErrorMessage("Masukkan harga dengan benar.", ref errorMessage);
 
             // Validate that fulus can be parsed to an integer
-            if (!int.TryParse(fulus, out int fulusAmount))
+            if (!int.TryParse(CashCustomer.ToString(), out int fulusAmount))
                 return SetErrorMessage("Harga tidak valid", ref errorMessage);
-
+            string total = CleanInput(txtJumlahPembayaran.Text);
             // Validate total cart amount
-            if (!int.TryParse(totalCart, out int totalCartAmount))
+            if (!int.TryParse(total, out int totalCartAmount))
                 return SetErrorMessage("Harga gagal diolah", ref errorMessage);
 
             // Ensure there is enough cash provided
-            if (fulusAmount < totalCartAmount)
+            if (CashCustomer < totalCartAmount)
                 return SetErrorMessage("Uang belum cukup", ref errorMessage);
 
             // Ensure a payment type is selected
@@ -1026,7 +1025,7 @@ namespace KASIR.OfflineMode
                 if (shouldPayed < 0) shouldPayed = 0;
 
                 txtJumlahPembayaran.Text = string.Format("Rp. {0:n0},-", shouldPayed);
-
+                totalCart = CleanInput(txtJumlahPembayaran.Text);
                 // Update ttl2 for calculations
                 ttl2 = string.Format("Rp. {0:n0},-", shouldPayed);
 
@@ -1041,6 +1040,7 @@ namespace KASIR.OfflineMode
                 int shouldPayed = currentAmount + getMember.member_points;
 
                 txtJumlahPembayaran.Text = string.Format("Rp. {0:n0},-", shouldPayed);
+                totalCart = CleanInput(txtJumlahPembayaran.Text);
 
                 // Update ttl2 for calculations
                 ttl2 = string.Format("Rp. {0:n0},-", shouldPayed);

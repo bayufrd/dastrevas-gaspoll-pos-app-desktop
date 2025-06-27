@@ -86,7 +86,6 @@ namespace KASIR.OfflineMode
             panel1.Name = "panel1";
             panel1.Size = new Size(600, 70);
             panel1.TabIndex = 1;
-            panel1.Paint += panel1_Paint;
             // 
             // lblNameCart
             // 
@@ -173,7 +172,6 @@ namespace KASIR.OfflineMode
             flowLayoutPanel1.Name = "flowLayoutPanel1";
             flowLayoutPanel1.Size = new Size(600, 530);
             flowLayoutPanel1.TabIndex = 2;
-            flowLayoutPanel1.Paint += flowLayoutPanel1_Paint;
             // 
             // panel10
             // 
@@ -204,7 +202,6 @@ namespace KASIR.OfflineMode
             cmbDiskon.Name = "cmbDiskon";
             cmbDiskon.Size = new Size(568, 23);
             cmbDiskon.TabIndex = 0;
-            cmbDiskon.SelectedIndexChanged += cmbDiskon_SelectedIndexChanged;
             // 
             // label5
             // 
@@ -265,7 +262,6 @@ namespace KASIR.OfflineMode
             panel2.Name = "panel2";
             panel2.Size = new Size(597, 74);
             panel2.TabIndex = 2;
-            panel2.Paint += panel2_Paint;
             // 
             // panel4
             // 
@@ -324,7 +320,6 @@ namespace KASIR.OfflineMode
             panel3.Name = "panel3";
             panel3.Size = new Size(270, 36);
             panel3.TabIndex = 2;
-            panel3.Paint += panel3_Paint;
             // 
             // txtKuantitas
             // 
@@ -345,7 +340,6 @@ namespace KASIR.OfflineMode
             label1.Size = new Size(71, 15);
             label1.TabIndex = 1;
             label1.Text = "KUANTITAS";
-            label1.Click += label1_Click_2;
             // 
             // panel5
             // 
@@ -365,7 +359,6 @@ namespace KASIR.OfflineMode
             panel12.Name = "panel12";
             panel12.Size = new Size(576, 38);
             panel12.TabIndex = 8;
-            panel12.Paint += panel12_Paint;
             // 
             // comboBox1
             // 
@@ -377,7 +370,6 @@ namespace KASIR.OfflineMode
             comboBox1.Name = "comboBox1";
             comboBox1.Size = new Size(568, 23);
             comboBox1.TabIndex = 0;
-            comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
             // 
             // label2
             // 
@@ -439,7 +431,6 @@ namespace KASIR.OfflineMode
             lblPrice.TextImageRelation = TextImageRelation.ImageBeforeText;
             lblPrice.UseVisualStyleBackColor = false;
             lblPrice.Visible = false;
-            lblPrice.Click += iconButton1_Click;
             // 
             // lblTotsl
             // 
@@ -474,7 +465,6 @@ namespace KASIR.OfflineMode
             Name = "Offline_addCartForm";
             StartPosition = FormStartPosition.CenterParent;
             TopMost = true;
-            Click += addCartForm_Click;
             panel1.ResumeLayout(false);
             flowLayoutPanel1.ResumeLayout(false);
             panel10.ResumeLayout(false);

@@ -44,14 +44,50 @@ namespace KASIR.OffineMode
             // Create the FlowLayoutPanel
             FlowLayoutPanel flowPanel = new()
             {
-                Dock = DockStyle.Top, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Height = panelHistory.ClientSize.Width, Width = panelHistory.ClientSize.Height
+                Dock = DockStyle.Top,
+                AutoScroll = true,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                Height = panelHistory.ClientSize.Width,
+                Width = panelHistory.ClientSize.Height
             };
 
             panelHistory.Controls.Add(flowPanel);
 
             int totalWidth = panelHistory.ClientSize.Width;
 
-            // Check if the directory exists
+            // Check if the ShiftData.data file exists first
+            if (File.Exists(shiftDataPath))
+            {
+                // Create a button for the ShiftData.data file
+                Button shiftDataButton = new()
+                {
+                    Text = "ShiftData (Latest)", // A generic name for the button
+                    Width = totalWidth * 98 / 100,
+                    ForeColor = Color.Black,
+                    Height = 40,
+                    FlatStyle = FlatStyle.Flat,
+                    TextAlign = ContentAlignment.MiddleLeft
+                };
+
+                shiftDataButton.Click += async (sender, e) =>
+                {
+                    // Deserialize the ShiftData.data file
+                    List<ShiftData> shiftDataList = await ReadShiftDataFromFile(shiftDataPath);
+
+                    // Bind the shift data to the DataGridView
+                    BindShiftDataToDataGridView(shiftDataList);
+                };
+
+                // Add the button for ShiftData.data to the FlowLayoutPanel
+                flowPanel.Controls.Add(shiftDataButton);
+            }
+            else
+            {
+                MessageBox.Show("The ShiftData.data file does not exist.");
+            }
+
+            // Next, check if the directory exists for other .data files
             if (Directory.Exists(directoryPath))
             {
                 // Get all .data files in the directory
@@ -103,40 +139,8 @@ namespace KASIR.OffineMode
             }
             else
             {
+                // If the directory does not exist, create it
                 Directory.CreateDirectory(directoryPath);
-            }
-
-            // Now, let's read the ShiftData.data file and add a button for it
-            if (File.Exists(shiftDataPath))
-            {
-                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(shiftDataPath);
-
-                // Create a button for the ShiftData.data file
-                Button shiftDataButton = new()
-                {
-                    Text = "ShiftData (Latest)", // A generic name for the button
-                    Width = totalWidth * 98 / 100,
-                    ForeColor = Color.Black,
-                    Height = 40,
-                    FlatStyle = FlatStyle.Flat,
-                    TextAlign = ContentAlignment.MiddleLeft
-                };
-
-                shiftDataButton.Click += async (sender, e) =>
-                {
-                    // Deserialize the ShiftData.data file
-                    List<ShiftData> shiftDataList = await ReadShiftDataFromFile(shiftDataPath);
-
-                    // Bind the shift data to the DataGridView
-                    BindShiftDataToDataGridView(shiftDataList);
-                };
-
-                // Add the button for ShiftData.data to the FlowLayoutPanel
-                flowPanel.Controls.Add(shiftDataButton);
-            }
-            else
-            {
-                MessageBox.Show("The ShiftData.data file does not exist.");
             }
         }
 

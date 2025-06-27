@@ -278,6 +278,14 @@ namespace KASIR.Model
         public List<RefundDetails> refund_details { get; set; }
         public List<CanceledDetails> canceled_items { get; set; }
         public int is_refund_all { get; set; }  // Indicating if the transaction is fully refunded
+        
+        //MEMBERS AREA
+        public int? member_id { get; set; }
+        public string? member_name { get; set; }
+        public string? member_phone_number { get; set; }
+        public string? member_email { get; set; }
+        public int? member_point { get; set; }
+        public int? member_use_point { get; set; }
     }
     public class CanceledDetails
     {

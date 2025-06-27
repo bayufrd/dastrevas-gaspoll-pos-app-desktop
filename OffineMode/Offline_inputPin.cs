@@ -43,14 +43,6 @@ namespace KASIR.OfflineMode
             Close();
         }
 
-        private void txtPin_TextChanged(object sender, EventArgs e)
-        {
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-        }
-
         private async void btnKonfirmasi_Click(object sender, EventArgs e)
         {
             try
@@ -136,26 +128,20 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                // Path untuk file transaction.data
                 string transactionDataPath = "DT-Cache\\Transaction\\transaction.data";
 
-                // Cek apakah file transaction.data ada
                 if (File.Exists(transactionDataPath))
                 {
-                    // Membaca isi file transaction.data
                     string transactionJson = File.ReadAllText(transactionDataPath);
                     JObject? transactionData = JsonConvert.DeserializeObject<JObject>(transactionJson);
 
-                    // Ambil array data transaksi
                     JArray? transactionDetails = transactionData["data"] as JArray;
 
-                    // Filter transaksi berdasarkan transaction_id
                     JToken? filteredTransaction =
                         transactionDetails.FirstOrDefault(t => t["transaction_id"]?.ToString() == transactionId);
 
                     if (filteredTransaction != null)
                     {
-                        // Menampilkan data transaksi berdasarkan transaction_id
                         string receiptNumber = filteredTransaction["receipt_number"]?.ToString() ?? "-";
                         string customerName = filteredTransaction["customer_name"]?.ToString() ?? "-";
                         string customerSeat = filteredTransaction["customer_seat"]?.ToString() ?? "0";
@@ -171,7 +157,6 @@ namespace KASIR.OfflineMode
                             formattedDate = transactionTime.ToString("dd MMM yyyy, HH:mm");
                         }
 
-                        // Menampilkan data transaksi di UI
                         lblCustomerReceipt.Text = receiptNumber;
                         lblWaktu.Text = formattedDate;
                         lblCustomerName.Text = customerName;
@@ -248,7 +233,20 @@ namespace KASIR.OfflineMode
                                 }
                             }
 
-                            // Setelah loop, periksa apakah ada item dengan qty > 0
+                            int points = 0;
+                            if (!string.IsNullOrEmpty(filteredTransaction["member_id"].ToString()) && !string.IsNullOrEmpty(filteredTransaction["member_name"].ToString()))
+                            {
+                                points = int.Parse(filteredTransaction["member_point"].ToString());
+                                dataTable.Rows.Add(null, null, null, $"  *Data Member:", null);
+                                dataTable.Rows.Add(null, null, null, $"    Member Name: {filteredTransaction["member_name"].ToString()} ", null);
+                                dataTable.Rows.Add(null, null, null, $"    Member Points: {points.ToString("#,#")} ", null);
+                                if (!string.IsNullOrEmpty(filteredTransaction["member_use_point"].ToString()))
+                                {
+                                    points = int.Parse(filteredTransaction["member_use_point"].ToString());
+                                    dataTable.Rows.Add(null, null, null, $"    Member Use Points: {points.ToString("#,#")} ", null);
+                                }
+                            }
+
                             btnSimpan.Enabled = hasItems; // Aktifkan atau nonaktifkan tombol Simpan
                             if (btnSimpan.Enabled != true)
                             {
@@ -259,8 +257,6 @@ namespace KASIR.OfflineMode
 
                         if (refundDetails != null && refundDetails.Count > 0)
                         {
-                            // Tambahkan separator untuk item refund
-                            //dataTable.Rows.Add(null, null, null, "Refund items: ", null);
                             AddSeparatorRow(dataTable, "  #Refund items: ", dataGridView1);
 
                             foreach (JToken refundItem in refundDetails)

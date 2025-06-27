@@ -379,42 +379,61 @@ namespace KASIR.komponen
         // pagenation end
 
         //Config pengaturan list view
+        private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1); // Semaphore for file access
+
         private async Task LoadConfig()
         {
-            if (!Directory.Exists("setting"))
+            string configDirectory = "setting";
+            string configFilePath = Path.Combine(configDirectory, "configListMenu.data");
+
+            // Ensure the directory exists
+            if (!Directory.Exists(configDirectory))
             {
-                Directory.CreateDirectory(configFolderPath);
+                Directory.CreateDirectory(configDirectory);
             }
 
-            if (!File.Exists("setting\\configListMenu.data"))
+            // Use semaphore to control access
+            await semaphore.WaitAsync(); // Wait to enter the semaphore
+            try
             {
-                string data = "OFF";
-                await File.WriteAllTextAsync("setting\\configListMenu.data", data);
-            }
-            else
-            {
-                string allSettingsData = await File.ReadAllTextAsync("setting\\configListMenu.data");
-
-                if (!string.IsNullOrEmpty(allSettingsData))
+                if (!File.Exists(configFilePath))
                 {
-                    if (allSettingsData == "ON")
+                    string data = "OFF";
+                    await File.WriteAllTextAsync(configFilePath, data); // Asynchronously write the initial state
+                }
+                else
+                {
+                    string allSettingsData = await File.ReadAllTextAsync(configFilePath); // Asynchronously read the content
+
+                    if (!string.IsNullOrEmpty(allSettingsData))
                     {
-                        await OnListView();
+                        if (allSettingsData == "ON")
+                        {
+                            await OnListView();
+                        }
+                        else
+                        {
+                            await OfflistView();
+                        }
                     }
                     else
                     {
                         await OfflistView();
+                        string data = "OFF";
+                        await File.WriteAllTextAsync(configFilePath, data); // Asynchronously write the reset state
                     }
                 }
-                else
-                {
-                    await OfflistView();
-                    string data = "OFF";
-                    await File.WriteAllTextAsync("setting\\configListMenu.data", data);
-                }
+            }
+            catch (Exception ex)
+            {
+                // Log any errors that occur while reading or writing to the file
+                LoggerUtil.LogError(ex, "An error occurred while loading configuration: {ErrorMessage}", ex.Message);
+            }
+            finally
+            {
+                semaphore.Release(); // Release the semaphore
             }
         }
-
 
         private async Task OnListView()
         {

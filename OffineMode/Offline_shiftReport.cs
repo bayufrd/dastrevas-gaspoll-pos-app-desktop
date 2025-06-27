@@ -14,19 +14,17 @@ namespace KASIR.Komponen
     public partial class Offline_shiftReport : UserControl
     {
         private readonly string baseOutlet;
-        private ApiService apiService;
-        private readonly int bedaCash = 0;
         private CancellationTokenSource cts;
         private Label loadingLabel;
 
         private Panel loadingPanel;
         private ProgressBar progressBar;
+        private int ending_cash = 0;
 
         public Offline_shiftReport()
         {
             baseOutlet = Settings.Default.BaseOutlet;
             InitializeComponent();
-            apiService = new ApiService();
             btnCetakStruk.Enabled = true;
             lblNotifikasi.Visible = false;
             InitializeLoadingUI();
@@ -144,14 +142,11 @@ namespace KASIR.Komponen
         {
             string shiftDataPath = @"DT-Cache\Transaction\shiftData.data";
 
-            // If the file doesn't exist or is empty, return today at 6 AM
             if (!File.Exists(shiftDataPath) || new FileInfo(shiftDataPath).Length == 0)
             {
-                // Return today's date at 6:00 AM
                 return DateTime.Now.Date.AddHours(6).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
             }
 
-            // Read the existing shift data from the file
             string shiftDataJson = File.ReadAllText(shiftDataPath);
             JObject shiftData = JObject.Parse(shiftDataJson);
             JArray shiftDataArray = (JArray)shiftData["data"];
@@ -162,7 +157,6 @@ namespace KASIR.Komponen
                 return DateTime.Now.Date.AddHours(6).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
             }
 
-            // Get the "End_at" of the last shift (last element in the array)
             JObject lastShift = (JObject)shiftDataArray.Last;
             string lastEndAt = lastShift["end_at"].ToString();
 
@@ -211,7 +205,7 @@ namespace KASIR.Komponen
                 string generateIDshift = $"{baseOutlet}{startAtDateTime.ToString("yyyyMMddHHmmss")}";
 
                 DialogResult yakin = MessageBox.Show(
-                    $"Melakukan End Shift {shiftNumber.ToString()} pada waktu \n{startAt} sampai {akhirshift.ToString("yyyy-MM-dd HH:mm:ss")}\nNama Kasir : {txtNamaKasir.Text}\nActual Cash : Rp.{txtActualCash.Text},- \nCash Different : {string.Format("{0:n0}", Convert.ToInt32(fulus) - bedaCash)}?",
+                    $"Melakukan End Shift {shiftNumber.ToString()} pada waktu \n{startAt} sampai {akhirshift.ToString("yyyy-MM-dd HH:mm:ss")}\nNama Kasir : {txtNamaKasir.Text}\nActual Cash : Rp.{txtActualCash.Text},- \nCash Different : {string.Format("{0:n0}", Convert.ToInt32(fulus) - ending_cash)}?",
                     "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (yakin != DialogResult.Yes)
                 {
@@ -365,7 +359,6 @@ namespace KASIR.Komponen
 
                 int totalPendingAmount = pendingCartDetails.Sum(cd => cd.total_price);
 
-                // Mengambil detail cart yang dibatalkan
                 var canceledCartDetails = transactionDataSavebill.data.SelectMany(t => t.canceled_items)
                     .Where(cd => cd.qty > 0) // Hanya ambil item dengan qty lebih dari 0
                     .GroupBy(cd =>
@@ -427,7 +420,6 @@ namespace KASIR.Komponen
                     })
                     .ToList();
 
-                int ending_cash = 0;
                 string actual_cash = Regex.Replace(txtActualCash.Text, "[^0-9]", "");
                 List<dynamic> paymentDetails = new();
                 int categoryId = 1; // Inisialisasi ID kategori pembayaran.
@@ -474,25 +466,33 @@ namespace KASIR.Komponen
                     .Sum(t => t.discounted_price); // Sum the discounted_price of each transaction
 
 
-                // Now sum the discounted_price from the cart_details nested within each transaction
                 int discountsDetails = transactionData.data
                     .SelectMany(t => t.cart_details) // Flatten the cart details
                     .Where(cd => cd.discounted_price > 0) // Filter only items with discounted_price > 0
                     .Sum(cd => cd.discounted_price); // Sum the discounted_price of each cart detail
 
-                // Calculate the total discounts by summing both
                 int totalDiscounts = discountsCarts + discountsDetails;
 
                 int grandTotal = transactionData.data
                     .SelectMany(t => t.cart_details) // Meratakan list cart_details dari setiap Transaction
                     .Sum(cd => cd.total_price); // Menjumlahkan total_price untuk setiap CartDetails
+                
+                //Membership
+                int totalMemberUsePoints = int.Parse(CalculateTotalMemberUsePoints(transactionData.data).ToString());
+                paymentDetails.Add(new
+                {
+                    payment_category = "POINT MEMBER USED", // Use the formatted payment category
+                    payment_type_detail = new List<dynamic>(), // Initialize as an empty array
+                    total_amount = totalMemberUsePoints,
+                    payment_category_id = categoryId++ // Increment category ID for each entry
+                });
 
                 grandTotal -= totalRefundAmount;
+                grandTotal -= totalMemberUsePoints;
                 int totalTransaction = grandTotal - totalExpenditure;
 
                 int cash_difference = int.Parse(actual_cash) - int.Parse(ending_cash.ToString());
 
-                // Construct the final JSON response
                 var finalReport = new
                 {
                     code = 200,
@@ -531,7 +531,6 @@ namespace KASIR.Komponen
                     }
                 };
 
-                // Ensure the directory exists before writing the file
                 string directoryPath =
                     Path.GetDirectoryName($"DT-Cache\\Transaction\\ShiftReport\\shiftReport-{IDshiftData}.data");
                 if (!Directory.Exists(directoryPath))
@@ -539,7 +538,6 @@ namespace KASIR.Komponen
                     Directory.CreateDirectory(directoryPath);
                 }
 
-                // Serialize the final JSON object and write to the file
                 string finalJson = JsonConvert.SerializeObject(finalReport, Formatting.Indented);
                 string filePath = $"DT-Cache\\Transaction\\ShiftReport\\shiftReport-{IDshiftData}.data";
                 await File.WriteAllTextAsync(filePath, finalJson);
@@ -696,22 +694,17 @@ namespace KASIR.Komponen
 
         private async Task printingReportHistory(string id)
         {
-            // Correct file path
             string filePath = $"DT-Cache\\Transaction\\ShiftReport\\shiftReport-{id}.data";
             if (!File.Exists(filePath))
             {
                 return;
             }
-            // Read the file content
             string fileContent = await File.ReadAllTextAsync(filePath);
 
-            // Deserialize the JSON content into an object
             object? shiftReport = JsonConvert.DeserializeObject(fileContent);
 
-            // Convert the object back into a JSON string
             string shiftReportJson = JsonConvert.SerializeObject(shiftReport, Formatting.Indented);
 
-            // Now pass the JSON string to the HandleSuccessfulPrint method
             await HandleSuccessfulPrint(shiftReportJson);
         }
 
@@ -750,7 +743,6 @@ namespace KASIR.Komponen
         {
             transactionFileMover c = new();
 
-            // Ensure the destination directory exists
             string directory = Path.GetDirectoryName(destinationFilePath);
             if (!Directory.Exists(directory))
             {
@@ -802,7 +794,6 @@ namespace KASIR.Komponen
 
         public async Task ArchiveDataShiftAsync(string sourceFilePath, string archiveDirectory)
         {
-            // Ensure destination directory exists
             if (!Directory.Exists(archiveDirectory))
             {
                 Directory.CreateDirectory(archiveDirectory);
@@ -843,7 +834,6 @@ namespace KASIR.Komponen
             List<DateTime?> transactionTimes = transactionData.data
                 .Select(t =>
                 {
-                    // Attempt to parse created_at, return null if invalid
                     DateTime parsedDate;
                     bool isValidDate = DateTime.TryParse(t.created_at, out parsedDate);
                     return isValidDate ? parsedDate : (DateTime?)null;
@@ -852,7 +842,6 @@ namespace KASIR.Komponen
                 .OrderBy(t => t.Value) // Order by date in ascending order
                 .ToList();
 
-            // Ensure we have at least one transaction
             if (transactionTimes.Count > 0)
             {
                 DateTime startShift = transactionTimes.First().Value; // First transaction is the start of the shift
@@ -875,16 +864,13 @@ namespace KASIR.Komponen
                     string existingData = File.ReadAllText(shiftPath);
                     JObject? existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
 
-                    // Retrieve the "data" array, which contains all shift transactions
                     JArray? shiftDataArray = existingTransactions["data"] as JArray;
 
-                    // If there are no shifts, return 1 (default shift number)
                     if (shiftDataArray == null || shiftDataArray.Count == 0)
                     {
                         return 1; // Default shift number when no shifts exist
                     }
 
-                    // Otherwise, return the next shift number (the count of current shifts + 1)
                     return shiftDataArray.Count + 1;
                 }
                 catch (Exception ex)
@@ -903,17 +889,14 @@ namespace KASIR.Komponen
         {
             if (!File.Exists(filePath))
             {
-                // If the file does not exist, create it with the default content
                 string defaultContent = "{ \"data\": [] }";
 
                 try
                 {
-                    // Create the file and write the default content
                     File.WriteAllText(filePath, defaultContent);
                 }
                 catch (IOException ex)
                 {
-                    // Handle any I/O exceptions that may occur during file creation
                     LoggerUtil.LogError(ex, $"Failed to create file: {filePath}");
                 }
             }
@@ -922,10 +905,8 @@ namespace KASIR.Komponen
         //LOAD DATA Transaction
         public async Task LoadData(bool isBackground = false)
         {
-            // Set background operation flag
             IsBackgroundOperation = isBackground;
 
-            // Cancel previous token if it exists
             CancelPreviousOperation();
 
             if (ShouldShowProgress())
@@ -1060,17 +1041,18 @@ namespace KASIR.Komponen
 
             // Process payment details
             ProcessPaymentDetails(filteredTransactions, dataTable, totalExpenditureItems);
-
             dataTable.Rows.Add("", "");
 
             // Add the grand total
             decimal grandTotal = filteredTransactions.data
                 .SelectMany(t => t.cart_details) // Meratakan list cart_details dari setiap Transaction
                 .Sum(cd => cd.total_price); // Menjumlahkan total_price untuk setiap CartDetails
+            decimal totalMemberUsePoints = CalculateTotalMemberUsePoints(filteredTransactions.data);
 
             AddSeparatorRowBold(dataTable, "GRAND TOTAL", dataGridView1);
             grandTotal -= totalRefundAmount;
             totalProcessedCart -= totalExpenditureItems;
+            totalProcessedCart -= totalMemberUsePoints;
             dataTable.Rows.Add("Total Transactions", $"{totalProcessedCart:n0}");
 
             // Display data in DataGridView
@@ -1083,7 +1065,6 @@ namespace KASIR.Komponen
                 await Task.Delay(500); // Short delay to show completion
                 HideLoading();
             }
-
             btnCetakStruk.Enabled = true;
         }
 
@@ -1236,26 +1217,24 @@ namespace KASIR.Komponen
             AddSeparatorRowBold(dataTable, "PAYMENT DETAILS", dataGridView1);
             List<PaymentType> paymentTypes = LoadPaymentTypes();
 
-            // Group payments by type
             var groupedPayments = transactionData.data
                 .GroupBy(t => t.payment_type_id)
                 .Select(g => new
                 {
                     PaymentTypeId = g.Key,
                     PaymentTypeName = paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ?? "Unknown",
-                    TotalAmount = g.Sum(x => x.total)
+                    TotalAmount = g.Sum(x => x.total),
+                    MemberUsePoints = g.Sum(x => x.member_use_point ?? 0) // Sum member_use_points for the payment type
                 }).ToList();
 
-            // Group refunds by payment type ID for transaction-level refunds
             var groupedRefunds = transactionData.data
-                .Where(t => t.is_refund_all == 1)  // Only transactions marked as fully refunded
+                .Where(t => t.is_refund_all == 1)
                 .Select(t => new
                 {
                     PaymentTypeId = t.refund_payment_id_all,
                     TotalRefund = t.total_refund
                 }).ToList();
 
-            // Group item-level refunds
             var groupedItemRefunds = transactionData.data
                 .SelectMany(t => t.refund_details.Select(r => new
                 {
@@ -1269,31 +1248,46 @@ namespace KASIR.Komponen
                     TotalItemRefund = g.Sum(x => x.RefundTotal)
                 }).ToList();
 
+            decimal totalMemberUsePoints = CalculateTotalMemberUsePoints(transactionData.data);
+
             foreach (var payment in groupedPayments)
             {
-                // Get transaction-level refund for the current payment type
                 var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
                 decimal totalRefund = refund?.TotalRefund ?? 0; // Default to 0 if not found
 
-                // Get item-level refunds for the current payment type
                 var itemRefund = groupedItemRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
                 decimal totalItemRefund = itemRefund?.TotalItemRefund ?? 0; // Default to 0 if not found
 
-                // Calculate the net amount considering both total refunds
-                decimal netAmount = payment.TotalAmount - totalRefund + totalItemRefund;
-
-                // Add the results to the data table
+                decimal netAmount = payment.TotalAmount - (totalRefund + totalItemRefund);
+                
                 dataTable.Rows.Add(payment.PaymentTypeName, $"{netAmount:n0}");
 
-                // Check for cash payment to update actual cash
                 if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
                 {
                     netAmount -= expenditures;
-                    txtActualCash.Text = $"{netAmount:n0}"; // Set cash value to the net amount
+                    txtActualCash.Text = $"{netAmount:n0}";
+                    ending_cash = int.Parse(netAmount.ToString());
                 }
             }
-        }
+            dataTable.Rows.Add("", $"");
 
+            AddSeparatorRowBold(dataTable, "POINT MEMBER DETAILS", dataGridView1);
+            dataTable.Rows.Add("POINT MEMBER USED", $"{totalMemberUsePoints:n0}");
+        }
+        private decimal CalculateTotalMemberUsePoints(IEnumerable<Transaction> transactions)
+        {
+            decimal totalUsePoints = 0;
+
+            foreach (var transaction in transactions)
+            {
+                if (transaction.member_use_point.HasValue)
+                {
+                    totalUsePoints += transaction.member_use_point.Value;
+                }
+            }
+
+            return totalUsePoints;
+        }
 
         private void DisplayDataInDataGridView(DataTable dataTable)
         {
@@ -1346,18 +1340,15 @@ namespace KASIR.Komponen
                         0);
                 }
 
-                // Reapply data source and styles
                 dataGridView1.DataSource =
                     dataTable; // Assuming dataTable is a class-level variable or passed as a parameter
                 DataGridViewCellStyle boldStyle = new() { Font = new Font(dataGridView1.Font, FontStyle.Italic) };
                 dataGridView1.Columns["DATA"].DefaultCellStyle = boldStyle;
                 dataGridView1.Columns["ID"].Visible = false;
 
-                // Log success
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during the reinitialization process
                 LoggerUtil.LogError(ex, "An error occurred while reinitializing dataGridView1: {ErrorMessage}",
                     ex.Message);
             }
@@ -1376,24 +1367,18 @@ namespace KASIR.Komponen
         }
         private void AddSeparatorRowBold(DataTable dataTable, string text, DataGridView dataGridView)
         {
-            // Create a new row
             DataRow separatorRow = dataTable.NewRow();
             separatorRow["DATA"] = text;
 
-            // Add the row to the DataTable
             dataTable.Rows.Add(separatorRow);
 
-            // Refresh DataGridView after adding the row
             dataGridView.DataSource = dataTable;
             dataGridView.Refresh(); // Ensure DataGridView is updated
 
-            // Apply bold style to the last added row
             if (dataGridView.Rows.Count > 0)
             {
-                // Apply bold style to the "DATA" column of the last row
                 DataGridViewCellStyle boldStyle = new() { Font = new Font(dataGridView.Font, FontStyle.Bold) };
 
-                // Apply the bold style to the last row that was added
                 int lastRowIndex = dataGridView.Rows.Count - 1;
                 if (dataGridView.Columns.Contains("DATA"))
                 {
@@ -1401,13 +1386,11 @@ namespace KASIR.Komponen
                 }
                 else
                 {
-                    // Handle the error (perhaps log it or show a message)
                     LoggerUtil.LogError(null, "The 'DATA' column does not exist in the DataGridView.");
                 }
             }
             else
             {
-                // Handle the error (no rows available in the DataGridView)
                 LoggerUtil.LogError(null, "No rows found in the DataGridView to apply bold style.");
             }
         }

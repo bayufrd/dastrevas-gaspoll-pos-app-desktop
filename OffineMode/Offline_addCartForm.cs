@@ -368,19 +368,54 @@ namespace KASIR.OfflineMode
                     File.Exists(servingTypeFilePath) ? File.ReadAllText(servingTypeFilePath) : "{}";
                 JObject? servingTypeData = JsonConvert.DeserializeObject<JObject>(servingTypeJson);
 
+                if (servingTypeData == null || servingTypeData["data"] == null)
+                {
+                    LoggerUtil.LogError(null, "Serving type data not found in file.");
+                    return; // Return or handle as appropriate
+                }
+
                 // Find the menu and serving type information from the loaded data
                 JToken? menuData = servingTypeData["data"];
                 JArray? menuDetails = menuData["menu_details"] as JArray;
                 JArray? servingTypes = menuData["serving_types"] as JArray;
+                // Get menu detail name based on selected variant
 
+                if (menuDetails == null)
+                {
+                    LoggerUtil.LogError(null, "Menu details not found.");
+                    return; // Handle as appropriate
+                }
                 // Get menu detail name based on selected variant
                 JToken? selectedMenuDetail =
                     menuDetails.FirstOrDefault(detail => (int)detail["menu_detail_id"] == selectedVarian);
+
+                if (selectedMenuDetail == null && selectedVarian != 0)
+                {
+                    // Only log the error if selectedVarian is not 0
+                    LoggerUtil.LogError(null, "Selected menu detail not found for variant: {selectedVarian}", selectedVarian);
+                    return; // Optionally handle the case further
+                }
+
                 string menuDetailName = selectedMenuDetail?["varian"]?.ToString();
+
+                // Get the serving type name based on the serving_type_id
+                if (servingTypes == null)
+                {
+                    LoggerUtil.LogError(null, "Serving types not found.");
+                    return; // Handle as appropriate
+                }
 
                 // Get the serving type name based on the serving_type_id
                 JToken? selectedServingType = servingTypes.FirstOrDefault(type => (int)type["id"] == serving_type);
                 string servingTypeName = selectedServingType?["name"]?.ToString();
+
+                // Convert pricefix to integer
+                if (!int.TryParse(pricefix, out int priceItem))
+                {
+                    LoggerUtil.LogError(null, "Invalid pricefix value: {pricefix}", pricefix);
+                    return; // Handle error
+                }
+
                 int subtotal_item = int.Parse(pricefix) * quantity;
                 int price_item = int.Parse(pricefix);
                 int total_item_withDiscount = subtotal_item;
@@ -640,7 +675,6 @@ namespace KASIR.OfflineMode
         private void RadioButton_Click(object sender, EventArgs e)
         {
             Button clickedButton = (Button)sender;
-            ////LoggerUtil.LogPrivateMethod(nameof(RadioButton_Click));
 
             foreach (Button button in radioButtonsList)
             {
@@ -653,14 +687,6 @@ namespace KASIR.OfflineMode
             btnServingType = clickedButton.Tag.ToString();
         }
 
-        private void label1_Click_2(object sender, EventArgs e)
-        {
-        }
-
-        private void flowLayoutPanel1_Paint(object sender, PaintEventArgs e)
-        {
-        }
-
         private void btnKeluar_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.OK;
@@ -669,7 +695,6 @@ namespace KASIR.OfflineMode
 
         private void btnTambah_Click(object sender, EventArgs e)
         {
-            ////LoggerUtil.LogPrivateMethod(nameof(btnTambah_Click));
 
             if (int.TryParse(txtKuantitas.Text, out int numericValue))
             {
@@ -680,7 +705,6 @@ namespace KASIR.OfflineMode
 
         private void btnKurang_Click(object sender, EventArgs e)
         {
-            ////LoggerUtil.LogPrivateMethod(nameof(btnKurang_Click));
 
             if (int.TryParse(txtKuantitas.Text, out int numericValue))
             {
@@ -691,28 +715,6 @@ namespace KASIR.OfflineMode
                 }
             }
         }
-
-
-        private void panel1_Paint(object sender, PaintEventArgs e)
-        {
-        }
-
-        private void btnShopeeFood_Click(object sender, EventArgs e)
-        {
-        }
-
-        private void btnTakeaway_Click(object sender, EventArgs e)
-        {
-        }
-
-        private void addCartForm_Click(object sender, EventArgs e)
-        {
-        }
-
-        private void panel2_Paint(object sender, PaintEventArgs e)
-        {
-        }
-
         private async void LoadDataDiscount()
         {
             if (!Directory.Exists(folder)) { Directory.CreateDirectory(folder); }
@@ -794,26 +796,6 @@ namespace KASIR.OfflineMode
 
                 e.DrawFocusRectangle();
             }
-        }
-
-        private void cmbDiskon_SelectedIndexChanged(object sender, EventArgs e)
-        {
-        }
-
-        private void panel3_Paint(object sender, PaintEventArgs e)
-        {
-        }
-
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-        }
-
-        private void panel12_Paint(object sender, PaintEventArgs e)
-        {
-        }
-
-        private void iconButton1_Click(object sender, EventArgs e)
-        {
         }
     }
 }

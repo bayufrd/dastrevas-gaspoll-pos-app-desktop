@@ -442,17 +442,18 @@ namespace KASIR.Komponen
             iconOfflineMode.BackgroundImageLayout = ImageLayout.None;
             iconOfflineMode.FlatAppearance.BorderSize = 0;
             iconOfflineMode.FlatStyle = FlatStyle.Flat;
+            iconOfflineMode.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
             iconOfflineMode.ForeColor = Color.FromArgb(31, 30, 68);
             iconOfflineMode.IconChar = IconChar.WifiStrong;
             iconOfflineMode.IconColor = Color.FromArgb(31, 30, 68);
             iconOfflineMode.IconFont = IconFont.Auto;
-            iconOfflineMode.IconSize = 30;
-            iconOfflineMode.Location = new Point(41, 571);
+            iconOfflineMode.IconSize = 20;
+            iconOfflineMode.Location = new Point(31, 578);
             iconOfflineMode.Name = "iconOfflineMode";
-            iconOfflineMode.Size = new Size(68, 55);
+            iconOfflineMode.Size = new Size(99, 55);
             iconOfflineMode.TabIndex = 64;
-            iconOfflineMode.Text = "OFF";
-            iconOfflineMode.TextImageRelation = TextImageRelation.TextBeforeImage;
+            iconOfflineMode.Text = "OFFLINE MODE";
+            iconOfflineMode.TextImageRelation = TextImageRelation.ImageAboveText;
             iconOfflineMode.UseVisualStyleBackColor = false;
             // 
             // iconButton1
@@ -948,6 +949,7 @@ namespace KASIR.Komponen
             iconDual.AutoSize = true;
             iconDual.BackColor = Color.Transparent;
             iconDual.BackgroundImageLayout = ImageLayout.None;
+            iconDual.Cursor = Cursors.Hand;
             iconDual.FlatAppearance.BorderSize = 0;
             iconDual.FlatStyle = FlatStyle.Flat;
             iconDual.ForeColor = Color.Transparent;

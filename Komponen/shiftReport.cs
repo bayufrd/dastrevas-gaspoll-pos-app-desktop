@@ -251,6 +251,29 @@ namespace KASIR.Komponen
                 return;
             }
         }
+        private void ClearCacheData(string destinationPath)
+        {
+            try
+            {
+                if (File.Exists(destinationPath))
+                {
+                    string currentContent = File.ReadAllText(destinationPath);
+
+                    if (string.IsNullOrWhiteSpace(currentContent) || currentContent != "{\"data\":[]}")
+                    {
+                        File.WriteAllText(destinationPath, "{\"data\":[]}");
+                    }
+                }
+                else
+                {
+                    File.WriteAllText(destinationPath, "{\"data\":[]}");
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred while clearing cache data: {ErrorMessage}", ex.Message);
+            }
+        }
         public async Task SyncDataTransactions(bool isBackground = false)
         {
             try
@@ -289,7 +312,7 @@ namespace KASIR.Komponen
                     UpdateProgress(15, "Memverifikasi file transaksi...");
 
                     if (File.Exists(destinationPath))
-                        try { File.Delete(destinationPath); }
+                        try { ClearCacheData(destinationPath); }
                         catch (Exception ex) { LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message); }
 
                     IApiService apiService = new ApiService();
@@ -345,7 +368,7 @@ namespace KASIR.Komponen
                     if (transactions == null || !transactions.Any())
                     {
                         // Delete file if data is empty but continue process
-                        try { File.Delete(destinationPath); }
+                        try { ClearCacheData(destinationPath); }
                         catch (Exception ex) { LoggerUtil.LogError(ex, "Failed to delete empty file: {ErrorMessage}", ex.Message); }
 
                         File.WriteAllText(destinationPath, "{\"data\":[]}");
@@ -422,7 +445,6 @@ namespace KASIR.Komponen
         {
             try
             {
-                // Step 1: Read the expenditure data from the file
                 var expenditures = ReadExpendituresFromFile(expenditurePathFile);
 
                 if (expenditures == null || !expenditures.Any())
@@ -430,7 +452,6 @@ namespace KASIR.Komponen
                     return;
                 }
 
-                // Step 2: Loop through each expenditure and check is_sync == 0
                 foreach (var expenditure in expenditures)
                 {
                     if (expenditure.is_sync == 0)  // Only send if is_sync is 0
@@ -453,7 +474,6 @@ namespace KASIR.Komponen
                     }
                 }
 
-                // After sending all the data, update the file with the updated is_sync values
                 SaveExpendituresToFile(expenditures, expenditurePathFile);
             }
             catch (Exception ex)
@@ -487,7 +507,6 @@ namespace KASIR.Komponen
             }
         }
 
-        // Method to read expenditures data from file
         private List<ExpenditureStrukShift> ReadExpendituresFromFile(string filePath)
         {
             try
@@ -503,7 +522,6 @@ namespace KASIR.Komponen
             }
         }
 
-        // Method to save updated expenditures back to the file
         private void SaveExpendituresToFile(List<ExpenditureStrukShift> expenditures, string expenditurePathFile)
         {
             try
@@ -687,7 +705,6 @@ namespace KASIR.Komponen
 
             try
             {
-                // Find problematic transaction
                 int openBrackets = 0;
                 int closeBrackets = 0;
                 int transactionStart = 0;
@@ -1039,7 +1056,7 @@ namespace KASIR.Komponen
                     // Hapus file jika data kosong
                     try
                     {
-                        File.Delete(saveBillDataPathClone);
+                        ClearCacheData(saveBillDataPathClone);
                     }
                     catch (Exception ex)
                     {
@@ -1068,7 +1085,7 @@ namespace KASIR.Komponen
                     // Hapus file SaveBill setelah sinkronisasi berhasil
                     try
                     {
-                        File.Delete(saveBillDataPathClone);
+                        ClearCacheData(saveBillDataPathClone);
                     }
                     catch (Exception ex)
                     {
@@ -1799,10 +1816,6 @@ namespace KASIR.Komponen
             path.CloseFigure();
             btnRetry.Region = new Region(path);
 
-            // Menambahkan ikon FontAwesome
-            // Pastikan Anda sudah menambahkan FontAwesome ke proyek Anda
-            // Misalnya, menggunakan FontAwesome.Sharp
-            // Anda bisa menggunakan Label untuk menampilkan ikon
             Label lblIcon = new Label();
             lblIcon.Text = "\uf021"; // Ganti dengan kode ikon FontAwesome yang sesuai
             lblIcon.Font = new Font("FontAwesome", 14); // Pastikan font FontAwesome sudah ditambahkan

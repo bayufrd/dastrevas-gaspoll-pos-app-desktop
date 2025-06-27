@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Net.NetworkInformation;
+using System.Text.RegularExpressions;
 using KASIR.komponen;
 using KASIR.Model;
 using KASIR.Network;
@@ -60,7 +61,7 @@ namespace KASIR.Komponen
                 {
                     member_id = 0,
                     member_name = "add new member",
-                    member_phone_number = "08",
+                    member_phone_number = "08121",
                     member_email = "addmember@gmail.com",
                     member_points = 0
                 };
@@ -78,8 +79,6 @@ namespace KASIR.Komponen
                     else
                     {
                         MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
-                        loadDataMember();
-
                         background.Dispose();
                     }
                 }
@@ -127,7 +126,8 @@ namespace KASIR.Komponen
             {
                 // Only clear DataGridView DataSource when necessary
                 string cacheFilePath = $"DT-Cache\\DataMember_Outlet{baseOutlet}.data";
-                
+                // Clear previous data
+                dataGridView1.DataSource = null;
                 // Check if network is available
                 if (!NetworkInterface.GetIsNetworkAvailable())
                 {
@@ -159,7 +159,6 @@ namespace KASIR.Komponen
 
                     if (apiResponse != null && cachedMembers != null)
                     {
-                        // Compare cached data with API data
                         bool isEqual = cachedMembers.Count() == apiResponse.data.Count() &&
                                        cachedMembers.All(m => apiResponse.data.Any(a => a.member_id == m.member_id &&
                                                                                         a.member_name == m.member_name &&
@@ -168,7 +167,6 @@ namespace KASIR.Komponen
 
                         if (isEqual)
                         {
-                            // Use cached data if equal
                             UpdateDataGridView(cachedMembers);
                             return; // Exit as data is already up-to-date
                         }
@@ -187,10 +185,8 @@ namespace KASIR.Komponen
                     List<Member> finalMemberList = new List<Member>();
                     PopulateMemberList(apiMemberList, finalMemberList, cacheFilePath);
 
-                    // Save response to cache
                     File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(new GetMemberModel { data = finalMemberList }));
 
-                    // **Update DataGridView only once instead of clearing it multiple times**
                     UpdateDataGridView(finalMemberList);
                 }
             }
@@ -204,7 +200,6 @@ namespace KASIR.Komponen
 
         public void PopulateMemberList(IEnumerable<Member> apiMemberList, List<Member> finalMemberList, string cacheFilePath)
         {
-            // Load existing cached members if any
             if (File.Exists(cacheFilePath))
             {
                 string cachedJson = File.ReadAllText(cacheFilePath);
@@ -212,64 +207,65 @@ namespace KASIR.Komponen
 
                 var cachedDict = cachedMembers.ToDictionary(m => m.member_id);
 
+                HashSet<int> addedMemberIds = new HashSet<int>(); // To track added members
+
                 foreach (var apiMember in apiMemberList)
                 {
-                    if (cachedDict.TryGetValue(apiMember.member_id, out var cachedMember))
+                    // Check if this member id has already been added
+                    if (!addedMemberIds.Contains(apiMember.member_id))
                     {
-                        apiMember.member_points = cachedMember.member_points; // Keep the points from the cache
-                    }
-                    else
-                    {
-                        apiMember.member_points = 0; // New member
-                    }
+                        if (cachedDict.TryGetValue(apiMember.member_id, out var cachedMember))
+                        {
+                            apiMember.member_points = cachedMember.member_points; // Keep the points from the cache
+                        }
+                        else
+                        {
+                            apiMember.member_points = 0; // New member
+                        }
 
-                    finalMemberList.Add(apiMember);
+                        finalMemberList.Add(apiMember);
+                        addedMemberIds.Add(apiMember.member_id); // Mark this member as added
+                    }
                 }
             }
             else
             {
-                // If cache doesn't exist, initialize points to zero for all
                 foreach (var apiMember in apiMemberList)
                 {
-                    apiMember.member_points = 0;
-                    finalMemberList.Add(apiMember);
+                    if (!finalMemberList.Any(m => m.member_id == apiMember.member_id)) // Check for existing member
+                    {
+                        apiMember.member_points = 0;
+                        finalMemberList.Add(apiMember);
+                    }
                 }
             }
         }
 
         private void UpdateDataGridView(IEnumerable<Member> memberList)
         {
-            // Clear existing button columns to prevent duplication
-            RemoveButtonColumns();
+            dataGridView1.DataSource = null;
+            dataGridView1.Columns.Clear();  // Clear all existing columns
 
-            // Create a DataTable to hold the member data
             DataTable dataTable = new DataTable();
             dataTable.Columns.Add("ID", typeof(int));
             dataTable.Columns.Add("Nama", typeof(string));
             dataTable.Columns.Add("No. HP", typeof(string));
             dataTable.Columns.Add("Email", typeof(string));
-            dataTable.Columns.Add("Points", typeof(int));
+            dataTable.Columns.Add("Points", typeof(string));
 
-            // Populate the DataTable with member data
             foreach (Member member in memberList)
             {
-                dataTable.Rows.Add(member.member_id, member.member_name, member.member_phone_number, member.member_email, member.member_points);
+                dataTable.Rows.Add(member.member_id, member.member_name, member.member_phone_number, member.member_email, member.member_points.ToString("#,0"));
             }
 
-            // Reset current binding to avoid duplicates
-            dataGridView1.DataSource = null;
-
-            // Bind the DataTable to the DataGridView
             dataGridView1.DataSource = dataTable;
 
-            // Add button columns
             AddButtonColumns();
 
-            // Hide the ID column
             dataGridView1.Columns["ID"].Visible = false;
 
             lblCountingItems.Text = $"{memberList.Count()} Member ditemukan.";
-            listDataTable = dataTable.Copy();
+            listDataTable = dataTable.Copy();  // Store the current data for further operations
         }
         private void RemoveButtonColumns()
         {
@@ -285,7 +281,6 @@ namespace KASIR.Komponen
 
         private void AddButtonColumns()
         {
-            // Add "Pilih" button column if it doesn't exist
             if (!dataGridView1.Columns.Contains("Pilih"))
             {
                 DataGridViewButtonColumn buttonColumn = new()
@@ -298,7 +293,6 @@ namespace KASIR.Komponen
                 dataGridView1.Columns.Add(buttonColumn);
             }
 
-            // Add "Edit" button column if it doesn't exist
             if (!dataGridView1.Columns.Contains("Edit"))
             {
                 DataGridViewButtonColumn buttonColumn1 = new()
@@ -310,6 +304,10 @@ namespace KASIR.Komponen
                 };
                 dataGridView1.Columns.Add(buttonColumn1);
             }
+        }
+        private string CleanInput(string input)
+        {
+            return Regex.Replace(input, "[^0-9]", "");
         }
         private async void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
@@ -324,7 +322,7 @@ namespace KASIR.Komponen
                         member_name = dataGridView1.Rows[e.RowIndex].Cells["Nama"].Value.ToString(),
                         member_phone_number = dataGridView1.Rows[e.RowIndex].Cells["No. HP"].Value.ToString(),
                         member_email = dataGridView1.Rows[e.RowIndex].Cells["Email"].Value.ToString(),
-                        member_points = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["Points"].Value)
+                        member_points = int.Parse(CleanInput(dataGridView1.Rows[e.RowIndex].Cells["Points"].Value.ToString()))
                     };
 
                     DialogResult = DialogResult.OK;
@@ -350,7 +348,7 @@ namespace KASIR.Komponen
                     member_name = dataGridView1.Rows[e.RowIndex].Cells["Nama"].Value.ToString(),
                     member_phone_number = dataGridView1.Rows[e.RowIndex].Cells["No. HP"].Value.ToString(),
                     member_email = dataGridView1.Rows[e.RowIndex].Cells["Email"].Value.ToString(),
-                    member_points = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["Points"].Value)
+                    member_points = int.Parse(CleanInput(dataGridView1.Rows[e.RowIndex].Cells["Points"].Value.ToString()))
                 };
                 try
                 {
@@ -382,8 +380,6 @@ namespace KASIR.Komponen
                         }
                         else
                         {
-                            loadDataMember();
-
                             background.Dispose();
                         }
                     }

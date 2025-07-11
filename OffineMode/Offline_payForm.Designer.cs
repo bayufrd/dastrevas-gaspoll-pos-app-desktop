@@ -72,6 +72,7 @@ namespace KASIR.OfflineMode
             panel7 = new Panel();
             btnTunai = new Button();
             label2 = new Label();
+            lblBonusMember = new Label();
             panel1.SuspendLayout();
             flowLayoutPanel1.SuspendLayout();
             panel9.SuspendLayout();
@@ -339,6 +340,7 @@ namespace KASIR.OfflineMode
             // 
             // panel4
             // 
+            panel4.Controls.Add(lblBonusMember);
             panel4.Controls.Add(lblUsePoint);
             panel4.Controls.Add(ButtonSwitchUsePoint);
             panel4.Controls.Add(lblPoint);
@@ -586,6 +588,19 @@ namespace KASIR.OfflineMode
             label2.TabIndex = 1;
             label2.Text = "TIPE PEMBAYARAN";
             // 
+            // lblBonusMember
+            // 
+            lblBonusMember.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            lblBonusMember.AutoSize = true;
+            lblBonusMember.Font = new Font("Segoe UI", 9F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point);
+            lblBonusMember.ForeColor = Color.Black;
+            lblBonusMember.Location = new Point(421, 8);
+            lblBonusMember.Name = "lblBonusMember";
+            lblBonusMember.Size = new Size(108, 15);
+            lblBonusMember.TabIndex = 29;
+            lblBonusMember.Text = "Bonus Member : %";
+            lblBonusMember.Visible = false;
+            // 
             // Offline_payForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -639,7 +654,6 @@ namespace KASIR.OfflineMode
         private Label label4;
         private Panel panel3;
         private Panel panel5;
-        private TextBox txtKuantitas;
         private Label label1;
         private Button btnTunai;
         private Label label2;
@@ -669,5 +683,6 @@ namespace KASIR.OfflineMode
         private Label lblKembalian;
         private Label lblUsePoint;
         private Model.SButton ButtonSwitchUsePoint;
+        private Label lblBonusMember;
     }
 }

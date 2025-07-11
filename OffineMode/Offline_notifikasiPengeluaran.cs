@@ -105,98 +105,112 @@ namespace KASIR.Komponen
         // Tambahkan method CleanFormAndAddRetryButton dari contoh yang diberikan
         private void CleanFormAndAddRetryButton(string ex)
         {
-            // Bersihkan form
-            if (dataGridView1 != null && dataGridView1.DataSource != null)
-            {
-                dataGridView1.DataSource = null;
-                dataGridView1.Rows.Clear();
-            }
-
-            // Tambahkan PictureBox untuk gambar
-            PictureBox pictureBox = new();
-            pictureBox.Name = "ErrorImg";
-            pictureBox.Size = new Size(100, 100); // Sesuaikan ukuran gambar
-            pictureBox.Location = new Point((ClientSize.Width - pictureBox.Width) / 2,
-                ((ClientSize.Height - pictureBox.Height) / 2) - 110); // Posisi di atas tombol
-            pictureBox.SizeMode = PictureBoxSizeMode.StretchImage; // Atur ukuran gambar agar sesuai dengan PictureBox
             try
             {
-                using (FileStream fs = new("icon\\OutletLogo.bmp", FileMode.Open, FileAccess.Read))
+                // Bersihkan form
+                if (dataGridView1 != null && dataGridView1.DataSource != null)
                 {
-                    pictureBox.Image = Image.FromStream(fs);
+                    dataGridView1.DataSource = null;
+                    dataGridView1.Rows.Clear();
                 }
+
+                // Tambahkan PictureBox untuk gambar
+                PictureBox pictureBox = new();
+                pictureBox.Name = "ErrorImg";
+                pictureBox.Size = new Size(100, 100); // Sesuaikan ukuran gambar
+                pictureBox.Location = new Point((ClientSize.Width - pictureBox.Width) / 2,
+                    ((ClientSize.Height - pictureBox.Height) / 2) - 110); // Posisi di atas tombol
+                pictureBox.SizeMode = PictureBoxSizeMode.StretchImage; // Atur ukuran gambar agar sesuai dengan PictureBox
+                try
+                {
+                    using (FileStream fs = new("icon\\OutletLogo.bmp", FileMode.Open, FileAccess.Read))
+                    {
+                        pictureBox.Image = Image.FromStream(fs);
+                    }
+                }
+                catch
+                {
+                    // Jika gagal memuat gambar, jangan tampilkan PictureBox
+                    pictureBox.Visible = false;
+                }
+
+                // Tambahkan tombol retry
+                Button btnRetry = new();
+                btnRetry.Name = "btnRetry";
+                btnRetry.Text = "Retry Load Data\nOut of Service";
+                btnRetry.Size = new Size(190, 60);
+                btnRetry.Location = new Point((ClientSize.Width - btnRetry.Width) / 2,
+                    (ClientSize.Height - btnRetry.Height) / 2);
+                btnRetry.BackColor = Color.FromArgb(30, 31, 68);
+                btnRetry.FlatStyle = FlatStyle.Flat;
+                btnRetry.Font = new Font("Arial", 10, FontStyle.Bold);
+                btnRetry.ForeColor = Color.White; // Mengatur warna teks tombol menjadi putih
+                btnRetry.Click += BtnRetry_Click;
+
+                // Membuat sudut membulat
+                GraphicsPath path = new();
+                path.AddArc(0, 0, 20, 20, 180, 90);
+                path.AddArc(btnRetry.Width - 20, 0, 20, 20, 270, 90);
+                path.AddArc(btnRetry.Width - 20, btnRetry.Height - 20, 20, 20, 0, 90);
+                path.AddArc(0, btnRetry.Height - 20, 20, 20, 90, 90);
+                path.CloseFigure();
+                btnRetry.Region = new Region(path);
+
+                // Menambahkan label di bawah tombol
+                Label lblInfo = new();
+                lblInfo.Name = "ErrorMsg";
+                lblInfo.Text = ex; // Teks yang ingin ditampilkan
+                lblInfo.Font = new Font("Arial", 9, FontStyle.Regular);
+                lblInfo.ForeColor = Color.Black; // Warna teks label
+                lblInfo.AutoSize = true; // Agar label menyesuaikan ukuran teks
+
+                // Mengatur posisi label agar berada di tengah
+                lblInfo.Location =
+                    new Point((ClientSize.Width - lblInfo.Width) / 4, btnRetry.Bottom + 10); // Posisi di bawah tombol
+
+                // Menambahkan kontrol ke form
+                Controls.Add(pictureBox); // Menambahkan PictureBox ke form
+                Controls.Add(btnRetry);
+                Controls.Add(lblInfo); // Menambahkan label ke form
+
+                btnRetry.BringToFront();
             }
-            catch
+            catch (Exception ez)
             {
-                // Jika gagal memuat gambar, jangan tampilkan PictureBox
-                pictureBox.Visible = false;
+                LoggerUtil.LogError(ez, "Error: {ErrorMessage}", ez.Message);
             }
-
-            // Tambahkan tombol retry
-            Button btnRetry = new();
-            btnRetry.Name = "btnRetry";
-            btnRetry.Text = "Retry Load Data\nOut of Service";
-            btnRetry.Size = new Size(190, 60);
-            btnRetry.Location = new Point((ClientSize.Width - btnRetry.Width) / 2,
-                (ClientSize.Height - btnRetry.Height) / 2);
-            btnRetry.BackColor = Color.FromArgb(30, 31, 68);
-            btnRetry.FlatStyle = FlatStyle.Flat;
-            btnRetry.Font = new Font("Arial", 10, FontStyle.Bold);
-            btnRetry.ForeColor = Color.White; // Mengatur warna teks tombol menjadi putih
-            btnRetry.Click += BtnRetry_Click;
-
-            // Membuat sudut membulat
-            GraphicsPath path = new();
-            path.AddArc(0, 0, 20, 20, 180, 90);
-            path.AddArc(btnRetry.Width - 20, 0, 20, 20, 270, 90);
-            path.AddArc(btnRetry.Width - 20, btnRetry.Height - 20, 20, 20, 0, 90);
-            path.AddArc(0, btnRetry.Height - 20, 20, 20, 90, 90);
-            path.CloseFigure();
-            btnRetry.Region = new Region(path);
-
-            // Menambahkan label di bawah tombol
-            Label lblInfo = new();
-            lblInfo.Name = "ErrorMsg";
-            lblInfo.Text = ex; // Teks yang ingin ditampilkan
-            lblInfo.Font = new Font("Arial", 9, FontStyle.Regular);
-            lblInfo.ForeColor = Color.Black; // Warna teks label
-            lblInfo.AutoSize = true; // Agar label menyesuaikan ukuran teks
-
-            // Mengatur posisi label agar berada di tengah
-            lblInfo.Location =
-                new Point((ClientSize.Width - lblInfo.Width) / 4, btnRetry.Bottom + 10); // Posisi di bawah tombol
-
-            // Menambahkan kontrol ke form
-            Controls.Add(pictureBox); // Menambahkan PictureBox ke form
-            Controls.Add(btnRetry);
-            Controls.Add(lblInfo); // Menambahkan label ke form
-
-            btnRetry.BringToFront();
         }
 
         private void BtnRetry_Click(object sender, EventArgs e)
         {
-            // Hapus tombol retry
-            if (sender is Button btnRetry)
+            try
             {
-                Controls.Remove(btnRetry);
-            }
+                // Hapus tombol retry
+                if (sender is Button btnRetry)
+                {
+                    Controls.Remove(btnRetry);
+                }
 
-            // Hapus label informasi jika ada
-            Label? lblInfo = Controls.OfType<Label>().FirstOrDefault(lbl => lbl.Name == "ErrorMsg");
-            if (lblInfo != null)
+                // Hapus label informasi jika ada
+                Label? lblInfo = Controls.OfType<Label>().FirstOrDefault(lbl => lbl.Name == "ErrorMsg");
+                if (lblInfo != null)
+                {
+                    Controls.Remove(lblInfo);
+                }
+
+                PictureBox? ErrImg = Controls.OfType<PictureBox>().FirstOrDefault(lbl => lbl.Name == "ErrorImg");
+                if (ErrImg != null)
+                {
+                    Controls.Remove(ErrImg);
+                }
+
+                // Muat data kembali
+                LoadData();
+            }
+            catch (Exception ez)
             {
-                Controls.Remove(lblInfo);
+                LoggerUtil.LogError(ez, "Error: {ErrorMessage}", ez.Message);
             }
-
-            PictureBox? ErrImg = Controls.OfType<PictureBox>().FirstOrDefault(lbl => lbl.Name == "ErrorImg");
-            if (ErrImg != null)
-            {
-                Controls.Remove(ErrImg);
-            }
-
-            // Muat data kembali
-            LoadData();
         }
 
         private void btnKeluar_Click(object sender, EventArgs e)
@@ -209,19 +223,6 @@ namespace KASIR.Komponen
             // KeluarButtonPrintReportShiftClicked = true;
             Close();
         }
-
-        private void AddItem(string name, string amount)
-        {
-        }
-
-        private void panel4_Paint(object sender, PaintEventArgs e)
-        {
-        }
-
-        private void panel13_Paint(object sender, PaintEventArgs e)
-        {
-        }
-
         private async void btnSaveExpenditure(object sender, EventArgs e)
         {
             string fulus = Regex.Replace(txtNominal.Text, "[^0-9]", "");
@@ -283,8 +284,7 @@ namespace KASIR.Komponen
                 File.WriteAllText(expenditureDataPath,
                     JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
 
-                DialogResult result = MessageBox.Show("Input notifikasi pengeluaran berhasil", "Gaspol",
-                    MessageBoxButtons.OK);
+                DialogResult result = DialogResult.OK;
                 if (result == DialogResult.OK)
                 {
                     Close(); // Close the payForm
@@ -300,22 +300,6 @@ namespace KASIR.Komponen
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
-        }
-
-        private void txtJumlahCicil_TextChanged(object sender, EventArgs e)
-        {
-        }
-
-        private void dateTimePicker1_ValueChanged(object sender, EventArgs e)
-        {
-        }
-
-        private void txtSelesaiShift_TextChanged(object sender, EventArgs e)
-        {
-        }
-
-        private void txtNotes_TextChanged(object sender, EventArgs e)
-        {
         }
 
         private void txtNominal_TextChanged(object sender, EventArgs e)

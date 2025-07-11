@@ -11,7 +11,6 @@ namespace KASIR.OfflineMode
     {
         private readonly string baseOutlet;
 
-        private int urutanRiwayat;
         private readonly int totalTransactions;
         private readonly string transactionId;
 
@@ -72,7 +71,7 @@ namespace KASIR.OfflineMode
                         Location = Location,
                         ShowInTaskbar = false
                     };
-                    using (Offline_refund Offline_refund = new(transactionId, urutanRiwayat))
+                    using (Offline_refund Offline_refund = new(transactionId))
                     {
                         Offline_refund.Owner = background;
 

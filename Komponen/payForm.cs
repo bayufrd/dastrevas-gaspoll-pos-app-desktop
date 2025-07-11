@@ -26,7 +26,6 @@ namespace KASIR.komponen
         public bool KeluarButtonClicked { get; private set; }
 
         public bool ReloadDataInBaseForm { get; private set; }
-        private DataTable originalDataTable;
         int customePrice = 0;
         int SelectedId, totalTransactions;
         public payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat, string name, masterPos masterPosForm)

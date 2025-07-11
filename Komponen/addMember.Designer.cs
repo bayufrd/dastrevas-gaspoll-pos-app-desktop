@@ -324,10 +324,8 @@ namespace KASIR.komponen
         private Panel panel11;
         private TextBox txtNama;
         private Label label4;
-        private Button btnKurang;
         private Button btnTunai;
         private Label label2;
-        private TextBox txtNotes;
         private FontAwesome.Sharp.IconButton btnKeluar;
         private FontAwesome.Sharp.IconButton btnSimpan;
         private Panel panel3;

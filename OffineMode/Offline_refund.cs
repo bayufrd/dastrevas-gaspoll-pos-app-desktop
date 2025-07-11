@@ -21,13 +21,12 @@ namespace KASIR.OfflineMode
         private readonly int Nomortransaks;
         private int isrefundall;
 
-        public Offline_refund(string transaksiId, int urutanRiwayat)
+        public Offline_refund(string transaksiId)
         {
             baseOutlet = Settings.Default.BaseOutlet;
             InitializeComponent();
             btnRefund.Visible = true;
             cartId = transaksiId;
-            Nomortransaks = urutanRiwayat;
             cmbPayform.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbPayform.DrawMode = DrawMode.OwnerDrawVariable;
             cmbPayform.DrawItem += CmbPayform_DrawItem;

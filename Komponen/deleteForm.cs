@@ -17,7 +17,6 @@ namespace KASIR.Komponen
         public bool ReloadDataInBaseForm { get; private set; }
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
-        GetTransactionDetail dataTransaction;
         string cart_id;
         private readonly ILogger _log = LoggerService.Instance._log;
         public deleteForm(string cartId)

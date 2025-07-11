@@ -19,7 +19,7 @@ namespace KASIR.Komponen
 
         private Panel loadingPanel;
         private ProgressBar progressBar;
-        private int ending_cash = 0;
+        private int ending_cash = 0,totalTransaksiOulet=0, totalDiscountAmount=0;
 
         public Offline_shiftReport()
         {
@@ -216,17 +216,27 @@ namespace KASIR.Komponen
                     btnCetakStruk.Enabled = false;
                     btnCetakStruk.Text = "Waiting...";
 
+                    int cashDiff = Convert.ToInt32(fulus) - ending_cash;
                     string? casherName = string.IsNullOrEmpty(txtNamaKasir.Text) ? "" : txtNamaKasir.Text;
                     string actualCash = string.IsNullOrEmpty(fulus) ? "0" : fulus;
 
                     var json = new
                     {
                         outlet_id = baseOutlet,
-                        casher_name = casherName,
                         actual_ending_cash = actualCash,
-                        id = generateIDshift,
-                        shift_number = shiftNumber.ToString(),
+                        cash_difference = cashDiff,
+                        start_date = startAt,
+                        end_date = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         created_at = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                        updated_at = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                        expected_ending_cash = ending_cash,
+                        total_amount = totalTransaksiOulet,
+                        total_discount = totalDiscountAmount,
+                        shift_number = shiftNumber.ToString(),
+                        casher_name = casherName,
+
+                        // cache
+                        id = generateIDshift,
                         start_at = startAt,
                         end_at = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         is_sync = 0
@@ -490,6 +500,8 @@ namespace KASIR.Komponen
                 grandTotal -= totalRefundAmount;
                 grandTotal -= totalMemberUsePoints;
                 int totalTransaction = grandTotal - totalExpenditure;
+                totalTransaksiOulet = totalTransaction;
+                totalDiscountAmount = totalDiscounts;
 
                 int cash_difference = int.Parse(actual_cash) - int.Parse(ending_cash.ToString());
 
@@ -502,18 +514,18 @@ namespace KASIR.Komponen
                         outlet_name = outletName,
                         outlet_address = outletAddress,
                         outlet_phone_number = outletPhoneNumber,
-                        casher_name = txtNamaKasir.Text, // This should be dynamically fetched if available
+                        casher_name = txtNamaKasir.Text, 
                         shift_number = shiftNumber,
                         start_date = startDate,
                         end_date = endDate,
                         expenditures,
                         expenditures_total = totalExpenditure,
-                        ending_cash_expected = ending_cash, // Example value
-                        ending_cash_actual = actual_cash, // Example value
-                        cash_difference = cash_difference.ToString(), // Example value
-                        discount_amount_transactions = discountsCarts, // Example value
-                        discount_amount_per_items = discountsDetails, // Example value
-                        discount_total_amount = totalDiscounts, // Example value
+                        ending_cash_expected = ending_cash,
+                        ending_cash_actual = actual_cash, 
+                        cash_difference = cash_difference.ToString(), 
+                        discount_amount_transactions = discountsCarts,
+                        discount_amount_per_items = discountsDetails, 
+                        discount_total_amount = totalDiscounts, 
                         cart_details_success = successfulCartDetails,
                         totalSuccessQty = successfulCartDetails.Sum(cd => cd.qty),
                         totalCartSuccessAmount = totalSuccessfulAmount,

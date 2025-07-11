@@ -120,15 +120,13 @@ namespace KASIR.Komponen
             }
         }
 
-        private async void loadDataMember()
+        private async Task loadDataMember()
         {
             try
             {
-                // Only clear DataGridView DataSource when necessary
                 string cacheFilePath = $"DT-Cache\\DataMember_Outlet{baseOutlet}.data";
-                // Clear previous data
                 dataGridView1.DataSource = null;
-                // Check if network is available
+
                 if (!NetworkInterface.GetIsNetworkAvailable())
                 {
                     if (File.Exists(cacheFilePath))
@@ -136,8 +134,8 @@ namespace KASIR.Komponen
                         string cachedJson = File.ReadAllText(cacheFilePath);
                         var cachedMembers = JsonConvert.DeserializeObject<GetMemberModel>(cachedJson)?.data;
 
-                                UpdateDataGridView(cachedMembers);
-                                return; // Exit as data is already up-to-date
+                        UpdateDataGridView(cachedMembers);
+                        return;
                     }
                     else
                     {
@@ -145,50 +143,25 @@ namespace KASIR.Komponen
                     }
                     return;
                 }
-                // Check if the cache file exists
-                if (File.Exists(cacheFilePath))
+
+                // Get data from API
+                IApiService apiService = new ApiService();
+                string response = await apiService.GetMember("/membership");
+                var apiResponse = JsonConvert.DeserializeObject<GetMemberModel>(response);
+
+                if (apiResponse?.data == null)
                 {
-                    // Load data from cache
-                    string cachedJson = File.ReadAllText(cacheFilePath);
-                    var cachedMembers = JsonConvert.DeserializeObject<GetMemberModel>(cachedJson)?.data;
-
-                    // Get data from API
-                    IApiService apiService = new ApiService();
-                    string response = await apiService.GetMember("/membership");
-                    var apiResponse = JsonConvert.DeserializeObject<GetMemberModel>(response);
-
-                    if (apiResponse != null && cachedMembers != null)
-                    {
-                        bool isEqual = cachedMembers.Count() == apiResponse.data.Count() &&
-                                       cachedMembers.All(m => apiResponse.data.Any(a => a.member_id == m.member_id &&
-                                                                                        a.member_name == m.member_name &&
-                                                                                        a.member_email == m.member_email &&
-                                                                                        a.member_phone_number == m.member_phone_number));
-
-                        if (isEqual)
-                        {
-                            UpdateDataGridView(cachedMembers);
-                            return; // Exit as data is already up-to-date
-                        }
-                    }
+                    MessageBox.Show("Failed to retrieve member data from API");
+                    return;
                 }
 
+                List<Member> finalMemberList = new List<Member>();
+                PopulateMemberList(apiResponse.data, finalMemberList, cacheFilePath);
 
-                // Fetch from API if cache is not available or needs updating
-                IApiService apiServiceNew = new ApiService();
-                string apiResponseNew = await apiServiceNew.GetMember("/membership");
+                // Always update cache with latest API data
+                File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(new GetMemberModel { data = finalMemberList }));
 
-                var apiMemberList = JsonConvert.DeserializeObject<GetMemberModel>(apiResponseNew)?.data;
-
-                if (apiMemberList != null)
-                {
-                    List<Member> finalMemberList = new List<Member>();
-                    PopulateMemberList(apiMemberList, finalMemberList, cacheFilePath);
-
-                    File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(new GetMemberModel { data = finalMemberList }));
-
-                    UpdateDataGridView(finalMemberList);
-                }
+                UpdateDataGridView(finalMemberList);
             }
             catch (Exception ex)
             {
@@ -216,15 +189,27 @@ namespace KASIR.Komponen
                     {
                         if (cachedDict.TryGetValue(apiMember.member_id, out var cachedMember))
                         {
-                            apiMember.member_points = cachedMember.member_points; // Keep the points from the cache
+                            // Compare updated_at and choose the most recent record
+                            DateTime apiUpdatedAt = ParseDateTime(apiMember.updated_at);
+                            DateTime cachedUpdatedAt = ParseDateTime(cachedMember.updated_at);
+
+                            if (apiUpdatedAt > cachedUpdatedAt)
+                            {
+                                // API data is more recent, use API member data
+                                apiMember.member_points = cachedMember.member_points; // Preserve points
+                                finalMemberList.Add(apiMember);
+                            }
+                            else
+                            {
+                                // Cached data is more recent or equal, use cached member
+                                finalMemberList.Add(cachedMember);
+                            }
                         }
                         else
                         {
-                            apiMember.member_points = 0; // New member
+                            finalMemberList.Add(apiMember);
                         }
-
-                        finalMemberList.Add(apiMember);
-                        addedMemberIds.Add(apiMember.member_id); // Mark this member as added
+                        addedMemberIds.Add(apiMember.member_id);
                     }
                 }
             }
@@ -238,6 +223,23 @@ namespace KASIR.Komponen
                         finalMemberList.Add(apiMember);
                     }
                 }
+            }
+        }
+        // Helper method to parse datetime safely
+        private DateTime ParseDateTime(string dateTimeString)
+        {
+            if (string.IsNullOrEmpty(dateTimeString))
+            {
+                return DateTime.MinValue;
+            }
+
+            try
+            {
+                return DateTime.Parse(dateTimeString);
+            }
+            catch
+            {
+                return DateTime.MinValue;
             }
         }
 
@@ -265,7 +267,7 @@ namespace KASIR.Komponen
             dataGridView1.Columns["ID"].Visible = false;
 
             lblCountingItems.Text = $"{memberList.Count()} Member ditemukan.";
-            listDataTable = dataTable.Copy();  // Store the current data for further operations
+            listDataTable = dataTable.Copy();
         }
         private void RemoveButtonColumns()
         {

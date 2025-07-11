@@ -1,5 +1,8 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics.Metrics;
+using System.Globalization;
+using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
+using System.Windows.Forms.Design;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
@@ -20,8 +23,8 @@ namespace KASIR.OfflineMode
         private string ttl2;
         public string btnPayType;
         private string FooterTextStruk;
-        private string namaMember, transactionId;
-        private int totalTransactions, membershipUsingPoint = 0;
+        private string transactionId;
+        private int totalTransactions, membershipUsingPoint = 0, bonusMember = 1;
         public Member getMember { get; private set; } = new();
 
         public Offline_payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat,
@@ -489,6 +492,41 @@ namespace KASIR.OfflineMode
 
                     JObject newTransactionData = new() { { "data", transactionDataArray } };
                     WriteJsonFile(transactionDataPath, newTransactionData);
+
+                    //membership
+                    if(getMember?.member_id > 0 && !string.IsNullOrEmpty(getMember.member_name.ToString()))
+                    {
+
+                        var membershipData = new
+                        {
+                            id = getMember.member_id,
+                            points = getMember.member_points,
+                            outlet_id = baseOutlet,
+
+                            updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                            is_sync = 0
+                        };
+
+                        // Save membership data to membership.data
+                        string membershipDataPath = "DT-Cache\\Transaction\\membershipSyncPoint.data";
+                        JArray membershipDataArray = new();
+                        if (File.Exists(membershipDataPath))
+                        {
+                            // If the membership file exists, read and append the new membership
+                            string existingData = File.ReadAllText(membershipDataPath);
+                            JObject? existingmemberships = JsonConvert.DeserializeObject<JObject>(existingData);
+                            membershipDataArray = existingmemberships["data"] as JArray ?? new JArray();
+                        }
+
+                        // Add new membership
+                        membershipDataArray.Add(JToken.FromObject(membershipData));
+
+                        // Serialize and save back to membership.data
+                        JObject newmembershipData = new() { { "data", membershipDataArray } };
+                        File.WriteAllText(membershipDataPath,
+                            JsonConvert.SerializeObject(newmembershipData, Formatting.Indented));
+                    }
+
                     convertData(fulus, change, paymentTypeName, receipt_numberfix, invoiceDue, discount_idConv,
                         discount_codeConv, discounts_valueConv, discounts_is_percentConv);
                 }
@@ -523,7 +561,7 @@ namespace KASIR.OfflineMode
                     File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(new GetMemberModel { data = finalMemberList }));
                 }
             }
-                int pointMember = totalCartAmount * 1/100;
+                int pointMember = totalCartAmount * bonusMember/100;
                 getMember.member_points += pointMember;
                 string json = File.ReadAllText(pathMembershipPathData);
                 JObject memberData = JObject.Parse(json);
@@ -898,7 +936,137 @@ namespace KASIR.OfflineMode
             txtCash.Text = number.ToString("#,#");
             txtCash.SelectionStart = txtCash.Text.Length;
         }
+        // Simpan settings ke file lokal
+        public static void SaveMemberBonusSettings(int pointPercentage, string settingsFilePath)
+        {
+            try
+            {
+                // Buat objek settings
+                var settings = new MemberBonusSettings
+                {
+                    point_percentage = pointPercentage,
+                };
 
+                // Pastikan direktori ada
+                Directory.CreateDirectory(Path.GetDirectoryName(settingsFilePath));
+
+                // Serialize dan simpan
+                string jsonSettings = JsonConvert.SerializeObject(settings, Formatting.Indented);
+                File.WriteAllText(settingsFilePath, jsonSettings);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, $"Error saving member bonus settings: {ex.Message}");
+            }
+        }
+        // Implementasi method loadBonusMember yang diperluas
+        private async Task loadBonusMember()
+        {
+            try
+            {
+                string settings = "DT-Cache//MembershipSettingsBonus.data";
+
+                if (!NetworkInterface.GetIsNetworkAvailable())
+                {
+                    await SetDefaultBonusMemberAsync(settings);
+                    return;
+                }
+                IApiService apiService = new ApiService();
+
+                string response = await apiService.GetMember("/membership-bonus-point");
+
+                // Parsing point percentage
+                int pointPercentage = ParsePointPercentage(response);
+
+                // Simpan ke local settings
+                SaveMemberBonusSettings(pointPercentage, settings);
+
+                bonusMember = pointPercentage;
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error in loadBonusMember: {ErrorMessage}", ex.Message);
+                string settings = "DT-Cache//MembershipSettingsBonus.data";
+                await SetDefaultBonusMemberAsync(settings);
+            }
+            finally
+            {
+                UpdateBonusLabel();
+            }
+
+            // Method parsing point percentage
+            int ParsePointPercentage(string jsonResponse)
+            {
+                try
+                {
+                    // Parsing berbagai kemungkinan struktur JSON
+                    var jsonObject = JObject.Parse(jsonResponse);
+
+                    // Coba berbagai path
+                    int pointPercentage =
+                        jsonObject.SelectToken("data.point_percentage")?.Value<int>() ??
+                        jsonObject.SelectToken("point_percentage")?.Value<int>() ??
+                        1;
+
+                    return pointPercentage > 0 ? pointPercentage : 1;
+                }
+                catch (Exception ex)
+                {
+                    LoggerUtil.LogError(ex ,$"Point Percentage Parsing Error: {ex.Message}");
+                    return 1;
+                }
+            }
+
+            // Method untuk set default dengan membaca dari local settings
+            async Task SetDefaultBonusMemberAsync(string settings)
+            {
+                // Ambil dari local settings
+                var localSettings = GetMemberBonusSettings(settings);
+
+                // Gunakan point percentage dari local settings
+                bonusMember = localSettings.point_percentage;
+            }
+
+            void UpdateBonusLabel()
+            {
+                if (lblBonusMember.InvokeRequired)
+                {
+                    lblBonusMember.Invoke(new Action(() =>
+                    {
+                        lblBonusMember.Text = $"Bonus Member {bonusMember}%";
+                    }));
+                }
+                else
+                {
+                    lblBonusMember.Text = $"Bonus Member {bonusMember}%";
+                }
+            }
+        }
+        // Baca settings dari file lokal
+        public static MemberBonusSettings GetMemberBonusSettings(string SettingsFilePath)
+        {
+            try
+            {
+                if (!File.Exists(SettingsFilePath))
+                {
+                    return new MemberBonusSettings
+                    {
+                        point_percentage = 1,
+                    };
+                }
+
+                string jsonSettings = File.ReadAllText(SettingsFilePath);
+                return JsonConvert.DeserializeObject<MemberBonusSettings>(jsonSettings);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex,$"Error reading member bonus settings: {ex.Message}");
+                return new MemberBonusSettings
+                {
+                    point_percentage = 1,
+                };
+            }
+        }
         private void sButton1_CheckedChanged(object sender, EventArgs e)
         {
             if (sButton1.Checked)
@@ -912,6 +1080,8 @@ namespace KASIR.OfflineMode
                 ButtonSwitchUsePoint.Visible = true;
                 ButtonSwitchUsePoint.Enabled = false;
                 lblUsePoint.Visible = true;
+                lblBonusMember.Visible = true;
+                loadBonusMember();
             }
             else
             {
@@ -924,6 +1094,7 @@ namespace KASIR.OfflineMode
                 ButtonSwitchUsePoint.Visible = false;
                 ButtonSwitchUsePoint.Enabled = false;
                 lblUsePoint.Visible = false;
+                lblBonusMember.Visible = false;
             }
         }
 

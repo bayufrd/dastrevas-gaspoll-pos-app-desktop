@@ -28,7 +28,6 @@ namespace KASIR.komponen
         private string cartID;
         private readonly string configFilePath = "setting\\configListMenu.data";
 
-        private readonly string configFolderPath = "setting";
 
         //for paging
         private int currentPageIndex = 1;
@@ -44,8 +43,6 @@ namespace KASIR.komponen
         private int items;
 
         //untuk delete
-        private Dictionary<string, object> jsondict;
-
         private DataTable listDataTable;
 
         // List<DataTable> dataList;

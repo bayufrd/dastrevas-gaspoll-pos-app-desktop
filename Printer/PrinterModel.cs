@@ -180,7 +180,7 @@ namespace KASIR.Printer
         public async Task SaveSettingsToFile(string fileName, string data)
         {
             string filePath = Path.Combine(baseDirectory, fileName);
-            await File.WriteAllTextAsync(filePath, data);
+            await SaveSettingsToFile(filePath, data);
         }
 
         public string SerializeCheckBoxSettings()
@@ -7305,43 +7305,6 @@ namespace KASIR.Printer
                                 }
                             }
 
-                            // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
-                            void DrawLeftText(string text, Font font)
-                            {
-                                if (text == null)
-                                {
-                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
-                                    return;
-                                }
-
-                                string[] words = text.Split(' ');
-                                StringBuilder currentLine = new();
-                                foreach (string word in words)
-                                {
-                                    SizeF size = e.Graphics.MeasureString(currentLine + word, font);
-                                    if (size.Width > printableWidth)
-                                    {
-                                        // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
-                                            yPos);
-                                        yPos += font.GetHeight(e.Graphics);
-                                        currentLine.Clear();
-                                    }
-
-                                    // Tambahkan kata ke baris saat ini
-                                    currentLine.Append(word + " ");
-                                }
-
-                                // Gambar baris terakhir
-                                if (currentLine.Length > 0)
-                                {
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
-                                        yPos);
-                                    yPos += font.GetHeight(e.Graphics);
-                                }
-                            }
-
-
                             // Fungsi untuk menggambar garis pemisah
                             void DrawSeparator()
                             {
@@ -7544,55 +7507,22 @@ namespace KASIR.Printer
                                 }
                             }
 
-                            // Fungsi untuk menggambar teks rata kiri dengan pemotongan otomatis
-                            void DrawLeftText(string text, Font font)
-                            {
-                                if (text == null)
-                                {
-                                    //LoggerUtil.LogError(new NullReferenceException(), "Text parameter is null");
-                                    return;
-                                }
-
-                                string[] words = text.Split(' ');
-                                StringBuilder currentLine = new();
-                                foreach (string word in words)
-                                {
-                                    SizeF size = e.Graphics.MeasureString(currentLine + word, font);
-                                    if (size.Width > printableWidth)
-                                    {
-                                        // Jika ukuran melebihi lebar, gambar teks yang sudah ada dan reset baris saat ini
-                                        e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
-                                            yPos);
-                                        yPos += font.GetHeight(e.Graphics);
-                                        currentLine.Clear();
-                                    }
-
-                                    // Tambahkan kata ke baris saat ini
-                                    currentLine.Append(word + " ");
-                                }
-
-                                // Gambar baris terakhir
-                                if (currentLine.Length > 0)
-                                {
-                                    e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
-                                        yPos);
-                                    yPos += font.GetHeight(e.Graphics);
-                                }
-                            }
-
-
                             // Fungsi untuk menggambar garis pemisah
                             void DrawSeparator()
                             {
-                                e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
-                                yPos += normalFont.GetHeight(e.Graphics);
+                                if (e.Graphics != null)
+                                {
+                                    e.Graphics.DrawLine(Pens.Black, leftMargin, yPos, leftMargin + printableWidth, yPos);
+                                    yPos += normalFont.GetHeight(e.Graphics);
+                                }
                             }
 
                             void DrawSpace()
                             {
-                                yPos += normalFont
-                                    .GetHeight(e
-                                        .Graphics); // Menambahkan satu baris spasi berdasarkan tinggi font normal
+                                if (e.Graphics != null)
+                                {
+                                    yPos += normalFont.GetHeight(e.Graphics);
+                                }
                             }
 
 

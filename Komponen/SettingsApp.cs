@@ -12,7 +12,6 @@ namespace KASIR.Komponen
         private ApiService apiService;
         private DataTable originalDataTable;
         private readonly string baseOutlet;
-        private inputPin pinForm;
 
         public SettingsApp()
         {
@@ -37,16 +36,6 @@ namespace KASIR.Komponen
                     e.CellStyle.BackColor = Color.WhiteSmoke; // Warna untuk baris ganjil
                 }
             }
-        }
-        private void OpenRefundForm(string transaksiId)
-        {
-            refund refundForm = new refund(transaksiId);
-            refundForm.RefundSuccessful += OnRefundSuccess;
-            if (pinForm != null && !pinForm.IsDisposed)
-            {
-                pinForm.Close();
-            }
-            refundForm.ShowDialog();
         }
 
         private void OnRefundSuccess(object sender, EventArgs e)

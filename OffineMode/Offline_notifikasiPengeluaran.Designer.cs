@@ -246,7 +246,6 @@ namespace KASIR.Komponen
             txtNotes.PlaceholderText = "Masukkan deksripsi pengeluaran";
             txtNotes.Size = new Size(559, 97);
             txtNotes.TabIndex = 2;
-            txtNotes.TextChanged += txtNotes_TextChanged;
             // 
             // panel2
             // 

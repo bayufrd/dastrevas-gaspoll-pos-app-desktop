@@ -287,7 +287,6 @@ namespace KASIR.OfflineMode
             lblTotal1.Size = new Size(32, 15);
             lblTotal1.TabIndex = 3;
             lblTotal1.Text = "Total";
-            lblTotal1.Click += lblTotal1_Click;
             // 
             // lblSubTotal1
             // 

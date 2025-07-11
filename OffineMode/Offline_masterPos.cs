@@ -32,9 +32,6 @@ namespace KASIR.OfflineMode
         private BindingSource bindingSource = new();
         private string cartID;
         private readonly string configFilePath = "setting\\configListMenu.data";
-
-        private readonly string configFolderPath = "setting";
-
         //for paging
         private int currentPageIndex = 1;
         private string customer_name;
@@ -749,38 +746,61 @@ namespace KASIR.OfflineMode
                 // Cek apakah file Cart.data ada
                 if (File.Exists(filePath))
                 {
-                    cmbDiskon.SelectedIndex = 0;
+                    // Safely set selected index only if items exist
+                    if (cmbDiskon.Items.Count > 0)
+                    {
+                        try
+                        {
+                            cmbDiskon.SelectedIndex = 0;
+                        }
+                        catch (ArgumentOutOfRangeException)
+                        {
+                            // Log or handle the specific case where setting index fails
+                            LoggerUtil.LogWarning("Unable to set discount combo box index to 0");
+                        }
+                    }
+
                     // Membaca isi file Cart.data
                     string cartJson = File.ReadAllText(filePath);
 
-                    // Deserialize data file Cart.data
-                    JObject? cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
+                    // Deserialize data file Cart.data using your existing model
+                    var cartData = JsonConvert.DeserializeObject<DataCart>(cartJson);
 
-                    // Ambil daftar cart_details
-                    JArray? cartDetails = cartData["cart_details"] as JArray;
+                    // Comprehensive cart emptiness check
+                    if (cartData.cart_details == null ||
+                        !cartData.cart_details.Any() ||
+                        cartData.total <= 0)
+                    {
+                        ClearCartFile();
+                        MessageBox.Show("Keranjang kosong.", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
 
                     // Cek apakah ada item yang sudah dipesan (is_ordered == 1)
-                    bool isAnyOrdered = cartDetails.Any(item => item["is_ordered"].ToString() == "1");
+                    bool isAnyOrdered = cartData.cart_details.Any(item =>
+                        item.is_ordered == "1");
 
                     if (!isAnyOrdered)
                     {
-                        ClearCartFile(); // save method
+                        // Jika tidak ada item yang dipesan, langsung clear
+                        ClearCartFile();
                         ReloadCart();
                         return;
                     }
 
+                    // Tampilkan form konfirmasi penghapusan
                     using (Form background = new()
-                           {
-                               StartPosition = FormStartPosition.Manual,
-                               FormBorderStyle = FormBorderStyle.None,
-                               Opacity = 0.7d,
-                               BackColor = Color.Black,
-                               WindowState = FormWindowState.Maximized,
-                               TopMost = true,
-                               Location = Location,
-                               ShowInTaskbar = false
-                           })
-                    using (Offline_deleteForm Offline_deleteForm = new(cartID))
+                    {
+                        StartPosition = FormStartPosition.Manual,
+                        FormBorderStyle = FormBorderStyle.None,
+                        Opacity = 0.7d,
+                        BackColor = Color.Black,
+                        WindowState = FormWindowState.Maximized,
+                        TopMost = true,
+                        Location = Location,
+                        ShowInTaskbar = false
+                    })
+                    using (Offline_deleteForm Offline_deleteForm = new(cartData.cart_id.ToString()))
                     {
                         Offline_deleteForm.Owner = background;
                         background.Show();
@@ -807,13 +827,10 @@ namespace KASIR.OfflineMode
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("An error occurred while reading the cart file: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -2599,9 +2616,9 @@ namespace KASIR.OfflineMode
                 items = dataGridView2.RowCount;
                 lblCountingItems.Text = items + " items";
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // MessageBox.Show($"Tidak ada pilihan {selectedFilter}");
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
 
@@ -2619,10 +2636,6 @@ namespace KASIR.OfflineMode
             dataGridView3.Visible = true;
             dataGridView2.Enabled = false;
             dataGridView2.Visible = false;
-        }
-
-        private void lblTotal1_Click(object sender, EventArgs e)
-        {
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -2801,50 +2814,81 @@ namespace KASIR.OfflineMode
 
         private void buttonPayment_Click(object sender, EventArgs e)
         {
-            // Path for the cart data cache file
-            string filePath = "DT-Cache\\Transaction\\Cart.data";
-
-            // Cek apakah file Cart.data ada
-            if (File.Exists(filePath))
+            try
             {
-                Form background = new()
-                {
-                    StartPosition = FormStartPosition.Manual,
-                    FormBorderStyle = FormBorderStyle.None,
-                    Opacity = 0.7d,
-                    BackColor = Color.Black,
-                    WindowState = FormWindowState.Maximized,
-                    TopMost = true,
-                    Location = Location,
-                    ShowInTaskbar = false
-                };
+                // Path for the cart data cache file
+                string filePath = "DT-Cache\\Transaction\\Cart.data";
 
-                using (Offline_payForm Offline_payForm = new(baseOutlet, cartID, totalCart,
-                           lblTotal1.Text, customer_seat, customer_name, this))
+                // Cek apakah file Cart.data ada
+                if (File.Exists(filePath))
                 {
-                    SignalReloadPayform();
-                    Offline_payForm.Owner = background;
-                    background.Show();
-                    DialogResult result = Offline_payForm.ShowDialog();
-                    if (result == DialogResult.OK)
+                    // Read the cart data
+                    string cartContent = File.ReadAllText(filePath);
+
+                    // Parse the JSON using your existing model
+                    var cartData = JsonConvert.DeserializeObject<DataCart>(cartContent);
+
+                    // Check if cart is effectively empty
+                    if (cartData.cart_details == null ||
+                        !cartData.cart_details.Any() ||
+                        cartData.total <= 0)
                     {
-                        cmbDiskon.SelectedIndex = 0;
-                        background.Dispose();
-                        ReloadCart();
-                        LoadCart();
+                        MessageBox.Show("Keranjang masih kosong!", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
                     }
-                    else
+
+                    // Existing payment form logic
+                    Form background = new()
                     {
-                        MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
-                        background.Dispose();
-                        ReloadCart();
-                        LoadCart();
+                        StartPosition = FormStartPosition.Manual,
+                        FormBorderStyle = FormBorderStyle.None,
+                        Opacity = 0.7d,
+                        BackColor = Color.Black,
+                        WindowState = FormWindowState.Maximized,
+                        TopMost = true,
+                        Location = Location,
+                        ShowInTaskbar = false
+                    };
+
+                    // Use values from parsed cart data
+                    using (Offline_payForm Offline_payForm = new(
+                        baseOutlet,
+                        cartData.cart_id.ToString(),
+                        cartData.total.ToString(),
+                        lblTotal1.Text,
+                        cartData.customer_seat ?? "",
+                        cartData.customer_name ?? "",
+                        this))
+                    {
+                        SignalReloadPayform();
+                        Offline_payForm.Owner = background;
+                        background.Show();
+                        DialogResult result = Offline_payForm.ShowDialog();
+
+                        if (result == DialogResult.OK)
+                        {
+                            cmbDiskon.SelectedIndex = 0;
+                            background.Dispose();
+                            ReloadCart();
+                            LoadCart();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
+                            background.Dispose();
+                            ReloadCart();
+                            LoadCart();
+                        }
                     }
                 }
+                else
+                {
+                    MessageBox.Show("Keranjang masih kosong!", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("Keranjang masih kosong!", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
     }

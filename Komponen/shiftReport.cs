@@ -8,6 +8,7 @@ using KASIR.OffineMode;
 using KASIR.Printer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using static System.Net.Mime.MediaTypeNames;
 namespace KASIR.Komponen
 {
     public partial class shiftReport : UserControl
@@ -341,6 +342,17 @@ namespace KASIR.Komponen
                         SyncExpenditureData(expenditureDataPath);
                     }
 
+                    string shiftDataPath = "DT-Cache\\Transaction\\shiftData.data";
+                    if (File.Exists(shiftDataPath))
+                    {
+                        SyncShiftData(shiftDataPath);
+                    }
+
+                    string membershipDataPath = "DT-Cache\\Transaction\\membershipSyncPoint.data";
+                    if (File.Exists(membershipDataPath))
+                    {
+                        SyncmembershipData(membershipDataPath);
+                    }
                     if (!File.Exists(filePath))
                     {
                         UpdateProgress(40, "Tidak ada file transaksi, melewati sinkronisasi...");
@@ -432,13 +444,105 @@ namespace KASIR.Komponen
                 }
                 finally
                 {
-                    // Always complete synchronization, whatever happens
+
                     TransactionSync.EndSync();
                 }
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+        private async Task SyncmembershipData(string membershipPathFile)
+        {
+            try
+            {
+                var memberships = ReadmembershipFromFile(membershipPathFile);
+
+                if (memberships == null || !memberships.Any())
+                {
+                    return;
+                }
+
+                foreach (var membership in memberships)
+                {
+                    if (membership.is_sync == 0)  // Only send if is_sync is 0
+                    {
+                        string api = $"/membership-point/{membership.id}";
+                        var payload = new
+                        {
+                            points = membership.points,
+                            updated_at = membership.updated_at
+                        };
+
+                        // Step 3: Send the data to the API
+                        var isSuccess = await SendToApi(payload, api);
+
+                        if (isSuccess)
+                        {
+                            // If the request was successful, update is_sync to 1
+                            membership.is_sync = 1;
+                            // Hapus entri yang berhasil disinkronisasi
+                            memberships.Remove(membership);
+                        }
+                    }
+                }
+
+                SavemembershipsToFile(memberships, membershipPathFile);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error while sending memberships to API: {ErrorMessage}", ex.Message);
+            }
+        }
+        private async Task SyncShiftData(string ShiftPathFile)
+        {
+            try
+            {
+                var Shifts = ReadShiftFromFile(ShiftPathFile);
+
+                if (Shifts == null || !Shifts.Any())
+                {
+                    return;
+                }
+
+                foreach (var Shift in Shifts)
+                {
+                    if (Shift.is_sync == 0)  // Only send if is_sync is 0
+                    {
+                        string api = "/struct-shift-sync";
+                        var payload = new
+                        {
+                            outlet_id = Shift.outlet_id,
+                            actual_ending_cash = Shift.actual_ending_cash,
+                            cash_difference = Shift.cash_difference,
+                            start_date = Shift.start_date,
+                            end_date = Shift.end_date,
+                            created_at = Shift.created_at,
+                            updated_at = Shift.updated_at,
+                            expected_ending_cash = Shift.expected_ending_cash,
+                            total_amount = Shift.total_amount,
+                            total_discount = Shift.total_discount,
+                            shift_number = Shift.shift_number,
+                            casher_name = Shift.casher_name
+                        };
+
+                        // Step 3: Send the data to the API
+                        var isSuccess = await SendToApi(payload, api);
+
+                        if (isSuccess)
+                        {
+                            // If the request was successful, update is_sync to 1
+                            Shift.is_sync = 1;
+                        }
+                    }
+                }
+
+                SaveShiftsToFile(Shifts, ShiftPathFile);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error while sending Shifts to API: {ErrorMessage}", ex.Message);
             }
         }
         private async Task SyncExpenditureData(string expenditurePathFile)
@@ -456,15 +560,17 @@ namespace KASIR.Komponen
                 {
                     if (expenditure.is_sync == 0)  // Only send if is_sync is 0
                     {
+                        string api = "/expenditure-sync";
                         var payload = new
                         {
-                            nominal = expenditure.nominal.ToString(),
-                            description = expenditure.description,
-                            outlet_id = expenditure.outlet_id
+                            nominal = expenditure.nominal,
+                            description = expenditure.description.ToString(),
+                            outlet_id = expenditure.outlet_id,
+                            created_at = expenditure.created_at.ToString()
                         };
 
                         // Step 3: Send the data to the API
-                        var isSuccess = await SendToApi(payload);
+                        var isSuccess = await SendToApi(payload,api);
 
                         if (isSuccess)
                         {
@@ -483,7 +589,7 @@ namespace KASIR.Komponen
         }
 
         // Method to send data to the API using a POST request
-        private async Task<bool> SendToApi(object payload)
+        private async Task<bool> SendToApi(object payload, string api)
         {
             try
             {
@@ -491,8 +597,7 @@ namespace KASIR.Komponen
                 string jsonString = JsonConvert.SerializeObject(payload, Formatting.Indented);
 
                 // Perform the POST request with the payload
-                HttpResponseMessage response = await apiService.notifikasiPengeluaran(jsonString, "/expenditure");
-
+                HttpResponseMessage response = await apiService.EditMember(jsonString, api);
 
                 if (response != null && response.IsSuccessStatusCode)
                 {
@@ -506,7 +611,34 @@ namespace KASIR.Komponen
                 return false;
             }
         }
-
+        private List<MemberPointModel> ReadmembershipFromFile(string filePath)
+        {
+            try
+            {
+                var fileContent = File.ReadAllText(filePath);
+                var MembershipData = JsonConvert.DeserializeObject<DataStructMemberPoint>(fileContent);
+                return MembershipData?.data ?? new List<MemberPointModel>();
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error reading or deserializing file: {ErrorMessage}", ex.Message);
+                return new List<MemberPointModel>();
+            }
+        }
+        private List<ShiftReportData> ReadShiftFromFile(string filePath)
+        {
+            try
+            {
+                var fileContent = File.ReadAllText(filePath);
+                var ShiftData = JsonConvert.DeserializeObject<DataStructShiftOffline>(fileContent);
+                return ShiftData?.data ?? new List<ShiftReportData>();
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error reading or deserializing file: {ErrorMessage}", ex.Message);
+                return new List<ShiftReportData>();
+            }
+        }
         private List<ExpenditureStrukShift> ReadExpendituresFromFile(string filePath)
         {
             try
@@ -521,7 +653,40 @@ namespace KASIR.Komponen
                 return new List<ExpenditureStrukShift>();
             }
         }
+        private void SavemembershipsToFile(List<MemberPointModel> memberships, string membershipPathFile)
+        {
+            try
+            {
+                var membershipData = new DataStructMemberPoint
+                {
+                    data = memberships
+                };
 
+                string json = JsonConvert.SerializeObject(membershipData, Formatting.Indented);
+                File.WriteAllText(membershipPathFile, json);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error saving memberships to file: {ErrorMessage}", ex.Message);
+            }
+        }
+        private void SaveShiftsToFile(List<ShiftReportData> Shifts, string ShiftPathFile)
+        {
+            try
+            {
+                var ShiftData = new DataStructShiftOffline
+                {
+                    data = Shifts
+                };
+
+                string json = JsonConvert.SerializeObject(ShiftData, Formatting.Indented);
+                File.WriteAllText(ShiftPathFile, json);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error saving Shifts to file: {ErrorMessage}", ex.Message);
+            }
+        }
         private void SaveExpendituresToFile(List<ExpenditureStrukShift> expenditures, string expenditurePathFile)
         {
             try
@@ -1793,7 +1958,7 @@ namespace KASIR.Komponen
             pictureBox.SizeMode = PictureBoxSizeMode.StretchImage; // Atur ukuran gambar agar sesuai dengan PictureBox
             using (FileStream fs = new FileStream("icon\\OutletLogo.bmp", FileMode.Open, FileAccess.Read))
             {
-                pictureBox.Image = Image.FromStream(fs);
+                pictureBox.Image = System.Drawing.Image.FromStream(fs);
             }
             // Tambahkan tombol retry
             Button btnRetry = new Button();
@@ -2042,7 +2207,6 @@ namespace KASIR.Komponen
                 {
                     btnCetakStruk.Enabled = false;
                     btnCetakStruk.Text = "Waiting...";
-                    ////LoggerUtil.LogPrivateMethod(nameof(btnCetakStruk_Click));
 
                     var casherName = string.IsNullOrEmpty(txtNamaKasir.Text) ? "" : txtNamaKasir.Text;
                     var actualCash = string.IsNullOrEmpty(fulus) ? "0" : fulus;

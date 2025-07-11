@@ -847,7 +847,6 @@ namespace KASIR.komponen
         private Panel panel9;
         private ComboBox cmbDiskon;
         private Label label1;
-        private Button button6;
         private Label lblDiskon1;
         private FlowLayoutPanel dataGridView3;
         private IconButton listBill1;

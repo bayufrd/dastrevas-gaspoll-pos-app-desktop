@@ -329,7 +329,6 @@ namespace KASIR.OfflineMode
         private Panel panel4;
         private ComboBox cmbRefundType;
         private FontAwesome.Sharp.IconButton button1;
-        private FontAwesome.Sharp.IconButton iconButton1;
         private FontAwesome.Sharp.IconButton btnRefund;
         private Label lblDetailPayment;
         private Label label1;

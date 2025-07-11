@@ -22,7 +22,6 @@ namespace KASIR.Komponen
         private readonly string PinPrinterBar;
         private readonly string BaseOutletName;
 
-        private PrinterModel printerModel; // Pastikan ini telah diinisialisasi dengan benar
         int nomor = 0;
 
         public bool ReloadDataInBaseForm { get; private set; }

@@ -12,7 +12,6 @@ namespace KASIR.Komponen
     public partial class refund : Form
     {
         private readonly ILogger _log = LoggerService.Instance._log;
-        public event EventHandler RefundSuccessful;
         private List<CartDetailTransaction> item = new List<CartDetailTransaction>();
         private List<RefundModel> refundItems = new List<RefundModel>();
         private readonly string MacAddressKasir;

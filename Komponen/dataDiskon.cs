@@ -8,7 +8,7 @@ namespace KASIR.Komponen
     public partial class dataDiskon : Form
     {
         private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet;
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         public bool ReloadDataInBaseForm { get; private set; }
         private const string CacheFolder = "DT-Cache";
         string CacheFileName;

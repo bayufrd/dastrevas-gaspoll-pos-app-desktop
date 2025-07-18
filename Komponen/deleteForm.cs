@@ -18,7 +18,7 @@ namespace KASIR.Komponen
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
         string cart_id;
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         public deleteForm(string cartId)
         {
             cart_id = cartId;

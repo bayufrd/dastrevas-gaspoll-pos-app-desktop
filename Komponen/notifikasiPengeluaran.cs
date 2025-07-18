@@ -14,7 +14,7 @@ namespace KASIR.Komponen
         public bool ReloadDataInBaseForm { get; private set; }
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         public notifikasiPengeluaran()
         {
             baseOutlet = Properties.Settings.Default.BaseOutlet;
@@ -286,7 +286,6 @@ namespace KASIR.Komponen
                     else
                     {
                         MessageBox.Show("Input notifikasi pengeluaran gagal  " + response.StatusCode);
-                        _log.Error("gagal input notifikasi pengeluaran");
                     }
                 }
             }

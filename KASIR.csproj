@@ -38,6 +38,9 @@
     <Compile Update="OffineMode\Offline_HistoryShift.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="OffineMode\Offline_settingsForm.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Update="OffineMode\Offline_splitBill.cs">
       <SubType>Form</SubType>
     </Compile>

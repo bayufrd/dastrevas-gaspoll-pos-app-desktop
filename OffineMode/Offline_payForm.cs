@@ -1,21 +1,20 @@
-﻿using System.Diagnostics.Metrics;
-using System.Globalization;
-using System.Net.NetworkInformation;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
-using System.Windows.Forms.Design;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
 using KASIR.Printer;
 using KASIR.Properties;
+using KASIR.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Serilog;
 
 namespace KASIR.OfflineMode
 {
     public partial class Offline_payForm : Form
     {
+        private IInternetService _internetServices;
+
         private readonly string baseOutlet;
         private readonly int customePrice;
         private readonly List<Button> radioButtonsList = new();
@@ -31,6 +30,7 @@ namespace KASIR.OfflineMode
             string name, Offline_masterPos masterPosForm)
         {
             InitializeComponent();
+            _internetServices = new InternetService();
             InitializeButtonListeners();
 
             btnSimpan.Enabled = false;
@@ -325,9 +325,7 @@ namespace KASIR.OfflineMode
         private async void btnSimpan_Click(object sender, EventArgs e)
         {
             btnSimpan.Enabled = false;
-            btnSimpan.Text = "Waiting...";
             btnSimpan.BackColor = Color.Gainsboro;
-
             try
             {
                 if (btnSimpan.Text == "Selesai.")
@@ -420,7 +418,7 @@ namespace KASIR.OfflineMode
 
                     if (sButton1.Checked == true && !string.IsNullOrEmpty(getMember.member_id.ToString()) && ButtonSwitchUsePoint.Checked != true)
                     {
-                        if(getMember.member_id > 0)
+                        if (getMember.member_id > 0)
                         {
                             processMembershipArea(totalCartAmount);
                         }
@@ -494,41 +492,20 @@ namespace KASIR.OfflineMode
                     WriteJsonFile(transactionDataPath, newTransactionData);
 
                     //membership
-                    if(getMember?.member_id > 0 && !string.IsNullOrEmpty(getMember.member_name.ToString()))
+                    if (getMember?.member_id > 0 && !string.IsNullOrEmpty(getMember.member_name.ToString()))
                     {
-
-                        var membershipData = new
-                        {
-                            id = getMember.member_id,
-                            points = getMember.member_points,
-                            outlet_id = baseOutlet,
-
-                            updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
-                            is_sync = 0
-                        };
-
-                        // Save membership data to membership.data
-                        string membershipDataPath = "DT-Cache\\Transaction\\membershipSyncPoint.data";
-                        JArray membershipDataArray = new();
-                        if (File.Exists(membershipDataPath))
-                        {
-                            // If the membership file exists, read and append the new membership
-                            string existingData = File.ReadAllText(membershipDataPath);
-                            JObject? existingmemberships = JsonConvert.DeserializeObject<JObject>(existingData);
-                            membershipDataArray = existingmemberships["data"] as JArray ?? new JArray();
-                        }
-
-                        // Add new membership
-                        membershipDataArray.Add(JToken.FromObject(membershipData));
-
-                        // Serialize and save back to membership.data
-                        JObject newmembershipData = new() { { "data", membershipDataArray } };
-                        File.WriteAllText(membershipDataPath,
-                            JsonConvert.SerializeObject(newmembershipData, Formatting.Indented));
+                        membershipSavingPointCache(transaction_ref_sent);
                     }
+
 
                     convertData(fulus, change, paymentTypeName, receipt_numberfix, invoiceDue, discount_idConv,
                         discount_codeConv, discounts_valueConv, discounts_is_percentConv);
+
+                    DialogResult = DialogResult.OK;
+
+                    Offline_masterPos del = new();
+                    del.ClearCartFile();
+                    Close();
                 }
             }
             catch (Exception ex)
@@ -540,28 +517,131 @@ namespace KASIR.OfflineMode
             }
         }
 
-        private async void processMembershipArea(int totalCartAmount)
+        private async void membershipSavingPointCache(string transactionReference)
         {
-            string pathMembershipPathData = $"DT-Cache\\DataMember_Outlet{baseOutlet}.data";
-            if (!File.Exists(pathMembershipPathData))
+            try
             {
-                string cacheFilePath = $"DT-Cache\\DataMember_Outlet{baseOutlet}.data";
-
-                IApiService apiServiceNew = new ApiService();
-                string apiResponseNew = await apiServiceNew.GetMember("/membership");
-
-                var apiMemberList = JsonConvert.DeserializeObject<GetMemberModel>(apiResponseNew)?.data;
-
-                if (apiMemberList != null)
+                int point = getMember.member_points;
+                if(ButtonSwitchUsePoint.Checked == true)
                 {
-                    List<Member> finalMemberList = new List<Member>();
-                    Offline_MemberData c = new();
-                    c.PopulateMemberList(apiMemberList, finalMemberList, cacheFilePath);
+                    point = 0;
+                }
 
-                    File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(new GetMemberModel { data = finalMemberList }));
+                var membershipData = new
+                {
+                    id = getMember.member_id,
+                    points = point,
+                    outlet_id = baseOutlet,
+                    transaction_ref = string.IsNullOrEmpty(transactionReference)
+        ? null
+        : transactionReference.ToString(),
+
+                    updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                    is_sync = 0
+                };
+
+                // Save membership data to membership.data
+                string membershipDataPath = "DT-Cache\\Transaction\\membershipSyncPoint.data";
+                JArray membershipDataArray = new();
+                if (File.Exists(membershipDataPath))
+                {
+                    // If the membership file exists, read and append the new membership
+                    string existingData = File.ReadAllText(membershipDataPath);
+                    JObject? existingmemberships = JsonConvert.DeserializeObject<JObject>(existingData);
+                    membershipDataArray = existingmemberships["data"] as JArray ?? new JArray();
+                }
+
+                // Add new membership
+                membershipDataArray.Add(JToken.FromObject(membershipData));
+
+                // Serialize and save back to membership.data
+                JObject newmembershipData = new() { { "data", membershipDataArray } };
+                File.WriteAllText(membershipDataPath,
+                    JsonConvert.SerializeObject(newmembershipData, Formatting.Indented));
+
+                // Update member points in DataMember_Outlet{baseoutlet}.data
+                UpdateMemberPointsInOutletFile(getMember.member_id, point);
+                if (_internetServices.IsInternetConnected())
+                {
+                    shiftReport c = new shiftReport();
+                    c.SyncmembershipData(membershipDataPath);
                 }
             }
-                int pointMember = totalCartAmount * bonusMember/100;
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+        private void UpdateMemberPointsInOutletFile(int memberId, int newPoints)
+        {
+            string outletMemberDataPath = $"DT-Cache//DataMember_Outlet{baseOutlet}.data";
+
+            try
+            {
+                // Validasi file ada
+                if (!File.Exists(outletMemberDataPath))
+                {
+                    Console.WriteLine($"File {outletMemberDataPath} tidak ditemukan.");
+                    return;
+                }
+
+                // Baca dan parse JSON
+                string jsonContent = File.ReadAllText(outletMemberDataPath);
+                JObject memberData = JObject.Parse(jsonContent);
+
+                if (memberData?["data"] is JArray membersArray)
+                {
+                    // Gunakan LINQ untuk update
+                    var memberToUpdate = membersArray
+                        .FirstOrDefault(m => m["member_id"]?.Value<int>() == memberId);
+
+                    if (memberToUpdate != null)
+                    {
+                        // Force update points dan timestamp
+                        memberToUpdate["member_points"] = newPoints;
+                        memberToUpdate["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                        // Simpan kembali seluruh JSON
+                        File.WriteAllText(outletMemberDataPath,
+                            memberData.ToString(Formatting.Indented));
+
+                        Console.WriteLine($"Berhasil update points member {memberId} menjadi {newPoints}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Member dengan ID {memberId} tidak ditemukan.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex,$"Error updating member points: {ex.Message}");
+            }
+        }
+        private async void processMembershipArea(int totalCartAmount)
+        {
+            try
+            {
+                string pathMembershipPathData = $"DT-Cache\\DataMember_Outlet{baseOutlet}.data";
+                if (!File.Exists(pathMembershipPathData))
+                {
+                    string cacheFilePath = $"DT-Cache\\DataMember_Outlet{baseOutlet}.data";
+
+                    IApiService apiServiceNew = new ApiService();
+                    string apiResponseNew = await apiServiceNew.GetMember("/membership");
+
+                    var apiMemberList = JsonConvert.DeserializeObject<GetMemberModel>(apiResponseNew)?.data;
+
+                    if (apiMemberList != null)
+                    {
+                        List<Member> finalMemberList = new List<Member>();
+                        Offline_MemberData c = new();
+                        c.PopulateMemberList(apiMemberList, finalMemberList, cacheFilePath);
+
+                        File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(new GetMemberModel { data = finalMemberList }));
+                    }
+                }
+                int pointMember = totalCartAmount * bonusMember / 100;
                 getMember.member_points += pointMember;
                 string json = File.ReadAllText(pathMembershipPathData);
                 JObject memberData = JObject.Parse(json);
@@ -577,7 +657,14 @@ namespace KASIR.OfflineMode
                 {
                     MessageBox.Show($"Member with ID {getMember.member_id} not found.");
                 }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+
+            }
         }
+
         private async Task convertData(string fulus, int change, string paymentTypeName, string receipt_numberfix,
             string invoiceDue, int discount_idConv, string discount_codeConv, string discounts_valueConv,
             string discounts_is_percentConv)
@@ -704,6 +791,7 @@ namespace KASIR.OfflineMode
                 }
 
                 string response = JsonConvert.SerializeObject(strukCustomerTransaction);
+
                 HandleSuccessfulTransaction(response, fulus);
 
                 DialogResult = DialogResult.OK;
@@ -712,6 +800,7 @@ namespace KASIR.OfflineMode
                 del.ClearCartFile();
 
                 Close();
+
             }
             catch (Exception ex)
             {
@@ -787,7 +876,7 @@ namespace KASIR.OfflineMode
                             }
                             catch (OperationCanceledException)
                             {
-                                LoggerUtil.LogWarning("Print operation timed out, will retry in background");
+                                MessageBox.Show("Print operation timed out, will retry in background");
                                 btnSimpan.Text = "Selesai, print akan dilanjutkan di background.";
 
                                 ThreadPool.QueueUserWorkItem(async _ =>
@@ -966,7 +1055,7 @@ namespace KASIR.OfflineMode
             {
                 string settings = "DT-Cache//MembershipSettingsBonus.data";
 
-                if (!NetworkInterface.GetIsNetworkAvailable())
+                if (!_internetServices.IsInternetConnected())
                 {
                     await SetDefaultBonusMemberAsync(settings);
                     return;
@@ -1012,7 +1101,7 @@ namespace KASIR.OfflineMode
                 }
                 catch (Exception ex)
                 {
-                    LoggerUtil.LogError(ex ,$"Point Percentage Parsing Error: {ex.Message}");
+                    LoggerUtil.LogError(ex, $"Point Percentage Parsing Error: {ex.Message}");
                     return 1;
                 }
             }
@@ -1060,7 +1149,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex,$"Error reading member bonus settings: {ex.Message}");
+                LoggerUtil.LogError(ex, $"Error reading member bonus settings: {ex.Message}");
                 return new MemberBonusSettings
                 {
                     point_percentage = 1,

@@ -11,7 +11,7 @@ namespace KASIR.Komponen
 {
     public partial class dataBill : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
 
         private readonly string baseOutlet;
         private readonly string MacAddressKasir;

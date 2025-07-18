@@ -12,7 +12,6 @@ namespace KASIR.Komponen
 {
     public partial class Offline_notifikasiPengeluaran : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
 
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;

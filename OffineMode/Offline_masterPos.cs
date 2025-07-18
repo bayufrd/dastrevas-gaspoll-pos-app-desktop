@@ -10,6 +10,7 @@ using KASIR.Model;
 using KASIR.Network;
 using KASIR.OffineMode;
 using KASIR.Properties;
+using KASIR.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using FontStyle = System.Drawing.FontStyle;
@@ -24,14 +25,14 @@ namespace KASIR.OfflineMode
 {
     public partial class Offline_masterPos : Form
     {
+        private IInternetService _internetServices;
+
         private readonly string baseOutlet;
         private readonly string baseUrl;
         private bool allDataLoaded;
         private List<Menu> allMenuItems;
         private readonly ApiService apiService;
-        private BindingSource bindingSource = new();
         private string cartID;
-        private readonly string configFilePath = "setting\\configListMenu.data";
         //for paging
         private int currentPageIndex = 1;
         private string customer_name;
@@ -70,6 +71,7 @@ namespace KASIR.OfflineMode
             dataGridView3.Margin = new Padding(0, 0, 0, 0);
 
 
+            _internetServices = new InternetService();
             //LoadConfig();
             txtCariMenu.Enabled = false;
 
@@ -1186,7 +1188,7 @@ namespace KASIR.OfflineMode
 
             try
             {
-                if (!NetworkInterface.GetIsNetworkAvailable())
+                if (!_internetServices.IsInternetConnected())
                 {
                     MessageBox.Show("No Connection Available.");
                     return;
@@ -2554,7 +2556,6 @@ namespace KASIR.OfflineMode
                 string selectedFilter = cmbFilter.SelectedItem.ToString();
 
                 items = 0;
-                string config = File.ReadAllText(configFilePath);
 
                 if (dataGridView1.Visible && selectedFilter == "Semua")
                 {

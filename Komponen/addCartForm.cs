@@ -41,7 +41,6 @@ namespace KASIR.komponen
         List<MenuDetailDataCart> menuDetailDataCarts;
         List<DataDiscountCart> dataDiskonList;
         List<ServingType> servingType;
-        private readonly ILogger _log = LoggerService.Instance._log;
         string namelabel;
         string folder = "DT-Cache\\addCartForm";
         public addCartForm(string id, string name)

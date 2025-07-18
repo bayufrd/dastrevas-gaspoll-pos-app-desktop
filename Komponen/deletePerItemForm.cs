@@ -12,7 +12,7 @@ namespace KASIR.Komponen
         private readonly string MacAddressKasir;
         private readonly string PinPrinterKasir;
         private readonly string BaseOutletName;
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         public bool ReloadDataInBaseForm { get; private set; }
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;

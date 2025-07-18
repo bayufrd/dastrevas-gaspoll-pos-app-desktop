@@ -9,7 +9,7 @@ namespace KASIR.OffineMode
 {
     public partial class Offline_Complaint : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
 
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
@@ -181,7 +181,6 @@ namespace KASIR.OffineMode
                     else
                     {
                         MessageBox.Show("Gagal dikirim, Coba cek koneksi internet ulang " + response.StatusCode);
-                        _log.Error("Gagal dikirim, Coba cek koneksi internet ulang " + response);
                     }
                 }
             }

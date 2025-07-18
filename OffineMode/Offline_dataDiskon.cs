@@ -10,7 +10,7 @@ namespace KASIR.OfflineMode
     public partial class Offline_dataDiskon : Form
     {
         private const string CacheFolder = "DT-Cache";
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         private readonly string baseOutlet = Settings.Default.BaseOutlet;
         private readonly string CacheFileName;
 

@@ -453,7 +453,7 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        private async Task SyncmembershipData(string membershipPathFile)
+        public async Task SyncmembershipData(string membershipPathFile)
         {
             try
             {
@@ -472,7 +472,8 @@ namespace KASIR.Komponen
                         var payload = new
                         {
                             points = membership.points,
-                            updated_at = membership.updated_at
+                            updated_at = membership.updated_at,
+                            transaction_ref = membership.transaction_ref
                         };
 
                         // Step 3: Send the data to the API
@@ -480,10 +481,8 @@ namespace KASIR.Komponen
 
                         if (isSuccess)
                         {
-                            // If the request was successful, update is_sync to 1
                             membership.is_sync = 1;
-                            // Hapus entri yang berhasil disinkronisasi
-                            memberships.Remove(membership);
+                            //memberships.Remove(membership);
                         }
                     }
                 }
@@ -657,9 +656,14 @@ namespace KASIR.Komponen
         {
             try
             {
+                // Hanya simpan data yang belum tersinkronisasi
+                var unsyncedMemberships = memberships
+                    .Where(m => m.is_sync != 1)
+                    .ToList();
+
                 var membershipData = new DataStructMemberPoint
                 {
-                    data = memberships
+                    data = unsyncedMemberships
                 };
 
                 string json = JsonConvert.SerializeObject(membershipData, Formatting.Indented);
@@ -670,6 +674,7 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "Error saving memberships to file: {ErrorMessage}", ex.Message);
             }
         }
+
         private void SaveShiftsToFile(List<ShiftReportData> Shifts, string ShiftPathFile)
         {
             try

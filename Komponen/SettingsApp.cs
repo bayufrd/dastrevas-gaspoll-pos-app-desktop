@@ -8,7 +8,7 @@ namespace KASIR.Komponen
 {
     public partial class SettingsApp : UserControl
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         private ApiService apiService;
         private DataTable originalDataTable;
         private readonly string baseOutlet;

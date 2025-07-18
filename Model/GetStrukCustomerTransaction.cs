@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace KASIR.Model
+﻿namespace KASIR.Model
 {
     public class CartDetailStrukCustomerTransaction
     {
@@ -149,6 +143,7 @@ namespace KASIR.Model
 
     public class CartDataCache
     {
+        public string transaction_ref { get; set; }
         public string transaction_id { get; set; }
         public string receipt_number { get; set; }
         public string invoice_number { get; set; }
@@ -168,19 +163,14 @@ namespace KASIR.Model
         public string delivery_type { get; set; }
         public string delivery_note { get; set; }
         public int? discount_id { get; set; }
-        public string discount_code { get; set; }
-        public string discounts_value { get; set; }
-        public string discounts_is_percent { get; set; }
+        public string? discount_code { get; set; }
+        public string? discounts_value { get; set; }
+        public string? discounts_is_percent { get; set; }
         public string invoice_due_date { get; set; }
         public string member_name { get; set; }
         public string member_phone_number { get; set; }
-        // Cart details for each item in the transaction
         public List<CartDetail> cart_details { get; set; }
-
-        // Refund details
         public List<RefundDetail> refund_details { get; set; }
-
-        // Canceled items
         public List<CanceledItem> canceled_items { get; set; }
     }
 
@@ -261,12 +251,12 @@ namespace KASIR.Model
     public class Data
     {
         public int id { get; set; }
-        public string name { get; set; }
-        public string address { get; set; }
+        public string? name { get; set; }
+        public string? address { get; set; }
         public int pin { get; set; }
-        public string phone_number { get; set; }
+        public string? phone_number { get; set; }
         public int is_kitchen_bar_merged { get; set; }
-        public string footer { get; set; }
+        public string? footer { get; set; }
     }
 
     public class CartDataOutlet

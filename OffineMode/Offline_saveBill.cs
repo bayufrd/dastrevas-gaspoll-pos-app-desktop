@@ -5,7 +5,6 @@ using KASIR.Printer;
 using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Serilog;
 
 namespace KASIR.OffineMode
 {
@@ -15,7 +14,7 @@ namespace KASIR.OffineMode
         private readonly string name;
         private readonly string seat;
         private int totalTransactions;
-        private string transactionId;
+        private int transactionId;
 
         public Offline_saveBill(string cartId, string customerName, string customerSeat)
         {
@@ -203,7 +202,7 @@ namespace KASIR.OffineMode
                     return;
                 }
 
-                transactionId = firstCartDetailId;
+                transactionId = int.Parse(firstCartDetailId);
 
                 int totalCartAmount = 0;
                 if (!int.TryParse(cartData["total"]?.ToString() ?? "0", out totalCartAmount))
@@ -256,7 +255,7 @@ namespace KASIR.OffineMode
 
                 var transactionData = new
                 {
-                    transaction_id = int.Parse(transactionId),
+                    transaction_id = transactionId,
                     receipt_number = receipt_numberfix,
                     transaction_ref = transaction_ref_sent,
                     transaction_ref_split = transaction_ref_splitted,
@@ -353,6 +352,7 @@ namespace KASIR.OffineMode
             try
             {
                 string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
+
                 if (!File.Exists(cartDataPath))
                 {
                     MessageBox.Show("Keranjang Masih Kosong", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -361,7 +361,20 @@ namespace KASIR.OffineMode
                 }
 
                 string cartDataJson = File.ReadAllText(cartDataPath);
-                CartDataCache? cartData = JsonConvert.DeserializeObject<CartDataCache>(cartDataJson);
+                //CartDataCache? cartData = JsonConvert.DeserializeObject<CartDataCache>(cartDataJson);
+                // Use more robust deserialization
+                CartDataCache cartData = JsonConvert.DeserializeObject<CartDataCache>(cartDataJson, new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore,
+                    MissingMemberHandling = MissingMemberHandling.Ignore
+                });
+
+                if (cartData == null)
+                {
+                    MessageBox.Show("Gagal membaca data keranjang", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ResetButtonState();
+                    return;
+                }
 
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
                 CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
@@ -375,7 +388,7 @@ namespace KASIR.OffineMode
                         outlet_address = dataOutlet.data.address,
                         outlet_phone_number = dataOutlet.data.phone_number,
                         outlet_footer = dataOutlet.data.footer,
-                        transaction_id = int.Parse(transactionId),
+                        transaction_id = transactionId,
                         receipt_number = receipt_numberfix,
                         invoice_due_date = invoiceDue,
                         customer_name = txtNama.Text,

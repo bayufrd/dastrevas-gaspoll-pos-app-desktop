@@ -8,6 +8,7 @@ using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
 using KASIR.Properties;
+using KASIR.Services;
 using Newtonsoft.Json;
 using Serilog;
 using Menu = KASIR.Model.Menu;
@@ -17,11 +18,12 @@ namespace KASIR.komponen
 {
     public partial class masterPos : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         private readonly string baseOutlet;
         private readonly string baseUrl;
         private bool allDataLoaded;
         private List<Menu> allMenuItems;
+        private IInternetService _internetServices;
 
         private readonly ApiService apiService;
         private readonly BindingSource bindingSource = new();
@@ -72,6 +74,7 @@ namespace KASIR.komponen
             //LoadConfig();
             txtCariMenu.Enabled = false;
 
+            _internetServices = new InternetService();
             InitializeComboBox();
             InitializeVisualRounded();
             //paging begin
@@ -890,7 +893,7 @@ namespace KASIR.komponen
 
         public async Task LoadDataListby()
         {
-            if (!NetworkInterface.GetIsNetworkAvailable())
+            if (!_internetServices.IsInternetConnected())
             {
                 MessageBox.Show("No network connection available. Please check your internet connection and try again.",
                     "Network Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -1234,7 +1237,7 @@ namespace KASIR.komponen
 
             try
             {
-                if (!NetworkInterface.GetIsNetworkAvailable())
+                if (!_internetServices.IsInternetConnected())
                 {
                     MessageBox.Show("No Connection Available.");
                     return;

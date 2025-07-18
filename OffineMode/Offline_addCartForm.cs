@@ -13,7 +13,7 @@ namespace KASIR.OfflineMode
     [Serializable]
     public partial class Offline_addCartForm : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         private readonly string baseOutlet;
         public string btnServingType;
         private List<DataDiscountCart> dataDiskonList;
@@ -62,6 +62,7 @@ namespace KASIR.OfflineMode
             lblNameCart.TextAlign = ContentAlignment.MiddleCenter;
 
             Shown += Form1_Shown; // Tambahkan ini
+            //Shown += (sender, e) => btnSimpan_ClickAsync(null, EventArgs.Empty);
         }
 
         public int selectedServingTypeall { get; set; }

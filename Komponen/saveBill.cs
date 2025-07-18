@@ -8,7 +8,7 @@ namespace KASIR.komponen
 {
     public partial class saveBill : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         string cart_id;
         private readonly string baseOutlet;
         private readonly string MacAddressKasir;

@@ -22,7 +22,7 @@ namespace KASIR.komponen
         private readonly string baseOutlet;
         private string Kakimu;
 
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         public bool KeluarButtonClicked { get; private set; }
 
         public bool ReloadDataInBaseForm { get; private set; }

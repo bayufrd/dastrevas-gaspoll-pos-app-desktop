@@ -56,6 +56,7 @@ namespace KASIR
             button2 = new PictureBox();
             Setting = new IconButton();
             panel2 = new Panel();
+            BtnSettingForm = new IconButton();
             panel1.SuspendLayout();
             panelTitleBar.SuspendLayout();
             gradientPanel1.SuspendLayout();
@@ -183,6 +184,7 @@ namespace KASIR
             // 
             gradientPanel2.Angle = 90F;
             gradientPanel2.BottomColor = Color.FromArgb(31, 30, 68);
+            gradientPanel2.Controls.Add(BtnSettingForm);
             gradientPanel2.Controls.Add(btnDev);
             gradientPanel2.Controls.Add(btnContact);
             gradientPanel2.Controls.Add(SignalPing);
@@ -320,6 +322,20 @@ namespace KASIR
             resources.ApplyResources(panel2, "panel2");
             panel2.Name = "panel2";
             // 
+            // BtnSettingForm
+            // 
+            BtnSettingForm.BackColor = Color.Transparent;
+            BtnSettingForm.FlatAppearance.BorderSize = 0;
+            resources.ApplyResources(BtnSettingForm, "BtnSettingForm");
+            BtnSettingForm.ForeColor = Color.Gainsboro;
+            BtnSettingForm.IconChar = IconChar.Gear;
+            BtnSettingForm.IconColor = Color.Gainsboro;
+            BtnSettingForm.IconFont = IconFont.Auto;
+            BtnSettingForm.IconSize = 25;
+            BtnSettingForm.Name = "BtnSettingForm";
+            BtnSettingForm.UseVisualStyleBackColor = false;
+            BtnSettingForm.Click += BtnSettingForm_Click;
+            // 
             // Form1
             // 
             resources.ApplyResources(this, "$this");
@@ -374,5 +390,6 @@ namespace KASIR
         private IconButton SignalPing;
         private IconButton btnContact;
         private IconButton btnDev;
+        private IconButton BtnSettingForm;
     }
 }

@@ -11,6 +11,8 @@ using KASIR.Model;
 using KASIR.Network;
 using KASIR.OffineMode;
 using KASIR.OfflineMode;
+using KASIR.Properties;
+using KASIR.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SharpCompress.Archives;
@@ -18,6 +20,7 @@ using SharpCompress.Common;
 using Color = System.Drawing.Color;
 using DrawingColor = System.Drawing.Color;
 using Path = System.IO.Path;
+using Timer = System.Windows.Forms.Timer;
 
 
 namespace KASIR
@@ -27,16 +30,23 @@ namespace KASIR
         private IconButton currentBtn;
         private Panel leftBorderBtn;
         private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet.ToString();
-
+        private readonly OutletService _outletService;
         private string DownloadPath, VersionUpdaterApp, PathKasir, baseOutletName;
         private static Random random = new();
-
+        private IInternetService _internetServices;
         public Form1()
         {
             InitializeComponent();
+            _internetServices = new InternetService();
+
+            // Inisialisasi dengan dependency injection atau manual
+            _outletService = new OutletService(
+                Settings.Default.BaseOutlet,
+                new InternetService(),
+                new ApiService(),
+                LoggerService.Instance._log
+            );
             SetDoubleBufferedForAllControls(this);
-            //this.Height = 768;
-            //this.Width = 1024;
             Load += btnMaximize_Click;
             Text = string.Empty;
             ControlBox = false;
@@ -52,7 +62,6 @@ namespace KASIR
             {
                 btnDev.Visible = false;
             }
-
             Shown += Form1_Shown; // Tambahkan ini
         }
 
@@ -124,7 +133,7 @@ namespace KASIR
         {
             await EnsureOfflineModeConfig();
 
-            string outletName = await GetOutletNameAsync();
+            string outletName = await _outletService.GetOutletNameAsync();
             string allSettingsData = await File.ReadAllTextAsync("setting\\OfflineMode.data");
 
             if (allSettingsData == "ON")
@@ -220,7 +229,6 @@ namespace KASIR
             await c.LoadConfig();*/
             await headerOutletName("");
             initPingTest();
-
             ConfigOfflineMode();
             // Mengecek apakah sButtonOffline dalam status checked
             string Config = "setting\\OfflineMode.data";
@@ -248,18 +256,47 @@ namespace KASIR
             });
             LoadingAllSetting(allSettingsData);
 
-            // Jika status offline ON, tampilkan Offline_masterPos
-            if (NetworkInterface.GetIsNetworkAvailable())
+            if (await _internetServices.IsInternetConnectedAsync())
             {
                 string TypeCacheEksekusi = "Sync";
 
-                CacheDataApp CacheDataApp = new(TypeCacheEksekusi);
-                CacheDataApp.Show();
-            }
+                CacheDataApp cacheDataApp = new(TypeCacheEksekusi);
 
+                // Minimkan dan tampilkan di system tray
+                cacheDataApp.Load += (sender, e) =>
+                {
+                    cacheDataApp.WindowState = FormWindowState.Minimized;
+
+                    // Tambahkan notifikasi sistem (opsional)
+                    ShowSystemTrayNotification("Sinkronisasi dimulai", "Proses sinkronisasi data sedang berjalan");
+                };
+
+                cacheDataApp.Show();
+            }
             await headerName();
         }
+        // Metode bantuan untuk notifikasi
+        private void ShowSystemTrayNotification(string title, string message)
+        {
+            NotifyIcon notifyIcon = new NotifyIcon
+            {
+                Visible = true,
+                Icon = SystemIcons.Information, // Ganti dengan icon kustom jika perlu
+                Text = title
+            };
 
+            notifyIcon.ShowBalloonTip(5000, title, message, ToolTipIcon.Info);
+
+            // Atur untuk menghilang setelah beberapa saat
+            Timer timer = new Timer();
+            timer.Interval = 5000; // 5 detik
+            timer.Tick += (sender, e) =>
+            {
+                notifyIcon.Dispose();
+                ((Timer)sender).Stop();
+            };
+            timer.Start();
+        }
         private async void LoadingAllSetting(string allSettingsData)
         {
             await sendDataSyncPerHours(allSettingsData);
@@ -323,7 +360,7 @@ namespace KASIR
         {
             try
             {
-                if (!NetworkInterface.GetIsNetworkAvailable())
+                if (!_internetServices.IsInternetConnected())
                 {
                     return;
                 }
@@ -547,7 +584,7 @@ namespace KASIR
             try
             {
                 await headerOutletName("Checking Kasir Version...");
-                if (!NetworkInterface.GetIsNetworkAvailable())
+                if (!_internetServices.IsInternetConnected())
                 {
                     return;
                 }
@@ -636,7 +673,7 @@ namespace KASIR
                     return;
                 }
 
-                if (!NetworkInterface.GetIsNetworkAvailable())
+                if (!_internetServices.IsInternetConnected())
                 {
                     LoggerUtil.LogWarning("No internet connection");
                     return;
@@ -644,7 +681,10 @@ namespace KASIR
 
                 ProcessStartInfo startInfo = new()
                 {
-                    FileName = updatePath, Arguments = "", UseShellExecute = true, Verb = "runas"
+                    FileName = updatePath,
+                    Arguments = "",
+                    UseShellExecute = true,
+                    Verb = "runas"
                 };
 
                 Process.Start(startInfo);
@@ -660,38 +700,11 @@ namespace KASIR
                     MessageBoxIcon.Error);
             }
         }
-
-        private async Task<string> GetOutletNameAsync()
-        {
-            string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
-
-            // Cek apakah file ada dan baca data dari file atau API
-            if (File.Exists(filePath))
-            {
-                return GetOutletNameFromFile(filePath);
-            }
-            else
-            {
-                string outletName = await GetOutletNameFromApi();
-                if (outletName != null)
-                {
-                    // Simpan data ke file jika berhasil mendapatkan nama outlet
-                    await File.WriteAllTextAsync(filePath,
-                        JsonConvert.SerializeObject(new { data = new { name = outletName } }));
-                    return outletName;
-                }
-                else
-                {
-                    return " (Hybrid)";
-                }
-            }
-        }
-
         public async Task headerName()
         {
             try
             {
-                string outletName = await GetOutletNameAsync();
+                string outletName = await _outletService.GetOutletNameAsync();
                 UpdateOutletLabel(outletName + " (Hybrid)");
             }
             catch (TaskCanceledException ex)
@@ -703,29 +716,6 @@ namespace KASIR
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
-        public string GetOutletNameFromFile(string filePath)
-        {
-            string fileContent = File.ReadAllText(filePath);
-            JObject? outletData = JsonConvert.DeserializeObject<JObject>(fileContent);
-            return outletData["data"]?["name"]?.ToString();
-        }
-
-        public async Task<string> GetOutletNameFromApi()
-        {
-            IApiService apiService = new ApiService();
-            string response = await apiService.CekShift("/outlet/" + baseOutlet);
-            if (response != null)
-            {
-                JObject? apiResponse = JsonConvert.DeserializeObject<JObject>(response);
-                File.WriteAllText($"DT-Cache\\DataOutlet{baseOutlet}.data", JsonConvert.SerializeObject(response));
-
-                return apiResponse["data"]?["name"]?.ToString();
-            }
-
-            return null;
-        }
-
         public void UpdateOutletLabel(string outletName)
         {
             if (lblNamaOutlet.InvokeRequired)
@@ -1070,7 +1060,7 @@ namespace KASIR
                     return;
                 }
 
-                if (!NetworkInterface.GetIsNetworkAvailable())
+                if (!_internetServices.IsInternetConnected())
                 {
                     SignalPing.ForeColor = Color.Red;
                     SignalPing.Text = $"Error Sync \n{DateTime.Now:HH:mm}";
@@ -1312,6 +1302,31 @@ namespace KASIR
             ActivateButton(sender, RGBColors.color4);
 
             DevMonitor c = new();
+
+            c.Dock = DockStyle.Fill;
+            panel1.Controls.Add(c);
+            c.BringToFront();
+            c.Show();
+        }
+
+        private void SettingsButton_Click(object sender, EventArgs e)
+        {
+            ActivateButton(sender, RGBColors.color4);
+
+            Offline_settingsForm c = new();
+
+            c.Dock = DockStyle.Fill;
+            panel1.Controls.Add(c);
+            c.BringToFront();
+            c.Show();
+        }
+
+        private void BtnSettingForm_Click(object sender, EventArgs e)
+        {
+
+            ActivateButton(sender, RGBColors.color4);
+
+            Offline_settingsForm c = new();
 
             c.Dock = DockStyle.Fill;
             panel1.Controls.Add(c);

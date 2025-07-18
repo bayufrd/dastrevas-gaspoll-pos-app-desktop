@@ -3,13 +3,14 @@ using System.Net.NetworkInformation;
 using KASIR.Model;
 using KASIR.Network;
 using KASIR.Printer;
+using KASIR.Services;
 using Newtonsoft.Json;
 using Serilog;
 namespace KASIR.Komponen
 {
     public partial class inputPin : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         private readonly string baseOutlet;
         private readonly string MacAddressKasir;
         private readonly string MacAddressKitchen;
@@ -17,6 +18,7 @@ namespace KASIR.Komponen
         private readonly string PinPrinterKasir;
         private readonly string PinPrinterKitchen;
         private readonly string PinPrinterBar;
+        private IInternetService _internetServices;
 
         private readonly string BaseOutletName;
         string cartId;
@@ -42,6 +44,7 @@ namespace KASIR.Komponen
             BaseOutletName = Properties.Settings.Default.BaseOutletName;
             InitializeComponent();
 
+            _internetServices = new InternetService();
 
 
             LoadData();
@@ -179,7 +182,7 @@ namespace KASIR.Komponen
         }
         private async void LoadData()
         {
-            if (!NetworkInterface.GetIsNetworkAvailable())
+            if (!_internetServices.IsInternetConnected())
             {
                 MessageBox.Show("No network connection available. Please check your internet connection and try again.", "Network Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;

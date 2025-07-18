@@ -7,7 +7,7 @@ namespace KASIR.Komponen
 {
     public partial class splitBill : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         private readonly string baseOutlet;
         private readonly string MacAddressKasir;
         private readonly string MacAddressKitchen;

@@ -7,7 +7,7 @@ namespace KASIR.komponen
 {
     public partial class Offline_MemberCustom : Form
     {
-        private readonly ILogger _log = LoggerService.Instance._log;
+         
         private readonly string baseOutlet;
         public string btnPayType;
         private readonly int idid;

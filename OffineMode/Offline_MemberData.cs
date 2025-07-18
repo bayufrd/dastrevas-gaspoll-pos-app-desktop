@@ -5,6 +5,7 @@ using KASIR.komponen;
 using KASIR.Model;
 using KASIR.Network;
 using KASIR.Properties;
+using KASIR.Services;
 using Newtonsoft.Json;
 using Serilog;
 
@@ -15,13 +16,17 @@ namespace KASIR.Komponen
         private string customMember;
         private DataTable listDataTable;
         private readonly string baseOutlet;
+        private IInternetService _internetServices;
 
         public Offline_MemberData()
         {
             InitializeComponent();
+            _internetServices = new InternetService();
+
             baseOutlet = Settings.Default.BaseOutlet;
             loadDataMember();
             dataGridView1.CellFormatting += DataGridView1_CellFormatting;
+
         }
 
         // Single Member property to store selected member
@@ -127,7 +132,7 @@ namespace KASIR.Komponen
                 string cacheFilePath = $"DT-Cache\\DataMember_Outlet{baseOutlet}.data";
                 dataGridView1.DataSource = null;
 
-                if (!NetworkInterface.GetIsNetworkAvailable())
+                if (!_internetServices.IsInternetConnected())
                 {
                     if (File.Exists(cacheFilePath))
                     {
@@ -159,7 +164,7 @@ namespace KASIR.Komponen
                 PopulateMemberList(apiResponse.data, finalMemberList, cacheFilePath);
 
                 // Always update cache with latest API data
-                File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(new GetMemberModel { data = finalMemberList }));
+                File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(new GetMemberModel { data = finalMemberList }, Formatting.Indented));
 
                 UpdateDataGridView(finalMemberList);
             }
@@ -169,8 +174,6 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-
-
         public void PopulateMemberList(IEnumerable<Member> apiMemberList, List<Member> finalMemberList, string cacheFilePath)
         {
             if (File.Exists(cacheFilePath))
@@ -193,20 +196,42 @@ namespace KASIR.Komponen
                             DateTime apiUpdatedAt = ParseDateTime(apiMember.updated_at);
                             DateTime cachedUpdatedAt = ParseDateTime(cachedMember.updated_at);
 
+                            Member memberToAdd;
                             if (apiUpdatedAt > cachedUpdatedAt)
                             {
-                                // API data is more recent, use API member data
-                                apiMember.member_points = cachedMember.member_points; // Preserve points
-                                finalMemberList.Add(apiMember);
+                                // API data is more recent
+                                memberToAdd = apiMember;
+
+                                // Preserve points from cached data if API doesn't provide points
+                                if (memberToAdd.member_points == 0)
+                                {
+                                    memberToAdd.member_points = cachedMember.member_points;
+                                }
                             }
-                            else
+                            else if (apiUpdatedAt < cachedUpdatedAt)
                             {
-                                // Cached data is more recent or equal, use cached member
-                                finalMemberList.Add(cachedMember);
+                                // Cached data is more recent
+                                memberToAdd = cachedMember;
+
+                                // Preserve points from API if cached points are 0
+                                if (memberToAdd.member_points == 0 && apiMember.member_points > 0)
+                                {
+                                    memberToAdd.member_points = apiMember.member_points;
+                                }
                             }
+                            else // Equal timestamps
+                            {
+                                // Choose the member with more points
+                                memberToAdd = apiMember.member_points > cachedMember.member_points
+                                    ? apiMember
+                                    : cachedMember;
+                            }
+
+                            finalMemberList.Add(memberToAdd);
                         }
                         else
                         {
+                            // New member from API
                             finalMemberList.Add(apiMember);
                         }
                         addedMemberIds.Add(apiMember.member_id);
@@ -219,28 +244,24 @@ namespace KASIR.Komponen
                 {
                     if (!finalMemberList.Any(m => m.member_id == apiMember.member_id)) // Check for existing member
                     {
-                        apiMember.member_points = 0;
                         finalMemberList.Add(apiMember);
                     }
                 }
             }
         }
+
         // Helper method to parse datetime safely
         private DateTime ParseDateTime(string dateTimeString)
         {
             if (string.IsNullOrEmpty(dateTimeString))
-            {
                 return DateTime.MinValue;
+
+            if (DateTime.TryParse(dateTimeString, out DateTime parsedDate))
+            {
+                return parsedDate;
             }
 
-            try
-            {
-                return DateTime.Parse(dateTimeString);
-            }
-            catch
-            {
-                return DateTime.MinValue;
-            }
+            return DateTime.MinValue;
         }
 
         private void UpdateDataGridView(IEnumerable<Member> memberList)
@@ -269,6 +290,35 @@ namespace KASIR.Komponen
             lblCountingItems.Text = $"{memberList.Count()} Member ditemukan.";
             listDataTable = dataTable.Copy();
         }
+        private void AddButtonColumns()
+        {
+            if (dataGridView1 == null) return;
+
+            // Konfigurasi kolom untuk points
+            if (dataGridView1.Columns.Contains("Points"))
+            {
+                dataGridView1.Columns["Points"].HeaderText = "Points";
+                dataGridView1.Columns["Points"].DisplayIndex = dataGridView1.ColumnCount - 2; // Atur posisi
+            }
+
+            var buttonColumns = new[]
+            {
+        new { HeaderText = "Pilih", Text = "Pilih" },
+        new { HeaderText = "Edit", Text = "Edit" }
+    };
+
+            foreach (var columnInfo in buttonColumns)
+            {
+                var buttonColumn = new DataGridViewButtonColumn
+                {
+                    HeaderText = columnInfo.HeaderText,
+                    Text = columnInfo.Text,
+                    FlatStyle = FlatStyle.Flat,
+                    UseColumnTextForButtonValue = true
+                };
+                dataGridView1.Columns.Add(buttonColumn);
+            }
+        }
         private void RemoveButtonColumns()
         {
             if (dataGridView1.Columns.Contains("Pilih"))
@@ -281,32 +331,6 @@ namespace KASIR.Komponen
             }
         }
 
-        private void AddButtonColumns()
-        {
-            if (!dataGridView1.Columns.Contains("Pilih"))
-            {
-                DataGridViewButtonColumn buttonColumn = new()
-                {
-                    HeaderText = "Pilih",
-                    Text = "Pilih",
-                    FlatStyle = FlatStyle.Flat,
-                    UseColumnTextForButtonValue = true
-                };
-                dataGridView1.Columns.Add(buttonColumn);
-            }
-
-            if (!dataGridView1.Columns.Contains("Edit"))
-            {
-                DataGridViewButtonColumn buttonColumn1 = new()
-                {
-                    HeaderText = "Edit",
-                    Text = "Edit",
-                    FlatStyle = FlatStyle.Flat,
-                    UseColumnTextForButtonValue = true
-                };
-                dataGridView1.Columns.Add(buttonColumn1);
-            }
-        }
         private string CleanInput(string input)
         {
             return Regex.Replace(input, "[^0-9]", "");

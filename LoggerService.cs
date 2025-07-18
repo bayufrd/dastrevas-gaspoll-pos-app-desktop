@@ -12,6 +12,7 @@ namespace KASIR
 
         private LoggerService()
         {
+            baseOutlet = Settings.Default.BaseOutlet;
             ConfigureLogger();
         }
 
@@ -27,8 +28,11 @@ namespace KASIR
                 // Default value for outletName
                 string outletName = "unknown";
 
+                // Mendapatkan outletID dari settings
+                string outletID = Settings.Default.BaseOutlet;
+
                 // Membaca file JSON dan mendeserialize jika file ada
-                string cacheOutlet = $"DT-Cache\\DataOutlet{baseOutlet}.data";
+                string cacheOutlet = $"DT-Cache\\DataOutlet{outletID}.data";
 
                 // Cek jika file ada sebelum membacanya
                 if (File.Exists(cacheOutlet))
@@ -45,8 +49,6 @@ namespace KASIR
                     }
                 }
 
-                // Mendapatkan outletID dari settings
-                string outletID = Settings.Default.BaseOutlet;
 
                 // Menggabungkan outletID dan outletName
                 string

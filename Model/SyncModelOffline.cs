@@ -43,6 +43,7 @@ namespace KASIR.Model
         public int points { get; set; }
         public string outlet_id { get; set; }
         public string updated_at { get; set; }
+        public string transaction_ref { get; set; }
         public int is_sync { get; set; }
     }
 }

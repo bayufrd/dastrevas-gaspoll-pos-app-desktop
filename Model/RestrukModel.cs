@@ -77,12 +77,12 @@ namespace KASIR.Model
         public string? total_refund { get; set; }
         public List<RefundDetailRestruk> refund_details { get; set; }
         //membership
-        public int member_id { get; set; }
-        public string member_name { get; set; }
-        public string member_email { get; set; }
-        public string member_phone_number { get; set; }
-        public int member_point { get; set; }
-        public int member_use_point { get; set; }
+        public int member_id { get; set; } = 0;
+        public string? member_name { get; set; }
+        public string? member_email { get; set; }
+        public string? member_phone_number { get; set; }
+        public int member_point { get; set; } = 0;
+        public int member_use_point { get; set; } = 0;
     }
     public class RefundDetailRestruk
     {

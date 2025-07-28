@@ -283,10 +283,6 @@ namespace KASIR.Network
         {
             try
             {
-                // Log detail payload
-                LoggerUtil.LogWarning(
-                    $"Sync Transaction Payload Size: {jsonString.Length} bytes, Timestamp: {DateTime.Now}");
-
                 StringContent content = new(jsonString, Encoding.UTF8, "application/json");
                 HttpResponseMessage response = await SendRequestAsync(() => httpClient.PostAsync(url, content));
 

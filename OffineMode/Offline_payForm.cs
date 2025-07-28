@@ -725,7 +725,7 @@ namespace KASIR.OfflineMode
                         kitchenBarCanceledItems = new List<KitchenAndBarCanceledItems>(),
                         customer_cash = int.Parse(fulus),
                         customer_change = change,
-                        member_id = getMember?.member_id > 0 ? getMember.member_id : (int?)null,
+                        member_id = getMember.member_id > 0 ? getMember.member_id : 0,
                         member_name = !string.IsNullOrEmpty(getMember?.member_name) ? getMember.member_name : (string)null,
                         member_phone_number = !string.IsNullOrEmpty(getMember?.member_phone_number) ? getMember.member_phone_number : (string)null,
                         member_email = !string.IsNullOrEmpty(getMember?.member_email) ? getMember.member_email : (string)null,

@@ -12,11 +12,11 @@ namespace KASIR.Model
     }
     public class Member
     {
-        public int member_id { get; set; }
+        public int member_id { get; set; } = 0;
         public string member_name { get; set; }
         public string member_email { get; set; }
         public string member_phone_number { get; set; }
-        public int member_points { get; set; }
+        public int member_points { get; set; } = 0;
         public string updated_at { get; set; }
     }
     public class MemberBonusSettings

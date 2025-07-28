@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using KASIR.Model;
-using KASIR.Network;
 using KASIR.OffineMode;
 using KASIR.Printer;
 using KASIR.Properties;
@@ -19,7 +18,7 @@ namespace KASIR.Komponen
 
         private Panel loadingPanel;
         private ProgressBar progressBar;
-        private int ending_cash = 0,totalTransaksiOulet=0, totalDiscountAmount=0;
+        private int ending_cash = 0, totalTransaksiOulet = 0, totalDiscountAmount = 0;
 
         public Offline_shiftReport()
         {
@@ -304,10 +303,10 @@ namespace KASIR.Komponen
 
                 string startAt = GetStartAt();
 
-                int shiftNumber = GetShiftNumber(); 
-                string startDate = startAt; 
-                DateTime akhirshift = DateTime.Now; 
-                string endDate = akhirshift.ToString("yyyy-MM-dd HH:mm:ss"); 
+                int shiftNumber = GetShiftNumber();
+                string startDate = startAt;
+                DateTime akhirshift = DateTime.Now;
+                string endDate = akhirshift.ToString("yyyy-MM-dd HH:mm:ss");
 
                 DateTime startAtDateTime = DateTime.Parse(startAt);
 
@@ -332,28 +331,28 @@ namespace KASIR.Komponen
                 int totalExpenditure = expenditures.Sum(e => e.nominal);
 
                 var successfulCartDetails = transactionData.data.SelectMany(t => t.cart_details)
-                    .Where(cd => cd.qty > 0) 
+                    .Where(cd => cd.qty > 0)
                     .GroupBy(cd =>
-                        new { cd.menu_id, cd.menu_detail_id }) 
+                        new { cd.menu_id, cd.menu_detail_id })
                     .Select(g => new
                     {
                         g.Key.menu_id,
                         g.Key.menu_detail_id,
-                        g.First().menu_name, 
-                        g.First().menu_type, 
+                        g.First().menu_name,
+                        g.First().menu_type,
                         varian =
-                            g.First().menu_detail_name, 
-                        qty = g.Sum(cd => cd.qty), 
-                        total_price = g.Sum(cd => cd.total_price) 
+                            g.First().menu_detail_name,
+                        qty = g.Sum(cd => cd.qty),
+                        total_price = g.Sum(cd => cd.total_price)
                     })
                     .ToList();
 
                 int totalSuccessfulAmount = successfulCartDetails.Sum(cd => cd.total_price);
 
                 var pendingCartDetails = transactionDataSavebill.data.SelectMany(t => t.cart_details)
-                    .Where(cd => cd.qty > 0) 
+                    .Where(cd => cd.qty > 0)
                     .GroupBy(cd =>
-                        new { cd.menu_id, cd.menu_detail_id }) 
+                        new { cd.menu_id, cd.menu_detail_id })
                     .Select(g => new
                     {
                         g.Key.menu_id,
@@ -393,7 +392,8 @@ namespace KASIR.Komponen
                     .GroupBy(rd =>
                         new
                         {
-                            rd.menu_id, rd.menu_detail_name
+                            rd.menu_id,
+                            rd.menu_detail_name
                         }) // Mengelompokkan berdasarkan menu_id dan menu_detail_name
                     .Select(g => new
                     {
@@ -486,7 +486,7 @@ namespace KASIR.Komponen
                 int grandTotal = transactionData.data
                     .SelectMany(t => t.cart_details) // Meratakan list cart_details dari setiap Transaction
                     .Sum(cd => cd.total_price); // Menjumlahkan total_price untuk setiap CartDetails
-                
+
                 //Membership
                 int totalMemberUsePoints = int.Parse(CalculateTotalMemberUsePoints(transactionData.data).ToString());
                 paymentDetails.Add(new
@@ -514,18 +514,18 @@ namespace KASIR.Komponen
                         outlet_name = outletName,
                         outlet_address = outletAddress,
                         outlet_phone_number = outletPhoneNumber,
-                        casher_name = txtNamaKasir.Text, 
+                        casher_name = txtNamaKasir.Text,
                         shift_number = shiftNumber,
                         start_date = startDate,
                         end_date = endDate,
                         expenditures,
                         expenditures_total = totalExpenditure,
                         ending_cash_expected = ending_cash,
-                        ending_cash_actual = actual_cash, 
-                        cash_difference = cash_difference.ToString(), 
+                        ending_cash_actual = actual_cash,
+                        cash_difference = cash_difference.ToString(),
                         discount_amount_transactions = discountsCarts,
-                        discount_amount_per_items = discountsDetails, 
-                        discount_total_amount = totalDiscounts, 
+                        discount_amount_per_items = discountsDetails,
+                        discount_total_amount = totalDiscounts,
                         cart_details_success = successfulCartDetails,
                         totalSuccessQty = successfulCartDetails.Sum(cd => cd.qty),
                         totalCartSuccessAmount = totalSuccessfulAmount,
@@ -570,45 +570,27 @@ namespace KASIR.Komponen
 
         private async Task HandleSuccessfulPrint(string response)
         {
-            int retryCount = 3; // Jumlah maksimal percobaan ulang
-            int delayBetweenRetries = 2000; // Jeda antara percobaan dalam milidetik
-            int currentRetry = 0;
-
-            while (currentRetry < retryCount)
+            try
             {
-                try
-                {
-                    PrinterModel printerModel = new();
+                PrinterModel printerModel = new();
 
-                    GetStrukShift shiftModel = JsonConvert.DeserializeObject<GetStrukShift>(response);
-                    DataStrukShift datas = shiftModel.data;
+                GetStrukShift shiftModel = JsonConvert.DeserializeObject<GetStrukShift>(response);
+                DataStrukShift datas = shiftModel.data;
 
-                    await printerModel.PrintModelCetakLaporanShift(
-                        datas,
-                        datas.expenditures,
-                        datas.cart_details_success,
-                        datas.cart_details_pending,
-                        datas.cart_details_canceled,
-                        datas.refund_details,
-                        datas.payment_details
-                    );
+                await printerModel.PrintModelCetakLaporanShift(
+                    datas,
+                    datas.expenditures,
+                    datas.cart_details_success,
+                    datas.cart_details_pending,
+                    datas.cart_details_canceled,
+                    datas.refund_details,
+                    datas.payment_details
+                );
 
-                    MessageBox.Show("Cetak laporan sukses", "Gaspol", MessageBoxButtons.OK);
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    currentRetry++;
-
-                    if (currentRetry >= retryCount)
-                    {
-                        LoggerUtil.LogError(ex, $"Error printing after {currentRetry}", ex);
-                    }
-                    else
-                    {
-                        await Task.Delay(delayBetweenRetries); // Menunggu sebelum mencoba lagi
-                    }
-                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error writing new shift ID: {ErrorMessage}", ex.Message);
             }
         }
 
@@ -706,18 +688,25 @@ namespace KASIR.Komponen
 
         private async Task printingReportHistory(string id)
         {
-            string filePath = $"DT-Cache\\Transaction\\ShiftReport\\shiftReport-{id}.data";
-            if (!File.Exists(filePath))
+            try
             {
-                return;
+                string filePath = $"DT-Cache\\Transaction\\ShiftReport\\shiftReport-{id}.data";
+                if (!File.Exists(filePath))
+                {
+                    return;
+                }
+                string fileContent = await File.ReadAllTextAsync(filePath);
+
+                object? shiftReport = JsonConvert.DeserializeObject(fileContent);
+
+                string shiftReportJson = JsonConvert.SerializeObject(shiftReport, Formatting.Indented);
+
+                await HandleSuccessfulPrint(shiftReportJson);
             }
-            string fileContent = await File.ReadAllTextAsync(filePath);
-
-            object? shiftReport = JsonConvert.DeserializeObject(fileContent);
-
-            string shiftReportJson = JsonConvert.SerializeObject(shiftReport, Formatting.Indented);
-
-            await HandleSuccessfulPrint(shiftReportJson);
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Error Print Ulang Shift : {ErrorMessage}", ex.Message);
+            }
         }
 
         private async void SelectedShiftID(string ID)
@@ -989,9 +978,21 @@ namespace KASIR.Komponen
                             expenditureCreatedAt > startAtDateTime)
                 .ToList();
 
+            List<Transaction> filteredSavebillCancelBefore = transactionDataSaveBill.data
+                .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt < startAtDateTime)
+                .ToList();
+
+            List<Transaction> filteredSavebillCancelAfter = transactionDataSaveBill.data
+                .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt > startAtDateTime)
+                .ToList();
+
             // Membungkus filteredTransactions menjadi TransactionData
             TransactionData filteredTransactions = new() { data = transactionDataFiltered };
+            TransactionData filteredTransactionsCanceledSavebillBefore = new() { data = filteredSavebillCancelBefore };
+            TransactionData filteredTransactionsCanceledSavebillAfter = new() { data = filteredSavebillCancelAfter };
 
+
+            ExpenditureData filteredexpenditureData = new() { data = filteredExpenditures };
             // Get the start and last shift based on transaction times
             var (startShift, lastShift) = GetStartAndLastShiftOrder(filteredTransactions);
             // Add the Start and Last Shift Order to the DataTable
@@ -1011,7 +1012,6 @@ namespace KASIR.Komponen
 
             decimal totalProcessedCart = CalculateTotalProcessCartDetails(filteredTransactions);
             dataTable.Rows.Add("Total Sold Items", $"{totalProcessedCart:n0}");
-
 
             dataTable.Rows.Add("", "");
 
@@ -1033,15 +1033,21 @@ namespace KASIR.Komponen
             // Cancel the savebill details
             ProcessCartDetails(transactionDataSaveBill, dataTable, "CANCELED ITEMS");
 
-            decimal totalCancelCart = CalculateTotalProcessCartDetails(transactionDataSaveBill);
-            dataTable.Rows.Add("Total Canceled Items", $"{totalCancelCart:n0}");
+            decimal totalCancelCartBefore = CalculateTotalCanceledItems(filteredTransactionsCanceledSavebillBefore);
+            if (totalCancelCartBefore > 0)
+            {
+                dataTable.Rows.Add("Total Canceled Items Shift Sebelumnya", $"{totalCancelCartBefore:n0}");
+            }
+
+            decimal totalCancelCart = CalculateTotalCanceledItems(filteredTransactionsCanceledSavebillAfter);
+            dataTable.Rows.Add("Total Canceled Items Shift Sekarang", $"{totalCancelCart:n0}");
 
             dataTable.Rows.Add("", "");
 
             // Process the Expenditure details
             ProcessExpenditureDetails(filteredExpenditures, dataTable, "EXPENDITURE ITEMS");
 
-            decimal totalExpenditureItems = CalculateTotalProcessExpenditures(expenditureData);
+            decimal totalExpenditureItems = CalculateTotalProcessExpenditures(filteredexpenditureData);
             dataTable.Rows.Add("Total Expense Items", $"{totalExpenditureItems:n0}");
 
             dataTable.Rows.Add("", "");
@@ -1116,6 +1122,27 @@ namespace KASIR.Komponen
             return totalProcessedCart;
         }
 
+        private decimal CalculateTotalCanceledItems(TransactionData transactionData)
+        {
+            var canceledCartDetails = transactionData.data.SelectMany(t => t.canceled_items)
+                    .Where(cd => cd.qty > 0) // Hanya ambil item dengan qty lebih dari 0
+                    .GroupBy(cd =>
+                        new { cd.menu_id, cd.menu_detail_id }) // Mengelompokkan berdasarkan menu_id dan menu_detail_id
+                    .Select(g => new
+                    {
+                        g.Key.menu_id,
+                        g.Key.menu_detail_id,
+                        g.First().menu_name, // Mengambil satu nilai menu_name dari salah satu item
+                        g.First().menu_type, // Mengambil satu nilai menu_type dari salah satu item
+                        varian =
+                            g.First().menu_detail_name, // Mengambil satu nilai menu_detail_name dari salah satu item
+                        qty = g.Sum(cd => cd.qty), // Menjumlahkan qty
+                        total_price = g.Sum(cd => cd.total_price) // Menjumlahkan total_price, jika diperlukan
+                    })
+                    .ToList();
+            decimal totalCanceledAmount = canceledCartDetails.Sum(cd => cd.total_price);
+            return totalCanceledAmount;
+        }
         private decimal CalculateTotalProcessCartDetails(TransactionData transactionData)
         {
             decimal totalProcessedCart = transactionData.data
@@ -1271,7 +1298,7 @@ namespace KASIR.Komponen
                 decimal totalItemRefund = itemRefund?.TotalItemRefund ?? 0; // Default to 0 if not found
 
                 decimal netAmount = payment.TotalAmount - (totalRefund + totalItemRefund);
-                
+
                 dataTable.Rows.Add(payment.PaymentTypeName, $"{netAmount:n0}");
 
                 if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))

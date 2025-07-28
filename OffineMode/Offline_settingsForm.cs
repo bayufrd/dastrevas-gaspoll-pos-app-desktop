@@ -27,10 +27,13 @@ namespace KASIR.Komponen
         private readonly string configFolderPath = "setting";
         private PrinterModel printerModel;
         private InternetService _internetService;
+        private ImageUploadHelper _imageUploadHelper;
         public Offline_settingsForm()
         {
             //ControlBox = false;
             InitializeComponent();
+            _imageUploadHelper = new ImageUploadHelper();
+
             //SetAllLabelsToBlack();
             SetAllControlStyles(
                 labelForeColor: Color.Black,
@@ -1253,41 +1256,23 @@ namespace KASIR.Komponen
 
         private void picThumbnail_Click_1(object sender, EventArgs e)
         {
-            string PathLogo = "icon\\QRCode.bmp";
-
-            // Membuat instance dari OpenFileDialog
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Bitmap Files (*.bmp)|*.bmp|All Files (*.*)|*.*";
-            openFileDialog.Title = "Pilih Logo";
-
-            // Menampilkan OpenFileDialog dan mengecek jika file dipilih
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            try
             {
-                try
-                {
-                    // Mendapatkan path file yang dipilih
-                    string selectedFilePath = openFileDialog.FileName;
+                // Path folder untuk menyimpan logo
+                string logoFolder = "icon";
 
-                    // Menampilkan gambar yang dipilih di PictureBox
-                    picThumbnail.Image = new Bitmap(selectedFilePath); // Menampilkan gambar di PictureBox
+                // Pastikan folder exists
+                Directory.CreateDirectory(logoFolder);
 
-                    string destinationPath = PathLogo;  // Lokasi dan nama file tujuan
+                // Path lengkap file logo
+                string PathLogo = Path.Combine(logoFolder, "QRCode.bmp");
 
-                    if (File.Exists(destinationPath))
-                    {
-                        File.Delete(destinationPath);  // Menghapus file lama (jika ada)
-                    }
-
-                    File.Copy(selectedFilePath, destinationPath);
-
-                    // Refresh PictureBox dengan gambar yang baru saja disalin
-                    picThumbnail.Image = new Bitmap(destinationPath);  // Muat ulang gambar dari path baru
-                    MessageBox.Show("Logo berhasil di-upload dan disimpan.");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Terjadi kesalahan saat membuka file: " + ex.Message);
-                }
+                // Gunakan method dari ImageUploadHelper
+                _imageUploadHelper.UploadAndSaveImage(picThumbnail, PathLogo);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Terjadi kesalahan saat membuka file: " + ex.Message);
             }
         }
 

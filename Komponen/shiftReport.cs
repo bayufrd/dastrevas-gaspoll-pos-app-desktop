@@ -341,17 +341,29 @@ namespace KASIR.Komponen
                     {
                         SyncExpenditureData(expenditureDataPath);
                     }
+                    else
+                    {
+                        LoggerUtil.LogWarning("Skip Expenditure Offline sync");
+                    }
 
                     string shiftDataPath = "DT-Cache\\Transaction\\shiftData.data";
                     if (File.Exists(shiftDataPath))
                     {
                         SyncShiftData(shiftDataPath);
                     }
+                    else
+                    {
+                        LoggerUtil.LogWarning("Skip ShiftData Offline sync");
+                    }
 
                     string membershipDataPath = "DT-Cache\\Transaction\\membershipSyncPoint.data";
                     if (File.Exists(membershipDataPath))
                     {
                         SyncmembershipData(membershipDataPath);
+                    }
+                    else
+                    {
+                        LoggerUtil.LogWarning("Skip membership sync");
                     }
                     if (!File.Exists(filePath))
                     {
@@ -402,6 +414,8 @@ namespace KASIR.Komponen
 
                     if (response.IsSuccessStatusCode)
                     {
+                        LoggerUtil.LogWarning(
+                        $"Sync Transaction Payload Size: {data.ToString().Length} bytes, Timestamp: {DateTime.Now}");
                         string folderCombine = Path.Combine(newSyncFileTransaction, newFileName);
 
                         // Handle successful sync
@@ -477,7 +491,7 @@ namespace KASIR.Komponen
                         };
 
                         // Step 3: Send the data to the API
-                        var isSuccess = await SendToApi(payload, api);
+                        var isSuccess = await SendToApiPOST (payload, api, "membership-point");
 
                         if (isSuccess)
                         {
@@ -527,7 +541,7 @@ namespace KASIR.Komponen
                         };
 
                         // Step 3: Send the data to the API
-                        var isSuccess = await SendToApi(payload, api);
+                        var isSuccess = await SendToApiPOST(payload, api, "ShiftData Offline");
 
                         if (isSuccess)
                         {
@@ -569,7 +583,7 @@ namespace KASIR.Komponen
                         };
 
                         // Step 3: Send the data to the API
-                        var isSuccess = await SendToApi(payload,api);
+                        var isSuccess = await SendToApiPOST(payload,api,"expenditures");
 
                         if (isSuccess)
                         {
@@ -586,9 +600,7 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "Error while sending expenditures to API: {ErrorMessage}", ex.Message);
             }
         }
-
-        // Method to send data to the API using a POST request
-        private async Task<bool> SendToApi(object payload, string api)
+        private async Task<bool> SendToApiPOST(object payload, string api, string DetailsSync)
         {
             try
             {
@@ -596,10 +608,12 @@ namespace KASIR.Komponen
                 string jsonString = JsonConvert.SerializeObject(payload, Formatting.Indented);
 
                 // Perform the POST request with the payload
-                HttpResponseMessage response = await apiService.EditMember(jsonString, api);
+                HttpResponseMessage response = await apiService.CreateMember(jsonString, api);
 
                 if (response != null && response.IsSuccessStatusCode)
                 {
+                    LoggerUtil.LogWarning(
+                    $"Sync {DetailsSync} Payload Size: {jsonString.Length} bytes, Timestamp: {DateTime.Now}");
                     return true; // Successfully sent
                 }
                 return false; // Failed to send
@@ -1250,6 +1264,8 @@ namespace KASIR.Komponen
 
                 if (savebillSync.IsSuccessStatusCode)
                 {
+                    LoggerUtil.LogWarning(
+                    $"Sync SaveBillSync Payload Size: {data.ToString().Length} bytes, Timestamp: {DateTime.Now}");
                     SyncSpecificTransactions(saveBillDataPath, transactionIdsBeingSynced);
 
                     // Hapus file SaveBill setelah sinkronisasi berhasil

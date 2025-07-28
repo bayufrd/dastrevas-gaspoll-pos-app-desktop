@@ -280,7 +280,7 @@ namespace KASIR.Model
         public int is_refund_all { get; set; }  // Indicating if the transaction is fully refunded
         
         //MEMBERS AREA
-        public int? member_id { get; set; }
+        public int? member_id { get; set; } = 0;
         public string? member_name { get; set; }
         public string? member_phone_number { get; set; }
         public string? member_email { get; set; }

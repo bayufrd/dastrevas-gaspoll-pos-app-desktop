@@ -1,19 +1,21 @@
 ﻿using System.Globalization;
 using System.Reflection;
 using FontAwesome.Sharp;
+using KASIR.Database;
+using KASIR.Database.ModalDatabase;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Properties;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Serilog;
 
 namespace KASIR.OfflineMode
 {
     [Serializable]
     public partial class Offline_addCartForm : Form
     {
-         
+
         private readonly string baseOutlet;
         public string btnServingType;
         private List<DataDiscountCart> dataDiskonList;
@@ -561,6 +563,211 @@ namespace KASIR.OfflineMode
             }
         }
 
+        private string GenerateTransactionRef()
+        {
+            string randomName = "";
+
+            generateRandomFill(ref randomName);
+            string transaction_ref_time = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            return $"{baseOutlet}-{transaction_ref_time}-{randomName}";
+        }
+        private async Task SendDataAsyncWithSQL(int serving_type, string pricefix, int diskon, int quantity, string notes,
+            int? selectedVarian)
+        {
+            try
+            {
+                btnSimpan.Enabled = false;
+                lblNameCart.Text = "Membuat Data...";
+
+                CartDetailsRepository cartRepo = new CartDetailsRepository();
+
+                using (var context = new AppDbContext())
+                {
+                    // Cek apakah ada cart modal  
+                    var existingCart = await context.Carts.Include(c => c.CartDetails).FirstOrDefaultAsync();
+
+                    // Jika tidak ada cart modal, buat cart baru  
+                    if (existingCart == null)
+                    {
+                        existingCart = new dbCartModal
+                        {
+                            TransactionRef = GenerateTransactionRef(), // Generate unique transaction reference  
+                            Subtotal = 0,
+                            Total = 0,
+                            DiscountsValue = 0,
+                            DiscountId = 0,
+                            DiscountCode = null,
+                            DiscountsIsPercent = 0,
+                            DiscountedPrice = 0,
+                            CartDetails = new List<dbCartDetails>()
+                        };
+
+                        context.Carts.Add(existingCart); // Menambah cart modal baru ke context  
+                        await context.SaveChangesAsync(); // Simpan perubahan  
+                    }
+
+                    // Path for LoadServingType data
+                    string servingTypeFilePath = "DT-Cache/addCartForm/LoadDataServingType_" + datas.id + "_Outlet_" +
+                                             baseOutlet + ".data";
+
+                    // Read the LoadServingType.data file if it exists
+                    string servingTypeJson =
+                        File.Exists(servingTypeFilePath) ? File.ReadAllText(servingTypeFilePath) : "{}";
+                    JObject? servingTypeData = JsonConvert.DeserializeObject<JObject>(servingTypeJson);
+
+                    if (servingTypeData == null || servingTypeData["data"] == null)
+                    {
+                        LoggerUtil.LogError(null, "Serving type data not found in file.");
+                        return; // Return or handle as appropriate
+                    }
+
+                    // Find the menu and serving type information from the loaded data
+                    JToken? menuData = servingTypeData["data"];
+                    JArray? menuDetails = menuData["menu_details"] as JArray;
+                    JArray? servingTypes = menuData["serving_types"] as JArray;
+                    // Get menu detail name based on selected variant
+
+                    if (menuDetails == null)
+                    {
+                        LoggerUtil.LogError(null, "Menu details not found.");
+                        return; // Handle as appropriate
+                    }
+                    // Get menu detail name based on selected variant
+                    JToken? selectedMenuDetail =
+                        menuDetails.FirstOrDefault(detail => (int)detail["menu_detail_id"] == selectedVarian);
+
+                    if (selectedMenuDetail == null && selectedVarian != 0)
+                    {
+                        // Only log the error if selectedVarian is not 0
+                        LoggerUtil.LogError(null, "Selected menu detail not found for variant: {selectedVarian}", selectedVarian);
+                        return; // Optionally handle the case further
+                    }
+
+                    string menuDetailName = selectedMenuDetail?["varian"]?.ToString();
+
+                    // Get the serving type name based on the serving_type_id
+                    if (servingTypes == null)
+                    {
+                        LoggerUtil.LogError(null, "Serving types not found.");
+                        return; // Handle as appropriate
+                    }
+
+                    // Get the serving type name based on the serving_type_id
+                    JToken? selectedServingType = servingTypes.FirstOrDefault(type => (int)type["id"] == serving_type);
+                    string servingTypeName = selectedServingType?["name"]?.ToString();
+
+                    // Convert pricefix to integer
+                    if (!int.TryParse(pricefix, out int priceItem))
+                    {
+                        LoggerUtil.LogError(null, "Invalid pricefix value: {pricefix}", pricefix);
+                        return; // Handle error
+                    }
+
+                    int subtotal_item = int.Parse(pricefix) * quantity;
+                    int price_item = int.Parse(pricefix);
+                    int total_item_withDiscount = subtotal_item;
+                    int discountPercent = 0;
+                    int discountValue = 0;
+                    string? discountCode = null;
+                    int discountId = 0;
+                    int discountedPrice = 0;
+                    int discounted_peritemPrice = 0;
+
+                    if (diskon == -1)
+                    {
+                        discountId = diskon;
+                    }
+
+                    if (diskon != -1)
+                    {
+                        discountPercent = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.is_percent ?? 0;
+                        discountValue = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.value ?? 0;
+                        int discountMax = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.max_discount ?? int.MaxValue;
+                        discountCode = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.code ?? null;
+                        discountId = dataDiskonList.FirstOrDefault(d => d.id == diskon)?.id ?? 0;
+
+                        int tempTotal = 0;
+
+
+                        if (discountPercent != 0) // Jika diskon berupa persentase
+                        {
+                            // Menghitung nilai diskon berdasarkan persentase
+                            tempTotal = subtotal_item * discountValue / 100;
+                            if (tempTotal > discountMax)
+                            {
+                                discountedPrice = discountMax; // Potongan diskon maksimal
+                            }
+                            else
+                            {
+                                discountedPrice = tempTotal; // Potongan diskon sesuai persen
+                            }
+
+                            total_item_withDiscount = subtotal_item - discountedPrice; // Total setelah diskon
+                            discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
+                        }
+                        else // Jika diskon berupa nilai tetap
+                        {
+                            // Mengurangi subtotal dengan diskon nilai tetap
+                            tempTotal = subtotal_item - discountValue;
+                            if (tempTotal > discountMax)
+                            {
+                                discountedPrice = discountMax; // Potongan diskon maksimal
+                            }
+                            else
+                            {
+                                discountedPrice = subtotal_item - tempTotal; // Potongan diskon tetap
+                            }
+
+                            total_item_withDiscount = subtotal_item - discountedPrice; // Total setelah diskon
+                            discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
+                        }
+                    }
+
+                    string created_atTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
+                    // Buat item baru untuk cart details
+                    var newItem = new dbCartDetails
+                    {
+                        CartDetailId = existingCart.Id, // Mengaitkan dengan cart modal
+                        MenuId = datas.id,
+                        MenuName = menuData["name"].ToString(),
+                        MenuType = menuData["menu_type"].ToString(),
+                        MenuDetailId = selectedVarian ?? null,
+                        MenuDetailName = menuDetailName,
+                        ServingTypeId = serving_type,
+                        ServingTypeName = servingTypeName,
+                        Price = priceItem,
+                        Qty = quantity,
+                        NoteItem = notes,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                        DiscountId = discountId,
+                        DiscountCode = discountCode,
+                        DiscountsValue = discountValue,
+                        DiscountedPrice = discountedPrice,
+                        DiscountedPerItemPrice = discounted_peritemPrice,
+                        DiscountsIsPercent = discountPercent,
+                        SubtotalPrice = subtotal_item,
+                        TotalPrice = total_item_withDiscount
+                    };
+
+                    existingCart.CartDetails.Add(newItem); // Menambahkan item ke collection cart
+                    existingCart.Subtotal += subtotal_item; // Update subtotal cart
+                    existingCart.Total += total_item_withDiscount; // Update total cart
+
+                    await context.SaveChangesAsync(); // Simpan perubahan ke database
+                }
+            }
+            catch (TaskCanceledException ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+
         private void generateRandomFill(ref string randomName) // 'ref' allows modification of the value
         {
             Random random = new();
@@ -655,8 +862,9 @@ namespace KASIR.OfflineMode
                 }
 
                 // Call SendDataAsync without awaiting it
-                //_ = SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
                 await SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
+
+                await SendDataAsyncWithSQL(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
 
                 DialogResult = DialogResult.OK;
                 selectedServingTypeall = int.Parse(comboBox1.SelectedValue?.ToString());

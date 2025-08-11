@@ -947,6 +947,7 @@ namespace KASIR.Komponen
             await EnsureFileExistsAsync("setting\\configListMenu.data", "OFF", sButtonListMenu);
             await EnsureFileExistsAsync("setting\\configDualMonitor.data", "OFF", radioDualMonitor);
             await EnsureFileExistsAsync("setting\\OfflineMode.data", "OFF", sButtonOffline);
+
             string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
             CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
             lblOutletID.Text = "ID : " + dataOutlet.data.id.ToString();

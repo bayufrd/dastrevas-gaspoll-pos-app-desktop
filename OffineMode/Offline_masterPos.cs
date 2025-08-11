@@ -5,6 +5,7 @@ using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Timers;
 using FontAwesome.Sharp;
+using KASIR.Database;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
@@ -19,6 +20,8 @@ using MessageBox = System.Windows.Forms.MessageBox;
 using Point = System.Drawing.Point;
 using Size = System.Drawing.Size;
 using SystemFonts = System.Drawing.SystemFonts;
+using Microsoft.EntityFrameworkCore;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
 
 
 namespace KASIR.OfflineMode
@@ -1792,8 +1795,204 @@ namespace KASIR.OfflineMode
             }
         }
 
-
         public async Task LoadCartData()
+        {
+            try
+            {
+                using (var context = new AppDbContext())
+                {
+                    // Ambil cart modal yang terbaru
+                    var cart = await context.Carts.Include(c => c.CartDetails)
+                                                    .Where(c => c.DeletedAt == null)
+                                                   .OrderByDescending(c => c.Id)
+                                                   .FirstOrDefaultAsync();
+
+                    if (cart == null || cart.CartDetails.Count == 0)
+                    {
+                        lblDetailKeranjang.Text = "Keranjang: Kosong";
+                        lblDiskon1.Text = "Rp. 0";
+                        lblSubTotal1.Text = "Rp. 0,-";
+                        lblTotal1.Text = "Rp. 0,-";
+                        buttonPayment.Text = "Bayar ";
+                        subTotalPrice = 0;
+                        diskonID = 0;
+
+                        iconButtonGet.Text = "Gunakan Disc";
+                        iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
+                        isDiscountActive = false;
+                        iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
+
+                        selectedServingTypeallItems = 1;
+
+                        ButtonSplit.Enabled = true;
+                    }
+                    else
+                    {
+                        // Jika cart ada, ambil informasi dari cart
+                        //customer_name = cart.CustomerName ?? "??";
+                        //customer_seat = cart.CustomerSeat ?? "??";
+                        lblDetailKeranjang.Text = $"Keranjang: Nama : {customer_name} Seat : {customer_seat}";
+
+                        totalCart = cart.Total.ToString();
+                        diskonID = cart.DiscountId;
+
+                        // Logika untuk mendeteksi diskon
+                        if (diskonID != 0)
+                        {
+                            iconButtonGet.Text = "Hapus Disc";
+                            iconButtonGet.ForeColor = Color.Red;
+                            isDiscountActive = true;
+                            iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
+                        }
+                        else
+                        {
+                            iconButtonGet.Text = "Gunakan Disc";
+                            iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
+                            isDiscountActive = false;
+                            iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
+                        }
+
+                        int subtotal = cart.Subtotal;
+                        int total = cart.Total;
+
+                        lblDiskon1.Text = string.Format("Rp. {0:n0},-", total - subtotal);
+                        lblSubTotal1.Text = string.Format("Rp. {0:n0},-", subtotal);
+                        subTotalPrice = subtotal; // Simpan subtotal untuk digunakan nanti
+                        lblTotal1.Text = string.Format("Rp. {0:n0},-", total);
+                        buttonPayment.Text = string.Format("Bayar Rp. {0:n0},-", total);
+
+                        // Membuat DataTable untuk menyimpan hasil
+                        DataTable dataTable = new();
+                        dataTable.Columns.Add("MenuID", typeof(string));
+                        dataTable.Columns.Add("CartDetailID", typeof(string));
+                        dataTable.Columns.Add("Jenis", typeof(string));
+                        dataTable.Columns.Add("Menu", typeof(string));
+                        dataTable.Columns.Add("Total Harga", typeof(string));
+                        dataTable.Columns.Add("Note", typeof(string));
+
+                        // Mengelompokkan item cart berdasarkan serving type
+                        var menuGroups = cart.CartDetails
+                                             .Where(item => item.Qty > 0) // Hanya ambil item dengan Qty lebih dari 0
+                                             .GroupBy(item => item.ServingTypeName)
+                                             .ToList();
+
+                        foreach (var group in menuGroups)
+                        {
+                            // Tambahkan baris pemisah untuk setiap grup serving type
+                            string servingTypeName = group.Key;
+                            AddSeparatorRow(dataTable, servingTypeName, dataGridView1); // Fungsi untuk menambahkan baris pemisah
+
+                            // Menambahkan item ke dalam group
+                            foreach (var item in group)
+                            {
+                                string menuName = item.MenuName;
+                                int quantity = item.Qty;
+                                decimal price = item.Price;
+                                int totalPrice = item.TotalPrice;
+                                string? noteItem = item.NoteItem;
+                                string discountedPrice = item.DiscountedPrice?.ToString() ?? "0"; // Mengambil discounted price jika ada
+                                int discountValue = item.DiscountsValue ?? 0; // Mengambil nilai diskon
+                                bool hasDiscount = item.DiscountedPrice.HasValue && item.DiscountedPrice > 0; // Mengecek apakah ada diskon
+
+                                // Menambahkan baris data untuk setiap item
+                                dataTable.Rows.Add(
+                                    item.MenuId.ToString(),
+                                    item.CartDetailId.ToString(),
+                                    servingTypeName,
+                                    $"{quantity}X {menuName}",
+                                    string.Format("Rp. {0:n0},-", totalPrice),
+                                    noteItem
+                                );
+
+                                // Menambahkan catatan jika ada
+                                if (!string.IsNullOrEmpty(noteItem))
+                                {
+                                    if (hasDiscount)
+                                    {
+                                        dataTable.Rows.Add(
+                                            null,
+                                            null,
+                                            null,
+                                            $"  *catatan: {noteItem}",
+                                            "  *diskon diterapkan",
+                                            null
+                                        );
+                                    }
+                                    else
+                                    {
+                                        dataTable.Rows.Add(
+                                            null,
+                                            null,
+                                            null,
+                                            $"  *catatan: {noteItem}",
+                                            null,
+                                            null
+                                        );
+                                    }
+                                }
+
+                                // Menambahkan informasi diskon jika ada
+                                if (hasDiscount)
+                                {
+                                    dataTable.Rows.Add(
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        $"  *diskon: Rp. {discountValue} (dari Rp. {price})",
+                                        null
+                                    );
+                                }
+                            }
+                        }
+
+                        // Bind the data to the DataGridView
+                        dataGridView1.DataSource = dataTable;
+
+                        // Hide unnecessary columns
+                        dataGridView1.Columns["MenuID"].Visible = false;
+                        dataGridView1.Columns["CartDetailID"].Visible = false;
+                        dataGridView1.Columns["Jenis"].Visible = false;
+                        dataGridView1.Columns["Note"].Visible = false;
+
+                        // Apply formatting to the DataGridView
+                        DataGridViewCellStyle boldStyle = new();
+                        boldStyle.Font = new Font(dataGridView1.Font, FontStyle.Italic);
+                        dataGridView1.Columns["Menu"].DefaultCellStyle = boldStyle;
+                        dataGridView1.Columns["Menu"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+                        dataGridView1.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+                        dataGridView1.Columns["Menu"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+
+                        await LoadDataDiscount(); 
+
+                        if (diskonID != 0)
+                        {
+                            for (int i = 0; i < cmbDiskon.Items.Count; i++)
+                            {
+                                DataDiscountCart? discount = cmbDiskon.Items[i] as DataDiscountCart;
+
+                                if (discount != null && discount.id == diskonID)
+                                {
+                                    // Set index diskon yang sesuai
+                                    cmbDiskon.SelectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (TaskCanceledException ex)
+            {
+                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+        public async Task LoadCartData1()
         {
             try
             {

@@ -433,7 +433,7 @@ namespace KASIR.Komponen
                 string actual_cash = Regex.Replace(txtActualCash.Text, "[^0-9]", "");
                 List<dynamic> paymentDetails = new();
                 int categoryId = 1; // Inisialisasi ID kategori pembayaran.
-
+                int CashOnPOS = 0;
                 foreach (var payment in groupedPayments)
                 {
                     var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
@@ -457,6 +457,7 @@ namespace KASIR.Komponen
                     // Check if the payment type is "Tunai"
                     if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
                     {
+                        CashOnPOS = netAmount;
                         netAmount -= totalExpenditure; // Deduct total expenditures if payment type is "Tunai"
                     }
 
@@ -470,6 +471,14 @@ namespace KASIR.Komponen
                     });
                 }
 
+
+                paymentDetails.Add(new
+                {
+                    payment_category = "Cash On POS", // Use the formatted payment category
+                    payment_type_detail = new List<dynamic>(), // Initialize as an empty array
+                    total_amount = CashOnPOS,
+                    payment_category_id = categoryId++ // Increment category ID for each entry
+                });
 
                 int discountsCarts = transactionData.data
                     .Where(t => t.discounted_price > 0) // Filter transactions with discounted_price > 0
@@ -1288,7 +1297,7 @@ namespace KASIR.Komponen
                 }).ToList();
 
             decimal totalMemberUsePoints = CalculateTotalMemberUsePoints(transactionData.data);
-
+            decimal CashOnPOS = 0;
             foreach (var payment in groupedPayments)
             {
                 var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
@@ -1303,11 +1312,14 @@ namespace KASIR.Komponen
 
                 if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
                 {
+                    CashOnPOS = netAmount;
                     netAmount -= expenditures;
                     txtActualCash.Text = $"{netAmount:n0}";
                     ending_cash = int.Parse(netAmount.ToString());
                 }
             }
+            dataTable.Rows.Add("Cash On POS", $"{CashOnPOS:n0}");
+
             dataTable.Rows.Add("", $"");
 
             AddSeparatorRowBold(dataTable, "POINT MEMBER DETAILS", dataGridView1);

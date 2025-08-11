@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Globalization;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using KASIR.Model;
@@ -491,7 +492,7 @@ namespace KASIR.Komponen
                         };
 
                         // Step 3: Send the data to the API
-                        var isSuccess = await SendToApiPOST (payload, api, "membership-point");
+                        var isSuccess = await SendToApiMembers (payload, api, "membership-point");
 
                         if (isSuccess)
                         {
@@ -600,6 +601,67 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "Error while sending expenditures to API: {ErrorMessage}", ex.Message);
             }
         }
+        private async Task<bool> SendToApiMembers(object payload, string api, string DetailsSync)
+        {
+            try
+            {
+                IApiService apiService = new ApiService();
+                string jsonString = JsonConvert.SerializeObject(payload, Formatting.Indented);
+
+                // Perform the POST request with the payload
+                HttpResponseMessage response = await apiService.EditMember(jsonString, api);
+
+                if (response != null)
+                {
+                    LoggerUtil.LogWarning(
+                        $"API Response - Status Code: {response.StatusCode}, " +
+                        $"Sync {DetailsSync}, " +
+                        $"Payload Size: {jsonString.Length} bytes, " +
+                        $"Timestamp: {DateTime.Now}");
+
+                    // Check for specific status codes
+                    switch (response.StatusCode)
+                    {
+                        case HttpStatusCode.OK: // 200
+                            return true;
+                        case HttpStatusCode.Created: // 201
+                            return true;
+                        case HttpStatusCode.BadRequest: // 400
+                                                        // Optional: Read response content for more details
+                            string responseBody = await response.Content.ReadAsStringAsync();
+                            LoggerUtil.LogWarning(
+                                $"Bad Request Details for {DetailsSync}: {responseBody}");
+
+                            return true;
+                        case HttpStatusCode.Unauthorized: // 401
+                            LoggerUtil.LogWarning($"Unauthorized access for {DetailsSync}");
+                            return false;
+                        case HttpStatusCode.Forbidden: // 403
+                            LoggerUtil.LogWarning($"Forbidden access for {DetailsSync}");
+                            return false;
+                        default:
+                            LoggerUtil.LogWarning(
+                                $"Unhandled status code {response.StatusCode} for {DetailsSync}");
+                            return false;
+                    }
+                }
+
+                LoggerUtil.LogWarning($"No response received for {DetailsSync}");
+                return false;
+            }
+            catch (HttpRequestException ex)
+            {
+                LoggerUtil.LogError(ex,
+                    $"HTTP Request Error while sending {DetailsSync}: {ex.Message}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex,
+                    $"Unexpected error while sending {DetailsSync}: {ex.Message}");
+                return false;
+            }
+        }
         private async Task<bool> SendToApiPOST(object payload, string api, string DetailsSync)
         {
             try
@@ -610,17 +672,53 @@ namespace KASIR.Komponen
                 // Perform the POST request with the payload
                 HttpResponseMessage response = await apiService.CreateMember(jsonString, api);
 
-                if (response != null && response.IsSuccessStatusCode)
+                if (response != null)
                 {
+                    // Log the status code for diagnostic purposes
                     LoggerUtil.LogWarning(
-                    $"Sync {DetailsSync} Payload Size: {jsonString.Length} bytes, Timestamp: {DateTime.Now}");
-                    return true; // Successfully sent
+                        $"API Response - Status Code: {response.StatusCode}, " +
+                        $"Sync {DetailsSync}, " +
+                        $"Payload Size: {jsonString.Length} bytes, " +
+                        $"Timestamp: {DateTime.Now}");
+
+                    // Check for specific status codes
+                    switch (response.StatusCode)
+                    {
+                        case HttpStatusCode.OK: // 200
+                            return true;
+                        case HttpStatusCode.Created: // 201
+                            return true;
+                        case HttpStatusCode.BadRequest: // 400
+                            string responseBody = await response.Content.ReadAsStringAsync();
+                            LoggerUtil.LogWarning(
+                                $"Bad Request Details for {DetailsSync}: {responseBody}");
+                            return false;
+                        case HttpStatusCode.Unauthorized: // 401
+                            LoggerUtil.LogWarning($"Unauthorized access for {DetailsSync}");
+                            return false;
+                        case HttpStatusCode.Forbidden: // 403
+                            LoggerUtil.LogWarning($"Forbidden access for {DetailsSync}");
+                            return false;
+                        default:
+                            LoggerUtil.LogWarning(
+                                $"Unhandled status code {response.StatusCode} for {DetailsSync}");
+                            return false;
+                    }
                 }
-                return false; // Failed to send
+
+                LoggerUtil.LogWarning($"No response received for {DetailsSync}");
+                return false;
+            }
+            catch (HttpRequestException ex)
+            {
+                LoggerUtil.LogError(ex,
+                    $"HTTP Request Error while sending {DetailsSync}: {ex.Message}");
+                return false;
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex, "Error while sending to API: {ErrorMessage}", ex.Message);
+                LoggerUtil.LogError(ex,
+                    $"Unexpected error while sending {DetailsSync}: {ex.Message}");
                 return false;
             }
         }

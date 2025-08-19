@@ -2236,198 +2236,26 @@ namespace KASIR.Komponen
 
         private void btnPengeluaran_Click(object sender, EventArgs e)
         {
-            ////LoggerUtil.LogPrivateMethod(nameof(btnPengeluaran_Click));
-
-            Form background = new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
-            };
-
-            using (notifikasiPengeluaran notifikasiPengeluaran = new notifikasiPengeluaran())
-            {
-                notifikasiPengeluaran.Owner = background;
-
-                background.Show();
-
-                DialogResult dialogResult = notifikasiPengeluaran.ShowDialog();
-
-                background.Dispose();
-            }
         }
 
         private void btnRiwayatShift_Click(object sender, EventArgs e)
         {
-
-            Form background = new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = this.Location,
-                ShowInTaskbar = false,
-            };
-            this.Invoke((MethodInvoker)delegate
-            {
-                using (printReportShift payForm = new printReportShift())
-                {
-                    payForm.Owner = background;
-
-                    background.Show();
-
-                    DialogResult dialogResult = payForm.ShowDialog();
-
-                    background.Dispose();
-                    if (dialogResult == DialogResult.OK && payForm.ReloadDataInBaseForm)
-                    {
-                        LoadData();
-
-                    }
-                }
-            });
         }
 
         private async void btnCetakStruk_Click(object sender, EventArgs e)
         {
-            try
-            {
-
-                if (txtNamaKasir.Text.ToString() == "" || txtNamaKasir.Text == null)
-                {
-                    MessageBox.Show("Nama kasir masih kurang tepat", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
-                if (txtActualCash.Text.ToString() == "" || txtActualCash.Text == null)
-                {
-                    MessageBox.Show("Uang kasir masih kurang tepat", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
-                string fulus = Regex.Replace(txtActualCash.Text, "[^0-9]", "");
-
-
-                DialogResult yakin = MessageBox.Show($"Melakukan End Shift {shiftnumber.ToString()} pada waktu \n{mulaishift.ToString()} sampai {akhirshift.ToString()}\nNama Kasir : {txtNamaKasir.Text}\nActual Cash : Rp.{txtActualCash.Text},- \nCash Different : {string.Format("{0:n0}", Convert.ToInt32(fulus) - bedaCash)}?", "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (yakin != DialogResult.Yes)
-                {
-                    MessageBox.Show("Cetak Shift diCancel");
-                    return;
-                }
-                else
-                {
-                    btnCetakStruk.Enabled = false;
-                    btnCetakStruk.Text = "Waiting...";
-
-                    var casherName = string.IsNullOrEmpty(txtNamaKasir.Text) ? "" : txtNamaKasir.Text;
-                    var actualCash = string.IsNullOrEmpty(fulus) ? "0" : fulus;
-
-                    var json = new
-                    {
-                        outlet_id = baseOutlet,
-                        casher_name = casherName,
-                        actual_ending_cash = actualCash
-                    };
-                    string jsonString = JsonConvert.SerializeObject(json, Formatting.Indented);
-
-                    IApiService api = new ApiService();
-
-                    string response = await api.CetakLaporanShift(jsonString, "/struct-shift");
-
-                    if (response != null)
-                    {
-                        await HandleSuccessfulPrint(response);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Gagal memproses transaksi. Silahkan coba lagi.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        ResetButtonState();
-                    }
-/*
-                    Offline_Complaint c = new Offline_Complaint();
-                    c.SendingComplaint($"AutoSendTrackingShift_{shiftnumber}", "ForTrackingBug");*/
-                }
-            }
-            catch (TaskCanceledException ex)
-            {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                ResetButtonState();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Gagal cetak laporan " + ex.Message);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                ResetButtonState();
-            }
+           
         }
 
         private async Task HandleSuccessfulPrint(string response)
         {
-            int retryCount = 3; // Jumlah maksimal percobaan ulang
-            int delayBetweenRetries = 2000; // Jeda antara percobaan dalam milidetik
-            int currentRetry = 0;
-
-            while (currentRetry < retryCount)
-            {
-                try
-                {
-                    PrinterModel printerModel = new PrinterModel();
-                    btnCetakStruk.Text = "Mencetak...";
-                    btnCetakStruk.Enabled = false;
-
-                    GetStrukShift shiftModel = JsonConvert.DeserializeObject<GetStrukShift>(response);
-                    DataStrukShift datas = shiftModel.data;
-
-                    await printerModel.PrintModelCetakLaporanShift(
-                        datas,
-                        datas.expenditures,
-                        datas.cart_details_success,
-                        datas.cart_details_pending,
-                        datas.cart_details_canceled,
-                        datas.refund_details,
-                        datas.payment_details
-                    );
-
-                    MessageBox.Show("Cetak laporan sukses", "Gaspol", MessageBoxButtons.OK);
-                    btnCetakStruk.Enabled = false;
-                    // Jika sukses, keluar dari loop
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    currentRetry++;
-
-                    if (currentRetry >= retryCount)
-                    {
-                        // Jika sudah mencapai batas retry, tampilkan pesan error
-                        //MessageBox.Show("Error printing after multiple attempts: " + ex.Message);
-                        LoggerUtil.LogError(ex, $"Error printing after {currentRetry}", ex);
-                    }
-                    else
-                    {
-                        // Tunda sebelum mencoba ulang
-                        //MessageBox.Show($"Error printing attempt {currentRetry}: {ex.Message}, retrying...");
-                        await Task.Delay(delayBetweenRetries); // Menunggu sebelum mencoba lagi
-                    }
-                }
-            }
+           
         }
 
 
         private void ResetButtonState()
         {
-            btnCetakStruk.Enabled = true;
-            btnCetakStruk.Text = "Cetak Struk";
-            btnCetakStruk.BackColor = Color.FromArgb(31, 30, 68);
+           
         }
     }
 }

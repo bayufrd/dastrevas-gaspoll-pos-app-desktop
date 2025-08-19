@@ -946,7 +946,8 @@ namespace KASIR.Komponen
             await EnsureFileExistsAsync("setting\\RunningText.data", "TERIMAKASIH ATAS KUNJUNGANNYA", txtRunningText);
             await EnsureFileExistsAsync("setting\\configListMenu.data", "OFF", sButtonListMenu);
             await EnsureFileExistsAsync("setting\\configDualMonitor.data", "OFF", radioDualMonitor);
-            await EnsureFileExistsAsync("setting\\OfflineMode.data", "OFF", sButtonOffline);
+            await EnsureFileExistsAsync("setting\\OfflineMode.data", "ON", sButtonOffline);
+            //OFLLINE AUTO ON
 
             string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
             CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);

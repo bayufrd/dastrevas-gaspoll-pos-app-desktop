@@ -41,7 +41,6 @@ namespace KASIR.komponen
             }
         }
 
-        private masterPos MasterPosForm { get; set; }
         public bool KeluarButtonClicked { get; private set; }
 
         public bool ReloadDataInBaseForm { get; private set; }

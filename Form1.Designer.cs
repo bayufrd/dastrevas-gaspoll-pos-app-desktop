@@ -40,29 +40,30 @@ namespace KASIR
             btnMax = new IconButton();
             btnExit = new IconButton();
             gradientPanel1 = new GradientPanel();
+            NavBarBtn = new PictureBox();
             lblNamaOutlet = new Label();
             iconCurrentChildForm = new IconPictureBox();
             lblTitleChildForm = new Label();
             SyncTimer = new System.Windows.Forms.Timer(components);
             gradientPanel2 = new GradientPanel();
+            BtnSettingForm = new IconButton();
             btnDev = new IconButton();
             btnContact = new IconButton();
             SignalPing = new IconButton();
             lblPing = new Label();
             btnShiftLaporan = new IconButton();
-            iconButton1 = new IconButton();
-            iconButton2 = new IconButton();
-            panel3 = new Panel();
-            button2 = new PictureBox();
+            MenuBtn = new IconButton();
+            TransBtn = new IconButton();
+            LogoKasir = new PictureBox();
             Setting = new IconButton();
             panel2 = new Panel();
-            BtnSettingForm = new IconButton();
             panel1.SuspendLayout();
             panelTitleBar.SuspendLayout();
             gradientPanel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)NavBarBtn).BeginInit();
             ((System.ComponentModel.ISupportInitialize)iconCurrentChildForm).BeginInit();
             gradientPanel2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)button2).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)LogoKasir).BeginInit();
             panel2.SuspendLayout();
             SuspendLayout();
             // 
@@ -96,12 +97,12 @@ namespace KASIR
             // 
             // btnMin
             // 
-            btnMin.BackColor = Color.Transparent;
+            btnMin.BackColor = Color.FromArgb(15, 90, 94);
             resources.ApplyResources(btnMin, "btnMin");
             btnMin.FlatAppearance.BorderSize = 0;
-            btnMin.ForeColor = Color.Wheat;
-            btnMin.IconChar = IconChar.CircleMinus;
-            btnMin.IconColor = Color.DarkSeaGreen;
+            btnMin.ForeColor = Color.Transparent;
+            btnMin.IconChar = IconChar.Minus;
+            btnMin.IconColor = Color.White;
             btnMin.IconFont = IconFont.Auto;
             btnMin.IconSize = 25;
             btnMin.Name = "btnMin";
@@ -110,12 +111,12 @@ namespace KASIR
             // 
             // btnMax
             // 
-            btnMax.BackColor = Color.Transparent;
+            btnMax.BackColor = Color.FromArgb(15, 90, 94);
             resources.ApplyResources(btnMax, "btnMax");
             btnMax.FlatAppearance.BorderSize = 0;
             btnMax.ForeColor = Color.Transparent;
-            btnMax.IconChar = IconChar.Maximize;
-            btnMax.IconColor = Color.PaleGoldenrod;
+            btnMax.IconChar = IconChar.Square;
+            btnMax.IconColor = Color.White;
             btnMax.IconFont = IconFont.Auto;
             btnMax.IconSize = 25;
             btnMax.Name = "btnMax";
@@ -124,12 +125,12 @@ namespace KASIR
             // 
             // btnExit
             // 
-            btnExit.BackColor = Color.Transparent;
+            btnExit.BackColor = Color.FromArgb(15, 90, 94);
             resources.ApplyResources(btnExit, "btnExit");
             btnExit.FlatAppearance.BorderSize = 0;
             btnExit.ForeColor = Color.Transparent;
-            btnExit.IconChar = IconChar.CircleMinus;
-            btnExit.IconColor = Color.IndianRed;
+            btnExit.IconChar = IconChar.Xmark;
+            btnExit.IconColor = Color.White;
             btnExit.IconFont = IconFont.Auto;
             btnExit.IconSize = 25;
             btnExit.Name = "btnExit";
@@ -138,15 +139,27 @@ namespace KASIR
             // 
             // gradientPanel1
             // 
+            resources.ApplyResources(gradientPanel1, "gradientPanel1");
             gradientPanel1.Angle = 0F;
-            gradientPanel1.BottomColor = Color.FromArgb(30, 31, 68);
+            gradientPanel1.BackColor = Color.FromArgb(15, 90, 94);
+            gradientPanel1.BottomColor = Color.FromArgb(15, 90, 94);
+            gradientPanel1.Controls.Add(NavBarBtn);
             gradientPanel1.Controls.Add(lblNamaOutlet);
             gradientPanel1.Controls.Add(iconCurrentChildForm);
             gradientPanel1.Controls.Add(lblTitleChildForm);
-            resources.ApplyResources(gradientPanel1, "gradientPanel1");
             gradientPanel1.Name = "gradientPanel1";
             gradientPanel1.TopColor = Color.Black;
             gradientPanel1.MouseDown += panelTitleBar_MouseDown;
+            // 
+            // NavBarBtn
+            // 
+            NavBarBtn.BackColor = Color.Transparent;
+            NavBarBtn.Cursor = Cursors.Hand;
+            NavBarBtn.Image = Properties.Resources.Menu;
+            resources.ApplyResources(NavBarBtn, "NavBarBtn");
+            NavBarBtn.Name = "NavBarBtn";
+            NavBarBtn.TabStop = false;
+            NavBarBtn.Click += NavBarBtn_Click;
             // 
             // lblNamaOutlet
             // 
@@ -162,7 +175,7 @@ namespace KASIR
             iconCurrentChildForm.IconChar = IconChar.House;
             iconCurrentChildForm.IconColor = Color.MediumPurple;
             iconCurrentChildForm.IconFont = IconFont.Auto;
-            iconCurrentChildForm.IconSize = 37;
+            iconCurrentChildForm.IconSize = 29;
             resources.ApplyResources(iconCurrentChildForm, "iconCurrentChildForm");
             iconCurrentChildForm.Name = "iconCurrentChildForm";
             iconCurrentChildForm.TabStop = false;
@@ -182,21 +195,35 @@ namespace KASIR
             // 
             // gradientPanel2
             // 
+            resources.ApplyResources(gradientPanel2, "gradientPanel2");
             gradientPanel2.Angle = 90F;
-            gradientPanel2.BottomColor = Color.FromArgb(31, 30, 68);
+            gradientPanel2.BackColor = Color.FromArgb(15, 90, 94);
+            gradientPanel2.BottomColor = Color.FromArgb(15, 90, 94);
             gradientPanel2.Controls.Add(BtnSettingForm);
             gradientPanel2.Controls.Add(btnDev);
             gradientPanel2.Controls.Add(btnContact);
             gradientPanel2.Controls.Add(SignalPing);
             gradientPanel2.Controls.Add(lblPing);
             gradientPanel2.Controls.Add(btnShiftLaporan);
-            gradientPanel2.Controls.Add(iconButton1);
-            gradientPanel2.Controls.Add(iconButton2);
-            gradientPanel2.Controls.Add(panel3);
-            gradientPanel2.Controls.Add(button2);
-            resources.ApplyResources(gradientPanel2, "gradientPanel2");
+            gradientPanel2.Controls.Add(MenuBtn);
+            gradientPanel2.Controls.Add(TransBtn);
+            gradientPanel2.Controls.Add(LogoKasir);
             gradientPanel2.Name = "gradientPanel2";
             gradientPanel2.TopColor = Color.Black;
+            // 
+            // BtnSettingForm
+            // 
+            BtnSettingForm.BackColor = Color.Transparent;
+            BtnSettingForm.FlatAppearance.BorderSize = 0;
+            resources.ApplyResources(BtnSettingForm, "BtnSettingForm");
+            BtnSettingForm.ForeColor = Color.Gainsboro;
+            BtnSettingForm.IconChar = IconChar.Gear;
+            BtnSettingForm.IconColor = Color.Gainsboro;
+            BtnSettingForm.IconFont = IconFont.Auto;
+            BtnSettingForm.IconSize = 25;
+            BtnSettingForm.Name = "BtnSettingForm";
+            BtnSettingForm.UseVisualStyleBackColor = false;
+            BtnSettingForm.Click += BtnSettingForm_Click;
             // 
             // btnDev
             // 
@@ -229,13 +256,14 @@ namespace KASIR
             // SignalPing
             // 
             resources.ApplyResources(SignalPing, "SignalPing");
+            SignalPing.BackColor = Color.Transparent;
             SignalPing.FlatAppearance.BorderSize = 0;
             SignalPing.IconChar = IconChar.WifiStrong;
             SignalPing.IconColor = Color.WhiteSmoke;
             SignalPing.IconFont = IconFont.Auto;
             SignalPing.IconSize = 30;
             SignalPing.Name = "SignalPing";
-            SignalPing.UseVisualStyleBackColor = true;
+            SignalPing.UseVisualStyleBackColor = false;
             SignalPing.Click += btnTestSpeed_Click;
             // 
             // lblPing
@@ -258,49 +286,43 @@ namespace KASIR
             btnShiftLaporan.UseVisualStyleBackColor = false;
             btnShiftLaporan.Click += btnShiftLaporan_Click;
             // 
-            // iconButton1
+            // MenuBtn
             // 
-            iconButton1.BackColor = Color.Transparent;
-            iconButton1.FlatAppearance.BorderSize = 0;
-            resources.ApplyResources(iconButton1, "iconButton1");
-            iconButton1.ForeColor = Color.Gainsboro;
-            iconButton1.IconChar = IconChar.HomeLg;
-            iconButton1.IconColor = Color.Gainsboro;
-            iconButton1.IconFont = IconFont.Auto;
-            iconButton1.IconSize = 25;
-            iconButton1.Name = "iconButton1";
-            iconButton1.UseVisualStyleBackColor = false;
-            iconButton1.Click += button6_Click;
+            MenuBtn.BackColor = Color.Transparent;
+            MenuBtn.FlatAppearance.BorderSize = 0;
+            resources.ApplyResources(MenuBtn, "MenuBtn");
+            MenuBtn.ForeColor = Color.Gainsboro;
+            MenuBtn.IconChar = IconChar.HomeLg;
+            MenuBtn.IconColor = Color.Gainsboro;
+            MenuBtn.IconFont = IconFont.Auto;
+            MenuBtn.IconSize = 25;
+            MenuBtn.Name = "MenuBtn";
+            MenuBtn.UseVisualStyleBackColor = false;
+            MenuBtn.Click += button6_Click;
             // 
-            // iconButton2
+            // TransBtn
             // 
-            iconButton2.BackColor = Color.Transparent;
-            iconButton2.FlatAppearance.BorderSize = 0;
-            resources.ApplyResources(iconButton2, "iconButton2");
-            iconButton2.ForeColor = Color.Gainsboro;
-            iconButton2.IconChar = IconChar.Book;
-            iconButton2.IconColor = Color.Gainsboro;
-            iconButton2.IconFont = IconFont.Auto;
-            iconButton2.IconSize = 25;
-            iconButton2.Name = "iconButton2";
-            iconButton2.UseVisualStyleBackColor = false;
-            iconButton2.Click += buttonHistoryTransaction;
+            TransBtn.BackColor = Color.Transparent;
+            TransBtn.FlatAppearance.BorderSize = 0;
+            resources.ApplyResources(TransBtn, "TransBtn");
+            TransBtn.ForeColor = Color.Gainsboro;
+            TransBtn.IconChar = IconChar.Book;
+            TransBtn.IconColor = Color.Gainsboro;
+            TransBtn.IconFont = IconFont.Auto;
+            TransBtn.IconSize = 25;
+            TransBtn.Name = "TransBtn";
+            TransBtn.UseVisualStyleBackColor = false;
+            TransBtn.Click += buttonHistoryTransaction;
             // 
-            // panel3
+            // LogoKasir
             // 
-            panel3.BackColor = Color.Transparent;
-            resources.ApplyResources(panel3, "panel3");
-            panel3.Name = "panel3";
-            // 
-            // button2
-            // 
-            button2.BackColor = Color.Transparent;
-            button2.Cursor = Cursors.Help;
-            button2.Image = Properties.Resources.a_2_;
-            resources.ApplyResources(button2, "button2");
-            button2.Name = "button2";
-            button2.TabStop = false;
-            button2.Click += link_Click;
+            LogoKasir.BackColor = Color.Transparent;
+            LogoKasir.Cursor = Cursors.Hand;
+            LogoKasir.Image = Properties.Resources.a_2_1;
+            resources.ApplyResources(LogoKasir, "LogoKasir");
+            LogoKasir.Name = "LogoKasir";
+            LogoKasir.TabStop = false;
+            LogoKasir.Click += link_Click;
             // 
             // Setting
             // 
@@ -322,20 +344,6 @@ namespace KASIR
             resources.ApplyResources(panel2, "panel2");
             panel2.Name = "panel2";
             // 
-            // BtnSettingForm
-            // 
-            BtnSettingForm.BackColor = Color.Transparent;
-            BtnSettingForm.FlatAppearance.BorderSize = 0;
-            resources.ApplyResources(BtnSettingForm, "BtnSettingForm");
-            BtnSettingForm.ForeColor = Color.Gainsboro;
-            BtnSettingForm.IconChar = IconChar.Gear;
-            BtnSettingForm.IconColor = Color.Gainsboro;
-            BtnSettingForm.IconFont = IconFont.Auto;
-            BtnSettingForm.IconSize = 25;
-            BtnSettingForm.Name = "BtnSettingForm";
-            BtnSettingForm.UseVisualStyleBackColor = false;
-            BtnSettingForm.Click += BtnSettingForm_Click;
-            // 
             // Form1
             // 
             resources.ApplyResources(this, "$this");
@@ -352,10 +360,11 @@ namespace KASIR
             panelTitleBar.ResumeLayout(false);
             gradientPanel1.ResumeLayout(false);
             gradientPanel1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)NavBarBtn).EndInit();
             ((System.ComponentModel.ISupportInitialize)iconCurrentChildForm).EndInit();
             gradientPanel2.ResumeLayout(false);
             gradientPanel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)button2).EndInit();
+            ((System.ComponentModel.ISupportInitialize)LogoKasir).EndInit();
             panel2.ResumeLayout(false);
             ResumeLayout(false);
         }
@@ -379,17 +388,17 @@ namespace KASIR
         private GradientPanel gradientPanel1;
         private Label lblNamaOutlet;
         private GradientPanel gradientPanel2;
-        private IconButton iconButton1;
-        private IconButton iconButton2;
-        private Panel panel3;
-        private PictureBox button2;
-        private IconButton Setting;
-        private Label lblPing;
-        private Panel panel2;
-        private IconButton btnShiftLaporan;
-        private IconButton SignalPing;
-        private IconButton btnContact;
-        private IconButton btnDev;
         private IconButton BtnSettingForm;
+        private IconButton btnDev;
+        private IconButton btnContact;
+        private IconButton SignalPing;
+        private Label lblPing;
+        private IconButton btnShiftLaporan;
+        private IconButton MenuBtn;
+        private IconButton TransBtn;
+        private PictureBox LogoKasir;
+        private IconButton Setting;
+        private Panel panel2;
+        private PictureBox NavBarBtn;
     }
 }

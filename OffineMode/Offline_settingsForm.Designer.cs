@@ -461,6 +461,9 @@ namespace KASIR.Komponen
             sButtonOffline.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             sButtonOffline.AutoSize = true;
             sButtonOffline.BackColor = Color.White;
+            sButtonOffline.Checked = true;
+            sButtonOffline.CheckState = CheckState.Checked;
+            sButtonOffline.Enabled = false;
             sButtonOffline.FlatStyle = FlatStyle.Flat;
             sButtonOffline.Location = new Point(507, 318);
             sButtonOffline.MinimumSize = new Size(45, 22);

@@ -40,18 +40,18 @@ namespace KASIR.OfflineMode
             DataGridViewCellStyle dataGridViewCellStyle8 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle9 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle10 = new DataGridViewCellStyle();
-            panel3 = new Panel();
+            panelCartArea = new Panel();
+            lblDeleteCart = new Label();
+            label2 = new Label();
             lblDetailKeranjang = new IconButton();
-            buttonDelete = new IconButton();
             listBill1 = new IconButton();
-            panel6 = new Panel();
+            PanelDetailTotal = new Panel();
+            cmbDiskon = new ComboBox();
             label6 = new Label();
             iconButtonGet = new IconButton();
             label7 = new Label();
             lblDiskon1 = new Label();
             label1 = new Label();
-            panel9 = new Panel();
-            cmbDiskon = new ComboBox();
             lblTotal1 = new Label();
             lblSubTotal1 = new Label();
             lblTotal = new Label();
@@ -66,9 +66,7 @@ namespace KASIR.OfflineMode
             label3 = new Label();
             textBox2 = new TextBox();
             button4 = new Button();
-            panel7 = new Panel();
-            cmbFilter = new ComboBox();
-            panel5 = new Panel();
+            panelSearchBox = new Panel();
             txtCariMenuList = new TextBox();
             pictureBox2 = new PictureBox();
             txtCariMenu = new TextBox();
@@ -76,21 +74,25 @@ namespace KASIR.OfflineMode
             dataGridView2 = new DataGridView();
             dataGridView3 = new FlowLayoutPanel();
             panel8 = new Panel();
+            btnReload = new IconButton();
+            btnListView = new IconButton();
+            btnGridView = new IconButton();
+            label9 = new Label();
+            btnCategoryMin = new IconButton();
+            btnCategoryMkn = new IconButton();
+            btnCategoryAll = new IconButton();
             btnCari = new IconButton();
             lblCountingItems = new Label();
-            label9 = new Label();
             label5 = new Label();
             label4 = new Label();
             iconDropDownButton1 = new IconDropDownButton();
             menuBindingSource = new BindingSource(components);
-            panel3.SuspendLayout();
-            panel6.SuspendLayout();
-            panel9.SuspendLayout();
+            panelCartArea.SuspendLayout();
+            PanelDetailTotal.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             panel1.SuspendLayout();
             panel4.SuspendLayout();
-            panel7.SuspendLayout();
-            panel5.SuspendLayout();
+            panelSearchBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
             panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView2).BeginInit();
@@ -98,108 +100,129 @@ namespace KASIR.OfflineMode
             ((System.ComponentModel.ISupportInitialize)menuBindingSource).BeginInit();
             SuspendLayout();
             // 
-            // panel3
+            // panelCartArea
             // 
-            panel3.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
-            panel3.BackColor = Color.WhiteSmoke;
-            panel3.Controls.Add(lblDetailKeranjang);
-            panel3.Controls.Add(buttonDelete);
-            panel3.Controls.Add(listBill1);
-            panel3.Controls.Add(panel6);
-            panel3.Controls.Add(dataGridView1);
-            panel3.Controls.Add(panel1);
-            panel3.Controls.Add(panel4);
-            panel3.ForeColor = Color.White;
-            panel3.Location = new Point(619, 9);
-            panel3.Name = "panel3";
-            panel3.Padding = new Padding(5);
-            panel3.Size = new Size(410, 657);
-            panel3.TabIndex = 8;
+            panelCartArea.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
+            panelCartArea.BackColor = Color.White;
+            panelCartArea.Controls.Add(lblDeleteCart);
+            panelCartArea.Controls.Add(label2);
+            panelCartArea.Controls.Add(lblDetailKeranjang);
+            panelCartArea.Controls.Add(listBill1);
+            panelCartArea.Controls.Add(PanelDetailTotal);
+            panelCartArea.Controls.Add(dataGridView1);
+            panelCartArea.Controls.Add(panel1);
+            panelCartArea.Controls.Add(panel4);
+            panelCartArea.ForeColor = Color.White;
+            panelCartArea.Location = new Point(619, 9);
+            panelCartArea.Name = "panelCartArea";
+            panelCartArea.Padding = new Padding(5);
+            panelCartArea.Size = new Size(410, 657);
+            panelCartArea.TabIndex = 8;
+            // 
+            // lblDeleteCart
+            // 
+            lblDeleteCart.AutoSize = true;
+            lblDeleteCart.BackColor = Color.Transparent;
+            lblDeleteCart.Cursor = Cursors.Hand;
+            lblDeleteCart.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            lblDeleteCart.ForeColor = Color.DarkRed;
+            lblDeleteCart.Location = new Point(304, 42);
+            lblDeleteCart.Name = "lblDeleteCart";
+            lblDeleteCart.Size = new Size(97, 15);
+            lblDeleteCart.TabIndex = 63;
+            lblDeleteCart.Text = "Hapus Keranjang";
+            lblDeleteCart.Click += lblDeleteCart_Click;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.BackColor = Color.Transparent;
+            label2.Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold, GraphicsUnit.Point);
+            label2.ForeColor = Color.Black;
+            label2.Location = new Point(8, 42);
+            label2.Name = "label2";
+            label2.Size = new Size(101, 21);
+            label2.TabIndex = 62;
+            label2.Text = "Order items ";
             // 
             // lblDetailKeranjang
             // 
             lblDetailKeranjang.BackColor = Color.White;
+            lblDetailKeranjang.Enabled = false;
+            lblDetailKeranjang.FlatAppearance.BorderSize = 0;
             lblDetailKeranjang.FlatStyle = FlatStyle.Flat;
             lblDetailKeranjang.Font = new Font("Segoe UI Semibold", 7.75F, FontStyle.Bold, GraphicsUnit.Point);
-            lblDetailKeranjang.ForeColor = Color.FromArgb(31, 30, 68);
+            lblDetailKeranjang.ForeColor = Color.Black;
             lblDetailKeranjang.IconChar = IconChar.CartArrowDown;
-            lblDetailKeranjang.IconColor = Color.FromArgb(31, 30, 68);
+            lblDetailKeranjang.IconColor = Color.Black;
             lblDetailKeranjang.IconFont = IconFont.Auto;
             lblDetailKeranjang.IconSize = 20;
             lblDetailKeranjang.ImageAlign = ContentAlignment.MiddleRight;
-            lblDetailKeranjang.Location = new Point(3, 55);
+            lblDetailKeranjang.Location = new Point(52, 6);
             lblDetailKeranjang.Name = "lblDetailKeranjang";
-            lblDetailKeranjang.Size = new Size(401, 54);
+            lblDetailKeranjang.Size = new Size(352, 33);
             lblDetailKeranjang.TabIndex = 1;
             lblDetailKeranjang.Text = "Keranjang :";
             lblDetailKeranjang.TextImageRelation = TextImageRelation.ImageBeforeText;
             lblDetailKeranjang.UseVisualStyleBackColor = false;
             lblDetailKeranjang.Click += lblDetailKeranjang_Click;
             // 
-            // buttonDelete
-            // 
-            buttonDelete.FlatAppearance.BorderSize = 0;
-            buttonDelete.FlatStyle = FlatStyle.Flat;
-            buttonDelete.ForeColor = Color.DarkRed;
-            buttonDelete.IconChar = IconChar.TrashRestore;
-            buttonDelete.IconColor = Color.DarkRed;
-            buttonDelete.IconFont = IconFont.Auto;
-            buttonDelete.IconSize = 30;
-            buttonDelete.ImageAlign = ContentAlignment.MiddleRight;
-            buttonDelete.Location = new Point(203, 3);
-            buttonDelete.Name = "buttonDelete";
-            buttonDelete.Size = new Size(200, 47);
-            buttonDelete.TabIndex = 19;
-            buttonDelete.Text = "Hapus Pesanan";
-            buttonDelete.TextImageRelation = TextImageRelation.ImageBeforeText;
-            buttonDelete.UseVisualStyleBackColor = true;
-            buttonDelete.Click += buttonDeleteCart_ClickAsync;
-            // 
             // listBill1
             // 
+            listBill1.Cursor = Cursors.Hand;
             listBill1.FlatAppearance.BorderSize = 0;
             listBill1.FlatStyle = FlatStyle.Flat;
-            listBill1.ForeColor = Color.FromArgb(31, 30, 68);
+            listBill1.ForeColor = Color.Black;
             listBill1.IconChar = IconChar.List;
-            listBill1.IconColor = Color.FromArgb(31, 30, 68);
+            listBill1.IconColor = Color.Black;
             listBill1.IconFont = IconFont.Auto;
             listBill1.IconSize = 30;
             listBill1.ImageAlign = ContentAlignment.MiddleRight;
-            listBill1.Location = new Point(2, 3);
+            listBill1.Location = new Point(6, 5);
             listBill1.Name = "listBill1";
-            listBill1.Size = new Size(201, 47);
+            listBill1.Size = new Size(40, 34);
             listBill1.TabIndex = 18;
-            listBill1.Text = "List Bill";
             listBill1.TextImageRelation = TextImageRelation.ImageBeforeText;
             listBill1.UseVisualStyleBackColor = true;
             listBill1.Click += listBill_Click;
             // 
-            // panel6
+            // PanelDetailTotal
             // 
-            panel6.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            panel6.BackColor = Color.White;
-            panel6.Controls.Add(label6);
-            panel6.Controls.Add(iconButtonGet);
-            panel6.Controls.Add(label7);
-            panel6.Controls.Add(lblDiskon1);
-            panel6.Controls.Add(label1);
-            panel6.Controls.Add(panel9);
-            panel6.Controls.Add(lblTotal1);
-            panel6.Controls.Add(lblSubTotal1);
-            panel6.Controls.Add(lblTotal);
-            panel6.Controls.Add(lblSubTotal);
-            panel6.Location = new Point(3, 412);
-            panel6.Name = "panel6";
-            panel6.Size = new Size(401, 135);
-            panel6.TabIndex = 15;
+            PanelDetailTotal.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            PanelDetailTotal.BackColor = Color.WhiteSmoke;
+            PanelDetailTotal.Controls.Add(cmbDiskon);
+            PanelDetailTotal.Controls.Add(label6);
+            PanelDetailTotal.Controls.Add(iconButtonGet);
+            PanelDetailTotal.Controls.Add(label7);
+            PanelDetailTotal.Controls.Add(lblDiskon1);
+            PanelDetailTotal.Controls.Add(label1);
+            PanelDetailTotal.Controls.Add(lblTotal1);
+            PanelDetailTotal.Controls.Add(lblSubTotal1);
+            PanelDetailTotal.Controls.Add(lblTotal);
+            PanelDetailTotal.Controls.Add(lblSubTotal);
+            PanelDetailTotal.Location = new Point(8, 412);
+            PanelDetailTotal.Name = "PanelDetailTotal";
+            PanelDetailTotal.Size = new Size(392, 135);
+            PanelDetailTotal.TabIndex = 15;
+            // 
+            // cmbDiskon
+            // 
+            cmbDiskon.Cursor = Cursors.Hand;
+            cmbDiskon.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbDiskon.FlatStyle = FlatStyle.Flat;
+            cmbDiskon.FormattingEnabled = true;
+            cmbDiskon.Location = new Point(126, 98);
+            cmbDiskon.Name = "cmbDiskon";
+            cmbDiskon.Size = new Size(149, 23);
+            cmbDiskon.TabIndex = 1;
             // 
             // label6
             // 
             label6.AutoSize = true;
-            label6.BackColor = Color.White;
+            label6.BackColor = Color.Transparent;
             label6.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            label6.ForeColor = Color.FromArgb(31, 30, 68);
-            label6.Location = new Point(41, 22);
+            label6.ForeColor = Color.Black;
+            label6.Location = new Point(44, 99);
             label6.Name = "label6";
             label6.Size = new Size(71, 21);
             label6.TabIndex = 61;
@@ -208,19 +231,20 @@ namespace KASIR.OfflineMode
             // iconButtonGet
             // 
             iconButtonGet.BackColor = Color.White;
+            iconButtonGet.Cursor = Cursors.Hand;
             iconButtonGet.FlatAppearance.BorderSize = 0;
             iconButtonGet.FlatStyle = FlatStyle.Flat;
-            iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
-            iconButtonGet.IconChar = IconChar.Tag;
+            iconButtonGet.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            iconButtonGet.ForeColor = Color.Black;
+            iconButtonGet.IconChar = IconChar.None;
             iconButtonGet.IconColor = Color.FromArgb(31, 30, 68);
             iconButtonGet.IconFont = IconFont.Auto;
             iconButtonGet.IconSize = 20;
-            iconButtonGet.Location = new Point(284, 20);
+            iconButtonGet.Location = new Point(287, 97);
             iconButtonGet.Name = "iconButtonGet";
-            iconButtonGet.Size = new Size(113, 23);
+            iconButtonGet.Size = new Size(93, 23);
             iconButtonGet.TabIndex = 23;
-            iconButtonGet.Text = "Gunakan Disc";
+            iconButtonGet.Text = "Pakai";
             iconButtonGet.TextImageRelation = TextImageRelation.ImageBeforeText;
             iconButtonGet.UseVisualStyleBackColor = false;
             iconButtonGet.Click += btnGet_Click;
@@ -228,10 +252,10 @@ namespace KASIR.OfflineMode
             // label7
             // 
             label7.AutoSize = true;
-            label7.BackColor = Color.White;
+            label7.BackColor = Color.Transparent;
             label7.Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold, GraphicsUnit.Point);
-            label7.ForeColor = Color.FromArgb(31, 30, 68);
-            label7.Location = new Point(3, 22);
+            label7.ForeColor = Color.Black;
+            label7.Location = new Point(10, 99);
             label7.Name = "label7";
             label7.Size = new Size(40, 21);
             label7.TabIndex = 60;
@@ -240,9 +264,9 @@ namespace KASIR.OfflineMode
             // lblDiskon1
             // 
             lblDiskon1.AutoSize = true;
-            lblDiskon1.BackColor = Color.White;
-            lblDiskon1.ForeColor = Color.FromArgb(31, 30, 68);
-            lblDiskon1.Location = new Point(272, 66);
+            lblDiskon1.BackColor = Color.Transparent;
+            lblDiskon1.ForeColor = Color.Black;
+            lblDiskon1.Location = new Point(278, 11);
             lblDiskon1.Name = "lblDiskon1";
             lblDiskon1.Size = new Size(51, 15);
             lblDiskon1.TabIndex = 9;
@@ -251,49 +275,32 @@ namespace KASIR.OfflineMode
             // label1
             // 
             label1.AutoSize = true;
-            label1.BackColor = Color.White;
-            label1.ForeColor = Color.FromArgb(31, 30, 68);
-            label1.Location = new Point(3, 63);
+            label1.BackColor = Color.Transparent;
+            label1.ForeColor = Color.Black;
+            label1.Location = new Point(9, 11);
             label1.Name = "label1";
             label1.Size = new Size(49, 15);
             label1.TabIndex = 5;
             label1.Text = "Diskon :";
             // 
-            // panel9
-            // 
-            panel9.Controls.Add(cmbDiskon);
-            panel9.Location = new Point(118, 11);
-            panel9.Name = "panel9";
-            panel9.Size = new Size(160, 41);
-            panel9.TabIndex = 4;
-            // 
-            // cmbDiskon
-            // 
-            cmbDiskon.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbDiskon.FlatStyle = FlatStyle.Flat;
-            cmbDiskon.FormattingEnabled = true;
-            cmbDiskon.Location = new Point(8, 9);
-            cmbDiskon.Name = "cmbDiskon";
-            cmbDiskon.Size = new Size(149, 23);
-            cmbDiskon.TabIndex = 1;
-            // 
             // lblTotal1
             // 
             lblTotal1.AutoSize = true;
-            lblTotal1.BackColor = Color.White;
-            lblTotal1.ForeColor = Color.FromArgb(31, 30, 68);
-            lblTotal1.Location = new Point(273, 112);
+            lblTotal1.BackColor = Color.Transparent;
+            lblTotal1.Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold, GraphicsUnit.Point);
+            lblTotal1.ForeColor = Color.Black;
+            lblTotal1.Location = new Point(279, 60);
             lblTotal1.Name = "lblTotal1";
-            lblTotal1.Size = new Size(32, 15);
+            lblTotal1.Size = new Size(45, 21);
             lblTotal1.TabIndex = 3;
             lblTotal1.Text = "Total";
             // 
             // lblSubTotal1
             // 
             lblSubTotal1.AutoSize = true;
-            lblSubTotal1.BackColor = Color.White;
-            lblSubTotal1.ForeColor = Color.FromArgb(31, 30, 68);
-            lblSubTotal1.Location = new Point(273, 87);
+            lblSubTotal1.BackColor = Color.Transparent;
+            lblSubTotal1.ForeColor = Color.Black;
+            lblSubTotal1.Location = new Point(279, 34);
             lblSubTotal1.Name = "lblSubTotal1";
             lblSubTotal1.Size = new Size(52, 15);
             lblSubTotal1.TabIndex = 2;
@@ -302,20 +309,21 @@ namespace KASIR.OfflineMode
             // lblTotal
             // 
             lblTotal.AutoSize = true;
-            lblTotal.BackColor = Color.White;
-            lblTotal.ForeColor = Color.FromArgb(31, 30, 68);
-            lblTotal.Location = new Point(3, 112);
+            lblTotal.BackColor = Color.Transparent;
+            lblTotal.Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold, GraphicsUnit.Point);
+            lblTotal.ForeColor = Color.Black;
+            lblTotal.Location = new Point(9, 60);
             lblTotal.Name = "lblTotal";
-            lblTotal.Size = new Size(41, 15);
+            lblTotal.Size = new Size(57, 21);
             lblTotal.TabIndex = 1;
             lblTotal.Text = "Total : ";
             // 
             // lblSubTotal
             // 
             lblSubTotal.AutoSize = true;
-            lblSubTotal.BackColor = Color.White;
-            lblSubTotal.ForeColor = Color.FromArgb(31, 30, 68);
-            lblSubTotal.Location = new Point(3, 86);
+            lblSubTotal.BackColor = Color.Transparent;
+            lblSubTotal.ForeColor = Color.Black;
+            lblSubTotal.Location = new Point(9, 34);
             lblSubTotal.Name = "lblSubTotal";
             lblSubTotal.Size = new Size(58, 15);
             lblSubTotal.TabIndex = 0;
@@ -336,6 +344,7 @@ namespace KASIR.OfflineMode
             dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridView1.BackgroundColor = Color.White;
+            dataGridView1.BorderStyle = BorderStyle.None;
             dataGridView1.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView1.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleLeft;
@@ -360,7 +369,7 @@ namespace KASIR.OfflineMode
             dataGridView1.EnableHeadersVisualStyles = false;
             dataGridView1.GridColor = Color.FromArgb(31, 30, 68);
             dataGridView1.ImeMode = ImeMode.NoControl;
-            dataGridView1.Location = new Point(3, 115);
+            dataGridView1.Location = new Point(8, 66);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.ReadOnly = true;
             dataGridView1.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
@@ -386,7 +395,7 @@ namespace KASIR.OfflineMode
             dataGridView1.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.FromArgb(31, 30, 68);
             dataGridView1.RowTemplate.Height = 40;
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView1.Size = new Size(400, 291);
+            dataGridView1.Size = new Size(392, 340);
             dataGridView1.TabIndex = 14;
             dataGridView1.CellContentClick += dataGridView1_CellContentClick;
             // 
@@ -405,59 +414,60 @@ namespace KASIR.OfflineMode
             // ButtonSplit
             // 
             ButtonSplit.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            ButtonSplit.Cursor = Cursors.Hand;
             ButtonSplit.FlatAppearance.BorderSize = 0;
             ButtonSplit.FlatStyle = FlatStyle.Flat;
-            ButtonSplit.ForeColor = Color.FromArgb(31, 30, 68);
-            ButtonSplit.IconChar = IconChar.Receipt;
+            ButtonSplit.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            ButtonSplit.ForeColor = Color.Black;
+            ButtonSplit.IconChar = IconChar.None;
             ButtonSplit.IconColor = Color.FromArgb(31, 30, 68);
             ButtonSplit.IconFont = IconFont.Auto;
             ButtonSplit.IconSize = 25;
             ButtonSplit.ImageAlign = ContentAlignment.MiddleRight;
-            ButtonSplit.Location = new Point(4, 14);
+            ButtonSplit.Location = new Point(8, 7);
             ButtonSplit.Name = "ButtonSplit";
-            ButtonSplit.Size = new Size(154, 35);
+            ButtonSplit.Size = new Size(155, 35);
             ButtonSplit.TabIndex = 23;
             ButtonSplit.Text = "Split Bill";
-            ButtonSplit.TextImageRelation = TextImageRelation.ImageBeforeText;
             ButtonSplit.UseVisualStyleBackColor = true;
             ButtonSplit.Click += ButtonSplit_Click;
             // 
             // buttonPayment
             // 
             buttonPayment.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            buttonPayment.BackColor = Color.FromArgb(30, 31, 68);
+            buttonPayment.BackColor = Color.FromArgb(15, 90, 94);
             buttonPayment.Cursor = Cursors.Hand;
             buttonPayment.FlatAppearance.BorderSize = 0;
             buttonPayment.FlatStyle = FlatStyle.Flat;
             buttonPayment.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             buttonPayment.ForeColor = Color.Gainsboro;
-            buttonPayment.IconChar = IconChar.Donate;
+            buttonPayment.IconChar = IconChar.None;
             buttonPayment.IconColor = Color.Gainsboro;
             buttonPayment.IconFont = IconFont.Auto;
             buttonPayment.IconSize = 30;
             buttonPayment.ImageAlign = ContentAlignment.MiddleRight;
-            buttonPayment.Location = new Point(5, 52);
+            buttonPayment.Location = new Point(5, 47);
             buttonPayment.Name = "buttonPayment";
             buttonPayment.Size = new Size(392, 49);
             buttonPayment.TabIndex = 22;
-            buttonPayment.Text = "Bayar";
-            buttonPayment.TextImageRelation = TextImageRelation.ImageBeforeText;
+            buttonPayment.Text = "Proses Pembayaran";
             buttonPayment.UseVisualStyleBackColor = false;
             buttonPayment.Click += buttonPayment_Click;
             // 
             // iconButton3
             // 
             iconButton3.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            iconButton3.Cursor = Cursors.Hand;
             iconButton3.FlatAppearance.BorderSize = 0;
             iconButton3.FlatStyle = FlatStyle.Flat;
-            iconButton3.ForeColor = Color.FromArgb(31, 30, 68);
+            iconButton3.ForeColor = Color.FromArgb(15, 90, 94);
             iconButton3.IconChar = IconChar.Tags;
-            iconButton3.IconColor = Color.FromArgb(31, 30, 68);
+            iconButton3.IconColor = Color.FromArgb(15, 90, 94);
             iconButton3.IconFont = IconFont.Auto;
             iconButton3.IconSize = 30;
-            iconButton3.Location = new Point(327, 14);
+            iconButton3.Location = new Point(328, 7);
             iconButton3.Name = "iconButton3";
-            iconButton3.Size = new Size(70, 35);
+            iconButton3.Size = new Size(69, 35);
             iconButton3.TabIndex = 21;
             iconButton3.UseVisualStyleBackColor = true;
             iconButton3.Click += button3_Click;
@@ -465,20 +475,21 @@ namespace KASIR.OfflineMode
             // ButtonSimpan
             // 
             ButtonSimpan.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            ButtonSimpan.Cursor = Cursors.Hand;
             ButtonSimpan.FlatAppearance.BorderSize = 0;
             ButtonSimpan.FlatStyle = FlatStyle.Flat;
-            ButtonSimpan.ForeColor = Color.FromArgb(31, 30, 68);
-            ButtonSimpan.IconChar = IconChar.FileDownload;
+            ButtonSimpan.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            ButtonSimpan.ForeColor = Color.Black;
+            ButtonSimpan.IconChar = IconChar.None;
             ButtonSimpan.IconColor = Color.FromArgb(31, 30, 68);
             ButtonSimpan.IconFont = IconFont.Auto;
             ButtonSimpan.IconSize = 25;
             ButtonSimpan.ImageAlign = ContentAlignment.MiddleRight;
-            ButtonSimpan.Location = new Point(163, 14);
+            ButtonSimpan.Location = new Point(166, 7);
             ButtonSimpan.Name = "ButtonSimpan";
-            ButtonSimpan.Size = new Size(160, 35);
+            ButtonSimpan.Size = new Size(155, 35);
             ButtonSimpan.TabIndex = 20;
             ButtonSimpan.Text = "Simpan Bill";
-            ButtonSimpan.TextImageRelation = TextImageRelation.ImageBeforeText;
             ButtonSimpan.UseVisualStyleBackColor = true;
             ButtonSimpan.Click += SimpanBill_Click;
             // 
@@ -532,40 +543,20 @@ namespace KASIR.OfflineMode
             button4.Text = "Bayar";
             button4.UseVisualStyleBackColor = false;
             // 
-            // panel7
+            // panelSearchBox
             // 
-            panel7.BackColor = Color.White;
-            panel7.Controls.Add(cmbFilter);
-            panel7.Location = new Point(124, 55);
-            panel7.Name = "panel7";
-            panel7.Size = new Size(155, 35);
-            panel7.TabIndex = 16;
-            // 
-            // cmbFilter
-            // 
-            cmbFilter.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            cmbFilter.FlatStyle = FlatStyle.Flat;
-            cmbFilter.FormattingEnabled = true;
-            cmbFilter.Location = new Point(4, 5);
-            cmbFilter.Name = "cmbFilter";
-            cmbFilter.Size = new Size(148, 23);
-            cmbFilter.TabIndex = 0;
-            cmbFilter.SelectedIndexChanged += cmbFilter_SelectedIndexChanged;
-            // 
-            // panel5
-            // 
-            panel5.BackColor = Color.White;
-            panel5.Controls.Add(txtCariMenuList);
-            panel5.Controls.Add(pictureBox2);
-            panel5.Controls.Add(txtCariMenu);
-            panel5.Location = new Point(5, 8);
-            panel5.Name = "panel5";
-            panel5.Size = new Size(355, 31);
-            panel5.TabIndex = 14;
+            panelSearchBox.BackColor = Color.WhiteSmoke;
+            panelSearchBox.Controls.Add(txtCariMenuList);
+            panelSearchBox.Controls.Add(pictureBox2);
+            panelSearchBox.Controls.Add(txtCariMenu);
+            panelSearchBox.Location = new Point(5, 8);
+            panelSearchBox.Name = "panelSearchBox";
+            panelSearchBox.Size = new Size(266, 31);
+            panelSearchBox.TabIndex = 14;
             // 
             // txtCariMenuList
             // 
-            txtCariMenuList.BackColor = Color.White;
+            txtCariMenuList.BackColor = Color.WhiteSmoke;
             txtCariMenuList.BorderStyle = BorderStyle.None;
             txtCariMenuList.Cursor = Cursors.IBeam;
             txtCariMenuList.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
@@ -578,7 +569,7 @@ namespace KASIR.OfflineMode
             // 
             // pictureBox2
             // 
-            pictureBox2.BackColor = Color.White;
+            pictureBox2.BackColor = Color.WhiteSmoke;
             pictureBox2.BackgroundImage = Properties.Resources.search_20px;
             pictureBox2.BackgroundImageLayout = ImageLayout.Center;
             pictureBox2.InitialImage = Properties.Resources.search_20px;
@@ -590,7 +581,7 @@ namespace KASIR.OfflineMode
             // 
             // txtCariMenu
             // 
-            txtCariMenu.BackColor = Color.White;
+            txtCariMenu.BackColor = Color.WhiteSmoke;
             txtCariMenu.BorderStyle = BorderStyle.None;
             txtCariMenu.Cursor = Cursors.IBeam;
             txtCariMenu.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
@@ -697,32 +688,174 @@ namespace KASIR.OfflineMode
             // panel8
             // 
             panel8.BackColor = Color.White;
+            panel8.Controls.Add(btnReload);
+            panel8.Controls.Add(btnListView);
+            panel8.Controls.Add(btnGridView);
+            panel8.Controls.Add(label9);
+            panel8.Controls.Add(btnCategoryMin);
+            panel8.Controls.Add(btnCategoryMkn);
+            panel8.Controls.Add(btnCategoryAll);
             panel8.Controls.Add(btnCari);
             panel8.Controls.Add(lblCountingItems);
-            panel8.Controls.Add(label9);
             panel8.Controls.Add(label5);
             panel8.Controls.Add(label4);
-            panel8.Controls.Add(panel5);
-            panel8.Controls.Add(panel7);
+            panel8.Controls.Add(panelSearchBox);
             panel8.Location = new Point(0, 0);
             panel8.Name = "panel8";
-            panel8.Size = new Size(453, 109);
+            panel8.Size = new Size(465, 109);
             panel8.TabIndex = 17;
+            // 
+            // btnReload
+            // 
+            btnReload.BackColor = Color.White;
+            btnReload.Cursor = Cursors.Hand;
+            btnReload.FlatAppearance.BorderSize = 0;
+            btnReload.FlatStyle = FlatStyle.Flat;
+            btnReload.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            btnReload.ForeColor = Color.Black;
+            btnReload.IconChar = IconChar.Rotate;
+            btnReload.IconColor = Color.Black;
+            btnReload.IconFont = IconFont.Auto;
+            btnReload.IconSize = 20;
+            btnReload.Location = new Point(427, 8);
+            btnReload.Name = "btnReload";
+            btnReload.Size = new Size(35, 31);
+            btnReload.TabIndex = 67;
+            btnReload.UseVisualStyleBackColor = false;
+            btnReload.Click += btnReload_Click;
+            // 
+            // btnListView
+            // 
+            btnListView.BackColor = Color.White;
+            btnListView.Cursor = Cursors.Hand;
+            btnListView.FlatAppearance.BorderSize = 0;
+            btnListView.FlatStyle = FlatStyle.Flat;
+            btnListView.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            btnListView.ForeColor = Color.Black;
+            btnListView.IconChar = IconChar.ListCheck;
+            btnListView.IconColor = Color.Black;
+            btnListView.IconFont = IconFont.Auto;
+            btnListView.IconSize = 20;
+            btnListView.Location = new Point(386, 8);
+            btnListView.Name = "btnListView";
+            btnListView.Size = new Size(35, 31);
+            btnListView.TabIndex = 66;
+            btnListView.UseVisualStyleBackColor = false;
+            btnListView.Click += btnListView_Click;
+            // 
+            // btnGridView
+            // 
+            btnGridView.BackColor = Color.White;
+            btnGridView.Cursor = Cursors.Hand;
+            btnGridView.FlatAppearance.BorderSize = 0;
+            btnGridView.FlatStyle = FlatStyle.Flat;
+            btnGridView.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            btnGridView.ForeColor = Color.Black;
+            btnGridView.IconChar = IconChar.BorderAll;
+            btnGridView.IconColor = Color.Black;
+            btnGridView.IconFont = IconFont.Auto;
+            btnGridView.IconSize = 20;
+            btnGridView.Location = new Point(345, 8);
+            btnGridView.Name = "btnGridView";
+            btnGridView.Size = new Size(35, 31);
+            btnGridView.TabIndex = 65;
+            btnGridView.UseVisualStyleBackColor = false;
+            btnGridView.Click += btnGridView_Click;
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.BackColor = Color.White;
+            label9.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            label9.ForeColor = Color.Black;
+            label9.Location = new Point(356, 86);
+            label9.Name = "label9";
+            label9.Size = new Size(54, 15);
+            label9.TabIndex = 60;
+            label9.Text = "Showing";
+            // 
+            // btnCategoryMin
+            // 
+            btnCategoryMin.BackColor = Color.White;
+            btnCategoryMin.Cursor = Cursors.Hand;
+            btnCategoryMin.FlatAppearance.BorderSize = 0;
+            btnCategoryMin.FlatStyle = FlatStyle.Flat;
+            btnCategoryMin.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            btnCategoryMin.ForeColor = Color.Black;
+            btnCategoryMin.IconChar = IconChar.WineGlass;
+            btnCategoryMin.IconColor = Color.Black;
+            btnCategoryMin.IconFont = IconFont.Auto;
+            btnCategoryMin.IconSize = 20;
+            btnCategoryMin.ImageAlign = ContentAlignment.MiddleRight;
+            btnCategoryMin.Location = new Point(211, 66);
+            btnCategoryMin.Name = "btnCategoryMin";
+            btnCategoryMin.Size = new Size(114, 31);
+            btnCategoryMin.TabIndex = 64;
+            btnCategoryMin.Text = "MINUMAN";
+            btnCategoryMin.TextImageRelation = TextImageRelation.ImageBeforeText;
+            btnCategoryMin.UseVisualStyleBackColor = false;
+            btnCategoryMin.Click += btnCategoryMin_Click;
+            // 
+            // btnCategoryMkn
+            // 
+            btnCategoryMkn.BackColor = Color.White;
+            btnCategoryMkn.Cursor = Cursors.Hand;
+            btnCategoryMkn.FlatAppearance.BorderSize = 0;
+            btnCategoryMkn.FlatStyle = FlatStyle.Flat;
+            btnCategoryMkn.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            btnCategoryMkn.ForeColor = Color.Black;
+            btnCategoryMkn.IconChar = IconChar.BowlRice;
+            btnCategoryMkn.IconColor = Color.Black;
+            btnCategoryMkn.IconFont = IconFont.Auto;
+            btnCategoryMkn.IconSize = 20;
+            btnCategoryMkn.ImageAlign = ContentAlignment.MiddleRight;
+            btnCategoryMkn.Location = new Point(91, 66);
+            btnCategoryMkn.Name = "btnCategoryMkn";
+            btnCategoryMkn.Size = new Size(114, 31);
+            btnCategoryMkn.TabIndex = 63;
+            btnCategoryMkn.Text = "MAKANAN";
+            btnCategoryMkn.TextImageRelation = TextImageRelation.ImageBeforeText;
+            btnCategoryMkn.UseVisualStyleBackColor = false;
+            btnCategoryMkn.Click += iconButton1_Click;
+            // 
+            // btnCategoryAll
+            // 
+            btnCategoryAll.BackColor = Color.White;
+            btnCategoryAll.Cursor = Cursors.Hand;
+            btnCategoryAll.FlatAppearance.BorderSize = 0;
+            btnCategoryAll.FlatStyle = FlatStyle.Flat;
+            btnCategoryAll.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            btnCategoryAll.ForeColor = Color.Black;
+            btnCategoryAll.IconChar = IconChar.Utensils;
+            btnCategoryAll.IconColor = Color.Black;
+            btnCategoryAll.IconFont = IconFont.Auto;
+            btnCategoryAll.IconSize = 20;
+            btnCategoryAll.ImageAlign = ContentAlignment.MiddleRight;
+            btnCategoryAll.Location = new Point(8, 67);
+            btnCategoryAll.Name = "btnCategoryAll";
+            btnCategoryAll.Size = new Size(77, 31);
+            btnCategoryAll.TabIndex = 62;
+            btnCategoryAll.Text = "ALL";
+            btnCategoryAll.TextImageRelation = TextImageRelation.ImageBeforeText;
+            btnCategoryAll.UseVisualStyleBackColor = false;
+            btnCategoryAll.Click += btnCategoryAll_Click;
             // 
             // btnCari
             // 
-            btnCari.BackColor = Color.FromArgb(31, 30, 68);
+            btnCari.BackColor = Color.White;
+            btnCari.Cursor = Cursors.Hand;
             btnCari.FlatAppearance.BorderSize = 0;
             btnCari.FlatStyle = FlatStyle.Flat;
-            btnCari.ForeColor = Color.White;
+            btnCari.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            btnCari.ForeColor = Color.Black;
             btnCari.IconChar = IconChar.MagnifyingGlass;
-            btnCari.IconColor = Color.White;
+            btnCari.IconColor = Color.Black;
             btnCari.IconFont = IconFont.Auto;
             btnCari.IconSize = 20;
             btnCari.ImageAlign = ContentAlignment.MiddleRight;
-            btnCari.Location = new Point(366, 8);
+            btnCari.Location = new Point(279, 8);
             btnCari.Name = "btnCari";
-            btnCari.Size = new Size(77, 31);
+            btnCari.Size = new Size(57, 31);
             btnCari.TabIndex = 20;
             btnCari.Text = "Cari";
             btnCari.TextImageRelation = TextImageRelation.ImageBeforeText;
@@ -734,32 +867,20 @@ namespace KASIR.OfflineMode
             lblCountingItems.AutoSize = true;
             lblCountingItems.BackColor = Color.White;
             lblCountingItems.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            lblCountingItems.ForeColor = Color.FromArgb(31, 30, 68);
-            lblCountingItems.Location = new Point(338, 70);
+            lblCountingItems.ForeColor = Color.Black;
+            lblCountingItems.Location = new Point(409, 87);
             lblCountingItems.Name = "lblCountingItems";
             lblCountingItems.Size = new Size(45, 15);
             lblCountingItems.TabIndex = 61;
             lblCountingItems.Text = "0 Items";
-            // 
-            // label9
-            // 
-            label9.AutoSize = true;
-            label9.BackColor = Color.White;
-            label9.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            label9.ForeColor = Color.FromArgb(31, 30, 68);
-            label9.Location = new Point(285, 69);
-            label9.Name = "label9";
-            label9.Size = new Size(54, 15);
-            label9.TabIndex = 60;
-            label9.Text = "Showing";
             // 
             // label5
             // 
             label5.AutoSize = true;
             label5.BackColor = Color.White;
             label5.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            label5.ForeColor = Color.FromArgb(31, 30, 68);
-            label5.Location = new Point(50, 64);
+            label5.ForeColor = Color.Black;
+            label5.Location = new Point(142, 42);
             label5.Name = "label5";
             label5.Size = new Size(73, 21);
             label5.TabIndex = 59;
@@ -770,8 +891,8 @@ namespace KASIR.OfflineMode
             label4.AutoSize = true;
             label4.BackColor = Color.White;
             label4.Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold, GraphicsUnit.Point);
-            label4.ForeColor = Color.FromArgb(31, 30, 68);
-            label4.Location = new Point(3, 64);
+            label4.ForeColor = Color.Black;
+            label4.Location = new Point(95, 42);
             label4.Name = "label4";
             label4.Size = new Size(52, 21);
             label4.TabIndex = 58;
@@ -793,21 +914,20 @@ namespace KASIR.OfflineMode
             BackColor = Color.WhiteSmoke;
             ClientSize = new Size(1044, 681);
             Controls.Add(panel2);
-            Controls.Add(panel3);
+            Controls.Add(panelCartArea);
             FormBorderStyle = FormBorderStyle.None;
             Name = "Offline_masterPos";
             Text = "menu";
-            panel3.ResumeLayout(false);
-            panel6.ResumeLayout(false);
-            panel6.PerformLayout();
-            panel9.ResumeLayout(false);
+            panelCartArea.ResumeLayout(false);
+            panelCartArea.PerformLayout();
+            PanelDetailTotal.ResumeLayout(false);
+            PanelDetailTotal.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
             panel1.ResumeLayout(false);
             panel4.ResumeLayout(false);
             panel4.PerformLayout();
-            panel7.ResumeLayout(false);
-            panel5.ResumeLayout(false);
-            panel5.PerformLayout();
+            panelSearchBox.ResumeLayout(false);
+            panelSearchBox.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).EndInit();
             panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dataGridView2).EndInit();
@@ -820,35 +940,22 @@ namespace KASIR.OfflineMode
 
         #endregion
 
-        private Panel panel3;
+        private Panel panelCartArea;
         private Panel panel4;
         private Label label3;
         private TextBox textBox2;
         private Button button4;
         private Panel panel1;
-        private Panel panel5;
+        private Panel panelSearchBox;
         private TextBox txtCariMenu;
         private DataGridView dataGridView1;
-        private Panel panel6;
-        private Label lblSubTotal;
-        private Label lblTotal;
-        private Label lblTotal1;
-        private Label lblSubTotal1;
-        private Panel panel7;
-        private ComboBox cmbFilter;
         private Panel panel2;
         private Panel panel8;
-        private Panel panel9;
-        private ComboBox cmbDiskon;
-        private Label label1;
-        private Label lblDiskon1;
         private FlowLayoutPanel dataGridView3;
         private IconButton listBill1;
-        private IconButton buttonDelete;
         private IconButton ButtonSimpan;
         private IconButton iconButton3;
         private IconButton buttonPayment;
-        private IconButton iconButtonGet;
         private IconDropDownButton iconDropDownButton1;
         private IconButton ButtonSplit;
         private PictureBox pictureBox2;
@@ -858,10 +965,27 @@ namespace KASIR.OfflineMode
         private Label label4;
         private IconButton lblDetailKeranjang;
         private BindingSource menuBindingSource;
-        private Label label6;
-        private Label label7;
         private Label lblCountingItems;
         private Label label9;
         private IconButton btnCari;
+        private Panel PanelDetailTotal;
+        private Label label6;
+        private IconButton iconButtonGet;
+        private Label label7;
+        private Label lblDiskon1;
+        private Label label1;
+        private ComboBox cmbDiskon;
+        private Label lblTotal1;
+        private Label lblSubTotal1;
+        private Label lblTotal;
+        private Label lblSubTotal;
+        private Label label2;
+        private Label lblDeleteCart;
+        private IconButton btnCategoryAll;
+        private IconButton btnCategoryMin;
+        private IconButton btnCategoryMkn;
+        private IconButton btnGridView;
+        private IconButton btnListView;
+        private IconButton btnReload;
     }
 }

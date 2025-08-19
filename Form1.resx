@@ -163,14 +163,14 @@
     <value>Flat</value>
   </data>
   <data name="btnMin.Location" type="System.Drawing.Point, System.Drawing">
-    <value>807, 0</value>
+    <value>810, 0</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="btnMin.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>0, 0, 0, 0</value>
   </data>
   <data name="btnMin.Size" type="System.Drawing.Size, System.Drawing">
-    <value>33, 48</value>
+    <value>33, 32</value>
   </data>
   <data name="btnMin.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -200,13 +200,13 @@
     <value>Flat</value>
   </data>
   <data name="btnMax.Location" type="System.Drawing.Point, System.Drawing">
-    <value>840, 0</value>
+    <value>843, 0</value>
   </data>
   <data name="btnMax.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>0, 0, 0, 0</value>
   </data>
   <data name="btnMax.Size" type="System.Drawing.Size, System.Drawing">
-    <value>33, 48</value>
+    <value>33, 32</value>
   </data>
   <data name="btnMax.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -236,13 +236,13 @@
     <value>Flat</value>
   </data>
   <data name="btnExit.Location" type="System.Drawing.Point, System.Drawing">
-    <value>873, 0</value>
+    <value>876, 0</value>
   </data>
   <data name="btnExit.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>0, 0, 0, 0</value>
   </data>
   <data name="btnExit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>33, 48</value>
+    <value>33, 32</value>
   </data>
   <data name="btnExit.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -262,6 +262,33 @@
   <data name="&gt;&gt;btnExit.ZOrder" xml:space="preserve">
     <value>2</value>
   </data>
+  <data name="gradientPanel1.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Left, Right</value>
+  </data>
+  <data name="NavBarBtn.Location" type="System.Drawing.Point, System.Drawing">
+    <value>115, 5</value>
+  </data>
+  <data name="NavBarBtn.Size" type="System.Drawing.Size, System.Drawing">
+    <value>28, 22</value>
+  </data>
+  <data name="NavBarBtn.SizeMode" type="System.Windows.Forms.PictureBoxSizeMode, System.Windows.Forms">
+    <value>Zoom</value>
+  </data>
+  <data name="NavBarBtn.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;NavBarBtn.Name" xml:space="preserve">
+    <value>NavBarBtn</value>
+  </data>
+  <data name="&gt;&gt;NavBarBtn.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;NavBarBtn.Parent" xml:space="preserve">
+    <value>gradientPanel1</value>
+  </data>
+  <data name="&gt;&gt;NavBarBtn.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
   <data name="lblNamaOutlet.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
@@ -269,7 +296,7 @@
     <value>Segoe UI Semibold, 10pt, style=Italic</value>
   </data>
   <data name="lblNamaOutlet.Location" type="System.Drawing.Point, System.Drawing">
-    <value>167, 9</value>
+    <value>194, 5</value>
   </data>
   <data name="lblNamaOutlet.Size" type="System.Drawing.Size, System.Drawing">
     <value>0, 19</value>
@@ -287,13 +314,13 @@
     <value>gradientPanel1</value>
   </data>
   <data name="&gt;&gt;lblNamaOutlet.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>1</value>
   </data>
   <data name="iconCurrentChildForm.Location" type="System.Drawing.Point, System.Drawing">
-    <value>115, 3</value>
+    <value>149, 0</value>
   </data>
   <data name="iconCurrentChildForm.Size" type="System.Drawing.Size, System.Drawing">
-    <value>46, 37</value>
+    <value>45, 29</value>
   </data>
   <data name="iconCurrentChildForm.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -308,7 +335,7 @@
     <value>gradientPanel1</value>
   </data>
   <data name="&gt;&gt;iconCurrentChildForm.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="lblTitleChildForm.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -317,7 +344,7 @@
     <value>Segoe UI Semibold, 9pt, style=Bold</value>
   </data>
   <data name="lblTitleChildForm.Location" type="System.Drawing.Point, System.Drawing">
-    <value>256, 13</value>
+    <value>200, 7</value>
   </data>
   <data name="lblTitleChildForm.Size" type="System.Drawing.Size, System.Drawing">
     <value>0, 15</value>
@@ -338,13 +365,13 @@
     <value>gradientPanel1</value>
   </data>
   <data name="&gt;&gt;lblTitleChildForm.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="gradientPanel1.Location" type="System.Drawing.Point, System.Drawing">
     <value>-109, 0</value>
   </data>
   <data name="gradientPanel1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>1015, 45</value>
+    <value>1015, 29</value>
   </data>
   <data name="gradientPanel1.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -368,7 +395,7 @@
     <value>0, 0</value>
   </data>
   <data name="panelTitleBar.Size" type="System.Drawing.Size, System.Drawing">
-    <value>906, 48</value>
+    <value>909, 32</value>
   </data>
   <data name="panelTitleBar.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -392,10 +419,10 @@
     <value>Segoe UI, 10pt</value>
   </data>
   <data name="panel1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>106, 0</value>
+    <value>103, 0</value>
   </data>
   <data name="panel1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>906, 580</value>
+    <value>909, 580</value>
   </data>
   <data name="panel1.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -415,6 +442,9 @@
   <metadata name="SyncTimer.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="gradientPanel2.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Bottom, Left</value>
+  </data>
   <data name="BtnSettingForm.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
   </data>
@@ -425,10 +455,10 @@
     <value>NoControl</value>
   </data>
   <data name="BtnSettingForm.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 389</value>
+    <value>0, 260</value>
   </data>
   <data name="BtnSettingForm.Size" type="System.Drawing.Size, System.Drawing">
-    <value>106, 60</value>
+    <value>103, 50</value>
   </data>
   <data name="BtnSettingForm.TabIndex" type="System.Int32, mscorlib">
     <value>23</value>
@@ -461,10 +491,10 @@
     <value>NoControl</value>
   </data>
   <data name="btnDev.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 443</value>
+    <value>0, 380</value>
   </data>
   <data name="btnDev.Size" type="System.Drawing.Size, System.Drawing">
-    <value>106, 60</value>
+    <value>103, 50</value>
   </data>
   <data name="btnDev.TabIndex" type="System.Int32, mscorlib">
     <value>22</value>
@@ -497,10 +527,10 @@
     <value>NoControl</value>
   </data>
   <data name="btnContact.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 323</value>
+    <value>0, 320</value>
   </data>
   <data name="btnContact.Size" type="System.Drawing.Size, System.Drawing">
-    <value>106, 60</value>
+    <value>103, 50</value>
   </data>
   <data name="btnContact.TabIndex" type="System.Int32, mscorlib">
     <value>21</value>
@@ -535,17 +565,23 @@
   <data name="SignalPing.ImageAlign" type="System.Drawing.ContentAlignment, System.Drawing">
     <value>MiddleLeft</value>
   </data>
+  <data name="SignalPing.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="SignalPing.Location" type="System.Drawing.Point, System.Drawing">
-    <value>6, 509</value>
+    <value>0, 436</value>
   </data>
   <data name="SignalPing.Size" type="System.Drawing.Size, System.Drawing">
-    <value>103, 42</value>
+    <value>103, 82</value>
   </data>
   <data name="SignalPing.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
   </data>
   <data name="SignalPing.Text" xml:space="preserve">
     <value>Ping</value>
+  </data>
+  <data name="SignalPing.TextAlign" type="System.Drawing.ContentAlignment, System.Drawing">
+    <value>MiddleLeft</value>
   </data>
   <data name="SignalPing.TextImageRelation" type="System.Windows.Forms.TextImageRelation, System.Windows.Forms">
     <value>ImageBeforeText</value>
@@ -571,8 +607,11 @@
   <data name="lblPing.Font" type="System.Drawing.Font, System.Drawing">
     <value>Consolas, 8.25pt, style=Bold</value>
   </data>
+  <data name="lblPing.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="lblPing.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 464</value>
+    <value>3, 460</value>
   </data>
   <data name="lblPing.Size" type="System.Drawing.Size, System.Drawing">
     <value>0, 13</value>
@@ -601,11 +640,14 @@
   <data name="btnShiftLaporan.ImageAlign" type="System.Drawing.ContentAlignment, System.Drawing">
     <value>MiddleLeft</value>
   </data>
+  <data name="btnShiftLaporan.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="btnShiftLaporan.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 257</value>
+    <value>0, 200</value>
   </data>
   <data name="btnShiftLaporan.Size" type="System.Drawing.Size, System.Drawing">
-    <value>106, 60</value>
+    <value>103, 50</value>
   </data>
   <data name="btnShiftLaporan.TabIndex" type="System.Int32, mscorlib">
     <value>20</value>
@@ -628,125 +670,113 @@
   <data name="&gt;&gt;btnShiftLaporan.ZOrder" xml:space="preserve">
     <value>5</value>
   </data>
-  <data name="iconButton1.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
+  <data name="MenuBtn.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
   </data>
-  <data name="iconButton1.ImageAlign" type="System.Drawing.ContentAlignment, System.Drawing">
+  <data name="MenuBtn.ImageAlign" type="System.Drawing.ContentAlignment, System.Drawing">
     <value>MiddleLeft</value>
   </data>
-  <data name="iconButton1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 125</value>
+  <data name="MenuBtn.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
-  <data name="iconButton1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>106, 60</value>
+  <data name="MenuBtn.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 80</value>
   </data>
-  <data name="iconButton1.TabIndex" type="System.Int32, mscorlib">
+  <data name="MenuBtn.Size" type="System.Drawing.Size, System.Drawing">
+    <value>103, 50</value>
+  </data>
+  <data name="MenuBtn.TabIndex" type="System.Int32, mscorlib">
     <value>17</value>
   </data>
-  <data name="iconButton1.Text" xml:space="preserve">
+  <data name="MenuBtn.Text" xml:space="preserve">
     <value>Menu</value>
   </data>
-  <data name="iconButton1.TextImageRelation" type="System.Windows.Forms.TextImageRelation, System.Windows.Forms">
+  <data name="MenuBtn.TextImageRelation" type="System.Windows.Forms.TextImageRelation, System.Windows.Forms">
     <value>ImageBeforeText</value>
   </data>
-  <data name="&gt;&gt;iconButton1.Name" xml:space="preserve">
-    <value>iconButton1</value>
+  <data name="&gt;&gt;MenuBtn.Name" xml:space="preserve">
+    <value>MenuBtn</value>
   </data>
-  <data name="&gt;&gt;iconButton1.Type" xml:space="preserve">
+  <data name="&gt;&gt;MenuBtn.Type" xml:space="preserve">
     <value>FontAwesome.Sharp.IconButton, FontAwesome.Sharp, Culture=neutral, PublicKeyToken=d16d1e4e568ec10f</value>
   </data>
-  <data name="&gt;&gt;iconButton1.Parent" xml:space="preserve">
+  <data name="&gt;&gt;MenuBtn.Parent" xml:space="preserve">
     <value>gradientPanel2</value>
   </data>
-  <data name="&gt;&gt;iconButton1.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;MenuBtn.ZOrder" xml:space="preserve">
     <value>6</value>
   </data>
-  <data name="iconButton2.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
+  <data name="TransBtn.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
   </data>
-  <data name="iconButton2.Font" type="System.Drawing.Font, System.Drawing">
+  <data name="TransBtn.Font" type="System.Drawing.Font, System.Drawing">
     <value>Segoe UI, 8.5pt</value>
   </data>
-  <data name="iconButton2.ImageAlign" type="System.Drawing.ContentAlignment, System.Drawing">
+  <data name="TransBtn.ImageAlign" type="System.Drawing.ContentAlignment, System.Drawing">
     <value>MiddleLeft</value>
   </data>
-  <data name="iconButton2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 191</value>
+  <data name="TransBtn.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
-  <data name="iconButton2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>106, 60</value>
+  <data name="TransBtn.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 140</value>
   </data>
-  <data name="iconButton2.TabIndex" type="System.Int32, mscorlib">
+  <data name="TransBtn.Size" type="System.Drawing.Size, System.Drawing">
+    <value>103, 50</value>
+  </data>
+  <data name="TransBtn.TabIndex" type="System.Int32, mscorlib">
     <value>18</value>
   </data>
-  <data name="iconButton2.Text" xml:space="preserve">
-    <value>Transactions</value>
+  <data name="TransBtn.Text" xml:space="preserve">
+    <value>Transaction</value>
   </data>
-  <data name="iconButton2.TextImageRelation" type="System.Windows.Forms.TextImageRelation, System.Windows.Forms">
+  <data name="TransBtn.TextImageRelation" type="System.Windows.Forms.TextImageRelation, System.Windows.Forms">
     <value>ImageBeforeText</value>
   </data>
-  <data name="&gt;&gt;iconButton2.Name" xml:space="preserve">
-    <value>iconButton2</value>
+  <data name="&gt;&gt;TransBtn.Name" xml:space="preserve">
+    <value>TransBtn</value>
   </data>
-  <data name="&gt;&gt;iconButton2.Type" xml:space="preserve">
+  <data name="&gt;&gt;TransBtn.Type" xml:space="preserve">
     <value>FontAwesome.Sharp.IconButton, FontAwesome.Sharp, Culture=neutral, PublicKeyToken=d16d1e4e568ec10f</value>
   </data>
-  <data name="&gt;&gt;iconButton2.Parent" xml:space="preserve">
+  <data name="&gt;&gt;TransBtn.Parent" xml:space="preserve">
     <value>gradientPanel2</value>
   </data>
-  <data name="&gt;&gt;iconButton2.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;TransBtn.ZOrder" xml:space="preserve">
     <value>7</value>
   </data>
-  <data name="panel3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>30, 93</value>
+  <data name="LogoKasir.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
-  <data name="panel3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>10, 66</value>
+  <data name="LogoKasir.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
   </data>
-  <data name="panel3.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+  <data name="LogoKasir.Size" type="System.Drawing.Size, System.Drawing">
+    <value>103, 70</value>
   </data>
-  <data name="&gt;&gt;panel3.Name" xml:space="preserve">
-    <value>panel3</value>
-  </data>
-  <data name="&gt;&gt;panel3.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Panel, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;panel3.Parent" xml:space="preserve">
-    <value>gradientPanel2</value>
-  </data>
-  <data name="&gt;&gt;panel3.ZOrder" xml:space="preserve">
-    <value>8</value>
-  </data>
-  <data name="button2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, -9</value>
-  </data>
-  <data name="button2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>112, 87</value>
-  </data>
-  <data name="button2.SizeMode" type="System.Windows.Forms.PictureBoxSizeMode, System.Windows.Forms">
+  <data name="LogoKasir.SizeMode" type="System.Windows.Forms.PictureBoxSizeMode, System.Windows.Forms">
     <value>Zoom</value>
   </data>
-  <data name="button2.TabIndex" type="System.Int32, mscorlib">
+  <data name="LogoKasir.TabIndex" type="System.Int32, mscorlib">
     <value>19</value>
   </data>
-  <data name="&gt;&gt;button2.Name" xml:space="preserve">
-    <value>button2</value>
+  <data name="&gt;&gt;LogoKasir.Name" xml:space="preserve">
+    <value>LogoKasir</value>
   </data>
-  <data name="&gt;&gt;button2.Type" xml:space="preserve">
+  <data name="&gt;&gt;LogoKasir.Type" xml:space="preserve">
     <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;button2.Parent" xml:space="preserve">
+  <data name="&gt;&gt;LogoKasir.Parent" xml:space="preserve">
     <value>gradientPanel2</value>
   </data>
-  <data name="&gt;&gt;button2.ZOrder" xml:space="preserve">
-    <value>9</value>
+  <data name="&gt;&gt;LogoKasir.ZOrder" xml:space="preserve">
+    <value>8</value>
   </data>
   <data name="gradientPanel2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>-3, -4</value>
+    <value>0, 0</value>
   </data>
   <data name="gradientPanel2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>112, 584</value>
+    <value>103, 580</value>
   </data>
   <data name="gradientPanel2.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -768,6 +798,9 @@
   </data>
   <data name="Setting.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
+  </data>
+  <data name="Setting.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="Setting.Location" type="System.Drawing.Point, System.Drawing">
     <value>0, 553</value>
@@ -800,7 +833,7 @@
     <value>0, 0</value>
   </data>
   <data name="panel2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>106, 580</value>
+    <value>103, 580</value>
   </data>
   <data name="panel2.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>

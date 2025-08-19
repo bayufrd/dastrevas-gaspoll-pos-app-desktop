@@ -74,9 +74,6 @@
     <Compile Update="OffineMode\Offline_addCartForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="Komponen\addCartForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Update="OffineMode\Offline_masterPos.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -88,27 +85,6 @@
     </Compile>
     <Compile Update="Komponen\shiftReport.cs">
       <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Update="Komponen\updatePerItemForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Komponen\deletePerItemForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Komponen\splitBill.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Komponen\dataDiskon.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Komponen\deleteForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Komponen\notifikasiPengeluaran.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Komponen\printReportShift.cs">
-      <SubType>Form</SubType>
     </Compile>
     <Compile Update="OffineMode\Offline_shiftReport.cs">
       <SubType>UserControl</SubType>

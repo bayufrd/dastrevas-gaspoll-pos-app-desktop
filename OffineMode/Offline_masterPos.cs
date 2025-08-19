@@ -1,27 +1,26 @@
 ﻿using System.Data;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Net.NetworkInformation;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Timers;
 using FontAwesome.Sharp;
 using KASIR.Database;
+using KASIR.Helper;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
 using KASIR.OffineMode;
 using KASIR.Properties;
 using KASIR.Services;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using FontStyle = System.Drawing.FontStyle;
 using Menu = KASIR.Model.Menu;
-using MessageBox = System.Windows.Forms.MessageBox;
 using Point = System.Drawing.Point;
 using Size = System.Drawing.Size;
 using SystemFonts = System.Drawing.SystemFonts;
-using Microsoft.EntityFrameworkCore;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
 
 
 namespace KASIR.OfflineMode
@@ -44,7 +43,7 @@ namespace KASIR.OfflineMode
 
         private bool isDiscountActive;
         private bool isLoading;
-
+        private bool configViewDataProductGrid;
         private readonly int isSplitted = 0;
         private int diskonID;
 
@@ -69,8 +68,10 @@ namespace KASIR.OfflineMode
             InitializeComponent();
             // Panggil di constructor setelah InitializeComponent()
             SetDoubleBufferedForAllControls(this);
+            InitializeVisualRounded();
+
             apiService = new ApiService();
-            panel8.Margin = new Padding(0, 0, 0, 0); // No margin at the bottom
+            panel8.Margin = new Padding(0, 0, 0, 0);
             dataGridView3.Margin = new Padding(0, 0, 0, 0);
 
 
@@ -78,21 +79,12 @@ namespace KASIR.OfflineMode
             //LoadConfig();
             txtCariMenu.Enabled = false;
 
-            InitializeComboBox();
-            InitializeVisualRounded();
             //paging begin
             btnCari.Visible = false;
             dataGridView3.Scroll += dataGridView3_Scroll;
 
             //peging end
             Shown += MasterPos_ShownWrapper;
-
-            cmbFilter.SelectedIndexChanged += cmbFilter_SelectedIndexChanged;
-
-            cmbFilter.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbFilter.DrawMode = DrawMode.OwnerDrawVariable;
-            cmbFilter.DrawItem += CmbFilter_DrawItem;
-            cmbFilter.ItemHeight = 25;
 
             // Mengaitkan event handler dengan form utama
             KeyPreview = true;
@@ -210,32 +202,47 @@ namespace KASIR.OfflineMode
             }
         }
 
+        [DllImport("Gdi32.dll")]
+        private static extern IntPtr CreateRoundRectRgn(
+    int nLeftRect,      // x-coordinate of upper-left corner
+    int nTopRect,       // y-coordinate of upper-left corner
+    int nRightRect,     // x-coordinate of lower-right corner
+    int nBottomRect,    // y-coordinate of lower-right corner
+    int nWidthEllipse,  // width of ellipse
+    int nHeightEllipse  // height of ellipse
+);
+
         private async Task LoadCurrentPage()
         {
             isLoading = true;
 
-            List<Menu> pagedData = allMenuItems.Skip((currentPageIndex - 1) * pageSize).Take(pageSize).ToList();
+            List<Menu> pagedData = allMenuItems
+                .Skip((currentPageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
             dataGridView3.SuspendLayout();
+            dataGridView3.Controls.Clear(); // reset dulu biar ga numpuk
             items = 0;
 
             foreach (Menu menu in pagedData)
             {
-                items += 1;
+                items++;
+
                 Panel tileButton = CreateTileButton(menu);
                 dataGridView3.Controls.Add(tileButton);
 
-                if (menu != pagedData.First())
-                {
-                    Panel spacerPanel = new() { Dock = DockStyle.Top, Height = 110, Width = 10 };
-                    dataGridView3.Controls.Add(spacerPanel);
-                }
+                // ambil pictureBox pertama dari panel gambar
+                PictureBox pic = tileButton
+                    .Controls.OfType<Panel>().First()
+                    .Controls.OfType<PictureBox>().First();
 
-                await LoadImageToPictureBox((PictureBox)tileButton.Controls[0].Controls[0], menu);
+                await LoadImageToPictureBox(pic, menu);
+
                 lblCountingItems.Text = $"{items} items";
             }
 
             dataGridView3.ResumeLayout();
-            dataGridView3.AutoScroll = true;
             txtCariMenu.Enabled = true;
 
             originalPanelControls = dataGridView3.Controls.OfType<Panel>().ToList();
@@ -243,10 +250,80 @@ namespace KASIR.OfflineMode
 
             isLoading = false;
             if (currentPageIndex >= totalPageCount)
-            {
                 allDataLoaded = true;
-            }
         }
+
+        private Panel CreateTileButton(Menu menu)
+        {
+            // Panel utama (kotak produk)
+            Panel tileButton = new()
+            {
+                Width = 130 * 80/100,
+                Height = 180 * 80/100,
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                Margin = new Padding(5),
+                Cursor = Cursors.Hand,
+                Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, 130 * 80 / 100, 180 * 80 / 100, 15, 15))
+            };
+
+            // Panel gambar (atas)
+            Panel pictureBoxPanel = new()
+            {
+                Dock = DockStyle.Top,
+                Height = 90 * 80 / 100,
+                BackColor = Color.White,
+                Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, 130 * 80 / 100, 90 * 80 / 100, 10, 10)),
+                Padding = new Padding(3)
+            };
+
+            PictureBox pictureBox = new()
+            {
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Dock = DockStyle.Fill,
+                BorderStyle = BorderStyle.None,
+                BackColor = Color.White
+            };
+            pictureBoxPanel.Controls.Add(pictureBox);
+
+            // Nama produk (tengah)
+            Label nameLabel = new()
+            {
+                Text = menu.name,
+                ForeColor = Color.FromArgb(40, 40, 70),
+                Dock = DockStyle.Top,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Arial", 9, FontStyle.Bold),
+                AutoSize = false,
+                Height = 30 * 80 / 100
+            };
+
+            // Harga (bawah)
+            Label priceLabel = new()
+            {
+                Text = string.Format("Rp. {0:n0},-", menu.price),
+                ForeColor = Color.FromArgb(80, 80, 110),
+                Dock = DockStyle.Top,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Arial", 8, FontStyle.Regular),
+                AutoSize = false,
+                Height = 25 * 80 / 100
+            };
+
+            // urutannya HARUS: harga dulu → nama → gambar (biar gambar benar2 di atas)
+            tileButton.Controls.Add(priceLabel);
+            tileButton.Controls.Add(nameLabel);
+            tileButton.Controls.Add(pictureBoxPanel);
+
+            // Event klik
+            pictureBox.Click += async (sender, e) => await HandlePictureBoxClick(menu);
+            nameLabel.Click += async (sender, e) => await HandlePictureBoxClick(menu);
+            priceLabel.Click += async (sender, e) => await HandlePictureBoxClick(menu);
+
+            return tileButton;
+        }
+
+
 
         private void dataGridView3_Scroll(object sender, ScrollEventArgs e)
         {
@@ -261,7 +338,9 @@ namespace KASIR.OfflineMode
             }
         }
 
-        private Panel CreateTileButton(Menu menu)
+
+        
+        private Panel Ex_CreateTileButton(Menu menu)
         {
             Panel tileButton = new() { Width = 90, Height = 120 };
 
@@ -269,7 +348,9 @@ namespace KASIR.OfflineMode
 
             PictureBox pictureBox = new()
             {
-                SizeMode = PictureBoxSizeMode.Zoom, Dock = DockStyle.Fill, BorderStyle = BorderStyle.None
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Dock = DockStyle.Fill,
+                BorderStyle = BorderStyle.None
             };
 
             pictureBoxPanel.Controls.Add(pictureBox);
@@ -303,7 +384,6 @@ namespace KASIR.OfflineMode
                 Font = new Font("Arial", 8, FontStyle.Regular)
             };
             tileButton.Controls.Add(priceLabel);
-
             pictureBox.Click += async (sender, e) => await HandlePictureBoxClick(menu);
 
             return tileButton;
@@ -317,27 +397,35 @@ namespace KASIR.OfflineMode
 
             foreach (Menu menu in searchResults)
             {
-                items += 1;
-                Panel tileButton = CreateTileButton(menu); // Pastikan metode ini dipanggil dengan benar
+                items++;
+
+                // buat tile
+                Panel tileButton = CreateTileButton(menu);
                 dataGridView3.Controls.Add(tileButton);
 
-                if (menu != searchResults.First())
+                // cari PictureBox di dalam tile
+                PictureBox picBox = tileButton.Controls
+                    .OfType<Panel>()
+                    .SelectMany(p => p.Controls.OfType<PictureBox>())
+                    .FirstOrDefault();
+
+                if (picBox != null)
                 {
-                    Panel spacerPanel = new() { Dock = DockStyle.Top, Height = 110, Width = 10 };
-                    dataGridView3.Controls.Add(spacerPanel);
+                    await ReloadImageToPictureBox(picBox, menu);
                 }
 
-                // Muat ulang gambar untuk setiap menu
-                await ReloadImageToPictureBox((PictureBox)tileButton.Controls[0].Controls[0], menu);
                 lblCountingItems.Text = $"{items} items";
             }
 
             dataGridView3.ResumeLayout();
             dataGridView3.AutoScroll = true;
             txtCariMenu.Enabled = true;
+
+            // simpan original panel list
             originalPanelControls = dataGridView3.Controls.OfType<Panel>().ToList();
             txtCariMenu.PlaceholderText = "Cari Menu Items...";
         }
+
 
         private async Task ReloadImageToPictureBox(PictureBox pictureBox, Menu menu)
         {
@@ -420,7 +508,7 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    MessageBox.Show("Gagal Menambahkan item, silahkan coba lagi");
+                    NotifyHelper.Error("Gagal Menambahkan item, silahkan coba lagi");
                     ReloadCart();
                     LoadCart();
                     background.Dispose();
@@ -461,10 +549,12 @@ namespace KASIR.OfflineMode
                         if (allSettingsData == "ON")
                         {
                             await OnListView();
+                            configViewDataProductGrid = false;
                         }
                         else
                         {
                             await OfflistView();
+                            configViewDataProductGrid = true;
                         }
                     }
                     else
@@ -547,55 +637,184 @@ namespace KASIR.OfflineMode
         {
             // Create a GraphicsPath object with rounded rectangles
             RoundedPanel(panel8);
+            RoundedPanel(panelCartArea);
+            RoundedPanel(PanelDetailTotal, 8);
+            RoundedPanel(panelSearchBox, 8);
+            IconButtonRounded(buttonPayment, true, null, 8);
+            IconButtonRounded(ButtonSplit, true, Color.DarkGray, 8);
+            IconButtonRounded(ButtonSimpan, true, Color.DarkGray, 8);
+            IconButtonRounded(iconButtonGet, true, Color.DarkGray, 4);
+        }
+        public void IconButtonRounded(IconButton button, bool? isRounded = true, Color? outlineColor = null, int cornerRadius = 20)
+        {
+            // Jika parameter isRounded tidak diset atau false, kembalikan ke button standar
+            if (isRounded == null || isRounded == false)
+            {
+                button.FlatStyle = FlatStyle.Standard;
+                return;
+            }
+
+            // Set flat style untuk kontrol penuh
+            button.FlatStyle = FlatStyle.Flat;
+            button.FlatAppearance.BorderSize = 0;
+
+            // Event handler untuk custom drawing
+            button.Paint += (sender, e) =>
+            {
+                // Bersihkan background default
+                e.Graphics.Clear(button.Parent.BackColor);
+
+                // Buat path rounded
+                GraphicsPath path = new GraphicsPath();
+                Rectangle bounds = new Rectangle(0, 0, button.Width, button.Height);
+
+                // Tambahkan arc untuk setiap sudut
+                path.AddArc(0, 0, cornerRadius * 2, cornerRadius * 2, 180, 90); // Sudut kiri atas
+                path.AddLine(cornerRadius, 0, button.Width - cornerRadius, 0); // Garis atas
+                path.AddArc(button.Width - (cornerRadius * 2), 0, cornerRadius * 2, cornerRadius * 2, 270, 90); // Sudut kanan atas
+                path.AddLine(button.Width, cornerRadius, button.Width, button.Height - cornerRadius); // Garis kanan
+                path.AddArc(button.Width - (cornerRadius * 2), button.Height - (cornerRadius * 2), cornerRadius * 2, cornerRadius * 2, 0, 90); // Sudut kanan bawah
+                path.AddLine(button.Width - cornerRadius, button.Height, cornerRadius, button.Height); // Garis bawah
+                path.AddArc(0, button.Height - (cornerRadius * 2), cornerRadius * 2, cornerRadius * 2, 90, 90); // Sudut kiri bawah
+                path.AddLine(0, button.Height - cornerRadius, 0, cornerRadius); // Garis kiri
+
+                path.CloseFigure();
+
+                // Set region untuk button
+                button.Region = new Region(path);
+
+                // Gambar background button
+                using (SolidBrush brush = new SolidBrush(button.BackColor))
+                {
+                    e.Graphics.FillPath(brush, path);
+                }
+
+                // Gambar outline jika warna outline ditentukan
+                if (outlineColor.HasValue)
+                {
+                    using (Pen outlinePen = new Pen(outlineColor.Value, 1.8f))
+                    {
+                        outlinePen.Alignment = System.Drawing.Drawing2D.PenAlignment.Inset;
+                        e.Graphics.DrawPath(outlinePen, path);
+                    }
+                }
+
+                // Gambar ikon
+                if (button.IconChar != IconChar.None)
+                {
+                    // Hitung posisi ikon di tengah
+                    SizeF iconSize = new SizeF(button.IconSize, button.IconSize);
+                    PointF iconLocation = new PointF(
+                        (button.Width - iconSize.Width) / 2,
+                        (button.Height - iconSize.Height) / 2
+                    );
+
+                    // Konversi ikon FontAwesome ke bitmap
+                    using (Bitmap iconBitmap = GetIconBitmap(button.IconChar, button.IconColor, button.IconSize))
+                    {
+                        e.Graphics.DrawImage(iconBitmap, iconLocation);
+                    }
+                }
+
+                // Jika ada teks, gambar teks
+                if (!string.IsNullOrEmpty(button.Text))
+                {
+                    TextRenderer.DrawText(
+                        e.Graphics,
+                        button.Text,
+                        button.Font,
+                        bounds,
+                        button.ForeColor,
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
+                    );
+                }
+            };
+
+            // Event handler untuk resize
+            button.Resize += (sender, e) =>
+            {
+                button.Invalidate();
+            };
         }
 
-        public void RoundedPanel(Panel panel)
+        // Metode utility untuk konversi ikon FontAwesome ke Bitmap
+        private Bitmap GetIconBitmap(IconChar iconChar, Color iconColor, int iconSize)
         {
-            GraphicsPath path = new();
-            int radius = 20; // adjust the radius value to change the roundness of the corners
-            path.AddLine(panel.Left, panel.Top + radius, panel.Left, panel.Top);
-            path.AddArc(panel.Left, panel.Top, radius, radius, 180, 90);
-            path.AddLine(panel.Left + radius, panel.Top, panel.Width - radius, panel.Top);
-            path.AddArc(panel.Width - radius, panel.Top, radius, radius, 270, 90);
-            path.AddLine(panel.Width, panel.Top + radius, panel.Width, panel.Bottom - radius);
-            path.AddArc(panel.Width - radius, panel.Bottom - radius, radius, radius, 0, 90);
-            path.AddLine(panel.Width - radius, panel.Bottom, panel.Left + radius, panel.Bottom);
-            path.AddArc(panel.Left, panel.Bottom - radius, radius, radius, 90, 90);
+            // Buat bitmap baru dengan ukuran ikon
+            Bitmap iconBitmap = new Bitmap(iconSize, iconSize);
+
+            using (Graphics g = Graphics.FromImage(iconBitmap))
+            {
+                // Bersihkan background
+                g.Clear(Color.Transparent);
+
+                // Aktifkan anti-aliasing untuk rendering halus
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+                // Buat font ikon
+                using (Font iconFont = new Font("Font Awesome 6 Free", iconSize, FontStyle.Regular))
+                {
+                    // Konversi karakter ikon ke string
+                    string iconString = char.ConvertFromUtf32((int)iconChar);
+
+                    // Gambar ikon
+                    using (SolidBrush brush = new SolidBrush(iconColor))
+                    {
+                        g.DrawString(iconString, iconFont, brush, 0, 0);
+                    }
+                }
+            }
+
+            return iconBitmap;
+        }
+        public void RoundedPanel(Panel panel, int radius = 20)
+        {
+            // Pastikan panel tidak null
+            if (panel == null) return;
+
+            GraphicsPath path = new GraphicsPath();
+
+            // Definisikan rectangle untuk drawing
+            Rectangle bounds = new Rectangle(0, 0, panel.Width, panel.Height);
+
+            // Tambahkan arc untuk setiap sudut
+            path.AddArc(0, 0, radius * 2, radius * 2, 180, 90); // Sudut kiri atas
+            path.AddLine(radius, 0, panel.Width - radius, 0); // Garis atas
+            path.AddArc(panel.Width - (radius * 2), 0, radius * 2, radius * 2, 270, 90); // Sudut kanan atas
+            path.AddLine(panel.Width, radius, panel.Width, panel.Height - radius); // Garis kanan
+            path.AddArc(panel.Width - (radius * 2), panel.Height - (radius * 2), radius * 2, radius * 2, 0, 90); // Sudut kanan bawah
+            path.AddLine(panel.Width - radius, panel.Height, radius, panel.Height); // Garis bawah
+            path.AddArc(0, panel.Height - (radius * 2), radius * 2, radius * 2, 90, 90); // Sudut kiri bawah
+            path.AddLine(0, panel.Height - radius, 0, radius); // Garis kiri
+
             path.CloseFigure();
+
+            // Set region menggunakan path
             panel.Region = new Region(path);
-            panel.Location = new Point(panel.Left, panel.Top);
+
+            // Tambahkan event handler untuk menjaga konsistensi saat resize
+            panel.Resize += (sender, e) =>
+            {
+                GraphicsPath resizePath = new GraphicsPath();
+
+                // Ulang proses yang sama saat resize
+                resizePath.AddArc(0, 0, radius * 2, radius * 2, 180, 90);
+                resizePath.AddLine(radius, 0, panel.Width - radius, 0);
+                resizePath.AddArc(panel.Width - (radius * 2), 0, radius * 2, radius * 2, 270, 90);
+                resizePath.AddLine(panel.Width, radius, panel.Width, panel.Height - radius);
+                resizePath.AddArc(panel.Width - (radius * 2), panel.Height - (radius * 2), radius * 2, radius * 2, 0, 90);
+                resizePath.AddLine(panel.Width - radius, panel.Height, radius, panel.Height);
+                resizePath.AddArc(0, panel.Height - (radius * 2), radius * 2, radius * 2, 90, 90);
+                resizePath.AddLine(0, panel.Height - radius, 0, radius);
+
+                resizePath.CloseFigure();
+                panel.Region = new Region(resizePath);
+            };
         }
 
         private void PayForm_KeluarButtonClicked(object sender, EventArgs e)
         {
             loadDataAsync();
-        }
-
-        private void InitializeComboBox()
-        {
-            cmbFilter.Items.Add("Semua");
-            cmbFilter.Items.Add("Makanan");
-            cmbFilter.Items.Add("Minuman");
-            cmbFilter.Items.Add("Additional Makanan");
-            cmbFilter.Items.Add("Additional Minuman");
-            cmbFilter.SelectedIndex = 0;
-        }
-
-        private void CmbFilter_DrawItem(object sender, DrawItemEventArgs e)
-        {
-            if (e.Index >= 0)
-            {
-                e.DrawBackground();
-
-                int verticalMargin = 5;
-                string itemText = cmbFilter.GetItemText(cmbFilter.Items[e.Index]);
-
-                e.Graphics.DrawString(itemText, e.Font, Brushes.Black,
-                    new Rectangle(e.Bounds.Left, e.Bounds.Top + verticalMargin, e.Bounds.Width,
-                        e.Bounds.Height - verticalMargin));
-
-                e.DrawFocusRectangle();
-            }
         }
 
         private async Task LoadDataDiscount()
@@ -623,20 +842,19 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                    NotifyHelper.Warning("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
                     CacheDataApp form3 = new("Sync");
                     form3.Show();
                 }
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error($"Koneksi tidak stabil. Coba beberapa saat lagi.{ex.Message}");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data diskon " + ex.Message);
+                NotifyHelper.Error("Gagal tampil data diskon " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -740,106 +958,6 @@ namespace KASIR.OfflineMode
             }
         }
 
-        //button delete
-        private async void buttonDeleteCart_ClickAsync(object sender, EventArgs e)
-        {
-            try
-            {
-                // Path for the cart data cache file
-                string filePath = "DT-Cache\\Transaction\\Cart.data";
-
-                // Cek apakah file Cart.data ada
-                if (File.Exists(filePath))
-                {
-                    // Safely set selected index only if items exist
-                    if (cmbDiskon.Items.Count > 0)
-                    {
-                        try
-                        {
-                            cmbDiskon.SelectedIndex = 0;
-                        }
-                        catch (ArgumentOutOfRangeException)
-                        {
-                            // Log or handle the specific case where setting index fails
-                            LoggerUtil.LogWarning("Unable to set discount combo box index to 0");
-                        }
-                    }
-
-                    // Membaca isi file Cart.data
-                    string cartJson = File.ReadAllText(filePath);
-
-                    // Deserialize data file Cart.data using your existing model
-                    var cartData = JsonConvert.DeserializeObject<DataCart>(cartJson);
-
-                    // Comprehensive cart emptiness check
-                    if (cartData.cart_details == null ||
-                        !cartData.cart_details.Any() ||
-                        cartData.total <= 0)
-                    {
-                        ClearCartFile();
-                        MessageBox.Show("Keranjang kosong.", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        return;
-                    }
-
-                    // Cek apakah ada item yang sudah dipesan (is_ordered == 1)
-                    bool isAnyOrdered = cartData.cart_details.Any(item =>
-                        item.is_ordered == "1");
-
-                    if (!isAnyOrdered)
-                    {
-                        // Jika tidak ada item yang dipesan, langsung clear
-                        ClearCartFile();
-                        ReloadCart();
-                        return;
-                    }
-
-                    // Tampilkan form konfirmasi penghapusan
-                    using (Form background = new()
-                    {
-                        StartPosition = FormStartPosition.Manual,
-                        FormBorderStyle = FormBorderStyle.None,
-                        Opacity = 0.7d,
-                        BackColor = Color.Black,
-                        WindowState = FormWindowState.Maximized,
-                        TopMost = true,
-                        Location = Location,
-                        ShowInTaskbar = false
-                    })
-                    using (Offline_deleteForm Offline_deleteForm = new(cartData.cart_id.ToString()))
-                    {
-                        Offline_deleteForm.Owner = background;
-                        background.Show();
-
-                        DialogResult result = Offline_deleteForm.ShowDialog();
-
-                        if (result == DialogResult.OK)
-                        {
-                            background.Dispose();
-                            ReloadCart();
-                        }
-                        else
-                        {
-                            MessageBox.Show("Gagal hapus keranjang, Silahkan coba lagi");
-                            ReloadCart();
-                            background.Dispose();
-                        }
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Keranjang kosong.", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            }
-            catch (TaskCanceledException ex)
-            {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
-
         public async Task DeleteCartFile()
         {
             try
@@ -855,14 +973,13 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    MessageBox.Show("Keranjang kosong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    NotifyHelper.Warning("Keranjang kosong.");
                 }
             }
             catch (Exception ex)
             {
                 // Menangani error jika terjadi masalah saat penghapusan file
-                MessageBox.Show("Terjadi kesalahan saat menghapus file: " + ex.Message, "Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error("Terjadi kesalahan saat menghapus file: " + ex.Message);
             }
         }
 
@@ -926,13 +1043,12 @@ namespace KASIR.OfflineMode
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi." + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("An error occurred while retrieving data: " + ex.Message);
+                NotifyHelper.Error("An error occurred while retrieving data: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -980,7 +1096,7 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    MessageBox.Show("Gagal Menambahkan item, silahkan coba lagi");
+                    NotifyHelper.Error("Gagal Menambahkan item, silahkan coba lagi");
                     ReloadCart();
                     LoadCart();
                     background.Dispose();
@@ -1109,7 +1225,7 @@ namespace KASIR.OfflineMode
                                 }
                                 else
                                 {
-                                    MessageBox.Show("Gagal Menambahkan item, silahkan coba lagi");
+                                    NotifyHelper.Error("Gagal Menambahkan item, silahkan coba lagi");
                                     ReloadCart();
                                     LoadCart();
                                     // Dispose of the background form now that the addCartForm form has been closed
@@ -1161,14 +1277,12 @@ namespace KASIR.OfflineMode
                         txtCariMenu.PlaceholderText = "Cari Menu Items...";
                     }));
                     //LoadCart();
-                    cmbFilter.SelectedIndex = 0;
 
                     return;
                 }
                 catch (TaskCanceledException ex)
                 {
-                    MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi." + ex.Message);
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
                 catch (Exception ex)
@@ -1184,7 +1298,7 @@ namespace KASIR.OfflineMode
                     if (response != dataFileContents)
                     {
                         // Contents do not match, take appropriate action
-                        MessageBox.Show("Data rusak, Silahkan Reset Cache di setting.");
+                        NotifyHelper.Error("Data rusak, Silahkan Reset Cache di setting.");
                     }
                 }
             }
@@ -1193,7 +1307,7 @@ namespace KASIR.OfflineMode
             {
                 if (!_internetServices.IsInternetConnected())
                 {
-                    MessageBox.Show("No Connection Available.");
+                    NotifyHelper.Error("No Connection Available.");
                     return;
                 }
 
@@ -1323,7 +1437,7 @@ namespace KASIR.OfflineMode
                             }
                             else
                             {
-                                MessageBox.Show("Gagal Menambahkan item, silahkan coba lagi");
+                                NotifyHelper.Error("Gagal Menambahkan item, silahkan coba lagi");
                                 ReloadCart();
                                 LoadCart();
                                 // Dispose of the background form now that the addCartForm form has been closed
@@ -1377,12 +1491,10 @@ namespace KASIR.OfflineMode
                 }));
 
                 //LoadCart();
-                cmbFilter.SelectedIndex = 0;
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi." + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -1390,7 +1502,7 @@ namespace KASIR.OfflineMode
                 // Resume the layout engine after adding all the controls
                 dataGridView3.ResumeLayout();
 
-                MessageBox.Show("An error occurred while retrieving data: " + ex.Message);
+                NotifyHelper.Error("An error occurred while retrieving data: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -1751,10 +1863,8 @@ namespace KASIR.OfflineMode
 
         public async Task LoadCart()
         {
-            buttonDelete.Enabled = false;
             buttonPayment.Enabled = false;
             await LoadCartData();
-            buttonDelete.Enabled = true;
             buttonPayment.Enabled = true;
         }
 
@@ -1795,7 +1905,7 @@ namespace KASIR.OfflineMode
             }
         }
 
-        public async Task LoadCartData()
+        public async Task LoadCartDataSQL()
         {
             try
             {
@@ -1813,11 +1923,11 @@ namespace KASIR.OfflineMode
                         lblDiskon1.Text = "Rp. 0";
                         lblSubTotal1.Text = "Rp. 0,-";
                         lblTotal1.Text = "Rp. 0,-";
-                        buttonPayment.Text = "Bayar ";
+                        buttonPayment.Text = "Proses Pembayaran";
                         subTotalPrice = 0;
                         diskonID = 0;
 
-                        iconButtonGet.Text = "Gunakan Disc";
+                        iconButtonGet.Text = "Pakai";
                         iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
                         isDiscountActive = false;
                         iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
@@ -1846,7 +1956,7 @@ namespace KASIR.OfflineMode
                         }
                         else
                         {
-                            iconButtonGet.Text = "Gunakan Disc";
+                            iconButtonGet.Text = "Pakai";
                             iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
                             isDiscountActive = false;
                             iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
@@ -1963,7 +2073,7 @@ namespace KASIR.OfflineMode
                         dataGridView1.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
                         dataGridView1.Columns["Menu"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
 
-                        await LoadDataDiscount(); 
+                        await LoadDataDiscount();
 
                         if (diskonID != 0)
                         {
@@ -1984,7 +2094,7 @@ namespace KASIR.OfflineMode
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi." + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -1992,7 +2102,7 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        public async Task LoadCartData1()
+        public async Task LoadCartData()
         {
             try
             {
@@ -2013,12 +2123,12 @@ namespace KASIR.OfflineMode
                         lblDiskon1.Text = "Rp. 0";
                         lblSubTotal1.Text = "Rp. 0,-";
                         lblTotal1.Text = "Rp. 0,-";
-                        buttonPayment.Text = "Bayar ";
+                        buttonPayment.Text = "Proses Pembayaran";
                         subTotalPrice = 0;
                         diskonID = 0;
 
                         //set tombol disc
-                        iconButtonGet.Text = "Gunakan Disc";
+                        iconButtonGet.Text = "Pakai";
                         iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
                         isDiscountActive = false;
                         iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
@@ -2058,14 +2168,16 @@ namespace KASIR.OfflineMode
                         if (cartData["discount_id"] != null && int.Parse(cartData["discount_id"].ToString()) != 0)
                         {
                             iconButtonGet.Text = "Hapus Disc";
-                            iconButtonGet.ForeColor = Color.Red;
+                            iconButtonGet.ForeColor = Color.White;
+                            iconButtonGet.BackColor = Color.DarkRed;
                             isDiscountActive = true;
                             iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
                         }
                         else
                         {
-                            iconButtonGet.Text = "Gunakan Disc";
+                            iconButtonGet.Text = "Pakai";
                             iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
+                            iconButtonGet.BackColor = Color.White;
                             isDiscountActive = false;
                             iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
                         }
@@ -2233,12 +2345,12 @@ namespace KASIR.OfflineMode
                     lblDiskon1.Text = "Rp. 0";
                     lblSubTotal1.Text = "Rp. 0,-";
                     lblTotal1.Text = "Rp. 0,-";
-                    buttonPayment.Text = "Bayar ";
+                    buttonPayment.Text = "Proses Pembayaran";
                     subTotalPrice = 0;
                     ButtonSplit.Enabled = true;
 
                     //set tombol disc
-                    iconButtonGet.Text = "Gunakan Disc";
+                    iconButtonGet.Text = "Pakai";
                     iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
                     isDiscountActive = false;
                     iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
@@ -2265,8 +2377,7 @@ namespace KASIR.OfflineMode
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi." + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -2318,7 +2429,7 @@ namespace KASIR.OfflineMode
         {
             cartID = null;
             totalCart = null;
-            buttonPayment.Text = "Bayar";
+            buttonPayment.Text = "Proses Pembayaran";
             lblDiskon1.Text = null;
             lblSubTotal1.Text = null;
             lblTotal1.Text = null;
@@ -2422,7 +2533,7 @@ namespace KASIR.OfflineMode
             int rowCount = dataGridView1.RowCount;
             if (rowCount == 0)
             {
-                MessageBox.Show("Keranjang masih kosong!", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                NotifyHelper.Warning("Keranjang masih kosong!");
 
                 return;
             }
@@ -2441,8 +2552,7 @@ namespace KASIR.OfflineMode
 
             if (isSplitted != 0)
             {
-                MessageBox.Show("Keranjang ini telah di Split! tidak bisa diSimpan.", "Gaspol", MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                NotifyHelper.Info("Keranjang ini telah di Split! tidak bisa diSimpan.");
             }
             else
             {
@@ -2464,7 +2574,7 @@ namespace KASIR.OfflineMode
                     }
                     else
                     {
-                        MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
+                        NotifyHelper.Error("Gagal Simpan, Silahkan coba lagi");
                         background.Dispose();
                         ReloadCart();
                     }
@@ -2486,8 +2596,7 @@ namespace KASIR.OfflineMode
         {
             if (string.IsNullOrEmpty(cartID) || dataDiscountListCart == null || !dataDiscountListCart.Any())
             {
-                MessageBox.Show("Keranjang kosong. Silakan tambahkan item ke keranjang sebelum menerapkan diskon.",
-                    "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                NotifyHelper.Warning("Keranjang kosong. Silakan tambahkan item ke keranjang sebelum menerapkan diskon.");
                 return;
             }
 
@@ -2522,8 +2631,7 @@ namespace KASIR.OfflineMode
             {
                 if (selectedDiskon == -1)
                 {
-                    MessageBox.Show("Diskon belum dipilih !", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Info("Diskon belum dipilih !");
                     return;
                 }
 
@@ -2532,8 +2640,7 @@ namespace KASIR.OfflineMode
                 if (diskonMinimum > subTotalPrice)
                 {
                     int resultDiskon = diskonMinimum - subTotalPrice;
-                    MessageBox.Show("Minimum diskon kurang " + string.Format("Rp. {0:n0},-", resultDiskon) + " lagi",
-                        "Gaspol");
+                    NotifyHelper.Info("Minimum diskon kurang " + string.Format("Rp. {0:n0},-", resultDiskon) + " lagi");
                     return;
                 }
             }
@@ -2558,7 +2665,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal menggunakan diskon: " + ex.Message, "Gaspol");
+                NotifyHelper.Error("Gagal menggunakan diskon: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -2650,7 +2757,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal menggunakan diskon: " + ex.Message, "Gaspol");
+                NotifyHelper.Error("Gagal menggunakan diskon: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -2693,7 +2800,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal cek diskon: " + ex.Message, "Gaspol");
+                NotifyHelper.Error("Gagal cek diskon: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
 
@@ -2712,8 +2819,7 @@ namespace KASIR.OfflineMode
             {
                 if (dataGridView1.Rows.Count > 0)
                 {
-                    MessageBox.Show("Keranjang belum kosong. tidak dapat membuka keranjang lagi", "DT-Info",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    NotifyHelper.Info("Keranjang belum kosong. tidak dapat membuka keranjang lagi");
 
                     return;
                 }
@@ -2743,56 +2849,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
-
-        private async void cmbFilter_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                string selectedFilter = cmbFilter.SelectedItem.ToString();
-
-                items = 0;
-
-                if (dataGridView1.Visible && selectedFilter == "Semua")
-                {
-                    await LoadDataListby();
-                    return;
-                }
-
-                if (selectedFilter != "Semua")
-                {
-                    searchSemua(selectedFilter);
-                }
-                else
-                {
-                    ListMati();
-                    items = 0;
-                    foreach (Control control in dataGridView3.Controls)
-                    {
-                        if (control is Panel tileButton && control.Controls.Count >= 3)
-                        {
-                            Label typeLabel = control.Controls[2] as Label;
-                            if (typeLabel != null)
-                            {
-                                string menuType = typeLabel.Text;
-
-                                // Determine whether to show or hide the item based on the filter
-                                bool showItem = selectedFilter == "Semua";
-                                control.Visible = showItem;
-
-                                //counter items
-                                items++;
-                                lblCountingItems.Text = items + " items";
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
+                NotifyHelper.Error(ex.ToString());
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -2808,8 +2865,8 @@ namespace KASIR.OfflineMode
 
                 // Filter data based on Menu Type column
                 EnumerableRowCollection<DataRow> filteredData = from row in listDataTable.AsEnumerable()
-                    where row.Field<string>("Menu Type") == selectedFilter
-                    select row;
+                                                                where row.Field<string>("Menu Type") == selectedFilter
+                                                                select row;
 
                 DataTable filteredTable = filteredData.CopyToDataTable();
                 dataGridView2.DataSource = filteredTable;
@@ -2941,7 +2998,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Terjadi kesalahan: " + ex.Message);
+                NotifyHelper.Error("Terjadi kesalahan: " + ex.Message);
             }
         }
 
@@ -2950,7 +3007,7 @@ namespace KASIR.OfflineMode
         {
             if (dataGridView1.DataSource == null || dataGridView1.Rows.Count == 0)
             {
-                MessageBox.Show("Keranjang masih kosong!", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                NotifyHelper.Warning("Keranjang masih kosong!");
                 return;
             }
 
@@ -2991,7 +3048,7 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                MessageBox.Show("Demo ListView/1jam off. Contact PM");
+                NotifyHelper.Error("Demo ListView/1jam off. Contact PM");
             }
             catch (Exception)
             {
@@ -3033,7 +3090,7 @@ namespace KASIR.OfflineMode
                         !cartData.cart_details.Any() ||
                         cartData.total <= 0)
                     {
-                        MessageBox.Show("Keranjang masih kosong!", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        NotifyHelper.Warning("Keranjang masih kosong!");
                         return;
                     }
 
@@ -3074,7 +3131,7 @@ namespace KASIR.OfflineMode
                         }
                         else
                         {
-                            MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
+                            NotifyHelper.Error("Gagal Simpan, Silahkan coba lagi");
                             background.Dispose();
                             ReloadCart();
                             LoadCart();
@@ -3083,12 +3140,316 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    MessageBox.Show("Keranjang masih kosong!", "DT-Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Keranjang masih kosong!");
                 }
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private void lblDeleteCart_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Path for the cart data cache file
+                string filePath = "DT-Cache\\Transaction\\Cart.data";
+
+                // Cek apakah file Cart.data ada
+                if (File.Exists(filePath))
+                {
+                    // Safely set selected index only if items exist
+                    if (cmbDiskon.Items.Count > 0)
+                    {
+                        try
+                        {
+                            cmbDiskon.SelectedIndex = 0;
+                        }
+                        catch (ArgumentOutOfRangeException)
+                        {
+                            // Log or handle the specific case where setting index fails
+                            LoggerUtil.LogWarning("Unable to set discount combo box index to 0");
+                        }
+                    }
+
+                    // Membaca isi file Cart.data
+                    string cartJson = File.ReadAllText(filePath);
+
+                    // Deserialize data file Cart.data using your existing model
+                    var cartData = JsonConvert.DeserializeObject<DataCart>(cartJson);
+
+                    // Comprehensive cart emptiness check
+                    if (cartData.cart_details == null ||
+                        !cartData.cart_details.Any() ||
+                        cartData.total <= 0)
+                    {
+                        ClearCartFile();
+                        NotifyHelper.Warning("Keranjang kosong.");
+                        return;
+                    }
+
+                    // Cek apakah ada item yang sudah dipesan (is_ordered == 1)
+                    bool isAnyOrdered = cartData.cart_details.Any(item =>
+                        item.is_ordered == "1");
+
+                    if (!isAnyOrdered)
+                    {
+                        // Jika tidak ada item yang dipesan, langsung clear
+                        ClearCartFile();
+                        ReloadCart();
+                        return;
+                    }
+
+                    // Tampilkan form konfirmasi penghapusan
+                    using (Form background = new()
+                    {
+                        StartPosition = FormStartPosition.Manual,
+                        FormBorderStyle = FormBorderStyle.None,
+                        Opacity = 0.7d,
+                        BackColor = Color.Black,
+                        WindowState = FormWindowState.Maximized,
+                        TopMost = true,
+                        Location = Location,
+                        ShowInTaskbar = false
+                    })
+                    using (Offline_deleteForm Offline_deleteForm = new(cartData.cart_id.ToString()))
+                    {
+                        Offline_deleteForm.Owner = background;
+                        background.Show();
+
+                        DialogResult result = Offline_deleteForm.ShowDialog();
+
+                        if (result == DialogResult.OK)
+                        {
+                            background.Dispose();
+                            ReloadCart();
+                        }
+                        else
+                        {
+                            NotifyHelper.Error("Gagal hapus keranjang, Silahkan coba lagi");
+                            ReloadCart();
+                            background.Dispose();
+                        }
+                    }
+                }
+                else
+                {
+                    NotifyHelper.Warning("Keranjang kosong.");
+                }
+            }
+            catch (TaskCanceledException ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private async void btnCategoryAll_Click(object sender, EventArgs e)
+        {
+            items = 0;
+
+            if (configViewDataProductGrid)
+            {
+                string searchQuery = "";
+                try
+                {
+                    if (allMenuItems != null)
+                    {
+                        // Filter the allMenuItems based on the search query
+                        List<Menu> searchResults = allMenuItems.Where(menu =>
+                            menu.name.ToLower().Contains(searchQuery) ||
+                            menu.menu_type.ToLower().Contains(searchQuery) ||
+                            string.Format("Rp. {0:n0},-", menu.price).ToLower().Contains(searchQuery)
+                        ).ToList();
+
+                        // Update the display with the search results
+                        UpdateDisplayWithSearchResults(searchResults);
+                    }
+                }
+
+                catch (Exception ex)
+                {
+                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                }
+            }
+            else
+            {
+                await LoadDataListby();
+            }
+        }
+
+        private void iconButton1_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (configViewDataProductGrid)
+                {
+                    string searchQuery = "makanan";
+
+                    if (allMenuItems != null)
+                    {
+                        // Filter the allMenuItems based on the search query
+                        List<Menu> searchResults = allMenuItems.Where(menu =>
+                            menu.menu_type.ToLower().Contains(searchQuery)
+                        ).ToList();
+
+                        // Update the display with the search results
+                        UpdateDisplayWithSearchResults(searchResults);
+                    }
+                }
+
+                else
+                {
+                    items = 0;
+                    string selectedFilter = "makanan";
+
+                    foreach (Control control in dataGridView3.Controls)
+                    {
+                        if (control is Panel tileButton && control.Controls.Count >= 3)
+                        {
+                            Label typeLabel = control.Controls[2] as Label;
+                            if (typeLabel != null)
+                            {
+                                string menuType = typeLabel.Text;
+
+                                // Determine whether to show or hide the item based on the filter
+                                bool showItem = selectedFilter == "Semua";
+                                control.Visible = showItem;
+
+                                //counter items
+                                items++;
+                                lblCountingItems.Text = items + " items";
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private void btnCategoryMin_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (configViewDataProductGrid)
+                {
+                    string searchQuery = "minuman";
+
+                    if (allMenuItems != null)
+                    {
+                        // Filter the allMenuItems based on the search query
+                        List<Menu> searchResults = allMenuItems.Where(menu =>
+                            menu.menu_type.ToLower().Contains(searchQuery)
+                        ).ToList();
+
+                        // Update the display with the search results
+                        UpdateDisplayWithSearchResults(searchResults);
+                    }
+                }
+
+                else
+                {
+                    items = 0;
+                    string selectedFilter = "minuman";
+
+                    foreach (Control control in dataGridView3.Controls)
+                    {
+                        if (control is Panel tileButton && control.Controls.Count >= 3)
+                        {
+                            Label typeLabel = control.Controls[2] as Label;
+                            if (typeLabel != null)
+                            {
+                                string menuType = typeLabel.Text;
+
+                                // Determine whether to show or hide the item based on the filter
+                                bool showItem = selectedFilter == "Semua";
+                                control.Visible = showItem;
+
+                                //counter items
+                                items++;
+                                lblCountingItems.Text = items + " items";
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private async void btnGridView_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (dataGridView2.Enabled)
+                {
+                    dataGridView2.Controls.Clear();
+                }
+                else
+                {
+                    dataGridView3.Controls.Clear();
+                }
+                string configDirectory = "setting";
+                string configFilePath = Path.Combine(configDirectory, "configListMenu.data");
+
+                string data = "OFF";
+                await File.WriteAllTextAsync(configFilePath, data); // Asynchronously write the initial state
+
+                await LoadConfig();
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private async void btnListView_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (dataGridView2.Enabled)
+                {
+                    dataGridView2.Controls.Clear();
+                }
+                else
+                {
+                    dataGridView3.Controls.Clear();
+                }
+                string configDirectory = "setting";
+                string configFilePath = Path.Combine(configDirectory, "configListMenu.data");
+
+                string data = "ON";
+                await File.WriteAllTextAsync(configFilePath, data); // Asynchronously write the initial state
+
+                await LoadConfig();
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        private void btnReload_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string TypeCacheEksekusi = "Sync";
+                CacheDataApp form3 = new(TypeCacheEksekusi);
+                //Close();
+                form3.Show();
+            }
+            catch (Exception ex)
+            {
+                NotifyHelper.Error($"Gagal Download Data : {ex}");
             }
         }
     }

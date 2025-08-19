@@ -31,6 +31,7 @@ namespace KASIR.Database.ModalDatabase
         public int? DiscountsIsPercent { get; set; }
         public int SubtotalPrice { get; set; }
         public int TotalPrice { get; set; }
+        public int is_savebill { get; set; } = 0;
     }
     public class dbCartModal
     {

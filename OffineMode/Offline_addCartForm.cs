@@ -3,6 +3,7 @@ using System.Reflection;
 using FontAwesome.Sharp;
 using KASIR.Database;
 using KASIR.Database.ModalDatabase;
+using KASIR.Helper;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Properties;
@@ -478,7 +479,7 @@ namespace KASIR.OfflineMode
                         discounted_peritemPrice = discountedPrice / quantity; // Harga per item setelah diskon
                     }
                 }
-
+                NotifyHelper.Info($"Item {menuData["name"].ToString()} ditambahkan.");
                 string created_atTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                 // Prepare the new item for cart_details
                 JObject newItem = new()
@@ -864,7 +865,7 @@ namespace KASIR.OfflineMode
                 // Call SendDataAsync without awaiting it
                 await SendDataAsync(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
 
-                await SendDataAsyncWithSQL(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
+                //await SendDataAsyncWithSQL(serving_type, pricefix, diskon, quantity, notes, selectedVarian);
 
                 DialogResult = DialogResult.OK;
                 selectedServingTypeall = int.Parse(comboBox1.SelectedValue?.ToString());

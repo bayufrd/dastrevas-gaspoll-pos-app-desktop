@@ -12,25 +12,7 @@ namespace KASIR
         private readonly string baseOutlet = Settings.Default.BaseOutlet;
 
         // Your other utility functions here
-        private readonly blur background = new();
         private string outletName;
-
-        public void ShowBlurredDialog(Form formToShow)
-        {
-            background.StartPosition = FormStartPosition.CenterScreen;
-            background.FormBorderStyle = FormBorderStyle.None;
-            background.Opacity = 0.7d;
-            background.BackColor = Color.Black;
-            background.WindowState = FormWindowState.Maximized;
-            background.TopMost = true;
-            background.Size = formToShow.Size;
-            background.Location = formToShow.Location;
-            background.ShowInTaskbar = false;
-            background.Show();
-            formToShow.Owner = background;
-            formToShow.ShowDialog();
-            background.Dispose();
-        }
 
         public string GetOutletNameFromFile(string filePath)
         {

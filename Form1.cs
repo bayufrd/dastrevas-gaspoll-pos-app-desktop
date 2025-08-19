@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using FontAwesome.Sharp;
-using KASIR.komponen;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
@@ -13,15 +12,14 @@ using KASIR.OffineMode;
 using KASIR.OfflineMode;
 using KASIR.Properties;
 using KASIR.Services;
+using KASIR.Helper;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SharpCompress.Archives;
 using SharpCompress.Common;
 using Color = System.Drawing.Color;
 using DrawingColor = System.Drawing.Color;
 using Path = System.IO.Path;
 using Timer = System.Windows.Forms.Timer;
-
 
 namespace KASIR
 {
@@ -56,13 +54,13 @@ namespace KASIR
             leftBorderBtn.Size = new Size(7, 60);
             panel2.Controls.Add(leftBorderBtn);
             Height += 100;
-            button2.Visible = true;
+            LogoKasir.Visible = true;
             StarterApp();
             if (baseOutlet != "4")
             {
                 btnDev.Visible = false;
             }
-            Shown += Form1_Shown; // Tambahkan ini
+            Shown += Form1_Shown;
         }
 
         private void Form1_Shown(object sender, EventArgs e)
@@ -152,7 +150,6 @@ namespace KASIR
         {
             Offline_masterPos offlineMasterPos = new() { TopLevel = false, Dock = DockStyle.Fill };
 
-            RemoveExistingForm<masterPos>();
             panel1.Controls.Add(offlineMasterPos);
             offlineMasterPos.BringToFront();
             offlineMasterPos.Show();
@@ -161,13 +158,6 @@ namespace KASIR
 
         private async Task LoadMasterPos()
         {
-            masterPos m = new() { TopLevel = false, Dock = DockStyle.Fill };
-
-            RemoveExistingForm<Offline_masterPos>();
-            panel1.Controls.Add(m);
-            m.BringToFront();
-            m.Show();
-            await m.LoadCart();
         }
 
         private void RemoveExistingForm<T>() where T : Form
@@ -189,7 +179,16 @@ namespace KASIR
 
         public void initPingTest()
         {
-            SignalPing.Text = "Ping Test";
+            if (isOpenNavbar)
+            {
+                SignalPing.TextImageRelation = TextImageRelation.ImageBeforeText;
+                SignalPing.Text = "Ping Test";
+            }
+            else
+            {
+                SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
+                SignalPing.Text = "\n\nPing\nTest";
+            }
             SignalPing.ForeColor = DrawingColor.White;
             lblPing.ForeColor = DrawingColor.White;
             SignalPing.IconColor = DrawingColor.White;
@@ -202,7 +201,6 @@ namespace KASIR
                 string data = "ON";
                 await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
 
-                //System.Windows.MessageBox.Show("Contact PM Project.");
                 string path = Application.StartupPath + "KASIRDualMonitor\\KASIR Dual Monitor.exe";
                 //OpenApplicationOnSecondMonitor(System.Windows.Forms.Application.StartupPath + @"KASIRDualMonitor\\KASIR Dual Monitor.exe");
 
@@ -306,9 +304,6 @@ namespace KASIR
                 transactionFileMover fileMover = new();
                 await fileMover.refreshCacheTransaction();
             }
-
-            SettingsForm clean = new(this);
-            await clean.CleanupPrinterSettings();
         }
 
         private async Task DualMonitorChecker()
@@ -396,7 +391,7 @@ namespace KASIR
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error" + ex.Message, "Gaspol");
+                NotifyHelper.Error("Error" + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -437,7 +432,7 @@ namespace KASIR
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}", "Updater Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error($"Error: {ex.Message}");
                 LoggerUtil.LogError(ex, "An error occurred during updating: {ErrorMessage}", ex.Message);
             }
         }
@@ -483,7 +478,7 @@ namespace KASIR
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Extraction Error: {ex.Message}", "Gaspol");
+                NotifyHelper.Error($"Extraction Error: {ex.Message}");
                 LoggerUtil.LogError(ex, "Extraction failed: {ErrorMessage}", ex.Message);
             }
         }
@@ -532,7 +527,7 @@ namespace KASIR
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error" + ex.Message, "Gaspol");
+                NotifyHelper.Error("Error" + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -696,8 +691,7 @@ namespace KASIR
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "Failed to open updater");
-                MessageBox.Show($"Error opening updater: {ex.Message}", "Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error($"Error opening updater: {ex.Message}");
             }
         }
         public async Task headerName()
@@ -787,7 +781,7 @@ namespace KASIR
                 currentBtn.ForeColor = Color.Gainsboro;
                 currentBtn.TextAlign = ContentAlignment.MiddleLeft;
                 currentBtn.IconColor = Color.Gainsboro;
-                currentBtn.TextImageRelation = TextImageRelation.ImageBeforeText;
+                currentBtn.TextImageRelation = TextImageRelation.ImageAboveText;
                 currentBtn.ImageAlign = ContentAlignment.MiddleLeft;
             }
         }
@@ -799,70 +793,30 @@ namespace KASIR
 
             try
             {
-                // Read the OfflineMode status
-                string config = "setting\\OfflineMode.data";
-                string allSettingsData = File.ReadAllText(config); // Get the current OfflineMode setting
+                btnShiftLaporan.Enabled = false;
+                MenuBtn.Enabled = false;
+                TransBtn.Enabled = false;
+                // If OfflineMode is ON, load the Offline_masterPos form
+                Offline_masterPos offlineMasterPos = new();
+                offlineMasterPos.TopLevel = false;
+                offlineMasterPos.Dock = DockStyle.Fill;
 
-                // Check if OfflineMode is ON
-                if (allSettingsData == "ON")
-                {
-                    btnShiftLaporan.Enabled = false;
-                    iconButton1.Enabled = false;
-                    iconButton2.Enabled = false;
-                    // If OfflineMode is ON, load the Offline_masterPos form
-                    Offline_masterPos offlineMasterPos = new();
-                    offlineMasterPos.TopLevel = false;
-                    offlineMasterPos.Dock = DockStyle.Fill;
 
-                    // Close any existing masterPos form
-                    foreach (Control c in panel1.Controls)
-                    {
-                        if (c is masterPos)
-                        {
-                            c.Dispose(); // Dispose of the masterPos form
-                        }
-                    }
+                // Add the Offline_masterPos form to the panel
+                panel1.Controls.Add(offlineMasterPos);
+                offlineMasterPos.BringToFront();
+                offlineMasterPos.Show();
+                await offlineMasterPos.LoadCart();
 
-                    // Add the Offline_masterPos form to the panel
-                    panel1.Controls.Add(offlineMasterPos);
-                    offlineMasterPos.BringToFront();
-                    offlineMasterPos.Show();
-                    await offlineMasterPos.LoadCart();
-
-                    btnShiftLaporan.Enabled = true;
-                    iconButton1.Enabled = true;
-                    iconButton2.Enabled = true;
-                    lblTitleChildForm.Text = "Menu - Offline Mode Transaksi"; // Update label for Offline Mode
-                }
-                else
-                {
-                    // If OfflineMode is OFF, load the masterPos form
-                    masterPos m = new();
-                    m.TopLevel = false;
-                    m.Dock = DockStyle.Fill;
-
-                    // Close any existing Offline_masterPos form
-                    foreach (Control c in panel1.Controls)
-                    {
-                        if (c is Offline_masterPos)
-                        {
-                            c.Dispose(); // Dispose of the Offline_masterPos form
-                        }
-                    }
-
-                    // Add the masterPos form to the panel
-                    panel1.Controls.Add(m);
-                    m.BringToFront();
-                    m.Show();
-
-                    lblTitleChildForm.Text = "Menu - Semua Transaksi"; // Update label for normal mode
-                }
+                btnShiftLaporan.Enabled = true;
+                MenuBtn.Enabled = true;
+                TransBtn.Enabled = true;
+                lblTitleChildForm.Text = "Menu - Offline Mode Transaksi"; // Update label for Offline Mode
             }
             catch (Exception ex)
             {
                 // Handle any exceptions that occur during the process
-                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error("Terjadi kesalahan: " + ex.Message);
             }
         }
 
@@ -870,17 +824,17 @@ namespace KASIR
         {
             try
             {
+                NavBarBtn_Click(this, EventArgs.Empty); // Dengan parameter lengkap
                 // Specify the URL to open
-                string url = "http://cms.gaspollmanagementcenter.com";
+                //string url = "http://cms.gaspollmanagementcenter.com";
 
                 // Use the default browser to open the URL
-                Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+                //Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
             }
             catch (Exception ex)
             {
-                // Show an error message if the operation fails
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show(ex.Message);
+                NotifyHelper.Error(ex.Message);
             }
         }
 
@@ -896,54 +850,32 @@ namespace KASIR
                 string config = "setting\\OfflineMode.data";
                 string allSettingsData = File.ReadAllText(config); // Get the current OfflineMode setting
 
-                // Check if OfflineMode is ON
-                if (allSettingsData == "ON")
+                btnShiftLaporan.Enabled = false;
+                MenuBtn.Enabled = false;
+                TransBtn.Enabled = false;
+                Offline_successTransaction c = new();
+                if (c == null)
                 {
-                    btnShiftLaporan.Enabled = false;
-                    iconButton1.Enabled = false;
-                    iconButton2.Enabled = false;
-                    Offline_successTransaction c = new();
-                    if (c == null)
-                    {
-                        MessageBox.Show("Terjadi kesalah coba restart aplikasi", "Error", MessageBoxButtons.OK,
-                            MessageBoxIcon.Error);
-                        return;
-                    }
-
-                    c.Dock = DockStyle.Fill;
-                    panel1.Controls.Add(c);
-                    c.BringToFront();
-                    c.Show();
-                    await c.LoadData();
-
-                    btnShiftLaporan.Enabled = true;
-                    iconButton1.Enabled = true;
-                    iconButton2.Enabled = true;
-                    lblTitleChildForm.Text = "Transactions - History Transactions";
+                    NotifyHelper.Warning($"Terjadi kesalah coba restart aplikasi");
+                    return;
                 }
-                else
-                {
-                    successTransaction c = new();
 
-                    if (c == null)
-                    {
-                        return;
-                    }
+                c.Dock = DockStyle.Fill;
+                panel1.Controls.Add(c);
+                c.BringToFront();
+                c.Show();
+                await c.LoadData();
 
-                    c.Dock = DockStyle.Fill;
-                    panel1.Controls.Add(c);
-                    c.BringToFront();
-                    c.Show();
-                    lblTitleChildForm.Text = "Transactions - History Transactions";
-                    Form background = CreateOverlayForm();
-                }
+                btnShiftLaporan.Enabled = true;
+                MenuBtn.Enabled = true;
+                TransBtn.Enabled = true;
+                lblTitleChildForm.Text = "Transactions - History Transactions";
             }
             catch (NullReferenceException ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
 
-                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error("Terjadi kesalahan: " + ex.Message);
             }
         }
 
@@ -1003,44 +935,6 @@ namespace KASIR
 
         private void btnEditSettings_Click(object sender, EventArgs e)
         {
-            Form background = CreateOverlayForm();
-
-            // Create the SettingsForm
-            using (SettingsForm settingsForm = new(this))
-            {
-                // Set the position of the SettingsForm manually
-                settingsForm.StartPosition = FormStartPosition.CenterParent;
-
-                // Set the Owner of the SettingsForm to the background form
-                settingsForm.Owner = background;
-
-                // Set the TopMost property of the SettingsForm to true
-                settingsForm.TopMost = true;
-
-                // Set the FormBorderStyle property of the SettingsForm to None
-                settingsForm.FormBorderStyle = FormBorderStyle.None;
-
-                // Set the BackColor property of the SettingsForm to a light color
-                settingsForm.BackColor = Color.White;
-
-                // Show the background form first
-                background.Show();
-
-                // Show the SettingsForm as a dialog
-                DialogResult result = settingsForm.ShowDialog();
-
-                // Handle the result if needed
-                if (result == DialogResult.OK)
-                {
-                    string applicationName = Process.GetCurrentProcess().MainModule.FileName;
-                    Process.Start(applicationName);
-                    Environment.Exit(0);
-                    // Settings were successfully updated, perform any necessary actions
-                }
-
-                // Dispose of the background form
-                background.Dispose();
-            }
         }
 
         private async void timer1_Tick(object sender, EventArgs e)
@@ -1050,6 +944,16 @@ namespace KASIR
 
             try
             {
+                if (isOpenNavbar)
+                {
+                    SignalPing.Width = 103;
+                    SignalPing.TextImageRelation = TextImageRelation.ImageBeforeText;
+                }
+                else
+                {
+                    SignalPing.Width = 50;
+                    SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
+                }
                 // Read the OfflineMode status
                 string config = "setting\\OfflineMode.data";
                 string allSettingsData = File.ReadAllText(config); // Get the current OfflineMode setting
@@ -1079,7 +983,14 @@ namespace KASIR
 
                     await sendDataSyncPerHours(allSettingsData);
 
-                    UpdateSyncStatus(Color.White, $"Last Sync \n{DateTime.Now:HH:mm}");
+                    if (isOpenNavbar)
+                    {
+                        UpdateSyncStatus(Color.White, $"Last Sync \n{DateTime.Now:HH:mm}");
+                    }
+                    else
+                    {
+                        UpdateSyncStatus(Color.White, $"Last\nSync \n{DateTime.Now:HH:mm}");
+                    }
 
                     await Task.Run(async () =>
                     {
@@ -1089,6 +1000,16 @@ namespace KASIR
                 }
                 catch (Exception ex)
                 {
+                    if (isOpenNavbar)
+                    {
+                        SignalPing.Width = 103;
+                        SignalPing.TextImageRelation = TextImageRelation.ImageBeforeText;
+                    }
+                    else
+                    {
+                        SignalPing.Width = 50;
+                        SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
+                    }
                     SignalPing.ForeColor = Color.Red;
                     SignalPing.Text = $"Error Sync \n{DateTime.Now:HH:mm}";
                     SignalPing.IconColor = Color.White;
@@ -1121,6 +1042,16 @@ namespace KASIR
 
         private void UpdateSyncStatus(Color color, string text)
         {
+            if (isOpenNavbar)
+            {
+                SignalPing.Width = 103;
+                SignalPing.TextImageRelation = TextImageRelation.ImageBeforeText;
+            }
+            else
+            {
+                SignalPing.Width = 50;
+                SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
+            }
             lblPing.ForeColor = color;
             lblPing.Text = text;
             SignalPing.ForeColor = color;
@@ -1132,6 +1063,17 @@ namespace KASIR
 
         private async void btnTestSpeed_Click(object sender, EventArgs e)
         {
+            if (isOpenNavbar)
+            {
+                SignalPing.Width = 103;
+                SignalPing.TextImageRelation = TextImageRelation.ImageBeforeText;
+            }
+            else
+            {
+                SignalPing.Width = 50;
+                SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
+            }
+
             SignalPing.Text = "Testing...";
             SignalPing.ForeColor = Color.White; // Default warna saat testing
 
@@ -1142,7 +1084,14 @@ namespace KASIR
 
                 SignalPing.Text = $"{ping} ms";
                 await Task.Delay(2000);
-                UpdatePingLabel(Color.White, "Test Ping");
+                if (isOpenNavbar)
+                {
+                    UpdatePingLabel(Color.White, "Test Ping");
+                }
+                else
+                {
+                    UpdatePingLabel(Color.White, "");
+                }
             }
             catch (Exception ex)
             {
@@ -1169,6 +1118,16 @@ namespace KASIR
 
         private void UpdatePingLabel(Color color, string text)
         {
+            if (isOpenNavbar)
+            {
+                SignalPing.Width = 103;
+                SignalPing.TextImageRelation = TextImageRelation.ImageBeforeText;
+            }
+            else
+            {
+                SignalPing.Width = 50;
+                SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
+            }
             lblPing.ForeColor = color;
             lblPing.Text = text;
             SignalPing.ForeColor = color;
@@ -1178,6 +1137,16 @@ namespace KASIR
 
         private void UpdatePingColor(int ping)
         {
+            if (isOpenNavbar)
+            {
+                SignalPing.Width = 103;
+                SignalPing.TextImageRelation = TextImageRelation.ImageBeforeText;
+            }
+            else
+            {
+                SignalPing.Width = 50;
+                SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
+            }
             if (ping < 50) // Jika ping di bawah 50 ms, warna hijau
             {
                 UpdatePingLabel(Color.LimeGreen, $"{ping} ms - Excellent");
@@ -1235,8 +1204,7 @@ namespace KASIR
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show("Terjadi kesalahan: " + ex.Message, "Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error("Terjadi kesalahan: " + ex.Message);
             }
             finally
             {
@@ -1332,6 +1300,59 @@ namespace KASIR
             panel1.Controls.Add(c);
             c.BringToFront();
             c.Show();
+        }
+
+        private bool isOpenNavbar = true; // Tambahkan variabel status navbar
+
+        private void NavBarBtn_Click(object sender, EventArgs e)
+        {
+            // Toggle status navbar
+            isOpenNavbar = !isOpenNavbar;
+
+            if (isOpenNavbar)
+            {
+                // Mode navbar terbuka
+                gradientPanel2.Width = 103;
+                LogoKasir.Width = 103;
+                panel2.Width = 103;
+                SignalPing.Width = 103;
+                lblPing.Width = 103;
+
+                LogoKasir.Image = Resources.a_2_1;
+                LogoKasir.Height = 103;
+
+                MenuBtn.Text = "Menu";
+                TransBtn.Text = "Transaction";
+                btnShiftLaporan.Text = "Shift Report";
+                BtnSettingForm.Text = "Settings";
+                btnContact.Text = "Contact Us";
+                btnDev.Text = "Developer";
+                lblPing.Text = "Ping";
+                SignalPing.Text = "Test Ping";
+            }
+            else
+            {
+                // Mode navbar tertutup
+                gradientPanel2.Width = 50;
+                LogoKasir.Width = 50;
+                panel2.Width = 50;
+
+                LogoKasir.Image = Resources.logoblack;
+                LogoKasir.Height = 50;
+
+                SignalPing.Width = 50;
+                lblPing.Width = 50;
+
+                MenuBtn.Text = "";
+                TransBtn.Text = "";
+                btnShiftLaporan.Text = "";
+                BtnSettingForm.Text = "";
+                btnContact.Text = "";
+                btnDev.Text = "";
+                lblPing.Text = "";
+                SignalPing.Text = "";
+                SignalPing.ImageAlign = ContentAlignment.MiddleLeft;
+            }
         }
     }
 }

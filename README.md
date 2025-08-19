@@ -1,75 +1,129 @@
-﻿🖥️ #Gaspoll POS Application
+﻿🖥️ Gaspoll POS Application
 
-Aplikasi Point of Sale (POS) berbasis Windows (.NET Framework) yang dikembangkan secara khusus untuk memenuhi kebutuhan customisasi client PT. Gaspoll Management Center
+Aplikasi Point of Sale (POS) berbasis Windows (.NET 6.0 WinForms) dengan dukungan offline mode, dual monitor, serta integrasi API untuk kebutuhan bisnis retail.
+Dikembangkan khusus untuk customisasi client PT. Gaspoll Management Center
 👉 https://gaspollmanagementcenter.com
 
 Dikembangkan oleh:
-#Dastrevas Team
+Dastrevas Team
 👉 https://dastrevas.com
 
 ✨ Fitur Utama
 
-🔹 Support Bluetooth Printer & In The Hand Bluetooth Library
+🔹 Offline Mode: transaksi tetap berjalan tanpa internet, data akan sinkron otomatis saat online.
 
-🔹 Integrasi dengan API Service (online & offline-first sync)
+🔹 Bluetooth Printer Support (32feet.NET + ESCPOS_NET).
 
-🔹 Dual Monitor Display (kasir + customer screen)
+🔹 Dual Monitor Display (kasir + pelanggan).
 
-🔹 FontAwesome Icons untuk tampilan UI modern
+🔹 Entity Framework Core (SQLite) untuk database lokal.
 
-🔹 Logger Service untuk debugging dan monitoring
+🔹 API Service Integration dengan retry & resiliency (Polly).
 
-🔹 Modular Architecture dengan customisasi sesuai kebutuhan klien
+🔹 FontAwesome.Sharp untuk ikon modern dan konsisten.
 
-🛠️ Teknologi
+🔹 Logging dengan Serilog (Console & File Sink) untuk debugging.
 
-Bahasa: C# (.NET Framework)
+🔹 Modular Forms & Komponen untuk kemudahan customisasi.
 
-Database: Local + API Service
+🔹 Kompresi Data (SharpCompress) untuk efisiensi penyimpanan.
 
-UI Toolkit: Windows Forms + FontAwesome
+🛠️ Teknologi & Dependensi
 
-Dependencies:
+Bahasa & Framework
 
-Logger (custom)
+C#
 
-InTheHand Bluetooth
+.NET 6.0 (Windows)
+
+Windows Forms (WinForms)
+
+Paket NuGet
+
+32feet.NET → Bluetooth library
+
+ESCPOS_NET → ESC/POS printer support
+
+FontAwesome.Sharp → ikon modern
+
+Microsoft.EntityFrameworkCore.Sqlite → database SQLite lokal
+
+Microsoft.EntityFrameworkCore.Tools → tooling EF Core
+
+Microsoft.Extensions.Configuration → konfigurasi (JSON, dll)
+
+Newtonsoft.Json → serialisasi JSON
+
+Polly → retry & resiliency untuk API call
+
+Serilog + Serilog.Sinks.Console + Serilog.Sinks.File → logging terstruktur
+
+SharpCompress → kompresi file/data
+
+System.Management → informasi sistem Windows
+
+System.Net.Http → komunikasi HTTP
+
+📂 Struktur Aplikasi
+
+Offline Mode Forms
+
+Offline_MemberCustom
+
+Offline_MemberData
+
+Offline_notifikasiPengeluaran
+
+Offline_Complaint
+
+Offline_listBill
+
+Offline_saveBill
+
+Offline_HistoryShift
+
+Offline_settingsForm
+
+Offline_splitBill
+
+Offline_refund
+
+Offline_inputPin
+
+Offline_successTransaction
+
+Offline_updatePerItemForm
+
+Offline_deletePerItemForm
+
+Offline_dataDiskon
+
+Offline_updateCartForm
+
+Offline_deleteForm
+
+Offline_payForm
+
+Offline_addCartForm
+
+Offline_masterPos
+
+Offline_shiftReport
+
+Komponen & Utilities
+
+SettingsConfig
+
+SettingsDual
+
+shiftReport
+
+Logger (Serilog)
 
 API Service Handler
 
-FontAwesome.Sharp
+Struktur Repo (contoh)
 
-Dual Monitor Support
-
-📌 Standar Commit Message
-
-Proyek ini menggunakan custom commit convention untuk menjaga konsistensi riwayat perubahan.
-
-📑 Format
-(```)[TYPE] Deskripsi singkat perubahan
-
-📂 Jenis Commit
-
-(```)[UPDATE] → Penambahan atau perubahan fitur
-
-(```)[UPDATE] Tambah fitur login menggunakan kartu member
-
-
-(```)[FIX] → Perbaikan bug/error
-
-(```)[FIX] Perbaiki error saat print struk di monitor 2
-
-
-(```)[DELETE] → Penghapusan kode/file yang tidak dipakai
-
-(```)[DELETE] Hapus modul laporan lama yang tidak relevan
-
-
-(```)[REFACTOR] → Perubahan struktur kode tanpa mengubah fitur
-
-(```)[REFACTOR] Optimasi query transaksi untuk performa
-
-📦 Struktur Repo (contoh)
 /POS-App
   /Helper
   /Model
@@ -77,7 +131,92 @@ Proyek ini menggunakan custom commit convention untuk menjaga konsistensi riwaya
   /UI
   /Logger
   /Api
+  /OffineMode
+  /Komponen
+  /Properties
   README.md
+
+📌 Standar Commit Message
+
+Proyek ini menggunakan custom commit convention untuk menjaga konsistensi riwayat perubahan.
+
+📑 Format
+[TYPE] Deskripsi singkat perubahan
+
+📂 Jenis Commit
+
+[UPDATE] → Penambahan atau perubahan fitur
+
+[UPDATE] Tambah fitur login menggunakan kartu member
+
+
+[FIX] → Perbaikan bug/error
+
+[FIX] Perbaiki error saat print struk di monitor 2
+
+
+[DELETE] → Penghapusan kode/file yang tidak dipakai
+
+[DELETE] Hapus modul laporan lama yang tidak relevan
+
+
+[REFACTOR] → Perubahan struktur kode tanpa mengubah fitur
+
+[REFACTOR] Optimasi query transaksi untuk performa
+
+⚙️ Cara Build & Run
+📌 Prasyarat
+
+Windows 10/11
+
+Visual Studio 2022 atau lebih baru
+
+.NET 6.0 SDK → Download di sini
+
+📦 Build via Visual Studio
+
+Clone repository:
+
+git clone https://github.com/<username>/<repo-name>.git
+
+
+Buka file .sln di Visual Studio.
+
+Pilih konfigurasi Release atau Debug.
+
+Tekan Ctrl + F5 untuk menjalankan aplikasi.
+
+📦 Build via .NET CLI
+
+Clone repository:
+
+git clone https://github.com/<username>/<repo-name>.git
+cd <repo-name>
+
+
+Restore dependencies:
+
+dotnet restore
+
+
+Build:
+
+dotnet build
+
+
+Jalankan:
+
+dotnet run --project POS-App
+
+🚀 Deployment
+
+Pastikan konfigurasi app.manifest sudah sesuai environment (printer, dual monitor, API URL).
+
+Build aplikasi dalam mode Release.
+
+Gunakan Publish dari Visual Studio untuk menghasilkan installer/exe.
+
+Distribusikan installer ke mesin kasir yang sudah memenuhi requirement.
 
 👥 Kontribusi
 

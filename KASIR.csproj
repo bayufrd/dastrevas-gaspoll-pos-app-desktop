@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="0fa224138685e.png.ico" />
+    <Content Include="Image\0fa224138685e.png.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -106,10 +106,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Image\" />
   </ItemGroup>
 
   <ItemGroup>

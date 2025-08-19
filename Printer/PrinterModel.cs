@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
+using KASIR.Helper;
 using KASIR.Model;
 
 namespace KASIR.Printer
@@ -342,10 +343,15 @@ namespace KASIR.Printer
 
                         using (BluetoothClient clientSocket = new())
                         {
-                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                            if (!printerDevice.Authenticated) // cek sudah paired?
                             {
-                                continue;
+                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                {
+                                    NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                    continue;
+                                }
                             }
+
 
                             clientSocket.Connect(endpoint);
                             Stream stream = clientSocket.GetStream();
@@ -401,9 +407,13 @@ namespace KASIR.Printer
 
                         using (BluetoothClient clientSocket = new())
                         {
-                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                            if (!printerDevice.Authenticated) // cek sudah paired?
                             {
-                                continue;
+                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                {
+                                    NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                    continue;
+                                }
                             }
 
                             clientSocket.Connect(endpoint);
@@ -460,9 +470,13 @@ namespace KASIR.Printer
 
                         using (BluetoothClient clientSocket = new())
                         {
-                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                            if (!printerDevice.Authenticated) // cek sudah paired?
                             {
-                                continue;
+                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                {
+                                    NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                    continue;
+                                }
                             }
 
                             clientSocket.Connect(endpoint);
@@ -519,9 +533,13 @@ namespace KASIR.Printer
 
                         using (BluetoothClient clientSocket = new())
                         {
-                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                            if (!printerDevice.Authenticated) // cek sudah paired?
                             {
-                                continue;
+                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                {
+                                    NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                    continue;
+                                }
                             }
 
                             clientSocket.Connect(endpoint);
@@ -624,9 +642,13 @@ namespace KASIR.Printer
 
                 if (printer != null)
                 {
-                    if (!BluetoothSecurity.PairRequest(printer.DeviceAddress, "0000"))
+                    if (!printer.Authenticated) // cek sudah paired?
                     {
-                        return;
+                        if (!BluetoothSecurity.PairRequest(printer.DeviceAddress, "0000"))
+                        {
+                            NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                            return;
+                        }
                     }
 
                     // Connect to Bluetooth printer service (replace with appropriate UUID)
@@ -695,9 +717,13 @@ namespace KASIR.Printer
 
                             using (BluetoothClient clientSocket = new())
                             {
-                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                if (!printerDevice.Authenticated) // cek sudah paired?
                                 {
-                                    return;
+                                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                    {
+                                        NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                        return;
+                                    }
                                 }
 
                                 clientSocket.Connect(endpoint);
@@ -1339,9 +1365,13 @@ namespace KASIR.Printer
                         BluetoothClient client = new();
                         BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        if (!printerDevice.Authenticated) // cek sudah paired?
                         {
-                            return false;
+                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                            {
+                                NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                return false;
+                            }
                         }
 
                         client.Connect(endpoint);
@@ -1815,9 +1845,13 @@ namespace KASIR.Printer
                                 BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
                                     BluetoothService.SerialPort);
 
-                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                if (!printerDevice.Authenticated) // cek sudah paired?
                                 {
-                                    continue;
+                                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                    {
+                                        NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                        continue;
+                                    }
                                 }
 
                                 client.Connect(endpoint);
@@ -2159,9 +2193,13 @@ namespace KASIR.Printer
                         BluetoothClient client = new();
                         BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        if (!printerDevice.Authenticated) // cek sudah paired?
                         {
-                            return false;
+                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                            {
+                                NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                return false;
+                            }
                         }
 
                         client.Connect(endpoint);
@@ -2624,9 +2662,13 @@ namespace KASIR.Printer
                                 BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
                                     BluetoothService.SerialPort);
 
-                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                if (!printerDevice.Authenticated) // cek sudah paired?
                                 {
-                                    continue;
+                                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                                    {
+                                        NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                        continue;
+                                    }
                                 }
 
                                 client.Connect(endpoint);
@@ -2802,9 +2844,13 @@ namespace KASIR.Printer
                         BluetoothClient client = new();
                         BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        if (!printerDevice.Authenticated) // cek sudah paired?
                         {
-                            return false;
+                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                            {
+                                NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                return false;
+                            }
                         }
 
                         client.Connect(endpoint);
@@ -3657,9 +3703,13 @@ namespace KASIR.Printer
                         BluetoothClient client = new();
                         BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        if (!printerDevice.Authenticated) // cek sudah paired?
                         {
-                            return false;
+                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                            {
+                                NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                return false;
+                            }
                         }
 
                         client.Connect(endpoint);
@@ -4398,9 +4448,13 @@ namespace KASIR.Printer
                         BluetoothClient client = new();
                         BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        if (!printerDevice.Authenticated) // cek sudah paired?
                         {
-                            return false;
+                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                            {
+                                NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                return false;
+                            }
                         }
 
                         client.Connect(endpoint);
@@ -5073,9 +5127,13 @@ namespace KASIR.Printer
                         BluetoothClient client = new();
                         BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        if (!printerDevice.Authenticated) // cek sudah paired?
                         {
-                            return false;
+                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                            {
+                                NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                return false;
+                            }
                         }
 
                         client.Connect(endpoint);
@@ -5770,9 +5828,13 @@ namespace KASIR.Printer
                     var client = new BluetoothClient();
                     var endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
 
-                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                    if (!printerDevice.Authenticated) // cek sudah paired?
                     {
-                        throw new Exception("Bluetooth Pairing Failed");
+                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        {
+                            NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                            throw new Exception("Bluetooth pairing failed");
+                        }
                     }
 
                     client.Connect(endpoint);
@@ -6299,9 +6361,13 @@ namespace KASIR.Printer
 
                         BluetoothClient client = new();
                         BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                        if (!printerDevice.Authenticated) // cek sudah paired?
                         {
-                            return false;
+                            if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+                            {
+                                NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+                                return false;
+                            }
                         }
 
                         client.Connect(endpoint);

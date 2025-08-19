@@ -4,8 +4,10 @@ using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
 using System.Timers;
 using System.Windows;
+using KASIR.Helper;
 using KASIR.Model;
 using KASIR.Network;
+using KASIR.OfflineMode;
 using KASIR.Printer;
 using KASIR.Properties;
 using KASIR.Services;
@@ -46,6 +48,9 @@ namespace KASIR.Komponen
                 textBoxBackColor: Color.White,
                 textBoxFont: new Font("Segoe UI", 9F, FontStyle.Regular)
             );
+
+            Offline_masterPos m = new Offline_masterPos();
+            m.RoundedPanel(LogPanel);
             _internetService = new InternetService();
             LoadConfig();
             InitializeUpdateSettings();
@@ -240,8 +245,7 @@ namespace KASIR.Komponen
 
         private void HandlePrinterLoadingError(ComboBox comboBox, Exception ex)
         {
-            MessageBox.Show($"Error loading printers for {comboBox.Name}: {ex.Message}", "Error", MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            NotifyHelper.Error($"Error loading printers for {comboBox.Name}: {ex.Message}");
             LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             comboBox.Items.Add(new PrinterItem("Mac Address Manual", null));
             comboBox.SelectedIndex = 0; // Set default item on error
@@ -644,7 +648,7 @@ namespace KASIR.Komponen
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show($"{ex}");
+                NotifyHelper.Error($"{ex}");
 
             }
         }
@@ -661,8 +665,7 @@ namespace KASIR.Komponen
             }
             catch (PingException)
             {
-                System.Windows.Forms.MessageBox.Show("Koneksi bermasalah", "Kesalahan", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi bermasalah");
                 LoggerUtil.LogWarning("No koneksi");
 
                 // Handle exception (no internet connection or other issues)
@@ -799,8 +802,7 @@ namespace KASIR.Komponen
             }
             else
             {
-                System.Windows.Forms.MessageBox.Show("File tidak ditemukan", "Kesalahan", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error("File tidak ditemukan");
                 LoggerUtil.LogWarning("File not found");
             }
         }
@@ -816,7 +818,7 @@ namespace KASIR.Komponen
             }
             catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show("Gagal test " + ex.Message, "Gaspol");
+                NotifyHelper.Error("Gagal test " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -828,9 +830,7 @@ namespace KASIR.Komponen
                 string data = "ON";
                 await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
 
-                //System.Windows.MessageBox.Show("Contact PM Project.");
                 string path = Application.StartupPath + "KASIRDualMonitor\\KASIR Dual Monitor.exe";
-                //OpenApplicationOnSecondMonitor(System.Windows.Forms.Application.StartupPath + @"KASIRDualMonitor\\KASIR Dual Monitor.exe");
 
                 Process p = new();
                 p.StartInfo.FileName = path;
@@ -869,7 +869,7 @@ namespace KASIR.Komponen
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"{ex}");
+                NotifyHelper.Error($"{ex}");
             }
         }
 
@@ -877,7 +877,7 @@ namespace KASIR.Komponen
         {
             try
             {
-                MessageBox.Show("Mematikan Tampilan Dual Monitor");
+                NotifyHelper.Info("Mematikan Tampilan Dual Monitor");
 
                 Process[] processes = Process.GetProcesses();
                 foreach (Process process in processes)
@@ -931,7 +931,7 @@ namespace KASIR.Komponen
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Gagal Download Data : {ex}");
+                NotifyHelper.Error($"Gagal Download Data : {ex}");
             }
         }
 
@@ -955,6 +955,97 @@ namespace KASIR.Komponen
             lblOutletName.Text = "Name : " + dataOutlet.data.name.ToString();
             lblOutletAddress.Text = "Address : " + dataOutlet.data.address.ToString();
             lblOutletPhoneNumber.Text = "Phone Number : " + dataOutlet.data.phone_number.ToString();
+
+            DisplayLogInPanel();
+        }
+        private async void DisplayLogInPanel()
+        {
+            try
+            {
+                string content = await ReadingLogAsync(); // ambil dulu konten
+
+                // Pisah per baris
+                string[] lines = content.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+                // Filter hanya baris yang bukan stack trace / path file
+                var filtered = lines
+                    .Where(l => !l.TrimStart().StartsWith("at ")) // buang stack trace
+                    .Where(l => !l.Contains(":line "))            // buang info line number
+                    .Where(l => !l.Contains(@":\"))               // buang path Windows (C:\..)
+                    .Where(l => !l.StartsWith("--- End of stack trace")) // buang end trace
+                    .ToArray();
+
+                // Batasi 5000 baris terakhir
+                int maxLines = 5000;
+                if (filtered.Length > maxLines)
+                    filtered = filtered.Skip(filtered.Length - maxLines).ToArray();
+
+                // Gabungkan dengan extra newline supaya ada jarak antar log
+                string finalContent = string.Join(Environment.NewLine + Environment.NewLine, filtered);
+
+                LoggerMsg.Controls.Clear();
+
+                var box = new RichTextBox
+                {
+                    Dock = DockStyle.Fill,
+                    ReadOnly = true,
+                    Text = finalContent,
+                    BackColor = Color.White,
+                    ForeColor = Color.Black,  // opsional
+                    Font = new Font("Courier New", 10) // opsional biar rapih
+                };
+
+                LoggerMsg.Controls.Add(box);
+
+                // Auto scroll ke bawah setelah isi dimasukkan
+                box.SelectionStart = box.Text.Length;
+                box.ScrollToCaret();
+            }
+            catch (Exception ex)
+            {
+                NotifyHelper.Error(ex.Message);
+            }
+        }
+
+
+        private async Task<string> ReadingLogAsync()
+        {
+            try
+            {
+                string outletName = "unknown";
+                string outletID = Settings.Default.BaseOutlet;
+                string cacheOutlet = $"DT-Cache\\DataOutlet{outletID}.data";
+                if (File.Exists(cacheOutlet))
+                {
+                    string cacheData = await File.ReadAllTextAsync(cacheOutlet);
+                    CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheData);
+
+                    if (dataOutlet?.data != null)
+                    {
+                        outletName = dataOutlet.data.name;
+                    }
+                }
+
+                string todayDate = DateTime.Now.ToString("yyyyMMdd");
+                string customText = $"{outletID}_{outletName}_log{todayDate}";
+                string logFilePath = $"log\\{customText}.txt";
+
+                if (!File.Exists(logFilePath))
+                {
+                    return string.Empty;
+                }
+
+                using (var fileStream = new FileStream(logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var streamReader = new StreamReader(fileStream))
+                {
+                    string content = await streamReader.ReadToEndAsync();
+                    return content;
+                }
+            }
+            catch (Exception ex)
+            {
+                return string.Empty;
+            }
         }
 
         private async Task EnsureFileExistsAsync(string filePath, string defaultContent, Control controlToUpdate)
@@ -1056,7 +1147,7 @@ namespace KASIR.Komponen
         {
             if (!Directory.Exists(folderPath))
             {
-                MessageBox.Show("Folder tidak ditemukan.");
+                NotifyHelper.Error("Folder tidak ditemukan.");
                 return;
             }
 
@@ -1191,7 +1282,7 @@ namespace KASIR.Komponen
             {
                 if (picThumbnail.Image == null)
                 {
-                    MessageBox.Show("Image QRCode Not Found");
+                    NotifyHelper.Error("Image QRCode Not Found");
                     sButton1.Checked = false;
                     return;
                 }
@@ -1220,11 +1311,11 @@ namespace KASIR.Komponen
 
             if (allSettingsData == "OFF")
             {
-                sButton1.Checked = false;
+                radioDualMonitor.Checked = false;
             }
             else
             {
-                sButton1.Checked = true;
+                radioDualMonitor.Checked = true;
             }
 
             // Menyeting ukuran dan lokasi untuk PictureBox (untuk thumbnail)
@@ -1274,7 +1365,7 @@ namespace KASIR.Komponen
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Terjadi kesalahan saat membuka file: " + ex.Message);
+                NotifyHelper.Error("Terjadi kesalahan saat membuka file: " + ex.Message);
             }
         }
 

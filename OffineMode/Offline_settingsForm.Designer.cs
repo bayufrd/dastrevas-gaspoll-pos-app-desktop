@@ -1,4 +1,4 @@
-﻿
+﻿using KASIR.Model;
 using FontAwesome.Sharp;
 namespace KASIR.Komponen
 {
@@ -31,6 +31,7 @@ namespace KASIR.Komponen
         private void InitializeComponent()
         {
             panel1 = new Panel();
+            sButtonOffline = new SButton();
             lblOutletPhoneNumber = new Label();
             lblOutletAddress = new Label();
             lblOutletName = new Label();
@@ -38,19 +39,15 @@ namespace KASIR.Komponen
             panel5 = new Panel();
             btnSetupPictsDual = new IconButton();
             picThumbnail = new PictureBox();
-            sButton1 = new Model.SButton();
             label1 = new Label();
             ListMenu = new IconButton();
             CacheApp = new IconButton();
-            sButtonListMenu = new Model.SButton();
             UpdateInfo = new IconButton();
             Redownload = new IconButton();
             iconDual = new IconButton();
-            radioDualMonitor = new Model.SButton();
             label8 = new Label();
             Button2 = new IconButton();
             btnUpdate = new IconButton();
-            sButtonOffline = new Model.SButton();
             iconOfflineMode = new IconButton();
             lblVersion = new Label();
             lblNewVersionNow = new Label();
@@ -97,6 +94,12 @@ namespace KASIR.Komponen
             TestKasir = new IconButton();
             TestKitchen = new IconButton();
             ComboBoxPrinter1 = new ComboBox();
+            LogPanel = new Panel();
+            label6 = new Label();
+            LoggerMsg = new Panel();
+            sButtonListMenu = new SButton();
+            radioDualMonitor = new SButton();
+            sButton1 = new SButton();
             panel1.SuspendLayout();
             panel5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)picThumbnail).BeginInit();
@@ -109,10 +112,14 @@ namespace KASIR.Komponen
             panel10.SuspendLayout();
             panel9.SuspendLayout();
             panel8.SuspendLayout();
+            LogPanel.SuspendLayout();
             SuspendLayout();
             // 
             // panel1
             // 
+            panel1.Controls.Add(radioDualMonitor);
+            panel1.Controls.Add(sButtonListMenu);
+            panel1.Controls.Add(sButtonOffline);
             panel1.Controls.Add(lblOutletPhoneNumber);
             panel1.Controls.Add(lblOutletAddress);
             panel1.Controls.Add(lblOutletName);
@@ -120,15 +127,12 @@ namespace KASIR.Komponen
             panel1.Controls.Add(panel5);
             panel1.Controls.Add(ListMenu);
             panel1.Controls.Add(CacheApp);
-            panel1.Controls.Add(sButtonListMenu);
             panel1.Controls.Add(UpdateInfo);
             panel1.Controls.Add(Redownload);
             panel1.Controls.Add(iconDual);
-            panel1.Controls.Add(radioDualMonitor);
             panel1.Controls.Add(label8);
             panel1.Controls.Add(Button2);
             panel1.Controls.Add(btnUpdate);
-            panel1.Controls.Add(sButtonOffline);
             panel1.Controls.Add(iconOfflineMode);
             panel1.Controls.Add(lblVersion);
             panel1.Controls.Add(lblNewVersionNow);
@@ -140,32 +144,51 @@ namespace KASIR.Komponen
             panel1.Controls.Add(panel15);
             panel1.Controls.Add(label12);
             panel1.Controls.Add(panelPrinterOpt);
+            panel1.Controls.Add(LogPanel);
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
             panel1.Size = new Size(912, 577);
             panel1.TabIndex = 0;
+            // 
+            // sButtonOffline
+            // 
+            sButtonOffline.AutoSize = true;
+            sButtonOffline.Checked = true;
+            sButtonOffline.CheckState = CheckState.Checked;
+            sButtonOffline.Enabled = false;
+            sButtonOffline.Location = new Point(507, 286);
+            sButtonOffline.MinimumSize = new Size(45, 22);
+            sButtonOffline.Name = "sButtonOffline";
+            sButtonOffline.OffBackColor = Color.Gray;
+            sButtonOffline.OffToggleColor = Color.Gainsboro;
+            sButtonOffline.OnBackColor = Color.MediumSlateBlue;
+            sButtonOffline.OnToggleColor = Color.WhiteSmoke;
+            sButtonOffline.Size = new Size(45, 22);
+            sButtonOffline.TabIndex = 109;
+            sButtonOffline.UseVisualStyleBackColor = true;
+            sButtonOffline.CheckedChanged += sButtonOffline_CheckedChanged;
             // 
             // lblOutletPhoneNumber
             // 
             lblOutletPhoneNumber.AutoSize = true;
             lblOutletPhoneNumber.BackColor = Color.Transparent;
             lblOutletPhoneNumber.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            lblOutletPhoneNumber.Location = new Point(11, 99);
+            lblOutletPhoneNumber.Location = new Point(177, 69);
             lblOutletPhoneNumber.Name = "lblOutletPhoneNumber";
-            lblOutletPhoneNumber.Size = new Size(73, 15);
+            lblOutletPhoneNumber.Size = new Size(41, 15);
             lblOutletPhoneNumber.TabIndex = 107;
-            lblOutletPhoneNumber.Text = "Your Version";
+            lblOutletPhoneNumber.Text = "Phone";
             // 
             // lblOutletAddress
             // 
             lblOutletAddress.AutoSize = true;
             lblOutletAddress.BackColor = Color.Transparent;
             lblOutletAddress.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            lblOutletAddress.Location = new Point(11, 84);
+            lblOutletAddress.Location = new Point(177, 54);
             lblOutletAddress.Name = "lblOutletAddress";
-            lblOutletAddress.Size = new Size(73, 15);
+            lblOutletAddress.Size = new Size(49, 15);
             lblOutletAddress.TabIndex = 106;
-            lblOutletAddress.Text = "Your Version";
+            lblOutletAddress.Text = "Address";
             // 
             // lblOutletName
             // 
@@ -174,9 +197,9 @@ namespace KASIR.Komponen
             lblOutletName.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblOutletName.Location = new Point(11, 69);
             lblOutletName.Name = "lblOutletName";
-            lblOutletName.Size = new Size(73, 15);
+            lblOutletName.Size = new Size(72, 15);
             lblOutletName.TabIndex = 105;
-            lblOutletName.Text = "Your Version";
+            lblOutletName.Text = "OutletName";
             // 
             // lblOutletID
             // 
@@ -185,19 +208,19 @@ namespace KASIR.Komponen
             lblOutletID.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             lblOutletID.Location = new Point(11, 54);
             lblOutletID.Name = "lblOutletID";
-            lblOutletID.Size = new Size(73, 15);
+            lblOutletID.Size = new Size(53, 15);
             lblOutletID.TabIndex = 104;
-            lblOutletID.Text = "Your Version";
+            lblOutletID.Text = "OutletID";
             // 
             // panel5
             // 
             panel5.BackColor = Color.White;
             panel5.BorderStyle = BorderStyle.FixedSingle;
+            panel5.Controls.Add(sButton1);
             panel5.Controls.Add(btnSetupPictsDual);
             panel5.Controls.Add(picThumbnail);
-            panel5.Controls.Add(sButton1);
             panel5.Controls.Add(label1);
-            panel5.Location = new Point(461, 360);
+            panel5.Location = new Point(461, 327);
             panel5.Name = "panel5";
             panel5.Size = new Size(444, 97);
             panel5.TabIndex = 103;
@@ -236,24 +259,6 @@ namespace KASIR.Komponen
             picThumbnail.TabStop = false;
             picThumbnail.Click += picThumbnail_Click_1;
             // 
-            // sButton1
-            // 
-            sButton1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            sButton1.AutoSize = true;
-            sButton1.BackColor = Color.White;
-            sButton1.FlatStyle = FlatStyle.Flat;
-            sButton1.Location = new Point(7, 26);
-            sButton1.MinimumSize = new Size(45, 22);
-            sButton1.Name = "sButton1";
-            sButton1.OffBackColor = Color.Gray;
-            sButton1.OffToggleColor = Color.Gainsboro;
-            sButton1.OnBackColor = Color.FromArgb(31, 30, 68);
-            sButton1.OnToggleColor = Color.WhiteSmoke;
-            sButton1.Size = new Size(45, 22);
-            sButton1.TabIndex = 102;
-            sButton1.UseVisualStyleBackColor = false;
-            sButton1.CheckedChanged += sButton1_CheckedChanged;
-            // 
             // label1
             // 
             label1.AutoSize = true;
@@ -278,7 +283,7 @@ namespace KASIR.Komponen
             ListMenu.IconColor = Color.FromArgb(31, 30, 68);
             ListMenu.IconFont = IconFont.Auto;
             ListMenu.IconSize = 30;
-            ListMenu.Location = new Point(588, 280);
+            ListMenu.Location = new Point(588, 247);
             ListMenu.Name = "ListMenu";
             ListMenu.Size = new Size(36, 36);
             ListMenu.TabIndex = 96;
@@ -296,7 +301,7 @@ namespace KASIR.Komponen
             CacheApp.IconColor = Color.FromArgb(31, 30, 68);
             CacheApp.IconFont = IconFont.Auto;
             CacheApp.IconSize = 30;
-            CacheApp.Location = new Point(635, 280);
+            CacheApp.Location = new Point(635, 247);
             CacheApp.Name = "CacheApp";
             CacheApp.Size = new Size(52, 54);
             CacheApp.TabIndex = 94;
@@ -304,24 +309,6 @@ namespace KASIR.Komponen
             CacheApp.TextImageRelation = TextImageRelation.ImageAboveText;
             CacheApp.UseVisualStyleBackColor = false;
             CacheApp.Click += CacheApp_Click;
-            // 
-            // sButtonListMenu
-            // 
-            sButtonListMenu.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            sButtonListMenu.AutoSize = true;
-            sButtonListMenu.BackColor = Color.White;
-            sButtonListMenu.FlatStyle = FlatStyle.Flat;
-            sButtonListMenu.Location = new Point(584, 318);
-            sButtonListMenu.MinimumSize = new Size(45, 22);
-            sButtonListMenu.Name = "sButtonListMenu";
-            sButtonListMenu.OffBackColor = Color.Gray;
-            sButtonListMenu.OffToggleColor = Color.Gainsboro;
-            sButtonListMenu.OnBackColor = Color.FromArgb(31, 30, 68);
-            sButtonListMenu.OnToggleColor = Color.WhiteSmoke;
-            sButtonListMenu.Size = new Size(45, 22);
-            sButtonListMenu.TabIndex = 95;
-            sButtonListMenu.UseVisualStyleBackColor = false;
-            sButtonListMenu.CheckedChanged += sButtonListMenu_CheckedChanged;
             // 
             // UpdateInfo
             // 
@@ -355,7 +342,7 @@ namespace KASIR.Komponen
             Redownload.IconColor = Color.FromArgb(31, 30, 68);
             Redownload.IconFont = IconFont.Auto;
             Redownload.IconSize = 30;
-            Redownload.Location = new Point(693, 280);
+            Redownload.Location = new Point(693, 247);
             Redownload.Name = "Redownload";
             Redownload.Size = new Size(52, 54);
             Redownload.TabIndex = 92;
@@ -378,37 +365,19 @@ namespace KASIR.Komponen
             iconDual.IconColor = Color.FromArgb(31, 30, 68);
             iconDual.IconFont = IconFont.Auto;
             iconDual.IconSize = 30;
-            iconDual.Location = new Point(765, 280);
+            iconDual.Location = new Point(765, 247);
             iconDual.Name = "iconDual";
             iconDual.Size = new Size(36, 36);
             iconDual.TabIndex = 93;
             iconDual.UseVisualStyleBackColor = false;
             iconDual.Click += iconDual_Click;
             // 
-            // radioDualMonitor
-            // 
-            radioDualMonitor.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            radioDualMonitor.AutoSize = true;
-            radioDualMonitor.BackColor = Color.White;
-            radioDualMonitor.FlatStyle = FlatStyle.Flat;
-            radioDualMonitor.Location = new Point(761, 318);
-            radioDualMonitor.MinimumSize = new Size(45, 22);
-            radioDualMonitor.Name = "radioDualMonitor";
-            radioDualMonitor.OffBackColor = Color.Gray;
-            radioDualMonitor.OffToggleColor = Color.Gainsboro;
-            radioDualMonitor.OnBackColor = Color.FromArgb(31, 30, 68);
-            radioDualMonitor.OnToggleColor = Color.WhiteSmoke;
-            radioDualMonitor.Size = new Size(45, 22);
-            radioDualMonitor.TabIndex = 89;
-            radioDualMonitor.UseVisualStyleBackColor = false;
-            radioDualMonitor.CheckedChanged += radioDualMonitor_CheckedChanged;
-            // 
             // label8
             // 
             label8.AutoSize = true;
             label8.BackColor = Color.Transparent;
             label8.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            label8.Location = new Point(660, 249);
+            label8.Location = new Point(660, 216);
             label8.Name = "label8";
             label8.Size = new Size(50, 15);
             label8.TabIndex = 88;
@@ -456,27 +425,6 @@ namespace KASIR.Komponen
             btnUpdate.UseVisualStyleBackColor = false;
             btnUpdate.Click += btnUpdate_Click;
             // 
-            // sButtonOffline
-            // 
-            sButtonOffline.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            sButtonOffline.AutoSize = true;
-            sButtonOffline.BackColor = Color.White;
-            sButtonOffline.Checked = true;
-            sButtonOffline.CheckState = CheckState.Checked;
-            sButtonOffline.Enabled = false;
-            sButtonOffline.FlatStyle = FlatStyle.Flat;
-            sButtonOffline.Location = new Point(507, 318);
-            sButtonOffline.MinimumSize = new Size(45, 22);
-            sButtonOffline.Name = "sButtonOffline";
-            sButtonOffline.OffBackColor = Color.Gray;
-            sButtonOffline.OffToggleColor = Color.Gainsboro;
-            sButtonOffline.OnBackColor = Color.FromArgb(31, 30, 68);
-            sButtonOffline.OnToggleColor = Color.WhiteSmoke;
-            sButtonOffline.Size = new Size(45, 22);
-            sButtonOffline.TabIndex = 100;
-            sButtonOffline.UseVisualStyleBackColor = false;
-            sButtonOffline.CheckedChanged += sButtonOffline_CheckedChanged;
-            // 
             // iconOfflineMode
             // 
             iconOfflineMode.Anchor = AnchorStyles.Top | AnchorStyles.Right;
@@ -491,7 +439,7 @@ namespace KASIR.Komponen
             iconOfflineMode.IconColor = Color.FromArgb(31, 30, 68);
             iconOfflineMode.IconFont = IconFont.Auto;
             iconOfflineMode.IconSize = 20;
-            iconOfflineMode.Location = new Point(481, 276);
+            iconOfflineMode.Location = new Point(481, 243);
             iconOfflineMode.Name = "iconOfflineMode";
             iconOfflineMode.Size = new Size(99, 55);
             iconOfflineMode.TabIndex = 99;
@@ -547,7 +495,7 @@ namespace KASIR.Komponen
             // 
             panel13.BorderStyle = BorderStyle.FixedSingle;
             panel13.Controls.Add(txtFooter);
-            panel13.Location = new Point(461, 141);
+            panel13.Location = new Point(461, 108);
             panel13.Name = "panel13";
             panel13.Size = new Size(444, 40);
             panel13.TabIndex = 75;
@@ -567,7 +515,7 @@ namespace KASIR.Komponen
             label7.AutoSize = true;
             label7.BackColor = Color.Transparent;
             label7.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            label7.Location = new Point(590, 123);
+            label7.Location = new Point(590, 90);
             label7.Name = "label7";
             label7.Size = new Size(198, 15);
             label7.TabIndex = 86;
@@ -586,7 +534,7 @@ namespace KASIR.Komponen
             iconButton1.IconColor = Color.FromArgb(31, 30, 68);
             iconButton1.IconFont = IconFont.Auto;
             iconButton1.IconSize = 30;
-            iconButton1.Location = new Point(822, 279);
+            iconButton1.Location = new Point(822, 246);
             iconButton1.Name = "iconButton1";
             iconButton1.Size = new Size(53, 55);
             iconButton1.TabIndex = 98;
@@ -599,7 +547,7 @@ namespace KASIR.Komponen
             // 
             panel15.BorderStyle = BorderStyle.FixedSingle;
             panel15.Controls.Add(txtRunningText);
-            panel15.Location = new Point(461, 207);
+            panel15.Location = new Point(461, 174);
             panel15.Name = "panel15";
             panel15.Size = new Size(444, 40);
             panel15.TabIndex = 87;
@@ -619,7 +567,7 @@ namespace KASIR.Komponen
             label12.AutoSize = true;
             label12.BackColor = Color.Transparent;
             label12.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            label12.Location = new Point(612, 189);
+            label12.Location = new Point(612, 156);
             label12.Name = "label12";
             label12.Size = new Size(148, 15);
             label12.TabIndex = 91;
@@ -647,7 +595,7 @@ namespace KASIR.Komponen
             panelPrinterOpt.Controls.Add(TestKasir);
             panelPrinterOpt.Controls.Add(TestKitchen);
             panelPrinterOpt.Controls.Add(ComboBoxPrinter1);
-            panelPrinterOpt.Location = new Point(11, 123);
+            panelPrinterOpt.Location = new Point(11, 90);
             panelPrinterOpt.Name = "panelPrinterOpt";
             panelPrinterOpt.Size = new Size(444, 334);
             panelPrinterOpt.TabIndex = 97;
@@ -1027,6 +975,81 @@ namespace KASIR.Komponen
             ComboBoxPrinter1.Size = new Size(183, 23);
             ComboBoxPrinter1.TabIndex = 0;
             // 
+            // LogPanel
+            // 
+            LogPanel.BackColor = SystemColors.Control;
+            LogPanel.Controls.Add(label6);
+            LogPanel.Controls.Add(LoggerMsg);
+            LogPanel.ForeColor = SystemColors.Control;
+            LogPanel.Location = new Point(11, 430);
+            LogPanel.Name = "LogPanel";
+            LogPanel.Size = new Size(894, 144);
+            LogPanel.TabIndex = 108;
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Font = new Font("Courier New", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
+            label6.ForeColor = SystemColors.ActiveCaptionText;
+            label6.Location = new Point(356, 2);
+            label6.Name = "label6";
+            label6.Size = new Size(186, 22);
+            label6.TabIndex = 1;
+            label6.Text = ">_ Log Aktifitas";
+            // 
+            // LoggerMsg
+            // 
+            LoggerMsg.BackColor = Color.White;
+            LoggerMsg.Location = new Point(8, 27);
+            LoggerMsg.Name = "LoggerMsg";
+            LoggerMsg.Size = new Size(879, 114);
+            LoggerMsg.TabIndex = 0;
+            // 
+            // sButtonListMenu
+            // 
+            sButtonListMenu.AutoSize = true;
+            sButtonListMenu.Location = new Point(584, 286);
+            sButtonListMenu.MinimumSize = new Size(45, 22);
+            sButtonListMenu.Name = "sButtonListMenu";
+            sButtonListMenu.OffBackColor = Color.Gray;
+            sButtonListMenu.OffToggleColor = Color.Gainsboro;
+            sButtonListMenu.OnBackColor = Color.MediumSlateBlue;
+            sButtonListMenu.OnToggleColor = Color.WhiteSmoke;
+            sButtonListMenu.Size = new Size(45, 22);
+            sButtonListMenu.TabIndex = 110;
+            sButtonListMenu.UseVisualStyleBackColor = true;
+            sButtonListMenu.CheckedChanged += this.sButtonListMenu_CheckedChanged;
+            // 
+            // radioDualMonitor
+            //// 
+            radioDualMonitor.AutoSize = true;
+            radioDualMonitor.Location = new Point(759, 286);
+            radioDualMonitor.MinimumSize = new Size(45, 22);
+            radioDualMonitor.Name = "radioDualMonitor";
+            radioDualMonitor.OffBackColor = Color.Gray;
+            radioDualMonitor.OffToggleColor = Color.Gainsboro;
+            radioDualMonitor.OnBackColor = Color.MediumSlateBlue;
+            radioDualMonitor.OnToggleColor = Color.WhiteSmoke;
+            radioDualMonitor.Size = new Size(45, 22);
+            radioDualMonitor.TabIndex = 111;
+            radioDualMonitor.UseVisualStyleBackColor = true;
+            radioDualMonitor.CheckedChanged += this.radioDualMonitor_CheckedChanged;
+            // 
+            // sButton1
+            // 
+            sButton1.AutoSize = true;
+            sButton1.Location = new Point(7, 31);
+            sButton1.MinimumSize = new Size(45, 22);
+            sButton1.Name = "sButton1";
+            sButton1.OffBackColor = Color.Gray;
+            sButton1.OffToggleColor = Color.Gainsboro;
+            sButton1.OnBackColor = Color.MediumSlateBlue;
+            sButton1.OnToggleColor = Color.WhiteSmoke;
+            sButton1.Size = new Size(45, 22);
+            sButton1.TabIndex = 112;
+            sButton1.UseVisualStyleBackColor = true;
+            sButton1.CheckedChanged += sButton1_CheckedChanged;
+            // 
             // Offline_settingsForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -1058,6 +1081,8 @@ namespace KASIR.Komponen
             panel9.PerformLayout();
             panel8.ResumeLayout(false);
             panel8.PerformLayout();
+            LogPanel.ResumeLayout(false);
+            LogPanel.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -1066,15 +1091,16 @@ namespace KASIR.Komponen
         private Panel panel1;
         private IconButton ListMenu;
         private IconButton CacheApp;
-        private Model.SButton sButtonListMenu;
+        //private SButton sButtonListMenu;
+        private SButton sButton1;
         private IconButton UpdateInfo;
         private IconButton Redownload;
         private IconButton iconDual;
-        private Model.SButton radioDualMonitor;
+        //private SButton radioDualMonitor;
         private Label label8;
         private IconButton Button2;
         private IconButton btnUpdate;
-        private Model.SButton sButtonOffline;
+        private SButton sButtonOffline;
         private IconButton iconOfflineMode;
         private Label lblVersion;
         private Label lblNewVersionNow;
@@ -1121,7 +1147,7 @@ namespace KASIR.Komponen
         private IconButton TestKasir;
         private IconButton TestKitchen;
         private ComboBox ComboBoxPrinter1;
-        private Model.SButton sButton1;
+        private SButton radioDualMonitor;
         private Panel panel5;
         private PictureBox picThumbnail;
         private Label label1;
@@ -1130,5 +1156,10 @@ namespace KASIR.Komponen
         private Label lblOutletName;
         private Label lblOutletID;
         private IconButton btnSetupPictsDual;
+        private Panel LogPanel;
+        private Panel LoggerMsg;
+        private Label label3;
+        private Label label6;
+        private SButton sButtonListMenu;
     }
 }

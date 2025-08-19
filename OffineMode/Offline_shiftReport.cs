@@ -433,7 +433,6 @@ namespace KASIR.Komponen
                 string actual_cash = Regex.Replace(txtActualCash.Text, "[^0-9]", "");
                 List<dynamic> paymentDetails = new();
                 int categoryId = 1; // Inisialisasi ID kategori pembayaran.
-                int CashOnPOS = 0;
                 foreach (var payment in groupedPayments)
                 {
                     var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
@@ -453,32 +452,32 @@ namespace KASIR.Komponen
 
                     // Update netAmount to consider both transaction refunds and item-level refunds
                     netAmount -= totalItemRefund;
-
+                    string paymentTypeName = payment.PaymentTypeName;
+                    
                     // Check if the payment type is "Tunai"
-                    if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
+                    if (paymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
                     {
-                        CashOnPOS = netAmount;
-                        netAmount -= totalExpenditure; // Deduct total expenditures if payment type is "Tunai"
+                        // Add constructed result object
+                        paymentDetails.Add(new
+                        {
+                            payment_category = "CASH ON POS", // Use the formatted payment category
+                            payment_type_detail = new List<dynamic>(), // Initialize as an empty array
+                            total_amount = netAmount,
+                            payment_category_id = categoryId++ // Increment category ID for each entry
+                        });
                     }
-
-                    // Add constructed result object
-                    paymentDetails.Add(new
+                    else
                     {
-                        payment_category = payment.PaymentTypeName, // Use the formatted payment category
-                        payment_type_detail = new List<dynamic>(), // Initialize as an empty array
-                        total_amount = netAmount,
-                        payment_category_id = categoryId++ // Increment category ID for each entry
-                    });
+                        // Add constructed result object
+                        paymentDetails.Add(new
+                        {
+                            payment_category = paymentTypeName, // Use the formatted payment category
+                            payment_type_detail = new List<dynamic>(), // Initialize as an empty array
+                            total_amount = netAmount,
+                            payment_category_id = categoryId++ // Increment category ID for each entry
+                        });
+                    }
                 }
-
-
-                paymentDetails.Add(new
-                {
-                    payment_category = "Cash On POS", // Use the formatted payment category
-                    payment_type_detail = new List<dynamic>(), // Initialize as an empty array
-                    total_amount = CashOnPOS,
-                    payment_category_id = categoryId++ // Increment category ID for each entry
-                });
 
                 int discountsCarts = transactionData.data
                     .Where(t => t.discounted_price > 0) // Filter transactions with discounted_price > 0
@@ -1297,30 +1296,30 @@ namespace KASIR.Komponen
                 }).ToList();
 
             decimal totalMemberUsePoints = CalculateTotalMemberUsePoints(transactionData.data);
-            decimal CashOnPOS = 0;
             foreach (var payment in groupedPayments)
             {
                 var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
-                decimal totalRefund = refund?.TotalRefund ?? 0; // Default to 0 if not found
+                decimal totalRefund = refund?.TotalRefund ?? 0;
 
                 var itemRefund = groupedItemRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
-                decimal totalItemRefund = itemRefund?.TotalItemRefund ?? 0; // Default to 0 if not found
+                decimal totalItemRefund = itemRefund?.TotalItemRefund ?? 0;
 
                 decimal netAmount = payment.TotalAmount - (totalRefund + totalItemRefund);
 
-                dataTable.Rows.Add(payment.PaymentTypeName, $"{netAmount:n0}");
+                // Gunakan variabel terpisah untuk nama pembayaran
+                string paymentTypeName = payment.PaymentTypeName;
 
-                if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
+                if (paymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
                 {
-                    CashOnPOS = netAmount;
-                    netAmount -= expenditures;
+                    dataTable.Rows.Add("CASH ON POS", $"{netAmount:n0}");
                     txtActualCash.Text = $"{netAmount:n0}";
-                    ending_cash = int.Parse(netAmount.ToString());
+                    ending_cash = (int)netAmount;
+                }
+                else
+                {
+                    dataTable.Rows.Add(paymentTypeName, $"{netAmount:n0}");
                 }
             }
-            dataTable.Rows.Add("Cash On POS", $"{CashOnPOS:n0}");
-
-            dataTable.Rows.Add("", $"");
 
             AddSeparatorRowBold(dataTable, "POINT MEMBER DETAILS", dataGridView1);
             dataTable.Rows.Add("POINT MEMBER USED", $"{totalMemberUsePoints:n0}");

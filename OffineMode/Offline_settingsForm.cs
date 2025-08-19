@@ -941,7 +941,7 @@ namespace KASIR.Komponen
             {
                 Directory.CreateDirectory(configFolderPath);
             }
-
+            
             await EnsureFileExistsAsync("setting\\FooterStruk.data", "TERIMAKASIH ATAS KUNJUNGANNYA", txtFooter);
             await EnsureFileExistsAsync("setting\\RunningText.data", "TERIMAKASIH ATAS KUNJUNGANNYA", txtRunningText);
             await EnsureFileExistsAsync("setting\\configListMenu.data", "OFF", sButtonListMenu);
@@ -956,9 +956,9 @@ namespace KASIR.Komponen
             lblOutletAddress.Text = "Address : " + dataOutlet.data.address.ToString();
             lblOutletPhoneNumber.Text = "Phone Number : " + dataOutlet.data.phone_number.ToString();
 
-            DisplayLogInPanel();
+            DisplayLogInPanel(LoggerMsg);
         }
-        private async void DisplayLogInPanel()
+        public async void DisplayLogInPanel(Panel logggerMsg)
         {
             try
             {
@@ -1057,6 +1057,7 @@ namespace KASIR.Komponen
             else
             {
                 string content = await File.ReadAllTextAsync(filePath);
+                NotifyHelper.Success($"Loading Config.. {filePath}\nstatus : {content}");
                 if (!string.IsNullOrEmpty(content))
                 {
                     if (controlToUpdate is TextBox textBox)

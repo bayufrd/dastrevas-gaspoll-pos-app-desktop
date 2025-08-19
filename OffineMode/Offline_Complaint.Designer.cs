@@ -30,15 +30,10 @@ namespace KASIR.OffineMode
         /// </summary>
         private void InitializeComponent()
         {
-            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
             panel1 = new Panel();
-            panelComplaint = new Model.GradientPanel();
-            dataGridView1 = new DataGridView();
-            label4 = new Label();
+            LogPanel = new Panel();
+            label6 = new Label();
+            LoggerMsg = new Panel();
             panel5 = new Panel();
             lblNama = new TextBox();
             label2 = new Label();
@@ -52,8 +47,7 @@ namespace KASIR.OffineMode
             btnSimpan = new Button();
             btnKeluar = new Button();
             panel1.SuspendLayout();
-            panelComplaint.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
+            LogPanel.SuspendLayout();
             panel5.SuspendLayout();
             panel4.SuspendLayout();
             panel2.SuspendLayout();
@@ -61,7 +55,7 @@ namespace KASIR.OffineMode
             // 
             // panel1
             // 
-            panel1.Controls.Add(panelComplaint);
+            panel1.Controls.Add(LogPanel);
             panel1.Controls.Add(panel5);
             panel1.Controls.Add(label2);
             panel1.Controls.Add(label5);
@@ -75,97 +69,37 @@ namespace KASIR.OffineMode
             panel1.Size = new Size(600, 530);
             panel1.TabIndex = 0;
             // 
-            // panelComplaint
+            // LogPanel
             // 
-            panelComplaint.Angle = 45F;
-            panelComplaint.AutoScroll = true;
-            panelComplaint.BorderStyle = BorderStyle.FixedSingle;
-            panelComplaint.BottomColor = Color.Gainsboro;
-            panelComplaint.Controls.Add(dataGridView1);
-            panelComplaint.Controls.Add(label4);
-            panelComplaint.Location = new Point(13, 394);
-            panelComplaint.Name = "panelComplaint";
-            panelComplaint.Size = new Size(575, 112);
-            panelComplaint.TabIndex = 39;
-            panelComplaint.TopColor = Color.White;
-            panelComplaint.Visible = false;
+            LogPanel.BackColor = SystemColors.Control;
+            LogPanel.Controls.Add(label6);
+            LogPanel.Controls.Add(LoggerMsg);
+            LogPanel.ForeColor = SystemColors.Control;
+            LogPanel.Location = new Point(12, 394);
+            LogPanel.Name = "LogPanel";
+            LogPanel.Size = new Size(576, 133);
+            LogPanel.TabIndex = 109;
             // 
-            // dataGridView1
+            // label6
             // 
-            dataGridView1.AllowUserToAddRows = false;
-            dataGridView1.AllowUserToDeleteRows = false;
-            dataGridView1.AllowUserToResizeColumns = false;
-            dataGridView1.AllowUserToResizeRows = false;
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = Color.White;
-            dataGridViewCellStyle1.ForeColor = Color.Silver;
-            dataGridViewCellStyle1.SelectionBackColor = Color.Transparent;
-            dataGridViewCellStyle1.SelectionForeColor = Color.FromArgb(31, 30, 68);
-            dataGridView1.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
-            dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dataGridView1.BackgroundColor = Color.White;
-            dataGridView1.BorderStyle = BorderStyle.None;
-            dataGridView1.CellBorderStyle = DataGridViewCellBorderStyle.None;
-            dataGridView1.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = Color.FromArgb(31, 30, 68);
-            dataGridViewCellStyle2.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            dataGridViewCellStyle2.ForeColor = Color.White;
-            dataGridViewCellStyle2.SelectionBackColor = Color.Transparent;
-            dataGridViewCellStyle2.SelectionForeColor = Color.Transparent;
-            dataGridViewCellStyle2.WrapMode = DataGridViewTriState.True;
-            dataGridView1.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
-            dataGridView1.ColumnHeadersHeight = 30;
-            dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle3.BackColor = Color.White;
-            dataGridViewCellStyle3.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            dataGridViewCellStyle3.ForeColor = Color.White;
-            dataGridViewCellStyle3.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle3.SelectionForeColor = Color.Gainsboro;
-            dataGridViewCellStyle3.WrapMode = DataGridViewTriState.False;
-            dataGridView1.DefaultCellStyle = dataGridViewCellStyle3;
-            dataGridView1.EnableHeadersVisualStyles = false;
-            dataGridView1.GridColor = Color.FromArgb(31, 30, 68);
-            dataGridView1.ImeMode = ImeMode.NoControl;
-            dataGridView1.Location = new Point(3, 3);
-            dataGridView1.Name = "dataGridView1";
-            dataGridView1.ReadOnly = true;
-            dataGridView1.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
-            dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle4.BackColor = Color.White;
-            dataGridViewCellStyle4.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            dataGridViewCellStyle4.ForeColor = Color.FromArgb(31, 30, 68);
-            dataGridViewCellStyle4.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle4.SelectionForeColor = Color.FromArgb(31, 30, 68);
-            dataGridViewCellStyle4.WrapMode = DataGridViewTriState.True;
-            dataGridView1.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
-            dataGridView1.RowHeadersVisible = false;
-            dataGridView1.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
-            dataGridViewCellStyle5.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle5.BackColor = Color.White;
-            dataGridViewCellStyle5.ForeColor = Color.FromArgb(31, 30, 68);
-            dataGridViewCellStyle5.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle5.SelectionForeColor = Color.FromArgb(31, 30, 68);
-            dataGridView1.RowsDefaultCellStyle = dataGridViewCellStyle5;
-            dataGridView1.RowTemplate.DefaultCellStyle.BackColor = Color.White;
-            dataGridView1.RowTemplate.DefaultCellStyle.ForeColor = Color.FromArgb(31, 30, 68);
-            dataGridView1.RowTemplate.DefaultCellStyle.SelectionBackColor = Color.Gainsboro;
-            dataGridView1.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.FromArgb(31, 30, 68);
-            dataGridView1.RowTemplate.Height = 40;
-            dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView1.Size = new Size(567, 104);
-            dataGridView1.TabIndex = 16;
+            label6.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            label6.AutoSize = true;
+            label6.Font = new Font("Courier New", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            label6.ForeColor = SystemColors.ActiveCaptionText;
+            label6.Location = new Point(127, 8);
+            label6.Name = "label6";
+            label6.Size = new Size(322, 16);
+            label6.TabIndex = 1;
+            label6.Text = ">_ Log Aktifitas Aplikasi ( Auto dikirimkan )";
             // 
-            // label4
+            // LoggerMsg
             // 
-            label4.AutoSize = true;
-            label4.Location = new Point(285, 1);
-            label4.Name = "label4";
-            label4.Size = new Size(0, 15);
-            label4.TabIndex = 0;
-            label4.TextAlign = ContentAlignment.TopCenter;
+            LoggerMsg.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            LoggerMsg.BackColor = Color.White;
+            LoggerMsg.Location = new Point(8, 27);
+            LoggerMsg.Name = "LoggerMsg";
+            LoggerMsg.Size = new Size(560, 106);
+            LoggerMsg.TabIndex = 0;
             // 
             // panel5
             // 
@@ -192,9 +126,9 @@ namespace KASIR.OffineMode
             label2.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label2.Location = new Point(9, 156);
             label2.Name = "label2";
-            label2.Size = new Size(61, 15);
+            label2.Size = new Size(108, 15);
             label2.TabIndex = 16;
-            label2.Text = "Deskripsi :";
+            label2.Text = "Deskripsi Masalah :";
             // 
             // label5
             // 
@@ -202,9 +136,9 @@ namespace KASIR.OffineMode
             label5.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label5.Location = new Point(8, 77);
             label5.Name = "label5";
-            label5.Size = new Size(45, 15);
+            label5.Size = new Size(73, 15);
             label5.TabIndex = 15;
-            label5.Text = "Nama :";
+            label5.Text = "Nama Kasir :";
             // 
             // panel4
             // 
@@ -344,9 +278,8 @@ namespace KASIR.OffineMode
             TopMost = true;
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
-            panelComplaint.ResumeLayout(false);
-            panelComplaint.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
+            LogPanel.ResumeLayout(false);
+            LogPanel.PerformLayout();
             panel5.ResumeLayout(false);
             panel5.PerformLayout();
             panel4.ResumeLayout(false);
@@ -411,10 +344,10 @@ namespace KASIR.OffineMode
         private TextBox txtNotes;
         private FontAwesome.Sharp.IconButton button1;
         private FontAwesome.Sharp.IconButton button2;
-        private Model.GradientPanel panelComplaint;
-        private DataGridView dataGridView1;
-        private Label label4;
         private TextBox lblNama;
         private IconButton lblNameCart;
+        private Panel LogPanel;
+        private Label label6;
+        private Panel LoggerMsg;
     }
 }

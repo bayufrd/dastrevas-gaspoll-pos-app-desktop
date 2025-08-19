@@ -225,7 +225,8 @@ namespace KASIR
         {
             /*SettingsForm c = new(this);
             await c.LoadConfig();*/
-            await headerOutletName("");
+            //NotifyHelper.Success("");
+            await headerName();
             initPingTest();
             ConfigOfflineMode();
             // Mengecek apakah sButtonOffline dalam status checked
@@ -271,7 +272,6 @@ namespace KASIR
 
                 cacheDataApp.Show();
             }
-            await headerName();
         }
         // Metode bantuan untuk notifikasi
         private void ShowSystemTrayNotification(string title, string message)
@@ -360,7 +360,7 @@ namespace KASIR
                     return;
                 }
 
-                await headerOutletName("Check Last Update..");
+                NotifyHelper.Success("Check Last Update..");
                 findingdownloadpath();
                 string startupPath = AppDomain.CurrentDomain.BaseDirectory;
                 PathKasir = startupPath;
@@ -370,7 +370,7 @@ namespace KASIR
                 if (Directory.Exists(directoryPath) && File.Exists(filePath))
                 {
                     VersionUpdaterApp = File.ReadAllText(filePath);
-                    await headerOutletName($"Version Updater {VersionUpdaterApp.ToString()}");
+                    NotifyHelper.Success($"Version Updater {VersionUpdaterApp.ToString()}");
                 }
                 else
                 {
@@ -384,7 +384,7 @@ namespace KASIR
                     string contentToWrite = "1.0.0.1";
                     File.WriteAllText(filePath, contentToWrite);
                     VersionUpdaterApp = File.ReadAllText(filePath);
-                    await headerOutletName($"Version Updater {VersionUpdaterApp.ToString()}");
+                    NotifyHelper.Success($"Version Updater {VersionUpdaterApp.ToString()}");
                 }
 
                 await DownloadUpdaterApp();
@@ -400,7 +400,7 @@ namespace KASIR
         {
             try
             {
-                await headerOutletName("Checking New Updater...");
+                NotifyHelper.Success("Checking New Updater...");
 
                 using (HttpClient httpClient = new())
                 {
@@ -412,14 +412,14 @@ namespace KASIR
                     }
 
                     string changeVersion = newVersion.Trim();
-                    await headerOutletName($"New Version Updater is {changeVersion}");
+                    NotifyHelper.Success($"New Version Updater is {changeVersion}");
 
                     // Version comparison
                     newVersion = newVersion.Replace(".", "");
                     VersionUpdaterApp = VersionUpdaterApp.Replace(".", "");
                     if (Convert.ToInt32(newVersion) > Convert.ToInt32(VersionUpdaterApp))
                     {
-                        await headerOutletName("Downloading New Updater...");
+                        NotifyHelper.Success("Downloading New Updater...");
                         string fileUrl = "https://raw.githubusercontent.com/bayufrd/update/main/Dastrevas.rar";
                         string destinationPath =
                             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -451,7 +451,7 @@ namespace KASIR
         {
             try
             {
-                await headerOutletName("Extracting New Updater...");
+                NotifyHelper.Success("Extracting New Updater...");
 
                 string extractDirectory = $"{PathKasir}\\update";
 
@@ -578,7 +578,7 @@ namespace KASIR
         {
             try
             {
-                await headerOutletName("Checking Kasir Version...");
+                NotifyHelper.Success("Checking Kasir Version...");
                 if (!_internetServices.IsInternetConnected())
                 {
                     return;
@@ -590,7 +590,7 @@ namespace KASIR
                     string newVersion = await httpClient.GetStringAsync(urlVersion);
                     string currentVersion = Properties.Settings.Default.Version.ToString();
 
-                    await headerOutletName($"Current Version is {currentVersion}, New is {newVersion}");
+                    NotifyHelper.Success($"Current Version is {currentVersion}, New is {newVersion}");
                     await ConfirmUpdate(newVersion.ToString(), currentVersion);
 
                     newVersion = newVersion.Replace(".", "");
@@ -621,7 +621,7 @@ namespace KASIR
                         if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
                         {
                             shouldUpdate = true;
-                            await headerOutletName("Opening Kasir Updater...");
+                            NotifyHelper.Success("Opening Kasir Updater...");
                         }
 
                         if (shouldUpdate)
@@ -991,11 +991,11 @@ namespace KASIR
                     {
                         UpdateSyncStatus(Color.White, $"Last\nSync \n{DateTime.Now:HH:mm}");
                     }
-
+                    NotifyHelper.Success($"Berhasil syncron server at ${DateTime.Now:HH:mm}");
                     await Task.Run(async () =>
                     {
                         await cekVersionAndData();
-                        await headerName();
+                        //await headerName();
                     });
                 }
                 catch (Exception ex)
@@ -1013,6 +1013,8 @@ namespace KASIR
                     SignalPing.ForeColor = Color.Red;
                     SignalPing.Text = $"Error Sync \n{DateTime.Now:HH:mm}";
                     SignalPing.IconColor = Color.White;
+                    NotifyHelper.Error($"Gagal syncron server at ${DateTime.Now:HH:mm}");
+
                     LoggerUtil.LogError(ex, "An error occurred during SyncSuccess: {ErrorMessage}", ex.Message);
                 }
             }

@@ -2754,6 +2754,7 @@ namespace KASIR.OfflineMode
                 lblDiskon1.Text = string.Format("Rp. - {0:n0},-", discountedPrice);
                 // Menyimpan kembali data cart yang telah diperbarui ke file cache
                 File.WriteAllText(cartDataPath, cartData.ToString());
+                NotifyHelper.Success("DIscount dipakai");
             }
             catch (Exception ex)
             {

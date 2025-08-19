@@ -7304,6 +7304,7 @@ namespace KASIR.Printer
                 {
                     lastException = ex;
                     LoggerUtil.LogError(ex, $"Attempt {attempt} failed: {ex.Message}");
+                    NotifyHelper.Error($"Percobaan {attempt} gagal: {ex.Message}");
                 }
                 await Task.Delay(1000 * attempt);
 
@@ -7312,6 +7313,8 @@ namespace KASIR.Printer
             // Log details error
             Util util = new();
             util.sendLogTelegramNetworkError($"All {maxRetries} attempts failed. Last error: {lastException}");
+            NotifyHelper.Error($"Semua percobaan {maxRetries} x gagal. Error terakhir: {lastException}");
+
             return false;
         }
         public bool IsNotMacAddressOrIpAddress(string input)

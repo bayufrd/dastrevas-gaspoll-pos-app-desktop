@@ -1,4 +1,6 @@
 ﻿using System.Globalization;
+using KASIR.Helper;
+using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
 using KASIR.Properties;
@@ -23,6 +25,7 @@ namespace KASIR.OffineMode
             Version = Settings.Default.Version;
 
             InitializeComponent();
+            DisplayLogInPanel(LoggerMsg);
             txtNotes.PlaceholderText = "Deskripsi Masalah?";
             txtNotes.PlaceholderText += "\nKronologi : ";
             txtNotes.PlaceholderText += "\nSaat Melakukan/Mengakses tombol : ";
@@ -31,7 +34,95 @@ namespace KASIR.OffineMode
             txtNotes.PlaceholderText +=
                 "\n\nMohon maaf atas ketidak nyamanannya dan \nTerimakasih, dengan support ini akan membantu agar lebih maju \ndan berkembang kedepannya. \n\nGaspoll Management. x Dastrevas";
         }
+        public async void DisplayLogInPanel(Panel logggerMsg)
+        {
+            try
+            {
+                string content = await ReadingLogAsync(); // ambil dulu konten
 
+                // Pisah per baris
+                string[] lines = content.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+                // Filter hanya baris yang bukan stack trace / path file
+                var filtered = lines
+                    .Where(l => !l.TrimStart().StartsWith("at ")) // buang stack trace
+                    .Where(l => !l.Contains(":line "))            // buang info line number
+                    .Where(l => !l.Contains(@":\"))               // buang path Windows (C:\..)
+                    .Where(l => !l.StartsWith("--- End of stack trace")) // buang end trace
+                    .ToArray();
+
+                // Batasi 5000 baris terakhir
+                int maxLines = 5000;
+                if (filtered.Length > maxLines)
+                    filtered = filtered.Skip(filtered.Length - maxLines).ToArray();
+
+                // Gabungkan dengan extra newline supaya ada jarak antar log
+                string finalContent = string.Join(Environment.NewLine + Environment.NewLine, filtered);
+
+                LoggerMsg.Controls.Clear();
+
+                var box = new RichTextBox
+                {
+                    Dock = DockStyle.Fill,
+                    ReadOnly = true,
+                    Text = finalContent,
+                    BackColor = Color.White,
+                    ForeColor = Color.Black,  // opsional
+                    Font = new Font("Courier New", 10) // opsional biar rapih
+                };
+
+                LoggerMsg.Controls.Add(box);
+
+                // Auto scroll ke bawah setelah isi dimasukkan
+                box.SelectionStart = box.Text.Length;
+                box.ScrollToCaret();
+            }
+            catch (Exception ex)
+            {
+                NotifyHelper.Error(ex.Message);
+            }
+        }
+
+
+        private async Task<string> ReadingLogAsync()
+        {
+            try
+            {
+                string outletName = "unknown";
+                string outletID = Settings.Default.BaseOutlet;
+                string cacheOutlet = $"DT-Cache\\DataOutlet{outletID}.data";
+                if (File.Exists(cacheOutlet))
+                {
+                    string cacheData = await File.ReadAllTextAsync(cacheOutlet);
+                    CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheData);
+
+                    if (dataOutlet?.data != null)
+                    {
+                        outletName = dataOutlet.data.name;
+                    }
+                }
+
+                string todayDate = DateTime.Now.ToString("yyyyMMdd");
+                string customText = $"{outletID}_{outletName}_log{todayDate}";
+                string logFilePath = $"log\\{customText}.txt";
+
+                if (!File.Exists(logFilePath))
+                {
+                    return string.Empty;
+                }
+
+                using (var fileStream = new FileStream(logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var streamReader = new StreamReader(fileStream))
+                {
+                    string content = await streamReader.ReadToEndAsync();
+                    return content;
+                }
+            }
+            catch (Exception ex)
+            {
+                return string.Empty;
+            }
+        }
         public bool ReloadDataInBaseForm { get; private set; }
 
         private void btnKeluar_Click(object sender, EventArgs e)

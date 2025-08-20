@@ -237,7 +237,7 @@ namespace KASIR.OfflineMode
             iconButtonGet.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             iconButtonGet.ForeColor = Color.Black;
             iconButtonGet.IconChar = IconChar.None;
-            iconButtonGet.IconColor = Color.FromArgb(31, 30, 68);
+            iconButtonGet.IconColor = Color.FromArgb(15, 90, 94);
             iconButtonGet.IconFont = IconFont.Auto;
             iconButtonGet.IconSize = 20;
             iconButtonGet.Location = new Point(287, 97);
@@ -339,7 +339,7 @@ namespace KASIR.OfflineMode
             dataGridViewCellStyle1.BackColor = Color.White;
             dataGridViewCellStyle1.ForeColor = Color.Silver;
             dataGridViewCellStyle1.SelectionBackColor = Color.Transparent;
-            dataGridViewCellStyle1.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle1.SelectionForeColor = Color.Black;
             dataGridView1.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
             dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
@@ -348,7 +348,7 @@ namespace KASIR.OfflineMode
             dataGridView1.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView1.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle2.BackColor = Color.FromArgb(15, 90, 94);
             dataGridViewCellStyle2.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             dataGridViewCellStyle2.ForeColor = Color.White;
             dataGridViewCellStyle2.SelectionBackColor = Color.Transparent;
@@ -367,7 +367,7 @@ namespace KASIR.OfflineMode
             dataGridViewCellStyle3.WrapMode = DataGridViewTriState.False;
             dataGridView1.DefaultCellStyle = dataGridViewCellStyle3;
             dataGridView1.EnableHeadersVisualStyles = false;
-            dataGridView1.GridColor = Color.FromArgb(31, 30, 68);
+            dataGridView1.GridColor = Color.Black;
             dataGridView1.ImeMode = ImeMode.NoControl;
             dataGridView1.Location = new Point(8, 66);
             dataGridView1.Name = "dataGridView1";
@@ -376,23 +376,23 @@ namespace KASIR.OfflineMode
             dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle4.BackColor = Color.White;
             dataGridViewCellStyle4.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            dataGridViewCellStyle4.ForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle4.ForeColor = Color.Black;
             dataGridViewCellStyle4.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle4.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle4.SelectionForeColor = Color.Black;
             dataGridViewCellStyle4.WrapMode = DataGridViewTriState.True;
             dataGridView1.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
             dataGridView1.RowHeadersVisible = false;
             dataGridView1.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
             dataGridViewCellStyle5.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle5.BackColor = Color.White;
-            dataGridViewCellStyle5.ForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle5.ForeColor = Color.Black;
             dataGridViewCellStyle5.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle5.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle5.SelectionForeColor = Color.Black;
             dataGridView1.RowsDefaultCellStyle = dataGridViewCellStyle5;
             dataGridView1.RowTemplate.DefaultCellStyle.BackColor = Color.White;
-            dataGridView1.RowTemplate.DefaultCellStyle.ForeColor = Color.FromArgb(31, 30, 68);
+            dataGridView1.RowTemplate.DefaultCellStyle.ForeColor = Color.Black;
             dataGridView1.RowTemplate.DefaultCellStyle.SelectionBackColor = Color.Gainsboro;
-            dataGridView1.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridView1.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.Black;
             dataGridView1.RowTemplate.Height = 40;
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridView1.Size = new Size(392, 340);
@@ -420,7 +420,7 @@ namespace KASIR.OfflineMode
             ButtonSplit.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             ButtonSplit.ForeColor = Color.Black;
             ButtonSplit.IconChar = IconChar.None;
-            ButtonSplit.IconColor = Color.FromArgb(31, 30, 68);
+            ButtonSplit.IconColor = Color.FromArgb(15, 90, 94);
             ButtonSplit.IconFont = IconFont.Auto;
             ButtonSplit.IconSize = 25;
             ButtonSplit.ImageAlign = ContentAlignment.MiddleRight;
@@ -481,7 +481,7 @@ namespace KASIR.OfflineMode
             ButtonSimpan.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             ButtonSimpan.ForeColor = Color.Black;
             ButtonSimpan.IconChar = IconChar.None;
-            ButtonSimpan.IconColor = Color.FromArgb(31, 30, 68);
+            ButtonSimpan.IconColor = Color.FromArgb(15, 90, 94);
             ButtonSimpan.IconFont = IconFont.Auto;
             ButtonSimpan.IconSize = 25;
             ButtonSimpan.ImageAlign = ContentAlignment.MiddleRight;
@@ -507,7 +507,7 @@ namespace KASIR.OfflineMode
             // label3
             // 
             label3.Font = new Font("Segoe UI Black", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
-            label3.ForeColor = Color.FromArgb(31, 30, 68);
+            label3.ForeColor = Color.FromArgb(15, 90, 94);
             label3.Location = new Point(4, 0);
             label3.Name = "label3";
             label3.Size = new Size(100, 23);
@@ -521,7 +521,7 @@ namespace KASIR.OfflineMode
             textBox2.BackColor = Color.WhiteSmoke;
             textBox2.BorderStyle = BorderStyle.None;
             textBox2.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point);
-            textBox2.ForeColor = Color.FromArgb(31, 30, 68);
+            textBox2.ForeColor = Color.FromArgb(15, 90, 94);
             textBox2.Location = new Point(419, 57);
             textBox2.Multiline = true;
             textBox2.Name = "textBox2";
@@ -532,7 +532,7 @@ namespace KASIR.OfflineMode
             // 
             // button4
             // 
-            button4.BackColor = Color.FromArgb(31, 30, 68);
+            button4.BackColor = Color.FromArgb(15, 90, 94);
             button4.FlatAppearance.BorderSize = 0;
             button4.FlatStyle = FlatStyle.Flat;
             button4.ForeColor = Color.White;
@@ -615,7 +615,7 @@ namespace KASIR.OfflineMode
             dataGridViewCellStyle6.BackColor = Color.White;
             dataGridViewCellStyle6.ForeColor = Color.Silver;
             dataGridViewCellStyle6.SelectionBackColor = Color.Transparent;
-            dataGridViewCellStyle6.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle6.SelectionForeColor = Color.FromArgb(15, 90, 94);
             dataGridView2.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle6;
             dataGridView2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView2.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
@@ -623,7 +623,7 @@ namespace KASIR.OfflineMode
             dataGridView2.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView2.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle7.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle7.BackColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle7.BackColor = Color.FromArgb(15, 90, 94);
             dataGridViewCellStyle7.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             dataGridViewCellStyle7.ForeColor = Color.White;
             dataGridViewCellStyle7.SelectionBackColor = Color.Transparent;
@@ -642,7 +642,7 @@ namespace KASIR.OfflineMode
             dataGridViewCellStyle8.WrapMode = DataGridViewTriState.False;
             dataGridView2.DefaultCellStyle = dataGridViewCellStyle8;
             dataGridView2.EnableHeadersVisualStyles = false;
-            dataGridView2.GridColor = Color.FromArgb(31, 30, 68);
+            dataGridView2.GridColor = Color.FromArgb(15, 90, 94);
             dataGridView2.ImeMode = ImeMode.NoControl;
             dataGridView2.Location = new Point(0, 115);
             dataGridView2.Name = "dataGridView2";
@@ -651,23 +651,23 @@ namespace KASIR.OfflineMode
             dataGridViewCellStyle9.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle9.BackColor = Color.White;
             dataGridViewCellStyle9.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            dataGridViewCellStyle9.ForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle9.ForeColor = Color.FromArgb(15, 90, 94);
             dataGridViewCellStyle9.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle9.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle9.SelectionForeColor = Color.FromArgb(15, 90, 94);
             dataGridViewCellStyle9.WrapMode = DataGridViewTriState.True;
             dataGridView2.RowHeadersDefaultCellStyle = dataGridViewCellStyle9;
             dataGridView2.RowHeadersVisible = false;
             dataGridView2.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
             dataGridViewCellStyle10.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle10.BackColor = Color.White;
-            dataGridViewCellStyle10.ForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle10.ForeColor = Color.FromArgb(15, 90, 94);
             dataGridViewCellStyle10.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle10.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle10.SelectionForeColor = Color.FromArgb(15, 90, 94);
             dataGridView2.RowsDefaultCellStyle = dataGridViewCellStyle10;
             dataGridView2.RowTemplate.DefaultCellStyle.BackColor = Color.White;
-            dataGridView2.RowTemplate.DefaultCellStyle.ForeColor = Color.FromArgb(31, 30, 68);
+            dataGridView2.RowTemplate.DefaultCellStyle.ForeColor = Color.FromArgb(15, 90, 94);
             dataGridView2.RowTemplate.DefaultCellStyle.SelectionBackColor = Color.Gainsboro;
-            dataGridView2.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridView2.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.FromArgb(15, 90, 94);
             dataGridView2.RowTemplate.Height = 40;
             dataGridView2.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridView2.Size = new Size(607, 542);

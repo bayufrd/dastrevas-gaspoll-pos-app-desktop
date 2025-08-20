@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using KASIR.Helper;
 using KASIR.Model;
 using KASIR.OffineMode;
 using KASIR.Printer;
@@ -18,7 +19,13 @@ namespace KASIR.Komponen
 
         private Panel loadingPanel;
         private ProgressBar progressBar;
-        private int ending_cash = 0, totalTransaksiOulet = 0, totalDiscountAmount = 0;
+        private int ending_cash = 0,
+            totalTransaksiOulet = 0,
+            totalDiscountAmount = 0,
+            cashIncomeReal = 0,
+            cashOutRefund = 0, 
+            cashOutExpenditure = 0;
+
 
         public Offline_shiftReport()
         {
@@ -433,6 +440,7 @@ namespace KASIR.Komponen
                 string actual_cash = Regex.Replace(txtActualCash.Text, "[^0-9]", "");
                 List<dynamic> paymentDetails = new();
                 int categoryId = 1; // Inisialisasi ID kategori pembayaran.
+                int CashOnPOS = 0;
                 foreach (var payment in groupedPayments)
                 {
                     var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
@@ -452,31 +460,23 @@ namespace KASIR.Komponen
 
                     // Update netAmount to consider both transaction refunds and item-level refunds
                     netAmount -= totalItemRefund;
-                    string paymentTypeName = payment.PaymentTypeName;
-                    
+
+                    string paymentypeString = payment.PaymentTypeName;
                     // Check if the payment type is "Tunai"
-                    if (paymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
+                    if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Add constructed result object
-                        paymentDetails.Add(new
-                        {
-                            payment_category = "CASH ON POS", // Use the formatted payment category
-                            payment_type_detail = new List<dynamic>(), // Initialize as an empty array
-                            total_amount = netAmount,
-                            payment_category_id = categoryId++ // Increment category ID for each entry
-                        });
+                        paymentypeString = "Cash On POS";
+                        //netAmount -= totalExpenditure; // Deduct total expenditures if payment type is "Tunai"
                     }
-                    else
+
+                    // Add constructed result object
+                    paymentDetails.Add(new
                     {
-                        // Add constructed result object
-                        paymentDetails.Add(new
-                        {
-                            payment_category = paymentTypeName, // Use the formatted payment category
-                            payment_type_detail = new List<dynamic>(), // Initialize as an empty array
-                            total_amount = netAmount,
-                            payment_category_id = categoryId++ // Increment category ID for each entry
-                        });
-                    }
+                        payment_category = paymentypeString, // Use the formatted payment category
+                        payment_type_detail = new List<dynamic>(), // Initialize as an empty array
+                        total_amount = netAmount,
+                        payment_category_id = categoryId++ // Increment category ID for each entry
+                    });
                 }
 
                 int discountsCarts = transactionData.data
@@ -573,7 +573,7 @@ namespace KASIR.Komponen
         {
             btnCetakStruk.Enabled = true;
             btnCetakStruk.Text = "Cetak Struk";
-            btnCetakStruk.BackColor = Color.FromArgb(31, 30, 68);
+            btnCetakStruk.BackColor = Color.FromArgb(15, 90, 94);
         }
 
         private async Task HandleSuccessfulPrint(string response)
@@ -837,7 +837,7 @@ namespace KASIR.Komponen
             }
         }
 
-        private (DateTime startShift, DateTime lastShift) GetStartAndLastShiftOrder(TransactionData transactionData)
+        private (DateTime startShift, DateTime lastShift) ExGetStartAndLastShiftOrder(TransactionData transactionData)
         {
             // Extract all created_at dates from the transactions and parse them safely
             List<DateTime?> transactionTimes = transactionData.data
@@ -861,6 +861,50 @@ namespace KASIR.Komponen
 
             // If no valid transactions, return default values (in case of an error)
             return (DateTime.MinValue, DateTime.MinValue);
+        }
+        private (DateTime startShift, DateTime lastShift) GetStartAndLastShiftOrder(TransactionData transactionData)
+        {
+            try
+            {
+                DateTime defaultShiftStart = DateTime.Today.AddHours(6);
+                // Ekstrak dan parsing tanggal dengan penanganan error yang lebih baik
+                List<DateTime?> transactionTimes = transactionData?.data?
+                    .Select(t =>
+                    {
+                        if (string.IsNullOrWhiteSpace(t?.created_at))
+                            return defaultShiftStart;
+
+                        DateTime parsedDate;
+                        // Gunakan format parsing yang lebih spesifik dan kultur yang sesuai
+                        if (DateTime.TryParse(t.created_at, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate))
+                        {
+                            return parsedDate;
+                        }
+                        return (DateTime?)defaultShiftStart;
+                    })
+                    .Where(t => t.HasValue)
+                    .OrderBy(t => t.Value)
+                    .ToList() ?? new List<DateTime?>();
+
+                // Jika tidak ada transaksi valid, kembalikan default hari ini jam 6 pagi
+                if (transactionTimes.Count == 0)
+                {
+                    defaultShiftStart = DateTime.Today.AddHours(6);
+                    return (defaultShiftStart, defaultShiftStart);
+                }
+
+                // Ambil tanggal awal dan akhir shift
+                DateTime startShift = transactionTimes.First().Value;
+                DateTime lastShift = transactionTimes.Last().Value;
+
+                return (startShift, lastShift);
+            }
+            catch (Exception)
+            {
+                // Penanganan exception terakhir, kembalikan default
+                DateTime defaultShiftStart = DateTime.Today.AddHours(6);
+                return (defaultShiftStart, defaultShiftStart);
+            }
         }
 
         private int GetShiftNumber()
@@ -914,184 +958,202 @@ namespace KASIR.Komponen
         //LOAD DATA Transaction
         public async Task LoadData(bool isBackground = false)
         {
-            IsBackgroundOperation = isBackground;
-
-            CancelPreviousOperation();
-
-            if (ShouldShowProgress())
+            try
             {
-                btnCetakStruk.Enabled = false;
-                ShowLoading();
-                UpdateProgress(10, "Memeriksa konfigurasi...");
-            }
 
-            if (ShouldShowProgress())
+                IsBackgroundOperation = isBackground;
+
+                CancelPreviousOperation();
+
+                if (ShouldShowProgress())
+                {
+                    btnCetakStruk.Enabled = false;
+                    ShowLoading();
+                    UpdateProgress(10, "Memeriksa konfigurasi...");
+                }
+
+                if (ShouldShowProgress())
+                {
+                    UpdateProgress(80, "Data diterima, memproses...");
+                }
+
+                int shiftNumber = GetShiftNumber(); // Get the shift number dynamically
+
+                string filePath = @"DT-Cache/Transaction/transaction.data";
+
+                string fileSavebillPath = @"DT-Cache/Transaction/saveBill.data";
+
+                string fileExpenditurePath = @"DT-Cache/Transaction/expenditure.data";
+
+                // Ensure the transaction file exists
+                EnsureFileExists(filePath);
+
+                // Ensure the savebill file exists
+                EnsureFileExists(fileSavebillPath);
+
+                // Ensure the expenditure file exists
+                EnsureFileExists(fileExpenditurePath);
+
+                string jsonContent = File.ReadAllText(filePath);
+
+                string jsonContentSavebill = File.ReadAllText(fileSavebillPath);
+
+                string jsonContentExpenditure = File.ReadAllText(fileExpenditurePath);
+
+
+                ExpenditureData expenditureData = JsonConvert.DeserializeObject<ExpenditureData>(jsonContentExpenditure);
+
+                // Deserialize the JSON content into the `TransactionData` object
+                TransactionData transactionData = JsonConvert.DeserializeObject<TransactionData>(jsonContent);
+
+                // Deserialize the JSON content into the `TransactionData` object
+                TransactionData transactionDataSaveBill =
+                    JsonConvert.DeserializeObject<TransactionData>(jsonContentSavebill);
+
+                DataTable dataTable = CreateDataTable();
+
+                if (ShouldShowProgress())
+                {
+                    UpdateProgress(90, "Memformat data untuk tampilan...");
+                }
+
+                string startAt = GetStartAt();
+                DateTime startAtDateTime = DateTime.Parse(startAt);
+
+                //filtering
+
+                // Memfilter transaksi berdasarkan created_at
+                List<Transaction> transactionDataFiltered = transactionData.data
+                    .Where(t => DateTime.TryParse(t.updated_at, out DateTime createdAt) && createdAt > startAtDateTime)
+                    .ToList();
+
+                // Memfilter pengeluaran berdasarkan created_at
+                List<ExpenditureStrukShift> filteredExpenditures = expenditureData.data
+                    .Where(e => DateTime.TryParse(e.created_at, out DateTime expenditureCreatedAt) &&
+                                expenditureCreatedAt > startAtDateTime)
+                    .ToList();
+
+                List<Transaction> filteredSavebillCancelBefore = transactionDataSaveBill.data
+                    .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt < startAtDateTime)
+                    .ToList();
+
+                List<Transaction> filteredSavebillCancelAfter = transactionDataSaveBill.data
+                    .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt > startAtDateTime)
+                    .ToList();
+
+                // Membungkus filteredTransactions menjadi TransactionData
+                TransactionData filteredTransactions = new() { data = transactionDataFiltered };
+                TransactionData filteredTransactionsCanceledSavebillBefore = new() { data = filteredSavebillCancelBefore };
+                TransactionData filteredTransactionsCanceledSavebillAfter = new() { data = filteredSavebillCancelAfter };
+
+
+                ExpenditureData filteredexpenditureData = new() { data = filteredExpenditures };
+                // Get the start and last shift based on transaction times
+                var (startShift, lastShift) = GetStartAndLastShiftOrder(filteredTransactions);
+                // Add the Start and Last Shift Order to the DataTable
+                AddSeparatorRowBold(dataTable, "SHIFT NUMBER " + shiftNumber, dataGridView1);
+
+                AddSeparatorRowBold(dataTable, "Start Shift : " + startAtDateTime, dataGridView1);
+                dataTable.Rows.Add("Start Shift Order", $"{startShift.ToString("yyyy-MM-dd HH:mm:ss")}");
+                dataTable.Rows.Add("Last Shift Order", $"{lastShift.ToString("yyyy-MM-dd HH:mm:ss")}");
+
+                dataTable.Rows.Add("", "");
+
+                // Process the cart details
+                ProcessCartDetails(filteredTransactions, dataTable, "SOLD ITEMS");
+
+                decimal totalProcessedCartQty = CalculateTotalProcessCartDetailsQty(filteredTransactions);
+                dataTable.Rows.Add("Total Qty Sold Items", $"{totalProcessedCartQty}");
+
+                decimal totalProcessedCart = CalculateTotalProcessCartDetails(filteredTransactions);
+                dataTable.Rows.Add("Total Sold Items", $"{totalProcessedCart:n0}");
+
+                dataTable.Rows.Add("", "");
+
+                // Process refunded items
+                ProcessRefundDetails(filteredTransactions, dataTable);
+
+                // Calculate total refund amount
+                decimal totalRefundAmount = CalculateTotalRefund(filteredTransactions);
+                dataTable.Rows.Add("Total Refund", $"{totalRefundAmount:n0}");
+
+                dataTable.Rows.Add("", "");
+                // Process the savebill details
+                ProcessCartDetails(transactionDataSaveBill, dataTable, "SAVEBILL/PENDING ITEMS");
+
+                decimal totalPendingCart = CalculateTotalProcessCartDetails(transactionDataSaveBill);
+                dataTable.Rows.Add("Total Savebill/Pending Items", $"{totalPendingCart:n0}");
+
+                dataTable.Rows.Add("", "");
+                // Cancel the savebill details
+                ProcessCartDetails(transactionDataSaveBill, dataTable, "CANCELED ITEMS");
+
+                decimal totalCancelCartBefore = CalculateTotalCanceledItems(filteredTransactionsCanceledSavebillBefore);
+                if (totalCancelCartBefore > 0)
+                {
+                    dataTable.Rows.Add("Total Canceled Items Shift Sebelumnya", $"{totalCancelCartBefore:n0}");
+                }
+
+                decimal totalCancelCart = CalculateTotalCanceledItems(filteredTransactionsCanceledSavebillAfter);
+                dataTable.Rows.Add("Total Canceled Items Shift Sekarang", $"{totalCancelCart:n0}");
+
+                dataTable.Rows.Add("", "");
+
+                // Process the Expenditure details
+                ProcessExpenditureDetails(filteredExpenditures, dataTable, "EXPENDITURE ITEMS");
+
+                decimal totalExpenditureItems = CalculateTotalProcessExpenditures(filteredexpenditureData);
+                cashOutExpenditure = int.Parse(totalExpenditureItems.ToString());
+                dataTable.Rows.Add("Total Expense Items", $"{totalExpenditureItems:n0}");
+
+                dataTable.Rows.Add("", "");
+
+                // Process the Discounts details
+                ProcessDiscountDetails(filteredTransactions, dataTable, "DISCOUNT ITEMS");
+
+                dataTable.Rows.Add("", "");
+
+                // Process payment details
+                ProcessPaymentDetails(filteredTransactions, dataTable, totalExpenditureItems);
+                dataTable.Rows.Add("", "");
+                AddSeparatorRowBold(dataTable, $"CASH DETAILS", dataGridView1);
+                dataTable.Rows.Add("Cash Income (Not Include Exp & Ref)", $"{cashIncomeReal:n0}");
+                dataTable.Rows.Add("Cash Out Expenditure", $"{cashOutExpenditure:n0}");
+                dataTable.Rows.Add("Cash Out Refund", $"{cashOutRefund:n0}");
+                ending_cash -= cashOutExpenditure;
+                dataTable.Rows.Add("Expected Ending Cash", $"{ending_cash:n0}");
+
+                dataTable.Rows.Add("", "");
+
+                // Add the grand total
+                decimal grandTotal = filteredTransactions.data
+                    .SelectMany(t => t.cart_details) // Meratakan list cart_details dari setiap Transaction
+                    .Sum(cd => cd.total_price); // Menjumlahkan total_price untuk setiap CartDetails
+                decimal totalMemberUsePoints = CalculateTotalMemberUsePoints(filteredTransactions.data);
+
+                AddSeparatorRowBold(dataTable, "GRAND TOTAL", dataGridView1);
+                grandTotal -= totalRefundAmount;
+                totalProcessedCart -= totalExpenditureItems;
+                totalProcessedCart -= totalMemberUsePoints;
+                dataTable.Rows.Add("Total Transactions", $"{totalProcessedCart:n0}");
+
+                // Display data in DataGridView
+                DisplayDataInDataGridView(dataTable);
+
+                // Update progress and final steps
+                if (ShouldShowProgress())
+                {
+                    UpdateProgress(100, "Selesai!");
+                    await Task.Delay(500); // Short delay to show completion
+                    HideLoading();
+                }
+                btnCetakStruk.Enabled = true;
+            }
+            catch(Exception ex)
             {
-                UpdateProgress(80, "Data diterima, memproses...");
+                NotifyHelper.Error(ex.Message);
+                LoggerUtil.LogError(ex,ex.ToString());
             }
-
-            int shiftNumber = GetShiftNumber(); // Get the shift number dynamically
-
-            string filePath = @"DT-Cache/Transaction/transaction.data";
-
-            string fileSavebillPath = @"DT-Cache/Transaction/saveBill.data";
-
-            string fileExpenditurePath = @"DT-Cache/Transaction/expenditure.data";
-
-            // Ensure the transaction file exists
-            EnsureFileExists(filePath);
-
-            // Ensure the savebill file exists
-            EnsureFileExists(fileSavebillPath);
-
-            // Ensure the expenditure file exists
-            EnsureFileExists(fileExpenditurePath);
-
-            string jsonContent = File.ReadAllText(filePath);
-
-            string jsonContentSavebill = File.ReadAllText(fileSavebillPath);
-
-            string jsonContentExpenditure = File.ReadAllText(fileExpenditurePath);
-
-
-            ExpenditureData expenditureData = JsonConvert.DeserializeObject<ExpenditureData>(jsonContentExpenditure);
-
-            // Deserialize the JSON content into the `TransactionData` object
-            TransactionData transactionData = JsonConvert.DeserializeObject<TransactionData>(jsonContent);
-
-            // Deserialize the JSON content into the `TransactionData` object
-            TransactionData transactionDataSaveBill =
-                JsonConvert.DeserializeObject<TransactionData>(jsonContentSavebill);
-
-            DataTable dataTable = CreateDataTable();
-
-            if (ShouldShowProgress())
-            {
-                UpdateProgress(90, "Memformat data untuk tampilan...");
-            }
-
-            string startAt = GetStartAt();
-            DateTime startAtDateTime = DateTime.Parse(startAt);
-
-            //filtering
-
-            // Memfilter transaksi berdasarkan created_at
-            List<Transaction> transactionDataFiltered = transactionData.data
-                .Where(t => DateTime.TryParse(t.updated_at, out DateTime createdAt) && createdAt > startAtDateTime)
-                .ToList();
-
-            // Memfilter pengeluaran berdasarkan created_at
-            List<ExpenditureStrukShift> filteredExpenditures = expenditureData.data
-                .Where(e => DateTime.TryParse(e.created_at, out DateTime expenditureCreatedAt) &&
-                            expenditureCreatedAt > startAtDateTime)
-                .ToList();
-
-            List<Transaction> filteredSavebillCancelBefore = transactionDataSaveBill.data
-                .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt < startAtDateTime)
-                .ToList();
-
-            List<Transaction> filteredSavebillCancelAfter = transactionDataSaveBill.data
-                .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt > startAtDateTime)
-                .ToList();
-
-            // Membungkus filteredTransactions menjadi TransactionData
-            TransactionData filteredTransactions = new() { data = transactionDataFiltered };
-            TransactionData filteredTransactionsCanceledSavebillBefore = new() { data = filteredSavebillCancelBefore };
-            TransactionData filteredTransactionsCanceledSavebillAfter = new() { data = filteredSavebillCancelAfter };
-
-
-            ExpenditureData filteredexpenditureData = new() { data = filteredExpenditures };
-            // Get the start and last shift based on transaction times
-            var (startShift, lastShift) = GetStartAndLastShiftOrder(filteredTransactions);
-            // Add the Start and Last Shift Order to the DataTable
-            AddSeparatorRowBold(dataTable, "SHIFT NUMBER " + shiftNumber, dataGridView1);
-
-            AddSeparatorRowBold(dataTable, "Start Shift : " + startAtDateTime, dataGridView1);
-            dataTable.Rows.Add("Start Shift Order", $"{startShift.ToString("yyyy-MM-dd HH:mm:ss")}");
-            dataTable.Rows.Add("Last Shift Order", $"{lastShift.ToString("yyyy-MM-dd HH:mm:ss")}");
-
-            dataTable.Rows.Add("", "");
-
-            // Process the cart details
-            ProcessCartDetails(filteredTransactions, dataTable, "SOLD ITEMS");
-
-            decimal totalProcessedCartQty = CalculateTotalProcessCartDetailsQty(filteredTransactions);
-            dataTable.Rows.Add("Total Qty Sold Items", $"{totalProcessedCartQty}");
-
-            decimal totalProcessedCart = CalculateTotalProcessCartDetails(filteredTransactions);
-            dataTable.Rows.Add("Total Sold Items", $"{totalProcessedCart:n0}");
-
-            dataTable.Rows.Add("", "");
-
-            // Process refunded items
-            ProcessRefundDetails(filteredTransactions, dataTable);
-
-            // Calculate total refund amount
-            decimal totalRefundAmount = CalculateTotalRefund(filteredTransactions);
-            dataTable.Rows.Add("Total Refund", $"{totalRefundAmount:n0}");
-
-            dataTable.Rows.Add("", "");
-            // Process the savebill details
-            ProcessCartDetails(transactionDataSaveBill, dataTable, "SAVEBILL/PENDING ITEMS");
-
-            decimal totalPendingCart = CalculateTotalProcessCartDetails(transactionDataSaveBill);
-            dataTable.Rows.Add("Total Savebill/Pending Items", $"{totalPendingCart:n0}");
-
-            dataTable.Rows.Add("", "");
-            // Cancel the savebill details
-            ProcessCartDetails(transactionDataSaveBill, dataTable, "CANCELED ITEMS");
-
-            decimal totalCancelCartBefore = CalculateTotalCanceledItems(filteredTransactionsCanceledSavebillBefore);
-            if (totalCancelCartBefore > 0)
-            {
-                dataTable.Rows.Add("Total Canceled Items Shift Sebelumnya", $"{totalCancelCartBefore:n0}");
-            }
-
-            decimal totalCancelCart = CalculateTotalCanceledItems(filteredTransactionsCanceledSavebillAfter);
-            dataTable.Rows.Add("Total Canceled Items Shift Sekarang", $"{totalCancelCart:n0}");
-
-            dataTable.Rows.Add("", "");
-
-            // Process the Expenditure details
-            ProcessExpenditureDetails(filteredExpenditures, dataTable, "EXPENDITURE ITEMS");
-
-            decimal totalExpenditureItems = CalculateTotalProcessExpenditures(filteredexpenditureData);
-            dataTable.Rows.Add("Total Expense Items", $"{totalExpenditureItems:n0}");
-
-            dataTable.Rows.Add("", "");
-
-            // Process the Discounts details
-            ProcessDiscountDetails(filteredTransactions, dataTable, "DISCOUNT ITEMS");
-
-            dataTable.Rows.Add("", "");
-
-            // Process payment details
-            ProcessPaymentDetails(filteredTransactions, dataTable, totalExpenditureItems);
-            dataTable.Rows.Add("", "");
-
-            // Add the grand total
-            decimal grandTotal = filteredTransactions.data
-                .SelectMany(t => t.cart_details) // Meratakan list cart_details dari setiap Transaction
-                .Sum(cd => cd.total_price); // Menjumlahkan total_price untuk setiap CartDetails
-            decimal totalMemberUsePoints = CalculateTotalMemberUsePoints(filteredTransactions.data);
-
-            AddSeparatorRowBold(dataTable, "GRAND TOTAL", dataGridView1);
-            grandTotal -= totalRefundAmount;
-            totalProcessedCart -= totalExpenditureItems;
-            totalProcessedCart -= totalMemberUsePoints;
-            dataTable.Rows.Add("Total Transactions", $"{totalProcessedCart:n0}");
-
-            // Display data in DataGridView
-            DisplayDataInDataGridView(dataTable);
-
-            // Update progress and final steps
-            if (ShouldShowProgress())
-            {
-                UpdateProgress(100, "Selesai!");
-                await Task.Delay(500); // Short delay to show completion
-                HideLoading();
-            }
-            btnCetakStruk.Enabled = true;
         }
 
         private List<PaymentType> LoadPaymentTypes()
@@ -1299,27 +1361,30 @@ namespace KASIR.Komponen
             foreach (var payment in groupedPayments)
             {
                 var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
-                decimal totalRefund = refund?.TotalRefund ?? 0;
+                decimal totalRefund = refund?.TotalRefund ?? 0; // Default to 0 if not found
 
                 var itemRefund = groupedItemRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
-                decimal totalItemRefund = itemRefund?.TotalItemRefund ?? 0;
+                decimal totalItemRefund = itemRefund?.TotalItemRefund ?? 0; // Default to 0 if not found
 
                 decimal netAmount = payment.TotalAmount - (totalRefund + totalItemRefund);
 
-                // Gunakan variabel terpisah untuk nama pembayaran
-                string paymentTypeName = payment.PaymentTypeName;
 
-                if (paymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
+                string paymentTypeString = payment.PaymentTypeName;
+                if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
                 {
-                    dataTable.Rows.Add("CASH ON POS", $"{netAmount:n0}");
+                    paymentTypeString = "CASH ON POS";
+                    cashOutRefund = int.Parse(totalRefund.ToString()) + int.Parse(totalItemRefund.ToString());
+                    cashIncomeReal = payment.TotalAmount;
+                    //CashOnPOS = netAmount;
+                    //netAmount -= expenditures;
                     txtActualCash.Text = $"{netAmount:n0}";
-                    ending_cash = (int)netAmount;
+                    ending_cash = int.Parse(netAmount.ToString());
                 }
-                else
-                {
-                    dataTable.Rows.Add(paymentTypeName, $"{netAmount:n0}");
-                }
+
+                dataTable.Rows.Add(paymentTypeString, $"{netAmount:n0}");
             }
+
+            dataTable.Rows.Add("", $"");
 
             AddSeparatorRowBold(dataTable, "POINT MEMBER DETAILS", dataGridView1);
             dataTable.Rows.Add("POINT MEMBER USED", $"{totalMemberUsePoints:n0}");

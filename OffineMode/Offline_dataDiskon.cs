@@ -1,4 +1,6 @@
 ﻿using System.Data;
+using System.Windows.Forms;
+using KASIR.Helper;
 using KASIR.Model;
 using KASIR.Network;
 using KASIR.Properties;
@@ -37,21 +39,21 @@ namespace KASIR.OfflineMode
 
                 if (menuModel == null || menuModel.data == null)
                 {
-                    MessageBox.Show("Data diskon tidak dapat diproses. Periksa koneksi lagi", "Gaspol");
+                    NotifyHelper.Error("Data diskon tidak dapat diproses. Periksa koneksi lagi");
                     return;
                 }
 
-                PopulateDataGridView(menuModel);
+                PopulateFlowLayout(menuModel);
             }
             catch (JsonException jsonEx)
             {
-                MessageBox.Show("Gagal memproses data dari API: " + jsonEx.Message, "Gaspol");
+                NotifyHelper.Error("Gagal memproses data dari API: " + jsonEx.Message);
                 LoggerUtil.LogError(jsonEx, "An error occurred during JSON deserialization: {ErrorMessage}",
                     jsonEx.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data diskon: " + ex.Message, "Gaspol");
+                NotifyHelper.Error("Gagal tampil data diskon: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -67,6 +69,7 @@ namespace KASIR.OfflineMode
                 }
                 catch (Exception ex)
                 {
+                    NotifyHelper.Error($"Gagal load dari lokal, silahkan syncron ulang");
                     LoggerUtil.LogError(ex, "Failed to read from cache: {ErrorMessage}", ex.Message);
                 }
             }
@@ -81,7 +84,7 @@ namespace KASIR.OfflineMode
 
             if (string.IsNullOrEmpty(response))
             {
-                MessageBox.Show("Respons dari API kosong.", "Gaspol");
+                NotifyHelper.Error("Respons dari API kosong.");
                 return null;
             }
 
@@ -102,38 +105,86 @@ namespace KASIR.OfflineMode
 
             return menuModel;
         }
-
-        private void PopulateDataGridView(DiscountCartModel menuModel)
+        private void PopulateFlowLayout(DiscountCartModel menuModel)
         {
+            // pastikan flowLayoutPanel1 ada di form
+            flowLayoutPanel1.Controls.Clear();
+            flowLayoutPanel1.AutoScroll = true;
+            flowLayoutPanel1.WrapContents = true;
+            flowLayoutPanel1.FlowDirection = FlowDirection.LeftToRight;
+
             List<DataDiscountCart> menuList = menuModel.data.ToList();
-            DataTable dataTable = new();
-            dataTable.Columns.Add("ID", typeof(int));
-            dataTable.Columns.Add("Kode", typeof(string));
-            dataTable.Columns.Add("Nilai", typeof(string));
-            dataTable.Columns.Add("Tipe discount", typeof(string));
-            dataTable.Columns.Add("Jenis discount", typeof(string));
-            dataTable.Columns.Add("Minimum", typeof(string));
-            dataTable.Columns.Add("Maximum", typeof(string));
-            dataTable.Columns.Add("Durasi", typeof(string));
 
             foreach (DataDiscountCart menu in menuList)
             {
-                dataTable.Rows.Add(
-                    menu.id,
-                    menu.code,
-                    menu.is_percent == 0 ? string.Format("Rp. {0:n0},-", menu.value) : menu.value + " %",
-                    menu.is_percent == 0 ? "Nominal" : "Percent",
-                    menu.is_discount_cart == 0 ? "Peritem" : "Keranjang",
-                    string.Format("Rp. {0:n0},-", menu.min_purchase),
-                    string.Format("Rp. {0:n0},-", menu.max_discount),
-                    menu.start_date.ToString("yyyy-MM-dd") + " - " + menu.end_date.ToString("yyyy-MM-dd")
-                );
+                // Panel kartu
+                Panel card = new Panel
+                {
+                    Width = 200,
+                    Height = 130,
+                    BackColor = Color.White,
+                    Margin = new Padding(10),
+                    Padding = new Padding(10),
+                    BorderStyle = BorderStyle.FixedSingle
+                };
+
+                // Judul (kode diskon)
+                Label lblCode = new Label
+                {
+                    Text = $"Kode: {menu.code}",
+                    Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                    AutoSize = true,
+                    ForeColor = Color.Black,
+                    Location = new Point(5, 5)
+                };
+                card.Controls.Add(lblCode);
+
+                // Nilai
+                Label lblValue = new Label
+                {
+                    Text = menu.is_percent == 0 ? $"Nominal: Rp {menu.value:n0}" : $"Diskon: {menu.value}%",
+                    Font = new Font("Segoe UI", 9, FontStyle.Regular),
+                    AutoSize = true,
+                    Location = new Point(5, 35)
+                };
+                card.Controls.Add(lblValue);
+
+                // Tipe
+                Label lblType = new Label
+                {
+                    Text = $"Tipe: {(menu.is_percent == 0 ? "Nominal" : "Percent")}",
+                    Font = new Font("Segoe UI", 9),
+                    AutoSize = true,
+                    Location = new Point(5, 55)
+                };
+                card.Controls.Add(lblType);
+
+                // Jenis discount
+                Label lblJenis = new Label
+                {
+                    Text = $"Jenis: {(menu.is_discount_cart == 0 ? "Per Item" : "Keranjang")}",
+                    Font = new Font("Segoe UI", 9),
+                    AutoSize = true,
+                    Location = new Point(5, 75)
+                };
+                card.Controls.Add(lblJenis);
+
+                // Durasi
+                Label lblDurasi = new Label
+                {
+                    Text = $"Durasi: {menu.start_date:yyyy-MM-dd} - {menu.end_date:yyyy-MM-dd}",
+                    Font = new Font("Segoe UI", 8, FontStyle.Italic),
+                    AutoSize = true,
+                    ForeColor = Color.Gray,
+                    Location = new Point(5, 95)
+                };
+                card.Controls.Add(lblDurasi);
+
+
+                // Tambah ke flowLayout
+                flowLayoutPanel1.Controls.Add(card);
             }
-
-            dataGridView1.DataSource = dataTable;
-            dataGridView1.Columns["ID"].Visible = false;
         }
-
 
         private void btnKeluar_Click(object sender, EventArgs e)
         {

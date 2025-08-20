@@ -1928,7 +1928,7 @@ namespace KASIR.OfflineMode
                         diskonID = 0;
 
                         iconButtonGet.Text = "Pakai";
-                        iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
+                        iconButtonGet.ForeColor = Color.Black;
                         isDiscountActive = false;
                         iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
 
@@ -1957,7 +1957,7 @@ namespace KASIR.OfflineMode
                         else
                         {
                             iconButtonGet.Text = "Pakai";
-                            iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
+                            iconButtonGet.ForeColor = Color.Black;
                             isDiscountActive = false;
                             iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
                         }
@@ -2106,10 +2106,11 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                // Path for the cart data cache
                 string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
+                string cacheFilePathSplit = "DT-Cache\\Transaction\\Cart_main_split.data";
 
-                // Check if the cart file exists
+                
+
                 if (File.Exists(cacheFilePath))
                 {
                     string cartJson = File.ReadAllText(cacheFilePath);
@@ -2129,12 +2130,27 @@ namespace KASIR.OfflineMode
 
                         //set tombol disc
                         iconButtonGet.Text = "Pakai";
-                        iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
+                        iconButtonGet.ForeColor = Color.Black;
                         isDiscountActive = false;
                         iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
 
                         //reset servingtype
                         selectedServingTypeallItems = 1;
+
+                        //split main check
+                        if (File.Exists(cacheFilePathSplit))
+                        {
+                            if (File.Exists(cacheFilePath))
+                            {
+                                File.Delete(cacheFilePath);
+                            }
+
+                            File.Move(cacheFilePathSplit, cacheFilePath);
+
+                            LoadCartData();
+                            selectedServingTypeallItems = 1;
+                            return;
+                        }
                     }
                     else
                     {
@@ -2176,7 +2192,7 @@ namespace KASIR.OfflineMode
                         else
                         {
                             iconButtonGet.Text = "Pakai";
-                            iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
+                            iconButtonGet.ForeColor = Color.Black;
                             iconButtonGet.BackColor = Color.White;
                             isDiscountActive = false;
                             iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
@@ -2330,15 +2346,8 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    string cacheFilePathSplit = "DT-Cache\\Transaction\\Cart_main_split.data";
-                    if (File.Exists(cacheFilePathSplit))
-                    {
-                        // Ganti nama file
-                        File.Move(cacheFilePathSplit, cacheFilePath);
-                        LoadCartData();
-                        selectedServingTypeallItems = 1;
-                        return;
-                    }
+
+                    
 
                     // If file does not exist, set defaults
                     lblDetailKeranjang.Text = "Keranjang: Kosong";
@@ -2351,7 +2360,7 @@ namespace KASIR.OfflineMode
 
                     //set tombol disc
                     iconButtonGet.Text = "Pakai";
-                    iconButtonGet.ForeColor = Color.FromArgb(31, 30, 68);
+                    iconButtonGet.ForeColor = Color.Black;
                     isDiscountActive = false;
                     iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
 
@@ -2360,28 +2369,10 @@ namespace KASIR.OfflineMode
                 }
 
                 ReloadDisc();
-                // Setelah load berhasil, kirim sinyal reload
-                /*if (!File.Exists("setting\\configDualMonitor.data"))
-                {
-                    string data = "OFF";
-                    await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
-                }
-                else
-                {
-                    string allSettingsData = await File.ReadAllTextAsync("setting\\configDualMonitor.data");
-                    if (allSettingsData == "ON")
-                    {
-                        CartSyncClient.SendReloadSignal();
-                    }
-                }*/
-            }
-            catch (TaskCanceledException ex)
-            {
-                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi." + ex.Message);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
+                NotifyHelper.Error("An error occurred: "+ ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }

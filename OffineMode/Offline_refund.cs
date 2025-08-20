@@ -636,7 +636,8 @@ namespace KASIR.OfflineMode
                         total_refund = int.Parse(TotalRefunded.ToString()),
                         refund_details = refundDetailStruks // Data refund yang di-refund
                     };
-
+                    btnSimpan.Enabled = false;
+                    btnRefund.Enabled = false;
 
                     // Optionally, print the receipt here (Handle print)
                     await HandleSuccessfulTransaction(refundDetailStruks);
@@ -736,7 +737,8 @@ namespace KASIR.OfflineMode
                     ["refund_qty"] = cartItem["qty"], // Refund semua, jadi ambil qty penuh
                     ["refund_total"] = cartItem["total_price"], // Total harga untuk item
                     ["refund_reason_item"] = refundReason, // Alasan refund
-                    ["refund_payment_type_id_item"] = refundPaymentType, // Tipe pembayaran
+                    ["refund_payment_type_id_item"] = refundPaymentType,
+                    ["refund_payment_type_name"] = cmbPayform.Text ?? "Tunai",
                     ["note_item"] = cartItem["note_item"], // Tipe pembayaran
                     ["created_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                     ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
@@ -789,6 +791,11 @@ namespace KASIR.OfflineMode
 
                     try
                     {
+                        btnRefund.Text = "Selesai.";
+                        btnRefund.Enabled = true;
+                        DialogResult = DialogResult.OK;
+                        Close();
+
                         await Task.Run(async () =>
                         {
                             await printerModel.PrintModelRefund(refundData, refundDetailStruks, Nomortransaks);
@@ -796,11 +803,6 @@ namespace KASIR.OfflineMode
 
                         // If successful, remove the saved print job
                         RemoveSavedRefundPrintJob(Nomortransaks);
-
-                        btnRefund.Text = "Selesai.";
-                        btnRefund.Enabled = true;
-                        DialogResult = DialogResult.OK;
-                        Close();
                     }
                     catch (OperationCanceledException)
                     {

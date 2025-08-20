@@ -232,9 +232,9 @@ namespace KASIR.Komponen
             btnSetupPictsDual.FlatAppearance.BorderSize = 0;
             btnSetupPictsDual.FlatStyle = FlatStyle.Popup;
             btnSetupPictsDual.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            btnSetupPictsDual.ForeColor = Color.FromArgb(31, 30, 68);
+            btnSetupPictsDual.ForeColor = Color.FromArgb(15, 90, 94);
             btnSetupPictsDual.IconChar = IconChar.DesktopAlt;
-            btnSetupPictsDual.IconColor = Color.FromArgb(31, 30, 68);
+            btnSetupPictsDual.IconColor = Color.FromArgb(15, 90, 94);
             btnSetupPictsDual.IconFont = IconFont.Auto;
             btnSetupPictsDual.IconSize = 25;
             btnSetupPictsDual.Location = new Point(231, 33);
@@ -280,7 +280,7 @@ namespace KASIR.Komponen
             ListMenu.FlatStyle = FlatStyle.Flat;
             ListMenu.ForeColor = Color.Transparent;
             ListMenu.IconChar = IconChar.List;
-            ListMenu.IconColor = Color.FromArgb(31, 30, 68);
+            ListMenu.IconColor = Color.FromArgb(15, 90, 94);
             ListMenu.IconFont = IconFont.Auto;
             ListMenu.IconSize = 30;
             ListMenu.Location = new Point(588, 247);
@@ -296,9 +296,9 @@ namespace KASIR.Komponen
             CacheApp.FlatAppearance.BorderSize = 0;
             CacheApp.FlatStyle = FlatStyle.Flat;
             CacheApp.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            CacheApp.ForeColor = Color.FromArgb(31, 30, 68);
+            CacheApp.ForeColor = Color.FromArgb(15, 90, 94);
             CacheApp.IconChar = IconChar.Skyatlas;
-            CacheApp.IconColor = Color.FromArgb(31, 30, 68);
+            CacheApp.IconColor = Color.FromArgb(15, 90, 94);
             CacheApp.IconFont = IconFont.Auto;
             CacheApp.IconSize = 30;
             CacheApp.Location = new Point(635, 247);
@@ -319,7 +319,7 @@ namespace KASIR.Komponen
             UpdateInfo.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             UpdateInfo.ForeColor = Color.WhiteSmoke;
             UpdateInfo.IconChar = IconChar.IceCream;
-            UpdateInfo.IconColor = Color.FromArgb(31, 30, 68);
+            UpdateInfo.IconColor = Color.FromArgb(15, 90, 94);
             UpdateInfo.IconFont = IconFont.Auto;
             UpdateInfo.IconSize = 20;
             UpdateInfo.Location = new Point(677, 10);
@@ -337,9 +337,9 @@ namespace KASIR.Komponen
             Redownload.FlatAppearance.BorderSize = 0;
             Redownload.FlatStyle = FlatStyle.Flat;
             Redownload.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            Redownload.ForeColor = Color.FromArgb(31, 30, 68);
+            Redownload.ForeColor = Color.FromArgb(15, 90, 94);
             Redownload.IconChar = IconChar.ArrowRightRotate;
-            Redownload.IconColor = Color.FromArgb(31, 30, 68);
+            Redownload.IconColor = Color.FromArgb(15, 90, 94);
             Redownload.IconFont = IconFont.Auto;
             Redownload.IconSize = 30;
             Redownload.Location = new Point(693, 247);
@@ -362,7 +362,7 @@ namespace KASIR.Komponen
             iconDual.FlatStyle = FlatStyle.Flat;
             iconDual.ForeColor = Color.Transparent;
             iconDual.IconChar = IconChar.DesktopAlt;
-            iconDual.IconColor = Color.FromArgb(31, 30, 68);
+            iconDual.IconColor = Color.FromArgb(15, 90, 94);
             iconDual.IconFont = IconFont.Auto;
             iconDual.IconSize = 30;
             iconDual.Location = new Point(765, 247);
@@ -385,7 +385,7 @@ namespace KASIR.Komponen
             // 
             // Button2
             // 
-            Button2.BackColor = Color.FromArgb(31, 30, 68);
+            Button2.BackColor = Color.FromArgb(15, 90, 94);
             Button2.Cursor = Cursors.Hand;
             Button2.FlatAppearance.BorderSize = 0;
             Button2.FlatStyle = FlatStyle.Flat;
@@ -406,7 +406,7 @@ namespace KASIR.Komponen
             // 
             // btnUpdate
             // 
-            btnUpdate.BackColor = Color.FromArgb(31, 30, 68);
+            btnUpdate.BackColor = Color.FromArgb(15, 90, 94);
             btnUpdate.Cursor = Cursors.Hand;
             btnUpdate.FlatAppearance.BorderSize = 0;
             btnUpdate.FlatStyle = FlatStyle.Flat;
@@ -434,9 +434,9 @@ namespace KASIR.Komponen
             iconOfflineMode.FlatAppearance.BorderSize = 0;
             iconOfflineMode.FlatStyle = FlatStyle.Flat;
             iconOfflineMode.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
-            iconOfflineMode.ForeColor = Color.FromArgb(31, 30, 68);
+            iconOfflineMode.ForeColor = Color.FromArgb(15, 90, 94);
             iconOfflineMode.IconChar = IconChar.WifiStrong;
-            iconOfflineMode.IconColor = Color.FromArgb(31, 30, 68);
+            iconOfflineMode.IconColor = Color.FromArgb(15, 90, 94);
             iconOfflineMode.IconFont = IconFont.Auto;
             iconOfflineMode.IconSize = 20;
             iconOfflineMode.Location = new Point(481, 243);
@@ -529,9 +529,9 @@ namespace KASIR.Komponen
             iconButton1.Cursor = Cursors.Hand;
             iconButton1.FlatAppearance.BorderSize = 0;
             iconButton1.FlatStyle = FlatStyle.Flat;
-            iconButton1.ForeColor = Color.FromArgb(31, 30, 68);
+            iconButton1.ForeColor = Color.FromArgb(15, 90, 94);
             iconButton1.IconChar = IconChar.Gear;
-            iconButton1.IconColor = Color.FromArgb(31, 30, 68);
+            iconButton1.IconColor = Color.FromArgb(15, 90, 94);
             iconButton1.IconFont = IconFont.Auto;
             iconButton1.IconSize = 30;
             iconButton1.Location = new Point(822, 246);

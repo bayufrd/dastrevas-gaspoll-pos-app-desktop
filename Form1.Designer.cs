@@ -318,7 +318,7 @@ namespace KASIR
             // 
             LogoKasir.BackColor = Color.Transparent;
             LogoKasir.Cursor = Cursors.Hand;
-            LogoKasir.Image = Properties.Resources.a_2_1;
+            LogoKasir.Image = Properties.Resources.a_2_;
             resources.ApplyResources(LogoKasir, "LogoKasir");
             LogoKasir.Name = "LogoKasir";
             LogoKasir.TabStop = false;
@@ -338,7 +338,7 @@ namespace KASIR
             // 
             // panel2
             // 
-            panel2.BackColor = Color.FromArgb(31, 30, 68);
+            panel2.BackColor = Color.FromArgb(15, 90, 94);
             panel2.Controls.Add(Setting);
             panel2.Controls.Add(gradientPanel2);
             resources.ApplyResources(panel2, "panel2");

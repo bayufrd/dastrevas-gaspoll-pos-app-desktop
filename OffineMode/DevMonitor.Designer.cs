@@ -131,7 +131,7 @@ namespace KASIR.OfflineMode
             // 
             btnAddMenu.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             btnAddMenu.AutoSize = true;
-            btnAddMenu.BackColor = Color.FromArgb(31, 30, 68);
+            btnAddMenu.BackColor = Color.FromArgb(15, 90, 94);
             btnAddMenu.FlatAppearance.BorderSize = 0;
             btnAddMenu.FlatStyle = FlatStyle.Flat;
             btnAddMenu.ForeColor = Color.White;

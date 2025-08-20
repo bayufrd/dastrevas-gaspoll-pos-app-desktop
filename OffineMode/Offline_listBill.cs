@@ -1,6 +1,8 @@
 ﻿using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using FontAwesome.Sharp;
+using KASIR.Helper;
 using KASIR.Model;
 using KASIR.Printer;
 using KASIR.Properties;
@@ -17,16 +19,7 @@ namespace KASIR.OffineMode
         {
             baseOutlet = Settings.Default.BaseOutlet;
             InitializeComponent();
-            dataGridView1.CellFormatting += DataGridView1_CellFormatting;
         }
-
-        public List<CartDetail> cart_details { get; set; }
-
-        // Refund details
-        public List<RefundDetail> refund_details { get; set; }
-
-        // Canceled items
-        public List<CanceledItem> canceled_items { get; set; }
 
         public bool ReloadDataInBaseForm { get; private set; }
 
@@ -66,89 +59,175 @@ namespace KASIR.OffineMode
                 // Begin Counting Transaction Queue
                 int numberQueue = transactionDetails.Count + 1; // Start queue number
                 List<JToken> reversedTransactionDetails = transactionDetails.Reverse().ToList();
-                /*
-                                IApiService apiService = new ApiService();
-                                string response = await apiService.GetListBill("/transaction?outlet_id=", baseOutlet);
+                LoadDataToFlowLayout(reversedTransactionDetails);
 
-                                ListBillModel menuModel = JsonConvert.DeserializeObject<ListBillModel>(response);
-                                List<ListBill> menuList = menuModel.data.ToList();*/
-                DataTable dataTable = new();
-                dataTable.Columns.Add("ID", typeof(int));
-                dataTable.Columns.Add("Nama", typeof(string));
-                dataTable.Columns.Add("Seat", typeof(string));
-                dataTable.Columns.Add("Terakhir Update", typeof(string));
-                dataTable.Columns.Add("NumberQueue", typeof(int));
-
-
-                string format = "dddd, dd MMMM yyyy - HH:mm";
-                // Loop through each transaction to fill the DataTable
-                foreach (JToken transaction in reversedTransactionDetails)
-                {
-                    numberQueue -= 1; // Decrease number for the next entry
-
-                    // Parsing tanggal dari string API dan format ulang
-                    DateTime updatedAt;
-                    // Parsing tanggal menggunakan format yang sesuai
-                    if (DateTime.TryParseExact(transaction["updated_at"]?.ToString(), format,
-                            CultureInfo.InvariantCulture, DateTimeStyles.None, out updatedAt))
-                    {
-                        // Format ulang menjadi lebih singkat, misalnya "19 Oct 2024, 10:38"
-                        string formattedDate = updatedAt.ToString("dd MMM yyyy, HH:mm");
-                        dataTable.Rows.Add(
-                            transaction["transaction_id"]?.ToString(),
-                            numberQueue + "." + transaction["customer_name"],
-                            transaction["customer_seat"].ToString(),
-                            formattedDate);
-                    }
-                    else
-                    {
-                        // Jika parsing gagal, tampilkan seperti apa adanya
-                        dataTable.Rows.Add(
-                            transaction["transaction_id"]?.ToString(),
-                            numberQueue + "." + transaction["customer_name"],
-                            transaction["customer_seat"].ToString(),
-                            transaction["updated_at"].ToString());
-                    }
-                }
-
-                dataGridView1.DataSource = dataTable;
-                DataGridViewButtonColumn buttonColumn = new();
-                buttonColumn.HeaderText = "Pilih Bill";
-                buttonColumn.Text = "Pilih";
-                buttonColumn.FlatStyle = FlatStyle.Flat;
-                buttonColumn.UseColumnTextForButtonValue = true; // Displays the "Add to Cart" text on the button
-                DataGridViewButtonColumn buttonColumn1 = new();
-                buttonColumn1.HeaderText = "Struk";
-                buttonColumn1.Text = "Cetak";
-                buttonColumn1.FlatStyle = FlatStyle.Flat;
-                buttonColumn1.UseColumnTextForButtonValue = true;
-                dataGridView1.Columns.Add(buttonColumn);
-                dataGridView1.Columns.Add(buttonColumn1);
-                if (dataGridView1.DataSource != null)
-                {
-                    // Pastikan kolom "ID" ada dalam DataGridView sebelum mencoba mengaksesnya
-                    if (dataGridView1.Columns.Contains("ID"))
-                    {
-                        dataGridView1.Columns["ID"].Visible = false;
-                    }
-
-                    // Pastikan kolom "ID" ada dalam DataGridView sebelum mencoba mengaksesnya
-                    if (dataGridView1.Columns.Contains("NumberQueue"))
-                    {
-                        dataGridView1.Columns["NumberQueue"].Visible = false;
-                    }
-                }
-            }
-            catch (TaskCanceledException ex)
-            {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data bill  " + ex.Message, "Gaspol");
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                NotifyHelper.Error("Gagal tampil data bill  " + ex.Message);
+            }
+        }
+        private async void LoadDataToFlowLayout(IEnumerable<JToken> reversedTransactionDetails)
+        {
+            flowLayoutPanel1.Controls.Clear();
+
+            int numberQueue = reversedTransactionDetails.Count();
+            string format = "dddd, dd MMMM yyyy - HH:mm";
+
+            foreach (JToken transaction in reversedTransactionDetails)
+            {
+                numberQueue--;
+                string transactionId = transaction["transaction_id"]?.ToString() ?? null;
+
+                // Parsing tanggal
+                string formattedDate = transaction["updated_at"]?.ToString();
+                if (DateTime.TryParseExact(formattedDate, format,
+                    CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime updatedAt))
+                {
+                    formattedDate = updatedAt.ToString("dd MMM yyyy, HH:mm");
+                }
+
+                // Buat card
+                Panel card = new Panel
+                {
+                    Width = flowLayoutPanel1.ClientSize.Width - 30,
+                    Height = 80,
+                    BackColor = Color.White,
+                    BorderStyle = BorderStyle.FixedSingle,
+                    Margin = new Padding(5),
+                    Padding = new Padding(10)
+                };
+
+                // Label judul (Nama + Queue)
+                Label lblNama = new Label
+                {
+                    Text = $"{numberQueue + 1}. {transaction["customer_name"]}",
+                    Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                    AutoSize = true,
+                    ForeColor = Color.Black,
+                    Location = new Point(10, 10)
+                };
+
+                // Label seat
+                Label lblSeat = new Label
+                {
+                    Text = $"Seat: {transaction["customer_seat"]}",
+                    Font = new Font("Segoe UI", 9),
+                    AutoSize = true,
+                    ForeColor = Color.Gray,
+                    Location = new Point(10, 35)
+                };
+
+                // Label update time
+                Label lblUpdate = new Label
+                {
+                    Text = $"Terakhir di Update: {formattedDate}",
+                    Font = new Font("Segoe UI", 9, FontStyle.Italic),
+                    AutoSize = true,
+                    ForeColor = Color.DarkGray,
+                    Location = new Point(10, 55)
+                };
+
+                // Tombol pilih
+                IconButton btnPilih = new IconButton
+                {
+                    Text = "",
+                    IconChar = IconChar.CheckCircle,   // pilih icon
+                    IconColor = Color.Black,
+                    IconSize = 20,
+                    TextImageRelation = TextImageRelation.ImageBeforeText,
+                    BackColor = Color.White,
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Width = 35,
+                    Height = 35,
+                    Location = new Point(card.Width - 160, 25),
+                    Cursor = Cursors.Hand,
+                    Tag = transactionId
+                };
+                btnPilih.FlatAppearance.BorderSize = 0;
+
+                // Tombol cetak
+                IconButton btnCetak = new IconButton
+                {
+                    Text = "",
+                    IconChar = IconChar.Print,
+                    IconColor = Color.Black,
+                    IconSize = 20,
+                    TextImageRelation = TextImageRelation.ImageBeforeText,
+                    BackColor = Color.White,
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Width = 35,
+                    Height = 35,
+                    Location = new Point(card.Width - 100, 25),
+                    Cursor = Cursors.Hand,
+                    Tag = (transactionId, numberQueue)
+                };
+                btnCetak.FlatAppearance.BorderSize = 0;
+
+                // Event klik button
+                btnPilih.Click += (s, e) =>
+                {
+                    try
+                    {
+                        loadBill(transactionId);   // langsung pakai fungsi kamu
+                        DialogResult = DialogResult.OK;
+                        Close();
+                    }
+                    catch (Exception ex)
+                    {
+                        NotifyHelper.Error("Gagal load keranjang " + ex.Message);
+                        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                        DialogResult = DialogResult.Cancel;
+                        Close();
+                    }
+                };
+
+                btnCetak.Click += async (s, e) =>
+                {
+                    try
+                    {
+                        var (id, queue) = ((string, int))((Button)s).Tag;
+                        Close();
+                        await CetakBill(id, queue); // convert int ke string
+                        NotifyHelper.Success($"Cetak struk #{queue} dengan ID {id}");
+                    }
+                    catch (Exception ex)
+                    {
+                        NotifyHelper.Error("Gagal load keranjang " + ex.Message);
+                        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                        DialogResult = DialogResult.Cancel;
+                        Close();
+                    }
+                };
+
+                ToolTip toolTip = new ToolTip();
+
+                // Setting optional
+                toolTip.AutoPopDelay = 5000;   // durasi muncul
+                toolTip.InitialDelay = 500;    // delay awal
+                toolTip.ReshowDelay = 200;     // delay tampil ulang
+                toolTip.ShowAlways = true;     // tetap tampil walau tidak fokus
+
+                // Assign tooltip ke button
+                toolTip.SetToolTip(btnPilih, "Klik untuk memilih transaksi");
+                toolTip.SetToolTip(btnCetak, "Klik untuk mencetak struk");
+                toolTip.SetToolTip(btnKeluar, "Klik untuk keluar dari list savebill");
+
+                // Tambah semua ke card
+                card.Controls.Add(lblNama);
+                card.Controls.Add(lblSeat);
+                card.Controls.Add(lblUpdate);
+                card.Controls.Add(btnPilih);
+                card.Controls.Add(btnCetak);
+
+                // Tambahkan ke FlowLayoutPanel
+                flowLayoutPanel1.Controls.Add(card);
+                flowLayoutPanel1.AutoScroll = true;         // wajib, biar muncul scrollbar
+                flowLayoutPanel1.WrapContents = false;      // biar nggak pindah ke samping
+                flowLayoutPanel1.FlowDirection = FlowDirection.TopDown; // item ditumpuk ke bawah
+
             }
         }
 
@@ -160,239 +239,195 @@ namespace KASIR.OffineMode
             Close();
         }
 
-        private async void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private async Task CetakBill(string id, int queue)
         {
-            if (dataGridView1 == null || dataGridView1.Columns.Count <= e.ColumnIndex || e.RowIndex < 0)
+            PrinterModel printerModel = new();
+            int selectedId = int.Parse(id);  
+            int antrianCell = queue;         
+            int AntrianSaveBill = 0;
+
+            if (antrianCell != null)
             {
-                MessageBox.Show("Invalid selection", "Error");
-                return;
+                // Mencari angka sebelum titik menggunakan regex
+                Regex regex = new(@"^\d+"); // Mencocokkan angka di awal string
+                Match match = regex.Match(antrianCell.ToString());
+
+                if (match.Success)
+                {
+                    AntrianSaveBill = int.Parse(match.Value); // Ambil angka yang ditemukan
+                }
             }
 
-            if (dataGridView1.Columns[e.ColumnIndex].HeaderText == "Pilih Bill" && e.RowIndex >= 0)
+            try
             {
-                object? cellValue = dataGridView1.Rows[e.RowIndex].Cells["ID"].Value;
-                if (cellValue == null)
+                // Read cart.data to extract cart details and transaction id
+                string cartDataPath = "DT-Cache\\Transaction\\saveBill.data";
+                // Cek apakah file transaction.data ada
+                if (!File.Exists(cartDataPath))
                 {
-                    MessageBox.Show("Invalid cell value", "Error");
                     return;
                 }
 
-                string selectedId = cellValue.ToString();
-                try
+                JObject? transactionData = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(cartDataPath));
+
+                // Get the array of transaction data
+                JArray? transactionDetails = transactionData["data"] as JArray;
+
+                // Filter the transaction based on selectedId
+                JToken? cartData =
+                    transactionDetails.FirstOrDefault(t =>
+                        t["transaction_id"]?.ToString() == selectedId.ToString());
+                // Extract cart details from the transaction
+                JArray? cartDetails = cartData["cart_details"] as JArray;
+
+                // Membaca file JSON
+                string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
+                // Deserialize JSON ke object CartDataCache
+                CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
+                // Konversi ke format GetStrukCustomerTransaction
+                GetStrukCustomerTransaction strukCustomerTransaction = new()
                 {
-                    loadBill(selectedId);
-
-                    DialogResult = DialogResult.OK;
-
-                    Close();
-                }
-                catch (Exception ex)
-                {
-                    DialogResult = DialogResult.Cancel;
-                    MessageBox.Show("Gagal load keranjang " + ex.Message, "Gaspol");
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                    Close();
-                }
-            }
-            else if (dataGridView1.Columns[e.ColumnIndex].HeaderText == "Struk" && e.RowIndex >= 0)
-            {
-                PrinterModel printerModel = new();
-                object? cellValue = dataGridView1.Rows[e.RowIndex].Cells["ID"].Value;
-                if (cellValue == null)
-                {
-                    MessageBox.Show("Invalid cell value", "Error");
-                    return;
-                }
-
-                int selectedId = Convert.ToInt32(cellValue);
-
-                object? antrianCell = dataGridView1.Rows[e.RowIndex].Cells["NumberQueue"].Value;
-                int AntrianSaveBill = 0;
-
-                if (antrianCell != null)
-                {
-                    // Mencari angka sebelum titik menggunakan regex
-                    Regex regex = new(@"^\d+"); // Mencocokkan angka di awal string
-                    Match match = regex.Match(antrianCell.ToString());
-
-                    if (match.Success)
+                    code = 201,
+                    message = "Transaksi Sukses!",
+                    data = new DataStrukCustomerTransaction
                     {
-                        AntrianSaveBill = int.Parse(match.Value); // Ambil angka yang ditemukan
+                        outlet_name = dataOutlet.data.name,
+                        outlet_address = dataOutlet.data.address,
+                        outlet_phone_number = dataOutlet.data.phone_number,
+                        outlet_footer = dataOutlet.data.footer,
+                        transaction_id =
+                            int.TryParse(cartData["transaction_id"]?.ToString(), out int transId)
+                                ? transId
+                                : 0,
+                        receipt_number = cartData["receipt_number"]?.ToString(),
+                        invoice_due_date = cartData["invoice_due_date"]?.ToString(),
+                        customer_name = cartData["customer_name"]?.ToString(),
+                        customer_seat =
+                            int.TryParse(cartData["customer_seat"]?.ToString(), out int seat) ? seat : 0,
+                        customer_change =
+                            int.TryParse(cartData["customer_change"]?.ToString(), out int change)
+                                ? change
+                                : 0,
+                        payment_type = cartData["payment_type"]?.ToString(),
+                        delivery_type = null,
+                        delivery_note = null,
+                        cart_id = 0,
+                        subtotal =
+                            int.TryParse(cartData["subtotal"]?.ToString(), out int subTotal) ? subTotal : 0,
+                        total = int.TryParse(cartData["total"]?.ToString(), out int total) ? total : 0,
+                        discount_id =
+                            int.TryParse(cartData["discount_id"]?.ToString(), out int discountId) &&
+                            discountId != 0
+                                ? discountId
+                                : 0,
+                        discount_code = cartData["discount_code"]?.ToString(),
+                        discounts_value =
+                            int.TryParse(cartData["discounts_value"]?.ToString(), out int discountValue)
+                                ? discountValue
+                                : 0,
+                        discounts_is_percent = cartData["discounts_is_percent"]?.ToString(),
+                        cart_details = new List<CartDetailStrukCustomerTransaction>(),
+                        canceled_items = new List<CanceledItemStrukCustomerTransaction>(),
+                        kitchenBarCartDetails = new List<KitchenAndBarCartDetails>(),
+                        kitchenBarCanceledItems = new List<KitchenAndBarCanceledItems>(),
+                        customer_cash =
+                            int.TryParse(cartData["customer_cash"]?.ToString(), out int customerCash)
+                                ? customerCash
+                                : 0,
+                        member_name = null,
+                        member_phone_number = null
                     }
-                }
+                };
 
-                try
+                foreach (JToken item in cartDetails)
                 {
-                    // Read cart.data to extract cart details and transaction id
-                    string cartDataPath = "DT-Cache\\Transaction\\saveBill.data";
-                    // Cek apakah file transaction.data ada
-                    if (!File.Exists(cartDataPath))
+                    // Cast the JToken to JObject
+                    JObject? cartDetailObject = item as JObject;
+
+
+                    // Membuat objek CartDetailStrukCustomerTransaction
+                    CartDetailStrukCustomerTransaction cartDetail = new()
                     {
-                        return;
-                    }
-
-                    JObject? transactionData = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(cartDataPath));
-
-                    // Get the array of transaction data
-                    JArray? transactionDetails = transactionData["data"] as JArray;
-
-                    // Filter the transaction based on selectedId
-                    JToken? cartData =
-                        transactionDetails.FirstOrDefault(t =>
-                            t["transaction_id"]?.ToString() == selectedId.ToString());
-                    // Extract cart details from the transaction
-                    JArray? cartDetails = cartData["cart_details"] as JArray;
-
-                    // Membaca file JSON
-                    string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
-                    // Deserialize JSON ke object CartDataCache
-                    CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
-                    // Konversi ke format GetStrukCustomerTransaction
-                    GetStrukCustomerTransaction strukCustomerTransaction = new()
-                    {
-                        code = 201,
-                        message = "Transaksi Sukses!",
-                        data = new DataStrukCustomerTransaction
-                        {
-                            outlet_name = dataOutlet.data.name,
-                            outlet_address = dataOutlet.data.address,
-                            outlet_phone_number = dataOutlet.data.phone_number,
-                            outlet_footer = dataOutlet.data.footer,
-                            transaction_id =
-                                int.TryParse(cartData["transaction_id"]?.ToString(), out int transId)
-                                    ? transId
-                                    : 0,
-                            receipt_number = cartData["receipt_number"]?.ToString(),
-                            invoice_due_date = cartData["invoice_due_date"]?.ToString(),
-                            customer_name = cartData["customer_name"]?.ToString(),
-                            customer_seat =
-                                int.TryParse(cartData["customer_seat"]?.ToString(), out int seat) ? seat : 0,
-                            customer_change =
-                                int.TryParse(cartData["customer_change"]?.ToString(), out int change)
-                                    ? change
-                                    : 0,
-                            payment_type = cartData["payment_type"]?.ToString(),
-                            delivery_type = null,
-                            delivery_note = null,
-                            cart_id = 0,
-                            subtotal =
-                                int.TryParse(cartData["subtotal"]?.ToString(), out int subTotal) ? subTotal : 0,
-                            total = int.TryParse(cartData["total"]?.ToString(), out int total) ? total : 0,
-                            discount_id =
-                                int.TryParse(cartData["discount_id"]?.ToString(), out int discountId) &&
-                                discountId != 0
-                                    ? discountId
-                                    : 0,
-                            discount_code = cartData["discount_code"]?.ToString(),
-                            discounts_value =
-                                int.TryParse(cartData["discounts_value"]?.ToString(), out int discountValue)
-                                    ? discountValue
-                                    : 0,
-                            discounts_is_percent = cartData["discounts_is_percent"]?.ToString(),
-                            cart_details = new List<CartDetailStrukCustomerTransaction>(),
-                            canceled_items = new List<CanceledItemStrukCustomerTransaction>(),
-                            kitchenBarCartDetails = new List<KitchenAndBarCartDetails>(),
-                            kitchenBarCanceledItems = new List<KitchenAndBarCanceledItems>(),
-                            customer_cash =
-                                int.TryParse(cartData["customer_cash"]?.ToString(), out int customerCash)
-                                    ? customerCash
-                                    : 0,
-                            member_name = null,
-                            member_phone_number = null
-                        }
+                        cart_detail_id =
+                            int.Parse(cartDetailObject["cart_detail_id"].ToString()), // Mengonversi string ke int
+                        menu_id = int.Parse(cartDetailObject["menu_id"].ToString()), // Mengonversi string ke int
+                        menu_name = cartDetailObject["menu_name"]?.ToString(),
+                        menu_type = cartDetailObject["menu_type"]?.ToString(),
+                        menu_detail_id = int.Parse(cartDetailObject["menu_detail_id"]?.ToString() ?? "0"),
+                        varian = cartDetailObject["menu_detail_name"]?.ToString(), // Tidak ada data varian
+                        serving_type_id = int.Parse(cartDetailObject["serving_type_id"]?.ToString() ?? "0"),
+                        serving_type_name = cartDetailObject["serving_type_name"]?.ToString(),
+                        discount_id = null, // Tidak ada data discount
+                        discount_code = cartDetailObject["discount_code"]?.ToString(),
+                        discounts_value = null,
+                        discounted_price = 0,
+                        discounts_is_percent = null,
+                        price =
+                            int.Parse(cartDetailObject["price"]?.ToString() ?? "0"), // Mengonversi string ke int
+                        total_price =
+                            int.Parse(cartDetailObject["price"]?.ToString() ?? "0") *
+                            int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
+                        subtotal =
+                            int.Parse(cartDetailObject["price"]?.ToString() ?? "0") *
+                            int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
+                        subtotal_price =
+                            int.Parse(cartDetailObject["price"]?.ToString() ?? "0") *
+                            int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
+                        qty = int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
+                        note_item =
+                            string.IsNullOrEmpty(cartDetailObject["note_item"]?.ToString())
+                                ? ""
+                                : cartDetailObject["note_item"].ToString(),
+                        is_ordered = int.Parse(cartDetailObject["is_ordered"]?.ToString() ?? "0")
                     };
 
-                    foreach (JToken item in cartDetails)
+                    // Menambahkan ke cart_details
+                    strukCustomerTransaction.data.cart_details.Add(cartDetail);
+
+                    // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
+                    KitchenAndBarCartDetails kitchenAndBarCartDetail = new()
                     {
-                        // Cast the JToken to JObject
-                        JObject? cartDetailObject = item as JObject;
+                        cart_detail_id = cartDetail.cart_detail_id,
+                        menu_id = cartDetail.menu_id,
+                        menu_name = cartDetail.menu_name,
+                        menu_type = cartDetail.menu_type,
+                        menu_detail_id = cartDetail.menu_detail_id,
+                        varian = cartDetail.varian,
+                        serving_type_id = cartDetail.serving_type_id,
+                        serving_type_name = cartDetail.serving_type_name,
+                        discount_id = cartDetail.discount_id,
+                        discount_code = cartDetail.discount_code,
+                        discounts_value = cartDetail.discounts_value,
+                        discounted_price = cartDetail.discounted_price,
+                        discounts_is_percent = cartDetail.discounts_is_percent,
+                        price = cartDetail.price,
+                        total_price = cartDetail.total_price,
+                        qty = cartDetail.qty,
+                        note_item = cartDetail.note_item,
+                        is_ordered = cartDetail.is_ordered
+                    };
 
-
-                        // Membuat objek CartDetailStrukCustomerTransaction
-                        CartDetailStrukCustomerTransaction cartDetail = new()
-                        {
-                            cart_detail_id =
-                                int.Parse(cartDetailObject["cart_detail_id"].ToString()), // Mengonversi string ke int
-                            menu_id = int.Parse(cartDetailObject["menu_id"].ToString()), // Mengonversi string ke int
-                            menu_name = cartDetailObject["menu_name"]?.ToString(),
-                            menu_type = cartDetailObject["menu_type"]?.ToString(),
-                            menu_detail_id = int.Parse(cartDetailObject["menu_detail_id"]?.ToString() ?? "0"),
-                            varian = cartDetailObject["menu_detail_name"]?.ToString(), // Tidak ada data varian
-                            serving_type_id = int.Parse(cartDetailObject["serving_type_id"]?.ToString() ?? "0"),
-                            serving_type_name = cartDetailObject["serving_type_name"]?.ToString(),
-                            discount_id = null, // Tidak ada data discount
-                            discount_code = cartDetailObject["discount_code"]?.ToString(),
-                            discounts_value = null,
-                            discounted_price = 0,
-                            discounts_is_percent = null,
-                            price =
-                                int.Parse(cartDetailObject["price"]?.ToString() ?? "0"), // Mengonversi string ke int
-                            total_price =
-                                int.Parse(cartDetailObject["price"]?.ToString() ?? "0") *
-                                int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
-                            subtotal =
-                                int.Parse(cartDetailObject["price"]?.ToString() ?? "0") *
-                                int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
-                            subtotal_price =
-                                int.Parse(cartDetailObject["price"]?.ToString() ?? "0") *
-                                int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
-                            qty = int.Parse(cartDetailObject["qty"]?.ToString() ?? "0"),
-                            note_item =
-                                string.IsNullOrEmpty(cartDetailObject["note_item"]?.ToString())
-                                    ? ""
-                                    : cartDetailObject["note_item"].ToString(),
-                            is_ordered = int.Parse(cartDetailObject["is_ordered"]?.ToString() ?? "0")
-                        };
-
-                        // Menambahkan ke cart_details
-                        strukCustomerTransaction.data.cart_details.Add(cartDetail);
-
-                        // Membuat objek KitchenAndBarCartDetails dan menyalin data dari cartDetail
-                        KitchenAndBarCartDetails kitchenAndBarCartDetail = new()
-                        {
-                            cart_detail_id = cartDetail.cart_detail_id,
-                            menu_id = cartDetail.menu_id,
-                            menu_name = cartDetail.menu_name,
-                            menu_type = cartDetail.menu_type,
-                            menu_detail_id = cartDetail.menu_detail_id,
-                            varian = cartDetail.varian,
-                            serving_type_id = cartDetail.serving_type_id,
-                            serving_type_name = cartDetail.serving_type_name,
-                            discount_id = cartDetail.discount_id,
-                            discount_code = cartDetail.discount_code,
-                            discounts_value = cartDetail.discounts_value,
-                            discounted_price = cartDetail.discounted_price,
-                            discounts_is_percent = cartDetail.discounts_is_percent,
-                            price = cartDetail.price,
-                            total_price = cartDetail.total_price,
-                            qty = cartDetail.qty,
-                            note_item = cartDetail.note_item,
-                            is_ordered = cartDetail.is_ordered
-                        };
-
-                        // Menambahkan ke kitchenBarCartDetails
-                        strukCustomerTransaction.data.kitchenBarCartDetails.Add(kitchenAndBarCartDetail);
-                    }
-
-                    // Serialisasi ke JSON
-                    string response = JsonConvert.SerializeObject(strukCustomerTransaction);
-                    /*IApiService apiService = new ApiService();
-                    string response = await apiService.Restruk("/transaction/" + selectedId + "?outlet_id=" + baseOutlet + "&is_struct=1");*/
-                    if (!string.IsNullOrWhiteSpace(response))
-                    {
-                        await HandleSuccessfulTransaction(response, AntrianSaveBill);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Gagal memproses transaksi. Silahkan coba lagi.", "Gaspol",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
+                    // Menambahkan ke kitchenBarCartDetails
+                    strukCustomerTransaction.data.kitchenBarCartDetails.Add(kitchenAndBarCartDetail);
                 }
-                catch (Exception ex)
+
+                // Serialisasi ke JSON
+                string response = JsonConvert.SerializeObject(strukCustomerTransaction);
+                /*IApiService apiService = new ApiService();
+                string response = await apiService.Restruk("/transaction/" + selectedId + "?outlet_id=" + baseOutlet + "&is_struct=1");*/
+                if (!string.IsNullOrWhiteSpace(response))
                 {
-                    MessageBox.Show("Gagal cetak ulang struk " + ex, "Gaspol");
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                    await HandleSuccessfulTransaction(response, AntrianSaveBill);
                 }
+                else
+                {
+                    NotifyHelper.Error("Gagal memproses transaksi. Silahkan coba lagi.");
+                }
+            }
+            catch (Exception ex)
+            {
+                NotifyHelper.Error("Gagal cetak ulang struk " + ex.Message);
+                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
 
@@ -611,8 +646,7 @@ namespace KASIR.OffineMode
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred during data bill printing: {ErrorMessage}", ex.Message);
-                MessageBox.Show($"Terjadi kesalahan saat mencetak: {ex.Message}", "Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error($"Terjadi kesalahan saat mencetak: {ex.Message}");
             }
             finally
             {

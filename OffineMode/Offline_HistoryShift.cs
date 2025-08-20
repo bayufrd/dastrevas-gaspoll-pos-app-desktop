@@ -275,7 +275,7 @@ namespace KASIR.OffineMode
                 BackColor = Color.White,
                 ForeColor = Color.Silver,
                 SelectionBackColor = Color.Transparent,
-                SelectionForeColor = Color.FromArgb(31, 30, 68)
+                SelectionForeColor = Color.FromArgb(15, 90, 94)
             };
             dataGridView.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
 
@@ -290,7 +290,7 @@ namespace KASIR.OffineMode
             DataGridViewCellStyle dataGridViewCellStyle2 = new()
             {
                 Alignment = DataGridViewContentAlignment.MiddleLeft,
-                BackColor = Color.FromArgb(31, 30, 68),
+                BackColor = Color.FromArgb(15, 90, 94),
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 SelectionBackColor = Color.Transparent,
@@ -321,9 +321,9 @@ namespace KASIR.OffineMode
                 Alignment = DataGridViewContentAlignment.MiddleLeft,
                 BackColor = Color.White,
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
-                ForeColor = Color.FromArgb(31, 30, 68),
+                ForeColor = Color.FromArgb(15, 90, 94),
                 SelectionBackColor = Color.Gainsboro,
-                SelectionForeColor = Color.FromArgb(31, 30, 68),
+                SelectionForeColor = Color.FromArgb(15, 90, 94),
                 WrapMode = DataGridViewTriState.True
             };
             dataGridView.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
@@ -335,20 +335,20 @@ namespace KASIR.OffineMode
             {
                 Alignment = DataGridViewContentAlignment.MiddleLeft,
                 BackColor = Color.White,
-                ForeColor = Color.FromArgb(31, 30, 68),
+                ForeColor = Color.FromArgb(15, 90, 94),
                 SelectionBackColor = Color.Gainsboro,
-                SelectionForeColor = Color.FromArgb(31, 30, 68)
+                SelectionForeColor = Color.FromArgb(15, 90, 94)
             };
             dataGridView.RowsDefaultCellStyle = dataGridViewCellStyle5;
             dataGridView.RowTemplate.DefaultCellStyle.BackColor = Color.White;
-            dataGridView.RowTemplate.DefaultCellStyle.ForeColor = Color.FromArgb(31, 30, 68);
+            dataGridView.RowTemplate.DefaultCellStyle.ForeColor = Color.FromArgb(15, 90, 94);
             dataGridView.RowTemplate.DefaultCellStyle.SelectionBackColor = Color.Gainsboro;
-            dataGridView.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridView.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.FromArgb(15, 90, 94);
             dataGridView.RowTemplate.Height = 40;
             dataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
 
             // Final touches for DataGridView
-            dataGridView.GridColor = Color.FromArgb(31, 30, 68);
+            dataGridView.GridColor = Color.FromArgb(15, 90, 94);
             dataGridView.ImeMode = ImeMode.NoControl;
         }
     }

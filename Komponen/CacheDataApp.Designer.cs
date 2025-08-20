@@ -53,7 +53,7 @@
             // 
             // lblProgress
             // 
-            lblProgress.BackColor = Color.FromArgb(31, 30, 68);
+            lblProgress.BackColor = Color.FromArgb(15, 90, 94);
             lblProgress.Cursor = Cursors.Hand;
             lblProgress.FlatAppearance.BorderSize = 0;
             lblProgress.FlatStyle = FlatStyle.Flat;
@@ -74,7 +74,7 @@
             // 
             // lblDetail
             // 
-            lblDetail.BackColor = Color.FromArgb(31, 30, 68);
+            lblDetail.BackColor = Color.FromArgb(15, 90, 94);
             lblDetail.Cursor = Cursors.Hand;
             lblDetail.FlatAppearance.BorderSize = 0;
             lblDetail.FlatStyle = FlatStyle.Flat;

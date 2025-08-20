@@ -66,12 +66,12 @@ namespace KASIR.OfflineMode
             dataGridView1.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
             dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dataGridView1.BackgroundColor = Color.FromArgb(31, 30, 68);
+            dataGridView1.BackgroundColor = Color.FromArgb(15, 90, 94);
             dataGridView1.BorderStyle = BorderStyle.None;
             dataGridView1.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView1.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle2.BackColor = Color.FromArgb(15, 90, 94);
             dataGridViewCellStyle2.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             dataGridViewCellStyle2.ForeColor = Color.White;
             dataGridViewCellStyle2.SelectionBackColor = Color.Transparent;
@@ -190,7 +190,7 @@ namespace KASIR.OfflineMode
             // 
             btnAddMenu.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             btnAddMenu.AutoSize = true;
-            btnAddMenu.BackColor = Color.FromArgb(31, 30, 68);
+            btnAddMenu.BackColor = Color.FromArgb(15, 90, 94);
             btnAddMenu.FlatAppearance.BorderSize = 0;
             btnAddMenu.FlatStyle = FlatStyle.Flat;
             btnAddMenu.ForeColor = Color.White;

@@ -144,7 +144,7 @@ namespace KASIR.Komponen
             dataGridViewCellStyle1.BackColor = Color.White;
             dataGridViewCellStyle1.ForeColor = Color.Silver;
             dataGridViewCellStyle1.SelectionBackColor = Color.Transparent;
-            dataGridViewCellStyle1.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle1.SelectionForeColor = Color.Black;
             dataGridView1.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
             dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
@@ -152,7 +152,7 @@ namespace KASIR.Komponen
             dataGridView1.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView1.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle2.BackColor = Color.Black;
             dataGridViewCellStyle2.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             dataGridViewCellStyle2.ForeColor = Color.White;
             dataGridViewCellStyle2.SelectionBackColor = Color.Transparent;
@@ -171,7 +171,7 @@ namespace KASIR.Komponen
             dataGridViewCellStyle3.WrapMode = DataGridViewTriState.False;
             dataGridView1.DefaultCellStyle = dataGridViewCellStyle3;
             dataGridView1.EnableHeadersVisualStyles = false;
-            dataGridView1.GridColor = Color.FromArgb(31, 30, 68);
+            dataGridView1.GridColor = Color.Black;
             dataGridView1.ImeMode = ImeMode.NoControl;
             dataGridView1.Location = new Point(13, 122);
             dataGridView1.Name = "dataGridView1";
@@ -180,23 +180,23 @@ namespace KASIR.Komponen
             dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle4.BackColor = Color.White;
             dataGridViewCellStyle4.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            dataGridViewCellStyle4.ForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle4.ForeColor = Color.Black;
             dataGridViewCellStyle4.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle4.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle4.SelectionForeColor = Color.Black;
             dataGridViewCellStyle4.WrapMode = DataGridViewTriState.True;
             dataGridView1.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
             dataGridView1.RowHeadersVisible = false;
             dataGridView1.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
             dataGridViewCellStyle5.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle5.BackColor = Color.White;
-            dataGridViewCellStyle5.ForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle5.ForeColor = Color.Black;
             dataGridViewCellStyle5.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle5.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridViewCellStyle5.SelectionForeColor = Color.Black;
             dataGridView1.RowsDefaultCellStyle = dataGridViewCellStyle5;
             dataGridView1.RowTemplate.DefaultCellStyle.BackColor = Color.White;
-            dataGridView1.RowTemplate.DefaultCellStyle.ForeColor = Color.FromArgb(31, 30, 68);
+            dataGridView1.RowTemplate.DefaultCellStyle.ForeColor = Color.Black;
             dataGridView1.RowTemplate.DefaultCellStyle.SelectionBackColor = Color.Gainsboro;
-            dataGridView1.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.FromArgb(31, 30, 68);
+            dataGridView1.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.Black;
             dataGridView1.RowTemplate.Height = 40;
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridView1.Size = new Size(886, 385);
@@ -244,9 +244,9 @@ namespace KASIR.Komponen
             btnRiwayatShift.FlatAppearance.BorderSize = 0;
             btnRiwayatShift.FlatStyle = FlatStyle.Flat;
             btnRiwayatShift.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            btnRiwayatShift.ForeColor = Color.FromArgb(31, 30, 68);
+            btnRiwayatShift.ForeColor = Color.Black;
             btnRiwayatShift.IconChar = IconChar.Rug;
-            btnRiwayatShift.IconColor = Color.FromArgb(31, 30, 68);
+            btnRiwayatShift.IconColor = Color.Black;
             btnRiwayatShift.IconFont = IconFont.Auto;
             btnRiwayatShift.IconSize = 40;
             btnRiwayatShift.Location = new Point(13, 13);
@@ -261,7 +261,7 @@ namespace KASIR.Komponen
             // btnCetakStruk
             // 
             btnCetakStruk.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnCetakStruk.BackColor = Color.FromArgb(30, 31, 68);
+            btnCetakStruk.BackColor = Color.FromArgb(15, 90, 94);
             btnCetakStruk.Cursor = Cursors.Hand;
             btnCetakStruk.FlatAppearance.BorderSize = 0;
             btnCetakStruk.FlatStyle = FlatStyle.Flat;
@@ -303,7 +303,7 @@ namespace KASIR.Komponen
             // 
             btnAddMenu.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             btnAddMenu.AutoSize = true;
-            btnAddMenu.BackColor = Color.FromArgb(31, 30, 68);
+            btnAddMenu.BackColor = Color.FromArgb(15, 90, 94);
             btnAddMenu.FlatAppearance.BorderSize = 0;
             btnAddMenu.FlatStyle = FlatStyle.Flat;
             btnAddMenu.ForeColor = Color.White;

@@ -953,7 +953,7 @@ namespace KASIR.OfflineMode
         {
             btnSimpan.Enabled = true;
             btnSimpan.Text = "Simpan";
-            btnSimpan.BackColor = Color.FromArgb(31, 30, 68);
+            btnSimpan.BackColor = Color.FromArgb(15, 90, 94);
         }
 
 

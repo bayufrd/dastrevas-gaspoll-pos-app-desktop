@@ -25,35 +25,22 @@ namespace KASIR
             IApiService apiService = new ApiService();
             try
             {
-                // Default value for outletName
                 string outletName = "unknown";
-
-                // Mendapatkan outletID dari settings
                 string outletID = Settings.Default.BaseOutlet;
-
-                // Membaca file JSON dan mendeserialize jika file ada
                 string cacheOutlet = $"DT-Cache\\DataOutlet{outletID}.data";
-
-                // Cek jika file ada sebelum membacanya
                 if (File.Exists(cacheOutlet))
                 {
-                    // Membaca file JSON
                     string cacheData = File.ReadAllText(cacheOutlet);
-
-                    // Mend deserialisasi JSON ke objek CartDataOutlet
                     CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheData);
-
                     if (dataOutlet != null && dataOutlet.data != null)
                     {
-                        outletName = dataOutlet.data.name; // Mengambil nama outlet dari data yang deserialized
+                        outletName = dataOutlet.data.name;
                     }
                 }
 
-
-                // Menggabungkan outletID dan outletName
                 string
                     customText =
-                        $"{outletID}_{outletName}_"; // Menggunakan interpolasi string untuk format yang lebih bersih
+                        $"{outletID}_{outletName}_"; 
 
                 _log = new LoggerConfiguration()
                     .Enrich.FromLogContext()
@@ -62,7 +49,6 @@ namespace KASIR
                         "{yyyy-MM-dd HH:mm:ss} [{Level:u3}]\r\n {Message} \n\r{PropertyName}{NewLine}\n\r{Exception}")
                     .WriteTo.File($"log\\{customText}log.txt", rollingInterval: RollingInterval.Day)
                     .CreateLogger();
-                //File.Copy(LogCacheData, $"log\\{baseOutlet}_{outletName}_log{formatDate}CloningSent.txt");
             }
             catch (Exception)
             {

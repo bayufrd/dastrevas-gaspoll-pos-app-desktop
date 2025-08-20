@@ -1,5 +1,8 @@
 ﻿using System.Data;
 using System.Globalization;
+using System.Windows.Forms;
+using FontAwesome.Sharp;
+using KASIR.Helper;
 using KASIR.Model;
 using KASIR.Properties;
 using Newtonsoft.Json;
@@ -29,7 +32,8 @@ namespace KASIR.OffineMode
         {
             btnSimpan.Enabled = false;
             btnKeluar.Enabled = false;
-            await LoadCart();
+            //await LoadCart();
+            await LoadCartToFlow();
             btnSimpan.Enabled = true;
             btnKeluar.Enabled = true;
         }
@@ -41,148 +45,191 @@ namespace KASIR.OffineMode
 
             Close();
         }
-
-        public async Task LoadCart()
+        private async Task LoadCartToFlow()
         {
             try
             {
                 string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
 
-
-                // Check if the response is not empty or null
-                if (File.Exists(cacheFilePath))
+                if (!File.Exists(cacheFilePath))
                 {
-                    string cartJson = File.ReadAllText(cacheFilePath);
-                    JObject? cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
-
-                    // Ensure dataModel and its properties are not null
-                    if (cartData["cart_details"] != null || cartData["cart_details"].Count() != 0)
-                    {
-                        JArray? cartDetails = cartData["cart_details"] as JArray;
-                        // Set the first cart_detail_id as cart_id
-                        JToken? cartDetail = cartDetails.FirstOrDefault();
-                        cart_id = cartDetail?["cart_detail_id"].ToString() ??
-                                  "null"; // Get first cart_detail_id for cart_id
-
-                        // Initialize the DataTable for the DataGridView
-                        DataTable dataTable = new();
-                        dataTable.Columns.Add("MenuID", typeof(string));
-                        dataTable.Columns.Add("CartDetailID", typeof(int));
-                        dataTable.Columns.Add("Jenis", typeof(string));
-                        dataTable.Columns.Add("Menu", typeof(string));
-                        dataTable.Columns.Add("Jumlah", typeof(string));
-                        dataTable.Columns.Add("Total Harga", typeof(string));
-                        dataTable.Columns.Add("Note", typeof(string));
-                        dataTable.Columns.Add("Minus", typeof(string));
-                        dataTable.Columns.Add("Hasil", typeof(string));
-                        dataTable.Columns.Add("Plus", typeof(string));
-
-                        foreach (JToken menu in cartDetails)
-                        {
-                            int quantity = menu["qty"] != null ? (int)menu["qty"] : 0;
-                            decimal price = menu["price"] != null ? decimal.Parse(menu["price"].ToString()) : 0;
-                            string noteItem = menu["note_item"]?.ToString() ?? "";
-                            decimal totalPrice = price * quantity;
-                            string totprice = string.Format("{0:n0},-", totalPrice);
-
-                            dataTable.Rows.Add(
-                                menu["menu_id"].ToString(),
-                                menu["cart_detail_id"],
-                                menu["serving_type_name"].ToString(),
-                                menu["menu_name"] + " " + menu["cart_detail_name"],
-                                "x" + menu["qty"] != null ? (int)menu["qty"] : 0,
-                                "Rp " + totprice,
-                                null,
-                                "-",
-                                "0",
-                                "+");
-
-                            if (!string.IsNullOrEmpty(noteItem))
-                            {
-                                dataTable.Rows.Add(null, null, null, "*catatan : " + noteItem, null, null, null, null,
-                                    null, null);
-                            }
-                        }
-
-                        // Check if dataGridView1 is initialized
-                        if (dataGridView1 != null)
-                        {
-                            dataGridView1.DataSource = dataTable;
-                            dataTable2 = dataTable.Copy();
-
-                            // Check if the columns exist before trying to access them
-                            if (dataGridView1.Columns.Contains("MenuID"))
-                            {
-                                dataGridView1.Columns["MenuID"].Visible = false;
-                            }
-
-                            if (dataGridView1.Columns.Contains("CartDetailID"))
-                            {
-                                dataGridView1.Columns["CartDetailID"].Visible = false;
-                            }
-
-                            if (dataGridView1.Columns.Contains("Jenis"))
-                            {
-                                dataGridView1.Columns["Jenis"].Visible = false;
-                            }
-
-                            if (dataGridView1.Columns.Contains("Note"))
-                            {
-                                dataGridView1.Columns["Note"].Visible = false;
-                            }
-
-                            int minusColumn = dataGridView1.Columns["Minus"].Index;
-                            int plusColumn = dataGridView1.Columns["Plus"].Index;
-
-                            foreach (DataGridViewRow row in dataGridView1.Rows)
-                            {
-                                if (row.Cells["Jenis"].Value != null) // Check if the row is not a separator row
-                                {
-                                    DataGridViewTextBoxCell minusButtonCell = new();
-                                    minusButtonCell.Value = "-";
-                                    minusButtonCell.Style.Font = new Font("Arial", 10, FontStyle.Bold);
-                                    minusButtonCell.Style.ForeColor = Color.Red;
-
-                                    row.Cells[minusColumn] = minusButtonCell;
-
-                                    DataGridViewTextBoxCell plusButtonCell = new();
-                                    plusButtonCell.Value = "+";
-                                    plusButtonCell.Style.Font = new Font("Arial", 10, FontStyle.Bold);
-                                    plusButtonCell.Style.ForeColor = Color.Green;
-
-                                    row.Cells[plusColumn] = plusButtonCell;
-                                }
-                            }
-
-                            for (int rowIndex = 0; rowIndex < dataGridView1.Rows.Count; rowIndex++)
-                            {
-                                string? menuValue = dataGridView1.Rows[rowIndex].Cells[3].Value?.ToString();
-
-                                if (menuValue != null && (menuValue.EndsWith("s") || menuValue.StartsWith("*")))
-                                {
-                                    dataGridView1.Rows[rowIndex].Cells[minusColumn].Value = "";
-                                    dataGridView1.Rows[rowIndex].Cells[plusColumn].Value = "";
-                                }
-                            }
-
-                            dataGridView1.ColumnHeadersVisible = false;
-
-                            dataGridView1.Columns["Minus"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-                            dataGridView1.Columns["Minus"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-
-                            dataGridView1.Columns["Plus"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-                            dataGridView1.Columns["Plus"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-
-                            dataGridView1.Columns["Hasil"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-                            dataGridView1.Columns["Hasil"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-                        }
-                    }
-                    // Log or handle the case where cart_details is null or dataModel is invalid
-                    /*MessageBox.Show("Data not found or in unexpected format.");*/
+                    NotifyHelper.Error("tidak ada data diterima from the lokal.");
+                    return;
                 }
-                else
+
+                string cartJson = File.ReadAllText(cacheFilePath);
+                JObject? cartData = JsonConvert.DeserializeObject<JObject>(cartJson);
+
+                if (cartData?["cart_details"] == null || !cartData["cart_details"].Any())
+                    return;
+
+                JArray cartDetailsJson = (JArray)cartData["cart_details"];
+
+                // Bersihkan dulu panel
+                flowLayoutPanel1.Controls.Clear();
+                flowLayoutPanel1.AutoScroll = true;
+                flowLayoutPanel1.WrapContents = true;
+                flowLayoutPanel1.Padding = new Padding(10);
+
+                foreach (var menu in cartDetailsJson)
                 {
-                    MessageBox.Show("No data 2received from the server.");
+                    int qty = menu["qty"] != null ? (int)menu["qty"] : 0;
+                    decimal price = menu["price"] != null ? decimal.Parse(menu["price"].ToString()) : 0;
+                    decimal totalPrice = price * qty;
+                    string totPrice = string.Format("{0:n0},-", totalPrice);
+                    string noteItem = menu["note_item"]?.ToString() ?? "";
+
+                    int cartDetailId = (int)menu["cart_detail_id"];
+                    int maxQty = qty;
+
+                    // === PANEL ITEM ===
+                    Panel itemPanel = new Panel
+                    {
+                        Width = flowLayoutPanel1.ClientSize.Width - 30,
+                        Height = 80,
+                        BackColor = Color.White,
+                        BorderStyle = BorderStyle.FixedSingle,
+                        Padding = new Padding(10),
+                        Margin = new Padding(5)
+                    };
+
+                    // Label nama menu
+                    Label lblName = new Label
+                    {
+                        Text = $"{menu["menu_name"]} {menu["cart_detail_name"]}",
+                        Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                        AutoSize = true,
+                        ForeColor = Color.Black,
+                        Location = new Point(10, 10)
+                    };
+
+                    // Label harga
+                    Label lblPrice = new Label
+                    {
+                        Text = "Rp " + totPrice,
+                        Font = new Font("Segoe UI", 9, FontStyle.Regular),
+                        AutoSize = true,
+                        ForeColor = Color.Gray,
+                        Location = new Point(10, 35)
+                    };
+
+                    // Tombol - qty +
+                    IconButton buttonMinus = new IconButton
+                    {
+                        Text = "",
+                        IconChar = IconChar.CircleMinus,   // pilih icon
+                        IconColor = Color.Black,
+                        IconSize = 20,
+                        TextImageRelation = TextImageRelation.ImageBeforeText,
+                        BackColor = Color.White,
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat,
+                        Width = 35,
+                        Height = 35,
+                        Location = new Point(itemPanel.Width - 180, 15),
+                        Cursor = Cursors.Hand,
+                        Tag = cartDetailId
+                    };
+                    buttonMinus.FlatAppearance.BorderSize = 0;
+                    IconButton buttonPlus = new IconButton
+                    {
+                        Text = "",
+                        IconChar = IconChar.CirclePlus,   // pilih icon
+                        IconColor = Color.Black,
+                        IconSize = 20,
+                        TextImageRelation = TextImageRelation.ImageBeforeText,
+                        BackColor = Color.White,
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat,
+                        Width = 35,
+                        Height = 35,
+                        Location = new Point(itemPanel.Width - 100, 15),
+                        Cursor = Cursors.Hand,
+                        Tag = cartDetailId
+                    };
+                    buttonPlus.FlatAppearance.BorderSize = 0;
+
+                    Button btnMinus = new Button
+                    {
+                        Text = "-",
+                        Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                        ForeColor = Color.Red,
+                        Width = 40,
+                        Height = 30,
+                        FlatStyle = FlatStyle.Flat,
+                        BackColor = Color.White,
+                        Tag = cartDetailId
+                    };
+
+                    Label lblQty = new Label
+                    {
+                        Text = "0", // default hasil split
+                        Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                        Width = 30,
+                        AutoSize = true,
+                        Location = new Point(itemPanel.Width - 100, 15),
+                    };
+
+                    Button btnPlus = new Button
+                    {
+                        Text = "+",
+                        Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                        ForeColor = Color.Green,
+                        Width = 40,
+                        Height = 30,
+                        FlatStyle = FlatStyle.Flat,
+                        BackColor = Color.White,
+                        Tag = cartDetailId
+                    };
+
+                    FlowLayoutPanel qtyPanel = new FlowLayoutPanel
+                    {
+                        Dock = DockStyle.Right,
+                        Width = 140,
+                        FlowDirection = FlowDirection.LeftToRight
+                    };
+                    qtyPanel.Controls.Add(buttonMinus);
+                    qtyPanel.Controls.Add(lblQty);
+                    qtyPanel.Controls.Add(buttonPlus);
+
+                    // Event handler tombol
+                    buttonMinus.Click += (s, e) =>
+                    {
+                        int currentQty = int.TryParse(lblQty.Text, out int q) ? q : 0;
+                        if (currentQty > 0) currentQty--;
+                        lblQty.Text = currentQty.ToString();
+                        UpdateCartDetail(cartDetailId, currentQty, maxQty);
+                    };
+
+                    buttonPlus.Click += (s, e) =>
+                    {
+                        int currentQty = int.TryParse(lblQty.Text, out int q) ? q : 0;
+                        if (currentQty < maxQty) currentQty++;
+                        else NotifyHelper.Warning("Kuantitas telah mencapai batas maksimal");
+                        lblQty.Text = currentQty.ToString();
+                        UpdateCartDetail(cartDetailId, currentQty, maxQty);
+                    };
+
+                    // Susun panel
+                    itemPanel.Controls.Add(qtyPanel);
+                    itemPanel.Controls.Add(lblPrice);
+                    itemPanel.Controls.Add(lblName);
+
+                    flowLayoutPanel1.Controls.Add(itemPanel);
+
+                    // Catatan tambahan
+                    if (!string.IsNullOrEmpty(noteItem))
+                    {
+                        Label lblNote = new Label
+                        {
+                            Text = "*catatan: " + noteItem,
+                            Font = new Font("Segoe UI", 8, FontStyle.Italic),
+                            ForeColor = Color.DarkGray,
+                            AutoSize = true,
+                            Margin = new Padding(20, 0, 0, 5)
+                        };
+                        flowLayoutPanel1.Controls.Add(lblNote);
+                    }
                 }
             }
             catch (Exception ex)
@@ -191,86 +238,34 @@ namespace KASIR.OffineMode
             }
         }
 
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void UpdateCartDetail(int cartDetailId, int qty, int maxQty)
         {
-            try
+            RequestCartModel? existingItem = cartDetails
+                .FirstOrDefault(item => int.Parse(item.cart_detail_id) == cartDetailId);
+
+            if (qty == 0)
             {
-                if (e.RowIndex >= 0 && (e.ColumnIndex == dataGridView1.Columns["Minus"].Index ||
-                                        e.ColumnIndex == dataGridView1.Columns["Plus"].Index))
-                {
-                    int cartDetailId = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["CartDetailID"].Value);
-                    DataGridViewCell?
-                        qtyToSplitCell = dataGridView1.Rows[e.RowIndex].Cells["Hasil"]; // Access the QtyToSplit column
-                    DataGridViewCell?
-                        jumlahCell = dataGridView1.Rows[e.RowIndex].Cells["Jumlah"]; // Access the Jumlah column
-
-                    if (!originalQuantities.ContainsKey(cartDetailId))
-                    {
-                        originalQuantities[cartDetailId] = 1;
-                    }
-
-                    int originalQuantity = originalQuantities[cartDetailId];
-
-                    // Get the maximum quantity allowed from the Jumlah column
-                    int maxQuantity = int.Parse(jumlahCell.Value.ToString().Replace("x", ""));
-
-                    int currentQuantity;
-                    if (int.TryParse(qtyToSplitCell.Value?.ToString(), out currentQuantity))
-                    {
-                        if (e.ColumnIndex == dataGridView1.Columns["Minus"].Index)
-                        {
-                            if (currentQuantity > 0)
-                            {
-                                currentQuantity--;
-                            }
-                            else
-                            {
-                                //MessageBox.Show("Kuantitas telah mencapai batas minimum");
-                                return;
-                            }
-                        }
-                        else if (e.ColumnIndex == dataGridView1.Columns["Plus"].Index)
-                        {
-                            if (currentQuantity < maxQuantity)
-                            {
-                                currentQuantity++;
-                            }
-                            else
-                            {
-                                MessageBox.Show("Kuantitas telah mencapai batas maksimal");
-                                return;
-                            }
-                        }
-
-                        qtyToSplitCell.Value = currentQuantity.ToString();
-
-                        // Update or add the item to the cartDetails list
-                        RequestCartModel? existingItem =
-                            cartDetails.FirstOrDefault(item => int.Parse(item.cart_detail_id) == cartDetailId);
-                        if (existingItem != null)
-                        {
-                            existingItem.qty_to_split = currentQuantity.ToString();
-                        }
-                        else
-                        {
-                            cartDetails.Add(new RequestCartModel
-                            {
-                                cart_detail_id = cartDetailId.ToString(),
-                                qty_to_split = currentQuantity.ToString(),
-                                originQty = maxQuantity.ToString()
-                            });
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show("Kuantitas Invalid");
-                    }
-                }
+                // Hapus item jika qty 0
+                if (existingItem != null)
+                    cartDetails.Remove(existingItem);
             }
-
-            catch (Exception ex)
+            else
             {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                if (existingItem != null)
+                {
+                    // Update qty kalau sudah ada
+                    existingItem.qty_to_split = qty.ToString();
+                }
+                else
+                {
+                    // Tambahkan item baru kalau belum ada
+                    cartDetails.Add(new RequestCartModel
+                    {
+                        cart_detail_id = cartDetailId.ToString(),
+                        qty_to_split = qty.ToString(),
+                        originQty = maxQty.ToString()
+                    });
+                }
             }
         }
 
@@ -283,9 +278,9 @@ namespace KASIR.OffineMode
                 string main_split_cart = "DT-Cache\\Transaction\\Cart_main_split.data";
                 string new_cart = "DT-Cache\\Transaction\\Cart.data"; // File baru untuk item yang telah dipecah
 
-                if (cartDetails.Count == 0)
+                if (cartDetails.Count == 0 || cartDetails == null)
                 {
-                    MessageBox.Show("Kuantitas item yang ingin di split masih nol", "Split Bill", MessageBoxButtons.OK);
+                    NotifyHelper.Warning("Kuantitas item yang ingin di split masih nol");
                     return;
                 }
 
@@ -372,7 +367,7 @@ namespace KASIR.OffineMode
             {
                 // Tangani error
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show("Terjadi kesalahan saat memproses split item.", "Error", MessageBoxButtons.OK);
+                NotifyHelper.Error("Terjadi kesalahan saat memproses split item.");
             }
         }
 

@@ -788,6 +788,11 @@ namespace KASIR
 
         private async void button6_Click(object sender, EventArgs e)
         {
+            if (isOpenNavbar)
+            {
+                closeNavbar();
+                isOpenNavbar = false;
+            }
             Color randomColor = PickRandomColor(); // Pick a random color for button
             ActivateButton(sender, randomColor); // Activate the button
 
@@ -841,6 +846,11 @@ namespace KASIR
         //button shiftreport / shift report end shift
         private async void buttonHistoryTransaction(object sender, EventArgs e)
         {
+            if (isOpenNavbar)
+            {
+                closeNavbar();
+                isOpenNavbar = false;
+            }
             Color randomColor = PickRandomColor();
             ActivateButton(sender, randomColor);
 
@@ -1188,6 +1198,11 @@ namespace KASIR
 
         private async void btnShiftLaporan_Click(object sender, EventArgs e)
         {
+            if (isOpenNavbar)
+            {
+                closeNavbar();
+                isOpenNavbar = false;
+            }
             SyncTimer.Enabled = false;
             ActivateButton(sender, RGBColors.color4);
 
@@ -1293,7 +1308,11 @@ namespace KASIR
 
         private void BtnSettingForm_Click(object sender, EventArgs e)
         {
-
+            if (isOpenNavbar)
+            {
+                closeNavbar();
+                isOpenNavbar = false;
+            }
             ActivateButton(sender, RGBColors.color4);
 
             Offline_settingsForm c = new();
@@ -1320,7 +1339,7 @@ namespace KASIR
                 SignalPing.Width = 103;
                 lblPing.Width = 103;
 
-                LogoKasir.Image = Resources.a_2_1;
+                LogoKasir.Image = Resources.a_2_;
                 LogoKasir.Height = 103;
 
                 MenuBtn.Text = "Menu";
@@ -1334,27 +1353,32 @@ namespace KASIR
             }
             else
             {
-                // Mode navbar tertutup
-                gradientPanel2.Width = 50;
-                LogoKasir.Width = 50;
-                panel2.Width = 50;
-
-                LogoKasir.Image = Resources.logoblack;
-                LogoKasir.Height = 50;
-
-                SignalPing.Width = 50;
-                lblPing.Width = 50;
-
-                MenuBtn.Text = "";
-                TransBtn.Text = "";
-                btnShiftLaporan.Text = "";
-                BtnSettingForm.Text = "";
-                btnContact.Text = "";
-                btnDev.Text = "";
-                lblPing.Text = "";
-                SignalPing.Text = "";
-                SignalPing.ImageAlign = ContentAlignment.MiddleLeft;
+                closeNavbar();
             }
+        }
+
+        private void closeNavbar()
+        {
+            // Mode navbar tertutup
+            gradientPanel2.Width = 50;
+            LogoKasir.Width = 50;
+            panel2.Width = 50;
+
+            LogoKasir.Image = Resources.logoblack;
+            LogoKasir.Height = 50;
+
+            SignalPing.Width = 50;
+            lblPing.Width = 50;
+
+            MenuBtn.Text = "";
+            TransBtn.Text = "";
+            btnShiftLaporan.Text = "";
+            BtnSettingForm.Text = "";
+            btnContact.Text = "";
+            btnDev.Text = "";
+            lblPing.Text = "";
+            SignalPing.Text = "";
+            SignalPing.ImageAlign = ContentAlignment.MiddleLeft;
         }
     }
 }

@@ -7,6 +7,7 @@ using KASIR.Printer;
 using KASIR.Properties;
 using KASIR.Services;
 using Newtonsoft.Json;
+using KASIR.Helper;
 using Newtonsoft.Json.Linq;
 
 namespace KASIR.OfflineMode
@@ -219,7 +220,7 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                    NotifyHelper.Error("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
                     CacheDataApp form3 = new("Sync");
                     Close();
                     form3.Show();
@@ -309,7 +310,7 @@ namespace KASIR.OfflineMode
         private bool SetErrorMessage(string message, ref string errorMessage)
         {
             errorMessage = message; // Set the error message
-            MessageBox.Show(message, "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            NotifyHelper.Warning($"Validation Error: {message}");
             ResetButtonState();
             return false; // Validation failed
         }
@@ -511,8 +512,7 @@ namespace KASIR.OfflineMode
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show($"Terjadi kesalahan, silakan coba lagi.{ex}", "Gaspol", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error($"Terjadi kesalahan, silakan coba lagi.{ex}");
                 ResetButtonState();
             }
         }
@@ -655,7 +655,7 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    MessageBox.Show($"Member with ID {getMember.member_id} not found.");
+                    NotifyHelper.Error($"Member with ID {getMember.member_id} not found.");
                 }
             }
             catch (Exception ex)
@@ -674,7 +674,7 @@ namespace KASIR.OfflineMode
                 string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
                 if (!File.Exists(cartDataPath))
                 {
-                    MessageBox.Show("Keranjang Masih Kosong", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    NotifyHelper.Warning("Keranjang Masih Kosong");
                     ResetButtonState();
                     return;
                 }
@@ -876,7 +876,7 @@ namespace KASIR.OfflineMode
                             }
                             catch (OperationCanceledException)
                             {
-                                MessageBox.Show("Print operation timed out, will retry in background");
+                                NotifyHelper.Error("Print operation timed out, will retry in background");
                                 btnSimpan.Text = "Selesai, print akan dilanjutkan di background.";
 
                                 ThreadPool.QueueUserWorkItem(async _ =>
@@ -1012,7 +1012,7 @@ namespace KASIR.OfflineMode
             }
             catch (FormatException)
             {
-                MessageBox.Show("inputan hanya bisa Numeric");
+                NotifyHelper.Error("inputan hanya bisa Numeric");
                 if (txtCash.Text.Length > 0)
                 {
                     txtCash.Text = txtCash.Text.Substring(0, txtCash.Text.Length - 1);
@@ -1242,7 +1242,7 @@ namespace KASIR.OfflineMode
                         }
                         else
                         {
-                            MessageBox.Show("Member selection was canceled or invalid.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            NotifyHelper.Warning("Member selection was canceled or invalid.");
                         }
 
                         background.Dispose();
@@ -1256,7 +1256,7 @@ namespace KASIR.OfflineMode
             catch (Exception ex)
             {
                 DialogResult = DialogResult.Cancel;
-                MessageBox.Show("Gagal load Member " + ex.Message, "Gaspol");
+                NotifyHelper.Error("Gagal load Member " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 Close();
             }

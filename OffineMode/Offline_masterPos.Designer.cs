@@ -563,7 +563,7 @@ namespace KASIR.OfflineMode
             txtCariMenuList.Location = new Point(37, 10);
             txtCariMenuList.Name = "txtCariMenuList";
             txtCariMenuList.PlaceholderText = "Masukan nama menu";
-            txtCariMenuList.Size = new Size(284, 16);
+            txtCariMenuList.Size = new Size(226, 16);
             txtCariMenuList.TabIndex = 15;
             txtCariMenuList.TextChanged += txtCariMenuList_TextChanged;
             // 
@@ -602,7 +602,7 @@ namespace KASIR.OfflineMode
             panel2.Controls.Add(panel8);
             panel2.Location = new Point(6, 9);
             panel2.Name = "panel2";
-            panel2.Size = new Size(607, 660);
+            panel2.Size = new Size(607, 657);
             panel2.TabIndex = 9;
             // 
             // dataGridView2
@@ -615,7 +615,7 @@ namespace KASIR.OfflineMode
             dataGridViewCellStyle6.BackColor = Color.White;
             dataGridViewCellStyle6.ForeColor = Color.Silver;
             dataGridViewCellStyle6.SelectionBackColor = Color.Transparent;
-            dataGridViewCellStyle6.SelectionForeColor = Color.FromArgb(15, 90, 94);
+            dataGridViewCellStyle6.SelectionForeColor = Color.Black;
             dataGridView2.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle6;
             dataGridView2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView2.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
@@ -623,7 +623,7 @@ namespace KASIR.OfflineMode
             dataGridView2.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView2.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle7.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle7.BackColor = Color.FromArgb(15, 90, 94);
+            dataGridViewCellStyle7.BackColor = Color.Black;
             dataGridViewCellStyle7.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             dataGridViewCellStyle7.ForeColor = Color.White;
             dataGridViewCellStyle7.SelectionBackColor = Color.Transparent;
@@ -642,7 +642,7 @@ namespace KASIR.OfflineMode
             dataGridViewCellStyle8.WrapMode = DataGridViewTriState.False;
             dataGridView2.DefaultCellStyle = dataGridViewCellStyle8;
             dataGridView2.EnableHeadersVisualStyles = false;
-            dataGridView2.GridColor = Color.FromArgb(15, 90, 94);
+            dataGridView2.GridColor = Color.Black;
             dataGridView2.ImeMode = ImeMode.NoControl;
             dataGridView2.Location = new Point(0, 115);
             dataGridView2.Name = "dataGridView2";
@@ -653,24 +653,24 @@ namespace KASIR.OfflineMode
             dataGridViewCellStyle9.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             dataGridViewCellStyle9.ForeColor = Color.FromArgb(15, 90, 94);
             dataGridViewCellStyle9.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle9.SelectionForeColor = Color.FromArgb(15, 90, 94);
+            dataGridViewCellStyle9.SelectionForeColor = Color.Black;
             dataGridViewCellStyle9.WrapMode = DataGridViewTriState.True;
             dataGridView2.RowHeadersDefaultCellStyle = dataGridViewCellStyle9;
             dataGridView2.RowHeadersVisible = false;
             dataGridView2.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
             dataGridViewCellStyle10.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle10.BackColor = Color.White;
-            dataGridViewCellStyle10.ForeColor = Color.FromArgb(15, 90, 94);
+            dataGridViewCellStyle10.ForeColor = Color.Black;
             dataGridViewCellStyle10.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle10.SelectionForeColor = Color.FromArgb(15, 90, 94);
+            dataGridViewCellStyle10.SelectionForeColor = Color.Black;
             dataGridView2.RowsDefaultCellStyle = dataGridViewCellStyle10;
             dataGridView2.RowTemplate.DefaultCellStyle.BackColor = Color.White;
-            dataGridView2.RowTemplate.DefaultCellStyle.ForeColor = Color.FromArgb(15, 90, 94);
+            dataGridView2.RowTemplate.DefaultCellStyle.ForeColor = Color.Black;
             dataGridView2.RowTemplate.DefaultCellStyle.SelectionBackColor = Color.Gainsboro;
-            dataGridView2.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.FromArgb(15, 90, 94);
+            dataGridView2.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.Black;
             dataGridView2.RowTemplate.Height = 40;
             dataGridView2.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView2.Size = new Size(607, 542);
+            dataGridView2.Size = new Size(607, 539);
             dataGridView2.TabIndex = 21;
             dataGridView2.CellContentClick += DataGridView2_CellContentClick;
             // 
@@ -681,7 +681,7 @@ namespace KASIR.OfflineMode
             dataGridView3.BackColor = Color.WhiteSmoke;
             dataGridView3.Location = new Point(0, 115);
             dataGridView3.Name = "dataGridView3";
-            dataGridView3.Size = new Size(607, 545);
+            dataGridView3.Size = new Size(607, 542);
             dataGridView3.TabIndex = 18;
             dataGridView3.Scroll += dataGridView3_Scroll;
             // 
@@ -768,7 +768,7 @@ namespace KASIR.OfflineMode
             label9.BackColor = Color.White;
             label9.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label9.ForeColor = Color.Black;
-            label9.Location = new Point(356, 86);
+            label9.Location = new Point(345, 86);
             label9.Name = "label9";
             label9.Size = new Size(54, 15);
             label9.TabIndex = 60;
@@ -868,7 +868,7 @@ namespace KASIR.OfflineMode
             lblCountingItems.BackColor = Color.White;
             lblCountingItems.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             lblCountingItems.ForeColor = Color.Black;
-            lblCountingItems.Location = new Point(409, 87);
+            lblCountingItems.Location = new Point(398, 87);
             lblCountingItems.Name = "lblCountingItems";
             lblCountingItems.Size = new Size(45, 15);
             lblCountingItems.TabIndex = 61;

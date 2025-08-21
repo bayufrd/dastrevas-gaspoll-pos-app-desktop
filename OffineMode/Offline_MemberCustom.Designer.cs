@@ -216,7 +216,7 @@ namespace KASIR.komponen
             // 
             // btnSimpan
             // 
-            btnSimpan.BackColor = Color.FromArgb(30, 31, 68);
+            btnSimpan.BackColor = Color.FromArgb(15, 90, 94);
             btnSimpan.Cursor = Cursors.Hand;
             btnSimpan.FlatAppearance.BorderSize = 0;
             btnSimpan.FlatStyle = FlatStyle.Flat;
@@ -237,7 +237,7 @@ namespace KASIR.komponen
             // 
             // btnKeluar
             // 
-            btnKeluar.BackColor = Color.WhiteSmoke;
+            btnKeluar.BackColor = Color.White;
             btnKeluar.Cursor = Cursors.Hand;
             btnKeluar.FlatAppearance.BorderSize = 0;
             btnKeluar.FlatStyle = FlatStyle.Flat;
@@ -248,11 +248,11 @@ namespace KASIR.komponen
             btnKeluar.IconColor = Color.FromArgb(30, 31, 68);
             btnKeluar.IconFont = IconFont.Auto;
             btnKeluar.IconSize = 25;
+            btnKeluar.ImageAlign = ContentAlignment.MiddleLeft;
             btnKeluar.Location = new Point(12, 21);
             btnKeluar.Name = "btnKeluar";
             btnKeluar.Size = new Size(88, 30);
             btnKeluar.TabIndex = 23;
-            btnKeluar.Text = "Keluar";
             btnKeluar.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnKeluar.UseVisualStyleBackColor = false;
             btnKeluar.Click += btnKeluar_Click;
@@ -287,14 +287,14 @@ namespace KASIR.komponen
             label2.TabIndex = 1;
             label2.Text = "TIPE PEMBAYARAN";
             // 
-            // addMember
+            // Offline_MemberCustom
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(600, 224);
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
-            Name = "addMember";
+            Name = "Offline_MemberCustom";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "create1";
             TopMost = true;

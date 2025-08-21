@@ -5,6 +5,7 @@ using KASIR.Printer;
 using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using KASIR.Helper;
 
 namespace KASIR.OfflineMode
 {
@@ -108,7 +109,7 @@ namespace KASIR.OfflineMode
 
             try
             {
-                MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                NotifyHelper.Error("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
                 CacheDataApp form3 = new("Sync");
                 Close();
                 form3.Show();
@@ -119,7 +120,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data tipe serving " + ex.Message, "Gaspol");
+                NotifyHelper.Error("Gagal tampil data tipe serving " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -293,20 +294,19 @@ namespace KASIR.OfflineMode
 
                 if (txtNotes.Text == "")
                 {
-                    MessageBox.Show("Masukkan alasan", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Masukkan alasan");
                     return;
                 }
 
                 if (cmbRefundType.Text == "Pilih Tipe Refund")
                 {
-                    MessageBox.Show("Pilih tipe refund", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Pilih tipe refund");
                     return;
                 }
 
                 if (cmbPayform.Text == "Pilih Tipe Pengembalian")
                 {
-                    MessageBox.Show("Pilih tipe pengembalian", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Pilih tipe pengembalian");
                     return;
                 }
 
@@ -322,8 +322,7 @@ namespace KASIR.OfflineMode
 
                 if (!isAnyItemRefunded && selectedRefundType != "Semua")
                 {
-                    MessageBox.Show("Kuantitas item yang ingin di refund masih nol", "Refund Items",
-                        MessageBoxButtons.OK);
+                    NotifyHelper.Warning("Kuantitas item yang ingin di refund masih nol");
                     return;
                 }
 
@@ -352,7 +351,6 @@ namespace KASIR.OfflineMode
                         TotalRefunded = cartDetails.Sum(item => int.Parse(item["total_price"]?.ToString() ?? "0"));
                         foreach (JToken cartItem in cartDetails)
                         {
-                            MessageBox.Show(cartItem["qty"]?.ToString());
                             refundDetailStruks.Add(new RefundDetailStruk
                             {
                                 cart_detail_id = int.Parse(cartItem["cart_detail_id"]?.ToString() ?? "0"),
@@ -583,7 +581,7 @@ namespace KASIR.OfflineMode
 
                     // Save the updated transaction data back to the file
                     File.WriteAllText(transactionDataPath, transactionData.ToString());
-                    //MessageBox.Show(transactionData.ToString());
+                    //NotifyHelper.Error(transactionData.ToString());
                     // Ambil data outlet dari file DataOutlet.data
                     OutletData outletData = GetOutletData();
                     int transaction_id = 0;

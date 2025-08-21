@@ -2,6 +2,7 @@
 using KASIR.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using KASIR.Helper;
 
 namespace KASIR.OfflineMode
 {
@@ -35,15 +36,13 @@ namespace KASIR.OfflineMode
         {
             if (txtReason.Text == null || txtReason.Text == "")
             {
-                MessageBox.Show("Masukkan alasan hapus item", "Gaspol", MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                NotifyHelper.Warning("Masukkan alasan hapus item");
                 return;
             }
 
             if (textPin.Text == "" || textPin.Text == null)
             {
-                MessageBox.Show("Masukan pin terlebih dahulu", "Gaspol", MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                NotifyHelper.Warning("Masukan pin terlebih dahulu");
                 return;
             }
 
@@ -143,20 +142,18 @@ namespace KASIR.OfflineMode
             {
                 if (ex.CancellationToken.IsCancellationRequested)
                 {
-                    MessageBox.Show("PIN salah atau koneksi tidak stabil. Silakan coba beberapa saat lagi.",
-                        "Timeout/Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    NotifyHelper.Error("PIN salah atau koneksi tidak stabil. Silakan coba beberapa saat lagi."+ex.Message);
                 }
                 else
                 {
-                    MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi."+ex.Message);
                 }
 
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Gagal hapus data {ex}" + ex.Message);
+                NotifyHelper.Error($"Gagal hapus data {ex}" + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }

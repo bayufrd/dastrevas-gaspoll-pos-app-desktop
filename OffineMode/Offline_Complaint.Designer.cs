@@ -195,7 +195,7 @@ namespace KASIR.OffineMode
             // 
             // button1
             // 
-            button1.BackColor = Color.WhiteSmoke;
+            button1.BackColor = Color.White;
             button1.Cursor = Cursors.Hand;
             button1.FlatAppearance.BorderSize = 0;
             button1.FlatStyle = FlatStyle.Flat;
@@ -206,18 +206,18 @@ namespace KASIR.OffineMode
             button1.IconColor = Color.FromArgb(30, 31, 68);
             button1.IconFont = IconFont.Auto;
             button1.IconSize = 25;
+            button1.ImageAlign = ContentAlignment.MiddleLeft;
             button1.Location = new Point(12, 12);
             button1.Name = "button1";
             button1.Size = new Size(88, 30);
             button1.TabIndex = 26;
-            button1.Text = "Keluar";
             button1.TextImageRelation = TextImageRelation.ImageBeforeText;
             button1.UseVisualStyleBackColor = false;
             button1.Click += button1_Click;
             // 
             // button2
             // 
-            button2.BackColor = Color.FromArgb(30, 31, 68);
+            button2.BackColor = Color.FromArgb(15, 90, 94);
             button2.Cursor = Cursors.Hand;
             button2.FlatAppearance.BorderSize = 0;
             button2.FlatStyle = FlatStyle.Flat;

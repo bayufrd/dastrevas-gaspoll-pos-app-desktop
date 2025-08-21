@@ -4,6 +4,7 @@ using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using KASIR.Helper;
 using Color = System.Drawing.Color;
 
 namespace KASIR.OfflineMode
@@ -147,12 +148,10 @@ namespace KASIR.OfflineMode
                     dataGridView1.Columns["Transaction ID"].Visible = false;
                     dataGridView1.Columns["NumberQueue"].Visible = false;
                 }
-                /* MessageBox.Show("File transaction.data tidak ditemukan.", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Error);*/
             }
             catch (Exception ex)
             {
-                MessageBox.Show("An error occurred while reading the transaction file: " + ex.Message, "Gaspol",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("An error occurred while reading the transaction file: " + ex.Message);
             }
         }
 
@@ -217,7 +216,10 @@ namespace KASIR.OfflineMode
                 background.Show();
 
                 DialogResult dialogResult = pinForm.ShowDialog();
-
+                if(dialogResult == DialogResult.OK)
+                {
+                    NotifyHelper.Success("Berhasil refund ID: #"+id);
+                }
                 background.Dispose();
                 LoadData();
             }

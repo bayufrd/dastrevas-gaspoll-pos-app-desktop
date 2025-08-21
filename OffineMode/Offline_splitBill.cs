@@ -15,7 +15,6 @@ namespace KASIR.OffineMode
         private readonly string baseOutlet;
         private string cart_id;
         private readonly List<RequestCartModel> cartDetails = new();
-        private DataTable dataTable2;
         private readonly Dictionary<int, int> originalQuantities = new();
 
         public Offline_splitBill(string cartID)

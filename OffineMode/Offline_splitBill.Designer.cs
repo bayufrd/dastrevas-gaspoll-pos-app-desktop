@@ -52,21 +52,21 @@ namespace KASIR.OffineMode
             // 
             // btnSimpan
             // 
-            btnSimpan.BackColor = Color.FromArgb(30, 31, 68);
+            btnSimpan.BackColor = Color.White;
             btnSimpan.Cursor = Cursors.Hand;
             btnSimpan.FlatAppearance.BorderSize = 0;
             btnSimpan.FlatStyle = FlatStyle.Flat;
             btnSimpan.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             btnSimpan.ForeColor = Color.WhiteSmoke;
             btnSimpan.IconChar = IconChar.CheckCircle;
-            btnSimpan.IconColor = Color.WhiteSmoke;
+            btnSimpan.IconColor = Color.Black;
             btnSimpan.IconFont = IconFont.Auto;
             btnSimpan.IconSize = 25;
+            btnSimpan.ImageAlign = ContentAlignment.MiddleRight;
             btnSimpan.Location = new Point(479, 21);
             btnSimpan.Name = "btnSimpan";
             btnSimpan.Size = new Size(109, 30);
             btnSimpan.TabIndex = 25;
-            btnSimpan.Text = "Konfirmasi";
             btnSimpan.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnSimpan.UseVisualStyleBackColor = false;
             btnSimpan.Click += btnSimpanSplit_ClickAsync;
@@ -84,6 +84,7 @@ namespace KASIR.OffineMode
             btnKeluar.IconColor = Color.Black;
             btnKeluar.IconFont = IconFont.Auto;
             btnKeluar.IconSize = 25;
+            btnKeluar.ImageAlign = ContentAlignment.MiddleLeft;
             btnKeluar.Location = new Point(12, 21);
             btnKeluar.Name = "btnKeluar";
             btnKeluar.Size = new Size(88, 30);

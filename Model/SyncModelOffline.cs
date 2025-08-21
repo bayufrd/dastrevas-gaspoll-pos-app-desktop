@@ -25,8 +25,6 @@ namespace KASIR.Model
         public int total_discount { get; set; }
         public int shift_number { get; set; }
         public string casher_name { get; set; }
-
-        // Additional properties from the target model
         public string id { get; set; }
         public string start_at { get; set; }
         public string end_at { get; set; }

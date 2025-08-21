@@ -27,15 +27,14 @@ namespace KASIR.OfflineMode
 {
     public partial class Offline_masterPos : Form
     {
-        private IInternetService _internetServices;
+        private readonly IInternetService _internetServices;
 
-        private readonly string baseOutlet;
-        private readonly string baseUrl;
+        private readonly string baseOutlet = Settings.Default.BaseOutlet;
+        private readonly string baseUrl = Settings.Default.BaseAddress;
         private bool allDataLoaded;
         private List<Menu> allMenuItems;
         private readonly ApiService apiService;
         private string cartID;
-        //for paging
         private int currentPageIndex = 1;
         private string customer_name;
         private string customer_seat;
@@ -44,49 +43,42 @@ namespace KASIR.OfflineMode
         private bool isDiscountActive;
         private bool isLoading;
         private bool configViewDataProductGrid;
-        private readonly int isSplitted = 0;
         private int diskonID;
+        private string cardDetailID = "cardID";
 
-        //hitung items
         private int items;
         private DataTable listDataTable;
         private readonly Dictionary<Menu, Image> menuImageDictionary = new();
 
         private Dictionary<string, Control> nameToControlMap;
 
-        private List<Panel> originalPanelControls;
         private readonly int pageSize = 35;
         private int selectedServingTypeallItems;
         private int subTotalPrice;
-        private string totalCart;
         private int totalPageCount;
 
         public Offline_masterPos()
         {
-            baseOutlet = Settings.Default.BaseOutlet;
-            baseUrl = Settings.Default.BaseAddress;
+            //Init Component
             InitializeComponent();
-            // Panggil di constructor setelah InitializeComponent()
+
+            panel8.Margin = new Padding(0, 0, 0, 0);
+            dataGridView3.Margin = new Padding(0, 0, 0, 0);
+
             SetDoubleBufferedForAllControls(this);
             InitializeVisualRounded();
 
             apiService = new ApiService();
-            panel8.Margin = new Padding(0, 0, 0, 0);
-            dataGridView3.Margin = new Padding(0, 0, 0, 0);
 
 
             _internetServices = new InternetService();
-            //LoadConfig();
             txtCariMenu.Enabled = false;
 
-            //paging begin
             btnCari.Visible = false;
             dataGridView3.Scroll += dataGridView3_Scroll;
 
-            //peging end
             Shown += MasterPos_ShownWrapper;
 
-            // Mengaitkan event handler dengan form utama
             KeyPreview = true;
             KeyDown += YourForm_KeyDown;
             Shown += Form1_Shown; // Tambahkan ini
@@ -147,7 +139,7 @@ namespace KASIR.OfflineMode
                 // Mengatur fokus ke CariMenu
                 if (txtCariMenu.Visible)
                 {
-                    txtCariMenu.Focus();
+                    _ = txtCariMenu.Focus();
 
                     // Menambahkan teks ke CariMenu (opsional)
                     txtCariMenu.Text += ">";
@@ -158,7 +150,7 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    txtCariMenuList.Focus();
+                    _ = txtCariMenuList.Focus();
 
                     txtCariMenuList.Text += ">";
 
@@ -174,7 +166,7 @@ namespace KASIR.OfflineMode
             // Buat direktori cache jika tidak ada
             if (!Directory.Exists("DT-Cache"))
             {
-                Directory.CreateDirectory("DT-Cache");
+                _ = Directory.CreateDirectory("DT-Cache");
             }
 
             // Muat semua data menu
@@ -245,7 +237,6 @@ namespace KASIR.OfflineMode
             dataGridView3.ResumeLayout();
             txtCariMenu.Enabled = true;
 
-            originalPanelControls = dataGridView3.Controls.OfType<Panel>().ToList();
             txtCariMenu.PlaceholderText = "Cari Menu Items...";
 
             isLoading = false;
@@ -258,8 +249,8 @@ namespace KASIR.OfflineMode
             // Panel utama (kotak produk)
             Panel tileButton = new()
             {
-                Width = 130 * 80/100,
-                Height = 180 * 80/100,
+                Width = 130 * 80 / 100,
+                Height = 180 * 80 / 100,
                 BackColor = Color.White,
                 BorderStyle = BorderStyle.None,
                 Margin = new Padding(5),
@@ -333,13 +324,13 @@ namespace KASIR.OfflineMode
                     dataGridView3.VerticalScroll.Maximum)
                 {
                     currentPageIndex++;
-                    LoadCurrentPage();
+                    _ = LoadCurrentPage();
                 }
             }
         }
 
 
-        
+
         private Panel Ex_CreateTileButton(Menu menu)
         {
             Panel tileButton = new() { Width = 90, Height = 120 };
@@ -422,7 +413,6 @@ namespace KASIR.OfflineMode
             txtCariMenu.Enabled = true;
 
             // simpan original panel list
-            originalPanelControls = dataGridView3.Controls.OfType<Panel>().ToList();
             txtCariMenu.PlaceholderText = "Cari Menu Items...";
         }
 
@@ -437,7 +427,7 @@ namespace KASIR.OfflineMode
 
                 if (pictureBox.InvokeRequired)
                 {
-                    pictureBox.Invoke((MethodInvoker)delegate
+                    _ = pictureBox.Invoke((MethodInvoker)delegate
                     {
                         pictureBox.Image = cachedImage;
                     });
@@ -459,7 +449,7 @@ namespace KASIR.OfflineMode
 
                     if (pictureBox.InvokeRequired)
                     {
-                        pictureBox.Invoke((MethodInvoker)delegate
+                        _ = pictureBox.Invoke((MethodInvoker)delegate
                         {
                             pictureBox.Image = downloadedImage;
                         });
@@ -503,14 +493,14 @@ namespace KASIR.OfflineMode
                 if (result == DialogResult.OK)
                 {
                     background.Dispose();
-                    LoadCart();
+                    _ = LoadCart();
                     selectedServingTypeallItems = Offline_addCartForm.selectedServingTypeall;
                 }
                 else
                 {
                     NotifyHelper.Error("Gagal Menambahkan item, silahkan coba lagi");
                     ReloadCart();
-                    LoadCart();
+                    _ = LoadCart();
                     background.Dispose();
                 }
             }
@@ -518,7 +508,7 @@ namespace KASIR.OfflineMode
         // pagenation end
 
         //Config pengaturan list view
-        private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1); // Semaphore for file access
+        private static readonly SemaphoreSlim semaphore = new(1, 1); // Semaphore for file access
 
         private async Task LoadConfig()
         {
@@ -528,7 +518,7 @@ namespace KASIR.OfflineMode
             // Ensure the directory exists
             if (!Directory.Exists(configDirectory))
             {
-                Directory.CreateDirectory(configDirectory);
+                _ = Directory.CreateDirectory(configDirectory);
             }
 
             // Use semaphore to control access
@@ -572,7 +562,7 @@ namespace KASIR.OfflineMode
             }
             finally
             {
-                semaphore.Release(); // Release the semaphore
+                _ = semaphore.Release(); // Release the semaphore
             }
         }
 
@@ -586,7 +576,7 @@ namespace KASIR.OfflineMode
             txtCariMenuList.Enabled = false;
             txtCariMenu.Visible = true;
             txtCariMenu.Enabled = true;
-            LoadDataListby();
+            _ = LoadDataListby();
             dataGridView2.CellFormatting += DataGridView2_CellFormatting;
         }
 
@@ -599,7 +589,7 @@ namespace KASIR.OfflineMode
             dataGridView2.Visible = false;
             txtCariMenuList.Visible = false;
             txtCariMenuList.Enabled = false;
-            LoadDataWithPagingAsync();
+            _ = LoadDataWithPagingAsync();
         }
 
         private void DataGridView2_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
@@ -626,9 +616,9 @@ namespace KASIR.OfflineMode
         {
             await Task.Run(async () =>
             {
-                Invoke((MethodInvoker)delegate
+                _ = Invoke((MethodInvoker)delegate
                 {
-                    MasterPos_Shown(sender, e);
+                    _ = MasterPos_Shown(sender, e);
                 });
             });
         }
@@ -665,8 +655,8 @@ namespace KASIR.OfflineMode
                 e.Graphics.Clear(button.Parent.BackColor);
 
                 // Buat path rounded
-                GraphicsPath path = new GraphicsPath();
-                Rectangle bounds = new Rectangle(0, 0, button.Width, button.Height);
+                GraphicsPath path = new();
+                Rectangle bounds = new(0, 0, button.Width, button.Height);
 
                 // Tambahkan arc untuk setiap sudut
                 path.AddArc(0, 0, cornerRadius * 2, cornerRadius * 2, 180, 90); // Sudut kiri atas
@@ -684,7 +674,7 @@ namespace KASIR.OfflineMode
                 button.Region = new Region(path);
 
                 // Gambar background button
-                using (SolidBrush brush = new SolidBrush(button.BackColor))
+                using (SolidBrush brush = new(button.BackColor))
                 {
                     e.Graphics.FillPath(brush, path);
                 }
@@ -692,7 +682,7 @@ namespace KASIR.OfflineMode
                 // Gambar outline jika warna outline ditentukan
                 if (outlineColor.HasValue)
                 {
-                    using (Pen outlinePen = new Pen(outlineColor.Value, 1.8f))
+                    using (Pen outlinePen = new(outlineColor.Value, 1.8f))
                     {
                         outlinePen.Alignment = System.Drawing.Drawing2D.PenAlignment.Inset;
                         e.Graphics.DrawPath(outlinePen, path);
@@ -703,8 +693,8 @@ namespace KASIR.OfflineMode
                 if (button.IconChar != IconChar.None)
                 {
                     // Hitung posisi ikon di tengah
-                    SizeF iconSize = new SizeF(button.IconSize, button.IconSize);
-                    PointF iconLocation = new PointF(
+                    SizeF iconSize = new(button.IconSize, button.IconSize);
+                    PointF iconLocation = new(
                         (button.Width - iconSize.Width) / 2,
                         (button.Height - iconSize.Height) / 2
                     );
@@ -741,7 +731,7 @@ namespace KASIR.OfflineMode
         private Bitmap GetIconBitmap(IconChar iconChar, Color iconColor, int iconSize)
         {
             // Buat bitmap baru dengan ukuran ikon
-            Bitmap iconBitmap = new Bitmap(iconSize, iconSize);
+            Bitmap iconBitmap = new(iconSize, iconSize);
 
             using (Graphics g = Graphics.FromImage(iconBitmap))
             {
@@ -752,13 +742,13 @@ namespace KASIR.OfflineMode
                 g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
                 // Buat font ikon
-                using (Font iconFont = new Font("Font Awesome 6 Free", iconSize, FontStyle.Regular))
+                using (Font iconFont = new("Font Awesome 6 Free", iconSize, FontStyle.Regular))
                 {
                     // Konversi karakter ikon ke string
                     string iconString = char.ConvertFromUtf32((int)iconChar);
 
                     // Gambar ikon
-                    using (SolidBrush brush = new SolidBrush(iconColor))
+                    using (SolidBrush brush = new(iconColor))
                     {
                         g.DrawString(iconString, iconFont, brush, 0, 0);
                     }
@@ -772,10 +762,10 @@ namespace KASIR.OfflineMode
             // Pastikan panel tidak null
             if (panel == null) return;
 
-            GraphicsPath path = new GraphicsPath();
+            GraphicsPath path = new();
 
             // Definisikan rectangle untuk drawing
-            Rectangle bounds = new Rectangle(0, 0, panel.Width, panel.Height);
+            Rectangle bounds = new(0, 0, panel.Width, panel.Height);
 
             // Tambahkan arc untuk setiap sudut
             path.AddArc(0, 0, radius * 2, radius * 2, 180, 90); // Sudut kiri atas
@@ -795,7 +785,7 @@ namespace KASIR.OfflineMode
             // Tambahkan event handler untuk menjaga konsistensi saat resize
             panel.Resize += (sender, e) =>
             {
-                GraphicsPath resizePath = new GraphicsPath();
+                GraphicsPath resizePath = new();
 
                 // Ulang proses yang sama saat resize
                 resizePath.AddArc(0, 0, radius * 2, radius * 2, 180, 90);
@@ -814,7 +804,7 @@ namespace KASIR.OfflineMode
 
         private void PayForm_KeluarButtonClicked(object sender, EventArgs e)
         {
-            loadDataAsync();
+            _ = loadDataAsync();
         }
 
         private async Task LoadDataDiscount()
@@ -822,9 +812,9 @@ namespace KASIR.OfflineMode
             try
             {
                 string folderAddCartForm = "DT-Cache\\addCartForm";
-                if (!Directory.Exists("DT-Cache")) { Directory.CreateDirectory("DT-Cache"); }
+                if (!Directory.Exists("DT-Cache")) { _ = Directory.CreateDirectory("DT-Cache"); }
 
-                if (!Directory.Exists(folderAddCartForm)) { Directory.CreateDirectory(folderAddCartForm); }
+                if (!Directory.Exists(folderAddCartForm)) { _ = Directory.CreateDirectory(folderAddCartForm); }
 
                 // Load all menu data
                 if (File.Exists($"{folderAddCartForm}\\LoadDataDiscountItem_Outlet_{baseOutlet}.data"))
@@ -921,7 +911,7 @@ namespace KASIR.OfflineMode
             // Populate the nameToControlMap with the name and corresponding control for each control in the panel
             foreach (Control control in panel.Controls)
             {
-                if (control is Panel tileButton && control.Controls.Count >= 2)
+                if (control is Panel && control.Controls.Count >= 2)
                 {
                     Label nameLabel = control.Controls[1] as Label;
                     if (nameLabel != null)
@@ -1011,18 +1001,18 @@ namespace KASIR.OfflineMode
 
                 DataTable dataTable2 = new();
 
-                dataTable2.Columns.Add("MenuID", typeof(int));
-                dataTable2.Columns.Add("Nama Menu", typeof(string)); // Change this line
-                dataTable2.Columns.Add("Menu Type", typeof(string));
-                dataTable2.Columns.Add("Menu Price", typeof(string));
+                _ = dataTable2.Columns.Add("MenuID", typeof(int));
+                _ = dataTable2.Columns.Add("Nama Menu", typeof(string)); // Change this line
+                _ = dataTable2.Columns.Add("Menu Type", typeof(string));
+                _ = dataTable2.Columns.Add("Menu Price", typeof(string));
 
                 foreach (Menu Menu in menuList)
                 {
-                    Invoke((MethodInvoker)delegate
+                    _ = Invoke((MethodInvoker)delegate
                     {
                         txtCariMenu.PlaceholderText = $"Downloading Data...[{items} / {menuModel.data.Count}]";
                     });
-                    dataTable2.Rows.Add(Menu.id, Menu.name, Menu.menu_type,
+                    _ = dataTable2.Rows.Add(Menu.id, Menu.name, Menu.menu_type,
                         string.Format("Rp. {0:n0},-", Menu.price));
                     items++;
                 }
@@ -1035,7 +1025,7 @@ namespace KASIR.OfflineMode
 
                 dataGridView2.Columns["MenuID"].Visible = false;
                 dataGridView2.Columns["Nama Menu"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-                Invoke((MethodInvoker)delegate
+                _ = Invoke((MethodInvoker)delegate
                 {
                     txtCariMenu.PlaceholderText = "Cari menu items...";
                     lblCountingItems.Text = $"{items} items";
@@ -1090,7 +1080,7 @@ namespace KASIR.OfflineMode
                 if (result == DialogResult.OK)
                 {
                     background.Dispose();
-                    LoadCart();
+                    _ = LoadCart();
                     // Settings were successfully updated, perform any necessary actions
                     selectedServingTypeallItems = Offline_addCartForm.selectedServingTypeall;
                 }
@@ -1098,7 +1088,7 @@ namespace KASIR.OfflineMode
                 {
                     NotifyHelper.Error("Gagal Menambahkan item, silahkan coba lagi");
                     ReloadCart();
-                    LoadCart();
+                    _ = LoadCart();
                     background.Dispose();
                 }
             }
@@ -1107,7 +1097,7 @@ namespace KASIR.OfflineMode
 
         public async Task loadDataAsync()
         {
-            if (!Directory.Exists("DT-Cache")) { Directory.CreateDirectory("DT-Cache"); }
+            if (!Directory.Exists("DT-Cache")) { _ = Directory.CreateDirectory("DT-Cache"); }
 
             // Load menu data from local file if available
             if (File.Exists($"DT-Cache\\menu_outlet_id_{baseOutlet}.data"))
@@ -1126,13 +1116,13 @@ namespace KASIR.OfflineMode
                         // ... same code as before to create and add controls ...
                         items += 1;
                         // Use BeginInvoke to marshal the call to the UI thread
-                        BeginInvoke((MethodInvoker)delegate
+                        _ = BeginInvoke((MethodInvoker)delegate
                         {
                             txtCariMenu.PlaceholderText = $"Loading Data...[{items} / {menuModel.data.Count}]";
                         });
 
                         // Use EndInvoke to release the delegate when the call is complete
-                        EndInvoke(BeginInvoke((MethodInvoker)delegate
+                        _ = EndInvoke(BeginInvoke((MethodInvoker)delegate
                         {
                             txtCariMenu.PlaceholderText = $"Loading Data...[{items} / {menuModel.data.Count}]";
                         }));
@@ -1220,14 +1210,14 @@ namespace KASIR.OfflineMode
                                 {
                                     // Dispose of the background form now that the addCartForm form has been closed
                                     background.Dispose();
-                                    LoadCart();
+                                    _ = LoadCart();
                                     selectedServingTypeallItems = Offline_addCartForm.selectedServingTypeall;
                                 }
                                 else
                                 {
                                     NotifyHelper.Error("Gagal Menambahkan item, silahkan coba lagi");
                                     ReloadCart();
-                                    LoadCart();
+                                    _ = LoadCart();
                                     // Dispose of the background form now that the addCartForm form has been closed
                                     background.Dispose();
                                 }
@@ -1244,13 +1234,13 @@ namespace KASIR.OfflineMode
                         await LoadImageToPictureBox(pictureBox, menu);
 
                         // Use BeginInvoke to marshal the call to the UI thread
-                        BeginInvoke((MethodInvoker)delegate
+                        _ = BeginInvoke((MethodInvoker)delegate
                         {
                             lblCountingItems.Text = $"{items} items";
                         });
 
                         // Use EndInvoke to release the delegate when the call is complete
-                        EndInvoke(BeginInvoke((MethodInvoker)delegate
+                        _ = EndInvoke(BeginInvoke((MethodInvoker)delegate
                         {
                             lblCountingItems.Text = $"{items} items";
                         }));
@@ -1266,13 +1256,12 @@ namespace KASIR.OfflineMode
                     txtCariMenu.Enabled = true;
 
                     // Initialize the original data source
-                    originalPanelControls = dataGridView3.Controls.OfType<Panel>().ToList();
-                    BeginInvoke((MethodInvoker)delegate
+                    _ = BeginInvoke((MethodInvoker)delegate
                     {
                         txtCariMenu.PlaceholderText = "Cari Menu Items...";
                     });
                     // Use EndInvoke to release the delegate when the call is complete
-                    EndInvoke(BeginInvoke((MethodInvoker)delegate
+                    _ = EndInvoke(BeginInvoke((MethodInvoker)delegate
                     {
                         txtCariMenu.PlaceholderText = "Cari Menu Items...";
                     }));
@@ -1329,13 +1318,13 @@ namespace KASIR.OfflineMode
                     // ... same code as before to create and add controls ...
                     items += 1;
                     // Use BeginInvoke to marshal the call to the UI thread
-                    BeginInvoke((MethodInvoker)delegate
+                    _ = BeginInvoke((MethodInvoker)delegate
                     {
                         txtCariMenu.PlaceholderText = $"Loading Data...[{items} / {menuModel.data.Count}]";
                     });
 
                     // Use EndInvoke to release the delegate when the call is complete
-                    EndInvoke(BeginInvoke((MethodInvoker)delegate
+                    _ = EndInvoke(BeginInvoke((MethodInvoker)delegate
                     {
                         txtCariMenu.PlaceholderText = $"Loading Data...[{items} / {menuModel.data.Count}]";
                     }));
@@ -1432,14 +1421,14 @@ namespace KASIR.OfflineMode
                             {
                                 // Dispose of the background form now that the addCartForm form has been closed
                                 background.Dispose();
-                                LoadCart();
+                                _ = LoadCart();
                                 selectedServingTypeallItems = Offline_addCartForm.selectedServingTypeall;
                             }
                             else
                             {
                                 NotifyHelper.Error("Gagal Menambahkan item, silahkan coba lagi");
                                 ReloadCart();
-                                LoadCart();
+                                _ = LoadCart();
                                 // Dispose of the background form now that the addCartForm form has been closed
                                 background.Dispose();
                             }
@@ -1456,13 +1445,13 @@ namespace KASIR.OfflineMode
                     await LoadImageToPictureBox(pictureBox, menu);
 
                     // Use BeginInvoke to marshal the call to the UI thread
-                    BeginInvoke((MethodInvoker)delegate
+                    _ = BeginInvoke((MethodInvoker)delegate
                     {
                         lblCountingItems.Text = $"{items} items";
                     });
 
                     // Use EndInvoke to release the delegate when the call is complete
-                    EndInvoke(BeginInvoke((MethodInvoker)delegate
+                    _ = EndInvoke(BeginInvoke((MethodInvoker)delegate
                     {
                         lblCountingItems.Text = $"{items} items";
                     }));
@@ -1478,14 +1467,13 @@ namespace KASIR.OfflineMode
                 txtCariMenu.Enabled = true;
 
                 // Initialize the original data source
-                originalPanelControls = dataGridView3.Controls.OfType<Panel>().ToList();
 
-                BeginInvoke((MethodInvoker)delegate
+                _ = BeginInvoke((MethodInvoker)delegate
                 {
                     txtCariMenu.PlaceholderText = "Cari Menu Items...";
                 });
                 // Use EndInvoke to release the delegate when the call is complete
-                EndInvoke(BeginInvoke((MethodInvoker)delegate
+                _ = EndInvoke(BeginInvoke((MethodInvoker)delegate
                 {
                     txtCariMenu.PlaceholderText = "Cari Menu Items...";
                 }));
@@ -1563,7 +1551,7 @@ namespace KASIR.OfflineMode
                         //agar tidak out of memory saat load gambar dengan menggunakan method resize
 
                         //downloadedImage = ResizeImage(downloadedImage, 70);
-                        ResizeImage(downloadedImage, 70);
+                        _ = ResizeImage(downloadedImage, 70);
                         // Check if the image size is within the limits of the PictureBox
                         CheckImageSize(downloadedImage);
                         try
@@ -1573,7 +1561,7 @@ namespace KASIR.OfflineMode
 
                             if (pictureBox.InvokeRequired)
                             {
-                                pictureBox.Invoke((MethodInvoker)delegate
+                                _ = pictureBox.Invoke((MethodInvoker)delegate
                                 {
                                     pictureBox.Image = downloadedImage;
                                 });
@@ -1689,7 +1677,7 @@ namespace KASIR.OfflineMode
                 string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 string projectDirectory = Directory.GetParent(appDirectory)?.Parent?.Parent?.FullName;
                 string localDirectory = Path.Combine(projectDirectory, "ImageCache");
-                Directory.CreateDirectory(localDirectory);
+                _ = Directory.CreateDirectory(localDirectory);
 
                 string localImagePath = Path.Combine(localDirectory, imageName + ".Jpeg"); //before jpg
                 // Generate a random pastel color
@@ -1733,7 +1721,7 @@ namespace KASIR.OfflineMode
 
                 HttpClient httpClient = new();
                 HttpResponseMessage response = await httpClient.GetAsync(imageUrl);
-                response.EnsureSuccessStatusCode();
+                _ = response.EnsureSuccessStatusCode();
 
 
                 using (Stream stream = await response.Content.ReadAsStreamAsync())
@@ -1762,10 +1750,11 @@ namespace KASIR.OfflineMode
                     return bmp;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Console.WriteLine($"Error downloading image: {ex.Message}");
                 return LoadPlaceholderImage(70, 70);
+                Exception ex;
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -1828,7 +1817,7 @@ namespace KASIR.OfflineMode
         {
             if (!Directory.Exists("C:\\Temp"))
             {
-                Directory.CreateDirectory("C:\\Temp");
+                _ = Directory.CreateDirectory("C:\\Temp");
             }
 
             File.WriteAllText("C:\\Temp\\reload_signal.txt", "ReloadChart");
@@ -1844,7 +1833,7 @@ namespace KASIR.OfflineMode
                 // Pastikan direktori ada
                 if (!Directory.Exists(Path.GetDirectoryName(filePath)))
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                    _ = Directory.CreateDirectory(Path.GetDirectoryName(filePath));
                 }
 
                 // Menyimpan JSON ke file
@@ -1943,7 +1932,6 @@ namespace KASIR.OfflineMode
                         //customer_seat = cart.CustomerSeat ?? "??";
                         lblDetailKeranjang.Text = $"Keranjang: Nama : {customer_name} Seat : {customer_seat}";
 
-                        totalCart = cart.Total.ToString();
                         diskonID = cart.DiscountId;
 
                         // Logika untuk mendeteksi diskon
@@ -1973,12 +1961,12 @@ namespace KASIR.OfflineMode
 
                         // Membuat DataTable untuk menyimpan hasil
                         DataTable dataTable = new();
-                        dataTable.Columns.Add("MenuID", typeof(string));
-                        dataTable.Columns.Add("CartDetailID", typeof(string));
-                        dataTable.Columns.Add("Jenis", typeof(string));
-                        dataTable.Columns.Add("Menu", typeof(string));
-                        dataTable.Columns.Add("Total Harga", typeof(string));
-                        dataTable.Columns.Add("Note", typeof(string));
+                        _ = dataTable.Columns.Add("MenuID", typeof(string));
+                        _ = dataTable.Columns.Add("CartDetailID", typeof(string));
+                        _ = dataTable.Columns.Add("Jenis", typeof(string));
+                        _ = dataTable.Columns.Add("Menu", typeof(string));
+                        _ = dataTable.Columns.Add("Total Harga", typeof(string));
+                        _ = dataTable.Columns.Add("Note", typeof(string));
 
                         // Mengelompokkan item cart berdasarkan serving type
                         var menuGroups = cart.CartDetails
@@ -2005,7 +1993,7 @@ namespace KASIR.OfflineMode
                                 bool hasDiscount = item.DiscountedPrice.HasValue && item.DiscountedPrice > 0; // Mengecek apakah ada diskon
 
                                 // Menambahkan baris data untuk setiap item
-                                dataTable.Rows.Add(
+                                _ = dataTable.Rows.Add(
                                     item.MenuId.ToString(),
                                     item.CartDetailId.ToString(),
                                     servingTypeName,
@@ -2019,7 +2007,7 @@ namespace KASIR.OfflineMode
                                 {
                                     if (hasDiscount)
                                     {
-                                        dataTable.Rows.Add(
+                                        _ = dataTable.Rows.Add(
                                             null,
                                             null,
                                             null,
@@ -2030,7 +2018,7 @@ namespace KASIR.OfflineMode
                                     }
                                     else
                                     {
-                                        dataTable.Rows.Add(
+                                        _ = dataTable.Rows.Add(
                                             null,
                                             null,
                                             null,
@@ -2044,7 +2032,7 @@ namespace KASIR.OfflineMode
                                 // Menambahkan informasi diskon jika ada
                                 if (hasDiscount)
                                 {
-                                    dataTable.Rows.Add(
+                                    _ = dataTable.Rows.Add(
                                         null,
                                         null,
                                         null,
@@ -2109,7 +2097,7 @@ namespace KASIR.OfflineMode
                 string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
                 string cacheFilePathSplit = "DT-Cache\\Transaction\\Cart_main_split.data";
 
-                
+
 
                 if (File.Exists(cacheFilePath))
                 {
@@ -2120,6 +2108,7 @@ namespace KASIR.OfflineMode
                     if (cartData["cart_details"] == null || cartData["cart_details"].Count() == 0)
                     {
                         ClearCartFile();
+                        cardDetailID = "##";
                         lblDetailKeranjang.Text = "Keranjang: Kosong";
                         lblDiskon1.Text = "Rp. 0";
                         lblSubTotal1.Text = "Rp. 0,-";
@@ -2147,14 +2136,13 @@ namespace KASIR.OfflineMode
 
                             File.Move(cacheFilePathSplit, cacheFilePath);
 
-                            LoadCartData();
+                            _ = LoadCartData();
                             selectedServingTypeallItems = 1;
                             return;
                         }
                     }
                     else
                     {
-                        // Retrieve cart details
                         JArray? cartDetails = cartData["cart_details"] as JArray;
                         if (!string.IsNullOrEmpty(cartData["is_splitted"]?.ToString()) &&
                             cartData["is_splitted"]?.ToString() == "1")
@@ -2166,19 +2154,18 @@ namespace KASIR.OfflineMode
                             ButtonSplit.Enabled = true;
                         }
 
-                        // Set the first cart_detail_id as cart_id
                         JToken? cartDetail = cartDetails.FirstOrDefault();
                         cartID = cartDetail?["cart_detail_id"].ToString() ??
-                                 "null"; // Get first cart_detail_id for cart_id
-                        totalCart = cartData["total"]?.ToString() ?? "0";
-                        diskonID = 0; //belum pakai disc
-                        // Memastikan jika discount_id adalah -1, ubah menjadi 0
+                                 "null";
+                        cardDetailID = cartID;
+
+                        diskonID = 0; 
                         int discountId = cartData["discount_id"] != null ? (int)cartData["discount_id"] : -1;
                         if (discountId == -1)
                         {
-                            discountId = 0; // Set to 0 if it's -1
-                            cartData["discount_id"] = discountId; // Update the cartData
-                            File.WriteAllText(cacheFilePath, cartData.ToString()); // Save back to file
+                            discountId = 0; 
+                            cartData["discount_id"] = discountId; 
+                            File.WriteAllText(cacheFilePath, cartData.ToString());
                         }
 
                         if (cartData["discount_id"] != null && int.Parse(cartData["discount_id"].ToString()) != 0)
@@ -2221,14 +2208,13 @@ namespace KASIR.OfflineMode
                         lblTotal1.Text = string.Format("Rp. {0:n0},-", total);
                         buttonPayment.Text = string.Format("Bayar Rp. {0:n0},-", total);
 
-                        // Prepare data for the DataGrid
                         DataTable dataTable = new();
-                        dataTable.Columns.Add("MenuID", typeof(string));
-                        dataTable.Columns.Add("CartDetailID", typeof(string));
-                        dataTable.Columns.Add("Jenis", typeof(string));
-                        dataTable.Columns.Add("Menu", typeof(string));
-                        dataTable.Columns.Add("Total Harga", typeof(string));
-                        dataTable.Columns.Add("Note", typeof(string));
+                        _ = dataTable.Columns.Add("MenuID", typeof(string));
+                        _ = dataTable.Columns.Add("CartDetailID", typeof(string));
+                        _ = dataTable.Columns.Add("Jenis", typeof(string));
+                        _ = dataTable.Columns.Add("Menu", typeof(string));
+                        _ = dataTable.Columns.Add("Total Harga", typeof(string));
+                        _ = dataTable.Columns.Add("Note", typeof(string));
 
                         // Group cart items by serving type
                         List<IGrouping<string, JToken>> menuGroups =
@@ -2261,7 +2247,7 @@ namespace KASIR.OfflineMode
                                 }
 
                                 // Add rows for each cart item
-                                dataTable.Rows.Add(
+                                _ = dataTable.Rows.Add(
                                     menu["menu_id"],
                                     menu["cart_detail_id"],
                                     servingTypeName,
@@ -2273,7 +2259,7 @@ namespace KASIR.OfflineMode
                                 {
                                     if (!string.IsNullOrEmpty(discountedPrice) && discountedPrice != "0")
                                     {
-                                        dataTable.Rows.Add(
+                                        _ = dataTable.Rows.Add(
                                             null,
                                             null,
                                             null,
@@ -2283,7 +2269,7 @@ namespace KASIR.OfflineMode
                                     }
                                     else
                                     {
-                                        dataTable.Rows.Add(
+                                        _ = dataTable.Rows.Add(
                                             null,
                                             null,
                                             null,
@@ -2296,7 +2282,7 @@ namespace KASIR.OfflineMode
                                 {
                                     if (!string.IsNullOrEmpty(discountedPrice) && discountedPrice != "0")
                                     {
-                                        dataTable.Rows.Add(
+                                        _ = dataTable.Rows.Add(
                                             null,
                                             null,
                                             null,
@@ -2347,8 +2333,8 @@ namespace KASIR.OfflineMode
                 else
                 {
 
-                    
 
+                    cardDetailID = "##";
                     // If file does not exist, set defaults
                     lblDetailKeranjang.Text = "Keranjang: Kosong";
                     lblDiskon1.Text = "Rp. 0";
@@ -2372,7 +2358,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                NotifyHelper.Error("An error occurred: "+ ex.Message);
+                NotifyHelper.Error("An error occurred: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -2380,7 +2366,7 @@ namespace KASIR.OfflineMode
         private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
         {
             // Add separator row to DataTable
-            dataTable.Rows.Add(null, null, null, groupKey + "s\n", null,
+            _ = dataTable.Rows.Add(null, null, null, groupKey + "s\n", null,
                 null); // Add a separator row with groupKey in column 4
 
             // Get the last row index just added
@@ -2408,31 +2394,30 @@ namespace KASIR.OfflineMode
 
         private void ReloadData()
         {
-            loadDataAsync();
+            _ = loadDataAsync();
         }
 
         public void ReloadData2()
         {
-            loadDataAsync();
+            _ = loadDataAsync();
         }
 
         public async void ReloadCart()
         {
             cartID = null;
-            totalCart = null;
             buttonPayment.Text = "Proses Pembayaran";
             lblDiskon1.Text = null;
             lblSubTotal1.Text = null;
             lblTotal1.Text = null;
             dataGridView1.DataSource = null;
-            LoadCart();
+            _ = LoadCart();
         }
 
         public void SignalReloadPayform()
         {
             if (!Directory.Exists("C:\\Temp"))
             {
-                Directory.CreateDirectory("C:\\Temp");
+                _ = Directory.CreateDirectory("C:\\Temp");
             }
 
             File.WriteAllText("C:\\Temp\\payment_signal.txt", "Payment");
@@ -2442,7 +2427,7 @@ namespace KASIR.OfflineMode
         {
             if (!Directory.Exists("C:\\Temp"))
             {
-                Directory.CreateDirectory("C:\\Temp");
+                _ = Directory.CreateDirectory("C:\\Temp");
             }
 
             File.WriteAllText("C:\\Temp\\payment_signal.txt", "PaymentDone");
@@ -2493,7 +2478,7 @@ namespace KASIR.OfflineMode
                         Location = Location,
                         ShowInTaskbar = false
                     };
-                    Invoke((MethodInvoker)delegate
+                    _ = Invoke((MethodInvoker)delegate
                     {
                         using (Offline_updateCartForm Offline_updateCartForm = new(id, cartdetailid))
                         {
@@ -2506,6 +2491,8 @@ namespace KASIR.OfflineMode
                             // Handle the result if needed
                             if (result == DialogResult.OK)
                             {
+                                NotifyHelper.Success($"Keranjang ID: #{cardDetailID}. berhasil diupdate.");
+
                                 background.Dispose();
                                 ReloadCart();
                             }
@@ -2541,34 +2528,27 @@ namespace KASIR.OfflineMode
                 ShowInTaskbar = false
             };
 
-            if (isSplitted != 0)
+            using (Offline_saveBill saveBill = new(cartID, customer_name, customer_seat))
             {
-                NotifyHelper.Info("Keranjang ini telah di Split! tidak bisa diSimpan.");
-            }
-            else
-            {
-                using (Offline_saveBill saveBill = new(cartID, customer_name, customer_seat))
+                saveBill.Owner = background;
+
+                background.Show();
+
+                DialogResult result = saveBill.ShowDialog();
+
+                // Handle the result if needed
+                if (result == DialogResult.OK)
                 {
-                    saveBill.Owner = background;
-
-                    background.Show();
-
-                    DialogResult result = saveBill.ShowDialog();
-
-                    // Handle the result if needed
-                    if (result == DialogResult.OK)
-                    {
-                        cmbDiskon.SelectedIndex = 0;
-
-                        background.Dispose();
-                        ReloadCart();
-                    }
-                    else
-                    {
-                        NotifyHelper.Error("Gagal Simpan, Silahkan coba lagi");
-                        background.Dispose();
-                        ReloadCart();
-                    }
+                    cmbDiskon.SelectedIndex = 0;
+                    NotifyHelper.Success($"Keranjang ID: #{cardDetailID}. berhasil disimpan.");
+                    background.Dispose();
+                    ReloadCart();
+                }
+                else
+                {
+                    NotifyHelper.Error("Gagal Simpan, Silahkan coba lagi");
+                    background.Dispose();
+                    ReloadCart();
                 }
             }
         }
@@ -2640,7 +2620,7 @@ namespace KASIR.OfflineMode
             {
                 if (await cekPeritemDiskon() != 0 && selectedDiskon != 0)
                 {
-                    LoadCart();
+                    _ = LoadCart();
                 }
                 // Mengambil nilai diskon yang dipilih dari combobox
 
@@ -2986,7 +2966,7 @@ namespace KASIR.OfflineMode
 
                 File.WriteAllText(cartDataPath, cartData.ToString());
 
-                LoadCart();
+                _ = LoadCart();
             }
             catch (Exception ex)
             {
@@ -3028,7 +3008,7 @@ namespace KASIR.OfflineMode
         private async void lblDetailKeranjang_Click(object sender, EventArgs e)
         {
             ReloadCart();
-            LoadCart();
+            _ = LoadCart();
         }
 
         private void txtCariMenuList_TextChanged(object sender, EventArgs e)
@@ -3118,15 +3098,17 @@ namespace KASIR.OfflineMode
                         {
                             cmbDiskon.SelectedIndex = 0;
                             background.Dispose();
+                            NotifyHelper.Success($"Keranjang ID: #{cardDetailID}. berhasil diproses.");
+
                             ReloadCart();
-                            LoadCart();
+                            _ = LoadCart();
                         }
                         else
                         {
                             NotifyHelper.Error("Gagal Simpan, Silahkan coba lagi");
                             background.Dispose();
                             ReloadCart();
-                            LoadCart();
+                            _ = LoadCart();
                         }
                     }
                 }
@@ -3189,6 +3171,8 @@ namespace KASIR.OfflineMode
                     {
                         // Jika tidak ada item yang dipesan, langsung clear
                         ClearCartFile();
+                        NotifyHelper.Success($"Keranjang ID: #{cardDetailID}. berhasil dihapus.");
+
                         ReloadCart();
                         return;
                     }
@@ -3215,6 +3199,15 @@ namespace KASIR.OfflineMode
                         if (result == DialogResult.OK)
                         {
                             background.Dispose();
+                            NotifyHelper.Success($"Keranjang ID: #{cardDetailID}. berhasil dihapus.");
+
+                            ReloadCart();
+                        }
+                        else if(result == DialogResult.Cancel)
+                        {
+                            background.Dispose();
+                            NotifyHelper.Info($"Keranjang ID: #{cardDetailID}. proses hapus dicancel.");
+
                             ReloadCart();
                         }
                         else
@@ -3297,27 +3290,27 @@ namespace KASIR.OfflineMode
                 else
                 {
                     items = 0;
-                    string selectedFilter = "makanan";
-
-                    foreach (Control control in dataGridView3.Controls)
+                    if (listDataTable == null)
                     {
-                        if (control is Panel tileButton && control.Controls.Count >= 3)
-                        {
-                            Label typeLabel = control.Controls[2] as Label;
-                            if (typeLabel != null)
-                            {
-                                string menuType = typeLabel.Text;
-
-                                // Determine whether to show or hide the item based on the filter
-                                bool showItem = selectedFilter == "Semua";
-                                control.Visible = showItem;
-
-                                //counter items
-                                items++;
-                                lblCountingItems.Text = items + " items";
-                            }
-                        }
+                        return;
                     }
+
+                    string searchTerm = "makanan";
+
+                    DataTable filteredDataTable = listDataTable.Clone();
+                    items = 0;
+                    IEnumerable<DataRow> filteredRows = listDataTable.AsEnumerable()
+                        .Where(row => row.ItemArray.Any(field => field.ToString().ToLower().Contains(searchTerm)));
+
+                    foreach (DataRow row in filteredRows)
+                    {
+                        filteredDataTable.ImportRow(row);
+                        items++;
+                    }
+
+                    lblCountingItems.Text = $"{items} items";
+
+                    dataGridView2.DataSource = filteredDataTable;
                 }
             }
             catch (Exception ex)
@@ -3341,39 +3334,44 @@ namespace KASIR.OfflineMode
                             menu.menu_type.ToLower().Contains(searchQuery)
                         ).ToList();
 
+
                         // Update the display with the search results
                         UpdateDisplayWithSearchResults(searchResults);
                     }
+                    else
+                    {
+                        NotifyHelper.Info("allMenuItems is null");
+                    }
                 }
-
                 else
                 {
                     items = 0;
-                    string selectedFilter = "minuman";
-
-                    foreach (Control control in dataGridView3.Controls)
+                    if (listDataTable == null)
                     {
-                        if (control is Panel tileButton && control.Controls.Count >= 3)
-                        {
-                            Label typeLabel = control.Controls[2] as Label;
-                            if (typeLabel != null)
-                            {
-                                string menuType = typeLabel.Text;
-
-                                // Determine whether to show or hide the item based on the filter
-                                bool showItem = selectedFilter == "Semua";
-                                control.Visible = showItem;
-
-                                //counter items
-                                items++;
-                                lblCountingItems.Text = items + " items";
-                            }
-                        }
+                        return;
                     }
+
+                    string searchTerm = "minuman";
+
+                    DataTable filteredDataTable = listDataTable.Clone();
+                    items = 0;
+                    IEnumerable<DataRow> filteredRows = listDataTable.AsEnumerable()
+                        .Where(row => row.ItemArray.Any(field => field.ToString().ToLower().Contains(searchTerm)));
+
+                    foreach (DataRow row in filteredRows)
+                    {
+                        filteredDataTable.ImportRow(row);
+                        items++;
+                    }
+
+                    lblCountingItems.Text = $"{items} items";
+
+                    dataGridView2.DataSource = filteredDataTable;
                 }
             }
             catch (Exception ex)
             {
+                NotifyHelper.Info($"Error Occurred: {ex.Message}");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -3395,6 +3393,7 @@ namespace KASIR.OfflineMode
 
                 string data = "OFF";
                 await File.WriteAllTextAsync(configFilePath, data); // Asynchronously write the initial state
+                configViewDataProductGrid = true;
 
                 await LoadConfig();
             }
@@ -3421,7 +3420,7 @@ namespace KASIR.OfflineMode
 
                 string data = "ON";
                 await File.WriteAllTextAsync(configFilePath, data); // Asynchronously write the initial state
-
+                configViewDataProductGrid = false;
                 await LoadConfig();
             }
             catch (Exception ex)

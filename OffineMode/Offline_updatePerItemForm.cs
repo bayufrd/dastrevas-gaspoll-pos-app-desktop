@@ -1,6 +1,7 @@
 ﻿using KASIR.Model;
 using KASIR.Properties;
 using Newtonsoft.Json;
+using KASIR.Helper;
 
 namespace KASIR.OfflineMode
 {
@@ -37,8 +38,7 @@ namespace KASIR.OfflineMode
             {
                 if (textPin.Text == "" || textPin.Text == null)
                 {
-                    MessageBox.Show("Masukan pin terlebih dahulu", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Masukan pin terlebih dahulu");
                     return;
                 }
 
@@ -54,12 +54,12 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    MessageBox.Show("Password salah", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    NotifyHelper.Error("Password salah");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal ubah data " + ex.Message);
+                NotifyHelper.Error("Gagal ubah data " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 DialogResult = DialogResult.Cancel;
             }

@@ -96,7 +96,7 @@
             lblNameCart.FlatAppearance.BorderSize = 0;
             lblNameCart.FlatStyle = FlatStyle.Flat;
             lblNameCart.Font = new Font("Segoe UI", 10F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point);
-            lblNameCart.ForeColor = Color.FromArgb(30, 31, 68);
+            lblNameCart.ForeColor = Color.Black;
             lblNameCart.IconChar = FontAwesome.Sharp.IconChar.Carrot;
             lblNameCart.IconColor = Color.FromArgb(30, 31, 68);
             lblNameCart.IconFont = FontAwesome.Sharp.IconFont.Auto;
@@ -133,7 +133,7 @@
             // 
             // btnKeluar
             // 
-            btnKeluar.BackColor = Color.WhiteSmoke;
+            btnKeluar.BackColor = Color.White;
             btnKeluar.Cursor = Cursors.Hand;
             btnKeluar.FlatAppearance.BorderSize = 0;
             btnKeluar.FlatStyle = FlatStyle.Flat;
@@ -144,18 +144,18 @@
             btnKeluar.IconColor = Color.FromArgb(30, 31, 68);
             btnKeluar.IconFont = FontAwesome.Sharp.IconFont.Auto;
             btnKeluar.IconSize = 25;
+            btnKeluar.ImageAlign = ContentAlignment.MiddleLeft;
             btnKeluar.Location = new Point(12, 20);
             btnKeluar.Name = "btnKeluar";
             btnKeluar.Size = new Size(88, 30);
             btnKeluar.TabIndex = 28;
-            btnKeluar.Text = "Keluar";
             btnKeluar.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnKeluar.UseVisualStyleBackColor = false;
             btnKeluar.Click += btnKeluar_Click;
             // 
             // btnSimpan
             // 
-            btnSimpan.BackColor = Color.FromArgb(30, 31, 68);
+            btnSimpan.BackColor = Color.FromArgb(15, 90, 94);
             btnSimpan.Cursor = Cursors.Hand;
             btnSimpan.FlatAppearance.BorderSize = 0;
             btnSimpan.FlatStyle = FlatStyle.Flat;

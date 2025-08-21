@@ -4,6 +4,7 @@ using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using KASIR.Helper;
 
 namespace KASIR.OfflineMode
 {
@@ -20,14 +21,14 @@ namespace KASIR.OfflineMode
         }
         private void btnKeluar_Click(object sender, EventArgs e)
         {
-            DialogResult = DialogResult.OK;
+            DialogResult = DialogResult.Cancel;
 
             Close();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            DialogResult = DialogResult.OK;
+            DialogResult = DialogResult.Cancel;
             Close();
         }
         private async void button2_Click(object sender, EventArgs e)
@@ -36,15 +37,13 @@ namespace KASIR.OfflineMode
             {
                 if (txtPin.Text == null || txtPin.Text == "")
                 {
-                    MessageBox.Show("Pin salah atau format kurang tepat", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Pin salah atau format kurang tepat");
                     return;
                 }
 
                 if (txtReason.Text == null || txtReason.Text == "")
                 {
-                    MessageBox.Show("Format alasan kurang tepat", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Format alasan kurang tepat");
                     return;
                 }
 
@@ -53,8 +52,7 @@ namespace KASIR.OfflineMode
                 CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
                 if (txtPin.Text != dataOutlet.data.pin.ToString())
                 {
-                    MessageBox.Show("Pin salah atau format kurang tepat", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Pin salah atau format kurang tepat");
                     return;
                 }
 
@@ -236,7 +234,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                NotifyHelper.Error(ex.ToString());
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }

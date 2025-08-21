@@ -189,7 +189,7 @@ namespace KASIR.OfflineMode
             // 
             // btnRefund
             // 
-            btnRefund.BackColor = Color.FromArgb(30, 31, 68);
+            btnRefund.BackColor = Color.FromArgb(15, 90, 94);
             btnRefund.Cursor = Cursors.Hand;
             btnRefund.FlatAppearance.BorderSize = 0;
             btnRefund.FlatStyle = FlatStyle.Flat;
@@ -210,7 +210,7 @@ namespace KASIR.OfflineMode
             // 
             // button1
             // 
-            button1.BackColor = Color.WhiteSmoke;
+            button1.BackColor = Color.White;
             button1.Cursor = Cursors.Hand;
             button1.FlatAppearance.BorderSize = 0;
             button1.FlatStyle = FlatStyle.Flat;
@@ -221,11 +221,11 @@ namespace KASIR.OfflineMode
             button1.IconColor = Color.FromArgb(30, 31, 68);
             button1.IconFont = IconFont.Auto;
             button1.IconSize = 25;
+            button1.ImageAlign = ContentAlignment.MiddleLeft;
             button1.Location = new Point(8, 20);
             button1.Name = "button1";
             button1.Size = new Size(88, 30);
             button1.TabIndex = 31;
-            button1.Text = "Keluar";
             button1.TextImageRelation = TextImageRelation.ImageBeforeText;
             button1.UseVisualStyleBackColor = false;
             button1.Click += button1_Click;

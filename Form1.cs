@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using FontAwesome.Sharp;
+using KASIR.Helper;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
@@ -12,7 +13,6 @@ using KASIR.OffineMode;
 using KASIR.OfflineMode;
 using KASIR.Properties;
 using KASIR.Services;
-using KASIR.Helper;
 using Newtonsoft.Json;
 using SharpCompress.Archives;
 using SharpCompress.Common;
@@ -26,18 +26,17 @@ namespace KASIR
     public partial class Form1 : Form
     {
         private IconButton currentBtn;
-        private Panel leftBorderBtn;
+        private readonly Panel leftBorderBtn;
         private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet.ToString();
         private readonly OutletService _outletService;
         private string DownloadPath, VersionUpdaterApp, PathKasir, baseOutletName;
-        private static Random random = new();
-        private IInternetService _internetServices;
+        private static readonly Random random = new();
+        private readonly IInternetService _internetServices;
         public Form1()
         {
             InitializeComponent();
             _internetServices = new InternetService();
 
-            // Inisialisasi dengan dependency injection atau manual
             _outletService = new OutletService(
                 Settings.Default.BaseOutlet,
                 new InternetService(),
@@ -79,12 +78,11 @@ namespace KASIR
             ResumeLayout(true);
         }
 
-        // Method untuk recursive refresh
         private void RecursiveRefreshIcons(Control control)
         {
             if (control is IconButton iconBtn)
             {
-                iconBtn.Invalidate(); // Force redraw
+                iconBtn.Invalidate();
             }
 
             foreach (Control child in control.Controls)
@@ -93,7 +91,6 @@ namespace KASIR
             }
         }
 
-        // Tambahkan method ini di Form1
         public static void SetDoubleBufferedForAllControls(Control control)
         {
             foreach (Control c in control.Controls)
@@ -114,13 +111,11 @@ namespace KASIR
             string configPath = "setting\\OfflineMode.data";
             string directoryPath = Path.GetDirectoryName(configPath);
 
-            // Ensure the directory exists
             if (!Directory.Exists(directoryPath))
             {
-                Directory.CreateDirectory(directoryPath);
+                _ = Directory.CreateDirectory(directoryPath);
             }
 
-            // Create or overwrite the config file
             if (!File.Exists(configPath))
             {
                 await File.WriteAllTextAsync(configPath, "ON");
@@ -190,7 +185,6 @@ namespace KASIR
                 SignalPing.Text = "\n\nPing\nTest";
             }
             SignalPing.ForeColor = DrawingColor.White;
-            lblPing.ForeColor = DrawingColor.White;
             SignalPing.IconColor = DrawingColor.White;
         }
 
@@ -211,7 +205,7 @@ namespace KASIR
                 p.StartInfo.CreateNoWindow = false;
                 p.StartInfo.RedirectStandardOutput = true;
                 p.StartInfo.Verb = "runas";
-                p.Start();
+                _ = p.Start();
 
                 Thread.Sleep(1000);
             }
@@ -223,29 +217,22 @@ namespace KASIR
 
         private async void StarterApp()
         {
-            /*SettingsForm c = new(this);
-            await c.LoadConfig();*/
-            //NotifyHelper.Success("");
             await headerName();
             initPingTest();
             ConfigOfflineMode();
-            // Mengecek apakah sButtonOffline dalam status checked
             string Config = "setting\\OfflineMode.data";
-            // Ensure the directory exists
             string directoryPath = Path.GetDirectoryName(Config);
             if (!Directory.Exists(directoryPath))
             {
-                Directory.CreateDirectory(directoryPath);
+                _ = Directory.CreateDirectory(directoryPath);
             }
 
-            // Memeriksa apakah file ada
             if (!File.Exists(Config))
             {
-                // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
                 File.WriteAllText(Config, "ON");
             }
 
-            string allSettingsData = File.ReadAllText(Config); // Ambil status offline
+            string allSettingsData = File.ReadAllText(Config); 
 
             await Task.Run(async () =>
             {
@@ -261,32 +248,28 @@ namespace KASIR
 
                 CacheDataApp cacheDataApp = new(TypeCacheEksekusi);
 
-                // Minimkan dan tampilkan di system tray
                 cacheDataApp.Load += (sender, e) =>
                 {
                     cacheDataApp.WindowState = FormWindowState.Minimized;
 
-                    // Tambahkan notifikasi sistem (opsional)
                     ShowSystemTrayNotification("Sinkronisasi dimulai", "Proses sinkronisasi data sedang berjalan");
                 };
 
                 cacheDataApp.Show();
             }
         }
-        // Metode bantuan untuk notifikasi
         private void ShowSystemTrayNotification(string title, string message)
         {
-            NotifyIcon notifyIcon = new NotifyIcon
+            NotifyIcon notifyIcon = new()
             {
                 Visible = true,
-                Icon = SystemIcons.Information, // Ganti dengan icon kustom jika perlu
+                Icon = SystemIcons.Information,
                 Text = title
             };
 
             notifyIcon.ShowBalloonTip(5000, title, message, ToolTipIcon.Info);
 
-            // Atur untuk menghilang setelah beberapa saat
-            Timer timer = new Timer();
+            Timer timer = new();
             timer.Interval = 5000; // 5 detik
             timer.Tick += (sender, e) =>
             {
@@ -300,7 +283,6 @@ namespace KASIR
             await sendDataSyncPerHours(allSettingsData);
             if (allSettingsData == "ON")
             {
-                // Create an instance of transactionFileMover and then call the method
                 transactionFileMover fileMover = new();
                 await fileMover.refreshCacheTransaction();
             }
@@ -335,12 +317,11 @@ namespace KASIR
         {
             if (string.IsNullOrWhiteSpace(text))
             {
-                return; // Avoid null or empty
-            }
+                return;             }
 
             if (lblNamaOutlet.InvokeRequired)
             {
-                await Task.Factory.FromAsync(
+                _ = await Task.Factory.FromAsync(
                     lblNamaOutlet.BeginInvoke(new Action(() => lblNamaOutlet.Text = "Please Wait.. " + text), null),
                     ar => lblNamaOutlet.EndInvoke(ar)
                 );
@@ -377,7 +358,7 @@ namespace KASIR
                     // Jika folder tidak ada, buat foldernya
                     if (!Directory.Exists(directoryPath))
                     {
-                        Directory.CreateDirectory(directoryPath);
+                        _ = Directory.CreateDirectory(directoryPath);
                     }
 
                     // Tulis konten default ke file
@@ -439,10 +420,8 @@ namespace KASIR
 
         private async Task DownloadFileAsync(HttpClient httpClient, string fileUrl, string destinationPath)
         {
-            // Ensure directory exists
-            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+            _ = Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
 
-            // Download file
             byte[] fileData = await httpClient.GetByteArrayAsync(fileUrl);
             await File.WriteAllBytesAsync(destinationPath, fileData);
         }
@@ -455,10 +434,8 @@ namespace KASIR
 
                 string extractDirectory = $"{PathKasir}\\update";
 
-                // Ensure the extraction directory exists
-                Directory.CreateDirectory(extractDirectory);
+                _ = Directory.CreateDirectory(extractDirectory);
 
-                // Extract RAR file
                 using (IArchive archive = ArchiveFactory.Open(rarFilePath))
                 {
                     foreach (IArchiveEntry entry in archive.Entries.Where(e => !e.IsDirectory))
@@ -468,13 +445,11 @@ namespace KASIR
                     }
                 }
 
-                // Update version file
                 string versionFilePath = $"{PathKasir}\\update\\versionUpdater.txt";
                 await File.WriteAllTextAsync(versionFilePath, changeVersion);
 
-                // Small delay and open updater
                 await Task.Delay(3000);
-                OpenUpdaterExe();
+                _ = OpenUpdaterExe();
             }
             catch (Exception ex)
             {
@@ -535,7 +510,6 @@ namespace KASIR
 
         private static bool IsValidVersion(string version)
         {
-            // Memastikan hanya angka dan maksimal 5 digit
             return Regex.IsMatch(version, @"^\d{1,5}$");
         }
 
@@ -544,7 +518,6 @@ namespace KASIR
             try
             {
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
-                // Deserialize JSON ke object CartDataCache
                 CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
 
                 var json = new
@@ -554,7 +527,6 @@ namespace KASIR
                     new_version = newVersion,
                     last_updated = GetCurrentTimeInIndonesianFormat()
                 };
-                // Mengubah objek menjadi string JSON
                 string jsonString =
                     JsonConvert.SerializeObject(json, Formatting.Indented); // Tidak ada indentasi
                 IApiService apiService = new ApiService();
@@ -596,7 +568,6 @@ namespace KASIR
                     newVersion = newVersion.Replace(".", "");
                     currentVersion = currentVersion.Replace(".", "");
 
-                    // Validasi input
                     if (!IsValidVersion(currentVersion))
                     {
                         currentVersion = "1080"; // Set default version jika tidak valid
@@ -605,19 +576,16 @@ namespace KASIR
                     bool shouldUpdate = false;
                     if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
                     {
-                        // Ambil data focus outlet
                         string originalUrl = Properties.Settings.Default.BaseAddressDev.ToString();
                         string urlOutletFocus = RemoveApiPrefix(originalUrl);
                         string focusOutletData =
                             await httpClient.GetStringAsync($"{urlOutletFocus}/update/outletUpdate.txt");
 
-                        // Parsing data focus outlet
                         string[] focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
                             .Split(',')
-                            .Select(s => s.Trim()) // Menghapus spasi di sekitar
+                            .Select(s => s.Trim()) 
                             .ToArray();
 
-                        // Cek apakah baseOutlet ada dalam focusOutlets
                         if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
                         {
                             shouldUpdate = true;
@@ -629,7 +597,7 @@ namespace KASIR
                             LoggerUtil.LogNetwork("Open Updater");
                             await OpenUpdaterExe();
 
-                            return; // Keluar dari method setelah membuka updater
+                            return; 
                         }
                     }
                 }
@@ -642,14 +610,12 @@ namespace KASIR
 
         private string RemoveApiPrefix(string url)
         {
-            // Memeriksa apakah URL mengandung "api."
             if (url.Contains("api."))
             {
-                // Mengganti "api." dengan string kosong
                 return url.Replace("api.", "");
             }
 
-            return url; // Kembalikan URL asli jika tidak ada "api."
+            return url; 
         }
 
         private async Task OpenUpdaterExe()
@@ -682,7 +648,7 @@ namespace KASIR
                     Verb = "runas"
                 };
 
-                Process.Start(startInfo);
+                _ = Process.Start(startInfo);
 
                 await Task.Delay(1000);
 
@@ -714,7 +680,7 @@ namespace KASIR
         {
             if (lblNamaOutlet.InvokeRequired)
             {
-                lblNamaOutlet.Invoke(new MethodInvoker(() => lblNamaOutlet.Text = outletName));
+                _ = lblNamaOutlet.Invoke(new MethodInvoker(() => lblNamaOutlet.Text = outletName));
             }
             else
             {
@@ -793,8 +759,8 @@ namespace KASIR
                 closeNavbar();
                 isOpenNavbar = false;
             }
-            Color randomColor = PickRandomColor(); // Pick a random color for button
-            ActivateButton(sender, randomColor); // Activate the button
+            Color randomColor = PickRandomColor(); 
+            ActivateButton(sender, randomColor); 
 
             try
             {
@@ -806,8 +772,6 @@ namespace KASIR
                 offlineMasterPos.TopLevel = false;
                 offlineMasterPos.Dock = DockStyle.Fill;
 
-
-                // Add the Offline_masterPos form to the panel
                 panel1.Controls.Add(offlineMasterPos);
                 offlineMasterPos.BringToFront();
                 offlineMasterPos.Show();
@@ -816,11 +780,10 @@ namespace KASIR
                 btnShiftLaporan.Enabled = true;
                 MenuBtn.Enabled = true;
                 TransBtn.Enabled = true;
-                lblTitleChildForm.Text = "Menu - Offline Mode Transaksi"; // Update label for Offline Mode
+                lblTitleChildForm.Text = "Menu - Offline Mode Transaksi"; 
             }
             catch (Exception ex)
             {
-                // Handle any exceptions that occur during the process
                 NotifyHelper.Error("Terjadi kesalahan: " + ex.Message);
             }
         }
@@ -843,7 +806,6 @@ namespace KASIR
             }
         }
 
-        //button shiftreport / shift report end shift
         private async void buttonHistoryTransaction(object sender, EventArgs e)
         {
             if (isOpenNavbar)
@@ -856,9 +818,8 @@ namespace KASIR
 
             try
             {
-                // Read the OfflineMode status
                 string config = "setting\\OfflineMode.data";
-                string allSettingsData = File.ReadAllText(config); // Get the current OfflineMode setting
+                string allSettingsData = File.ReadAllText(config);
 
                 btnShiftLaporan.Enabled = false;
                 MenuBtn.Enabled = false;
@@ -889,7 +850,6 @@ namespace KASIR
             }
         }
 
-        //Drag Form
         [DllImport("user32.DLL", EntryPoint = "ReleaseCapture")]
         private static extern void ReleaseCapture();
 
@@ -902,12 +862,8 @@ namespace KASIR
             SendMessage(Handle, 0x112, 0xf012, 0);
         }
 
-        //Close-Maximize-Minimize
         private async void btnExit_Click(object sender, EventArgs e)
         {
-            //string data = "OFF";
-            //await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
-
             Application.Exit();
         }
 
@@ -928,10 +884,8 @@ namespace KASIR
             WindowState = FormWindowState.Minimized;
         }
 
-        //Remove transparent border in maximized state
         private void FormMainMenu_Resize(object sender, EventArgs e)
         {
-            ////LoggerUtil.LogPrivateMethod(nameof(FormMainMenu_Resize));
 
             if (WindowState == FormWindowState.Maximized)
             {
@@ -949,7 +903,6 @@ namespace KASIR
 
         private async void timer1_Tick(object sender, EventArgs e)
         {
-            // Disable timer while processing to prevent multiple overlapping executions
             SyncTimer.Enabled = false;
 
             try
@@ -964,11 +917,9 @@ namespace KASIR
                     SignalPing.Width = 50;
                     SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
                 }
-                // Read the OfflineMode status
                 string config = "setting\\OfflineMode.data";
-                string allSettingsData = File.ReadAllText(config); // Get the current OfflineMode setting
+                string allSettingsData = File.ReadAllText(config);
 
-                // Check if OfflineMode is ON
                 if (allSettingsData != "ON")
                 {
                     return;
@@ -977,7 +928,7 @@ namespace KASIR
                 if (!_internetServices.IsInternetConnected())
                 {
                     SignalPing.ForeColor = Color.Red;
-                    SignalPing.Text = $"Error Sync \n{DateTime.Now:HH:mm}";
+                    SignalPing.Text = $"Error\n Sync \n{DateTime.Now:HH:mm}";
                     SignalPing.IconColor = Color.White;
                     return;
                 }
@@ -1021,7 +972,7 @@ namespace KASIR
                         SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
                     }
                     SignalPing.ForeColor = Color.Red;
-                    SignalPing.Text = $"Error Sync \n{DateTime.Now:HH:mm}";
+                    SignalPing.Text = $"Error\n Sync \n{DateTime.Now:HH:mm}";
                     SignalPing.IconColor = Color.White;
                     NotifyHelper.Error($"Gagal syncron server at ${DateTime.Now:HH:mm}");
 
@@ -1064,8 +1015,6 @@ namespace KASIR
                 SignalPing.Width = 50;
                 SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
             }
-            lblPing.ForeColor = color;
-            lblPing.Text = text;
             SignalPing.ForeColor = color;
             SignalPing.Text = text;
             SignalPing.IconColor = color;
@@ -1140,8 +1089,6 @@ namespace KASIR
                 SignalPing.Width = 50;
                 SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
             }
-            lblPing.ForeColor = color;
-            lblPing.Text = text;
             SignalPing.ForeColor = color;
             SignalPing.Text = text;
             SignalPing.IconColor = color;
@@ -1185,7 +1132,7 @@ namespace KASIR
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = false;
             startInfo.Arguments = $"{secondScreen.X} {secondScreen.Y} {secondScreen.Width} {secondScreen.Height}";
-            Process.Start(startInfo);
+            _ = Process.Start(startInfo);
         }
 
         public async void RefreshMenu()
@@ -1337,7 +1284,6 @@ namespace KASIR
                 LogoKasir.Width = 103;
                 panel2.Width = 103;
                 SignalPing.Width = 103;
-                lblPing.Width = 103;
 
                 LogoKasir.Image = Resources.a_2_;
                 LogoKasir.Height = 103;
@@ -1348,7 +1294,6 @@ namespace KASIR
                 BtnSettingForm.Text = "Settings";
                 btnContact.Text = "Contact Us";
                 btnDev.Text = "Developer";
-                lblPing.Text = "Ping";
                 SignalPing.Text = "Test Ping";
             }
             else
@@ -1368,7 +1313,6 @@ namespace KASIR
             LogoKasir.Height = 50;
 
             SignalPing.Width = 50;
-            lblPing.Width = 50;
 
             MenuBtn.Text = "";
             TransBtn.Text = "";
@@ -1376,7 +1320,6 @@ namespace KASIR
             BtnSettingForm.Text = "";
             btnContact.Text = "";
             btnDev.Text = "";
-            lblPing.Text = "";
             SignalPing.Text = "";
             SignalPing.ImageAlign = ContentAlignment.MiddleLeft;
         }

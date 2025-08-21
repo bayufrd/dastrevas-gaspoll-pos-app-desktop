@@ -5,6 +5,7 @@ using KASIR.Printer;
 using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using KASIR.Helper;
 
 namespace KASIR.OffineMode
 {
@@ -109,29 +110,26 @@ namespace KASIR.OffineMode
                 int seat = 0;
                 if (string.IsNullOrEmpty(txtNama.Text))
                 {
-                    MessageBox.Show("Masukan nama pelanggan", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Masukan nama pelanggan");
                     return;
                 }
 
                 if (string.IsNullOrEmpty(txtSeat.Text))
                 {
-                    MessageBox.Show("Masukan seat pelanggan", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Masukan seat pelanggan");
                     return;
                 }
 
                 if (!int.TryParse(txtSeat.Text.Trim(), out seat))
                 {
-                    MessageBox.Show("Seat harus berupa angka", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Seat harus berupa angka");
                     return;
                 }
 
                 string cartDataPath = "DT-Cache\\Transaction\\Cart.data";
                 if (!File.Exists(cartDataPath))
                 {
-                    MessageBox.Show("Keranjang Masih Kosong", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    NotifyHelper.Warning("Keranjang Masih Kosong");
                     ResetButtonState();
                     return;
                 }
@@ -141,8 +139,7 @@ namespace KASIR.OffineMode
 
                 if (string.IsNullOrEmpty(cartDataJson))
                 {
-                    MessageBox.Show("Data keranjang kosong atau tidak valid", "Error", MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
+                    NotifyHelper.Warning("Data keranjang kosong atau tidak valid");
                     ResetButtonState();
                     return;
                 }
@@ -153,8 +150,7 @@ namespace KASIR.OffineMode
                     cartData = JsonConvert.DeserializeObject<JObject>(cartDataJson);
                     if (cartData == null)
                     {
-                        MessageBox.Show("Format data keranjang tidak valid", "Error", MessageBoxButtons.OK,
-                            MessageBoxIcon.Error);
+                        NotifyHelper.Warning("Format data keranjang tidak valid");
                         ResetButtonState();
                         return;
                     }
@@ -162,8 +158,7 @@ namespace KASIR.OffineMode
                 catch (JsonException ex)
                 {
                     LoggerUtil.LogError(ex, "JSON parsing error: {ErrorMessage}", ex.Message);
-                    MessageBox.Show("Format data keranjang tidak valid: " + ex.Message, "Error", MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
+                    NotifyHelper.Error("Format data keranjang tidak valid: " + ex.Message);
                     ResetButtonState();
                     return;
                 }
@@ -172,8 +167,7 @@ namespace KASIR.OffineMode
                 JArray? cartDetails = cartData["cart_details"] as JArray;
                 if (cartDetails == null || cartDetails.Count == 0)
                 {
-                    MessageBox.Show("Tidak ada item dalam keranjang", "Error", MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
+                    NotifyHelper.Warning("Tidak ada item dalam keranjang");
                     ResetButtonState();
                     return;
                 }
@@ -196,8 +190,7 @@ namespace KASIR.OffineMode
                 string firstCartDetailId = cartDetails?.FirstOrDefault()?["cart_detail_id"]?.ToString();
                 if (string.IsNullOrEmpty(firstCartDetailId))
                 {
-                    MessageBox.Show("ID detail keranjang tidak valid", "Error", MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
+                    NotifyHelper.Warning("ID detail keranjang tidak valid");
                     ResetButtonState();
                     return;
                 }
@@ -326,16 +319,14 @@ namespace KASIR.OffineMode
             catch (FormatException ex)
             {
                 LoggerUtil.LogError(ex, "Format error: {ErrorMessage}", ex.Message);
-                MessageBox.Show(
-                    $"Format data tidak valid. Pastikan semua input angka sudah benar.\nDetail: {ex.Message}", "Gaspol",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error(
+                    $"Format data tidak valid. Pastikan semua input angka sudah benar.\nDetail: {ex.Message}");
                 ResetButtonState();
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show($"Terjadi kesalahan, silakan coba lagi.\nDetail: {ex.Message}", "Gaspol",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error($"Terjadi kesalahan, silakan coba lagi.\nDetail: {ex.Message}");
                 ResetButtonState();
             }
         }
@@ -355,7 +346,7 @@ namespace KASIR.OffineMode
 
                 if (!File.Exists(cartDataPath))
                 {
-                    MessageBox.Show("Keranjang Masih Kosong", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    NotifyHelper.Warning("Keranjang Masih Kosong");
                     ResetButtonState();
                     return;
                 }
@@ -371,7 +362,7 @@ namespace KASIR.OffineMode
 
                 if (cartData == null)
                 {
-                    MessageBox.Show("Gagal membaca data keranjang", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    NotifyHelper.Warning("Gagal membaca data keranjang");
                     ResetButtonState();
                     return;
                 }
@@ -562,7 +553,7 @@ namespace KASIR.OffineMode
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-                MessageBox.Show(ex.ToString());
+                NotifyHelper.Warning(ex.ToString());
             }
         }
 

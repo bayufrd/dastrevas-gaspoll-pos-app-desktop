@@ -642,8 +642,7 @@ namespace KASIR.Komponen
                     string data = txtRunningText.Text;
                     await SaveRunningText(data);
                 }
-
-                //Close();
+                NotifyHelper.Success("Config terbaru diSimpan.");
             }
             catch (Exception ex)
             {
@@ -785,25 +784,104 @@ namespace KASIR.Komponen
 
         private async Task StartUpdaterProcess()
         {
-            if (File.Exists(Application.StartupPath + "update\\update.exe"))
+            string updatePath = Path.Combine(Application.StartupPath, "update", "update.exe");
+
+            try
             {
-                if (IsInternetConnected())
+                // Validasi Ekstensi dan Keamanan File
+                if (!File.Exists(updatePath))
                 {
-                    LoggerUtil.LogWarning("Open Update.exe");
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = Application.StartupPath + "update\\update.exe",
-                        UseShellExecute = false,
-                        CreateNoWindow = false,
-                        Verb = "runas"
-                    });
-                    Application.Exit();
+                    NotifyHelper.Error("File update tidak ditemukan");
+                    LoggerUtil.LogWarning("Update file not found");
+                    return;
+                }
+
+                // Tambahkan Verifikasi Tambahan
+                if (!IsValidUpdateExecutable(updatePath))
+                {
+                    NotifyHelper.Error("File update tidak valid");
+                    LoggerUtil.LogWarning("Invalid update executable");
+                    return;
+                }
+
+                // Periksa Koneksi Internet dengan Timeout
+                if (!await IsInternetConnectedAsync())
+                {
+                    NotifyHelper.Warning("Tidak ada koneksi internet");
+                    return;
+                }
+
+                // Logging Detail Sebelum Proses
+                LoggerUtil.LogWarning($"Memulai proses update dari: {updatePath}");
+
+                // Proses Start dengan Konfigurasi Aman
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = updatePath,
+                    UseShellExecute = false,
+                    CreateNoWindow = false,
+                    Verb = "runas", // Elevated privileges
+                    WorkingDirectory = Path.GetDirectoryName(updatePath)
+                };
+
+                // Keluar Aplikasi Setelah Memulai Update
+                Application.Exit();
+            }
+            catch (Exception ex)
+            {
+                // Logging Komprehensif
+                LoggerUtil.LogError(ex, $"Gagal memulai proses update: {ex.Message}");
+                NotifyHelper.Error($"Gagal memulai update: {ex.Message}");
+            }
+        }
+
+        // Metode Tambahan untuk Validasi
+        private bool IsValidUpdateExecutable(string filePath)
+        {
+            try
+            {
+                FileInfo fileInfo = new FileInfo(filePath);
+
+                // Validasi Ukuran File
+                if (fileInfo.Length == 0 || fileInfo.Length > 50_000_000) // Maks 50 MB
+                {
+                    return false;
+                }
+
+                // Validasi Ekstensi
+                if (Path.GetExtension(filePath).ToLower() != ".exe")
+                {
+                    return false;
+                }
+
+                // Optional: Tambahkan Hash Verification
+                // string fileHash = CalculateFileHash(filePath);
+                // return fileHash == "ExpectedHashValue";
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Validasi file update gagal");
+                return false;
+            }
+        }
+
+        // Metode Koneksi Internet dengan Timeout
+        private async Task<bool> IsInternetConnectedAsync(int timeoutMilliseconds = 5000)
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.Timeout = TimeSpan.FromMilliseconds(timeoutMilliseconds);
+                    var response = await client.GetAsync("https://www.google.com");
+                    return response.IsSuccessStatusCode;
                 }
             }
-            else
+            catch
             {
-                NotifyHelper.Error("File tidak ditemukan");
-                LoggerUtil.LogWarning("File not found");
+                return false;
             }
         }
 
@@ -811,6 +889,7 @@ namespace KASIR.Komponen
         {
             try
             {
+                btnSave_Click(sender, null);
                 if (printerModel != null)
                 {
                     await printerModel.SelectAndPrintAsync();
@@ -941,7 +1020,7 @@ namespace KASIR.Komponen
             {
                 Directory.CreateDirectory(configFolderPath);
             }
-            
+
             await EnsureFileExistsAsync("setting\\FooterStruk.data", "TERIMAKASIH ATAS KUNJUNGANNYA", txtFooter);
             await EnsureFileExistsAsync("setting\\RunningText.data", "TERIMAKASIH ATAS KUNJUNGANNYA", txtRunningText);
             await EnsureFileExistsAsync("setting\\configListMenu.data", "OFF", sButtonListMenu);
@@ -1377,6 +1456,11 @@ namespace KASIR.Komponen
             //Close();
 
             u.Show();
+        }
+
+        private void Offline_settingsForm_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -31,6 +31,8 @@ namespace KASIR.OfflineMode
         private void InitializeComponent()
         {
             panel1 = new Panel();
+            panel4 = new Panel();
+            txtReason = new TextBox();
             label2 = new Label();
             label1 = new Label();
             panel3 = new Panel();
@@ -40,16 +42,15 @@ namespace KASIR.OfflineMode
             button2 = new IconButton();
             btnSimpan = new Button();
             btnKeluar = new Button();
-            panel4 = new Panel();
-            txtReason = new TextBox();
             panel1.SuspendLayout();
+            panel4.SuspendLayout();
             panel3.SuspendLayout();
             panel2.SuspendLayout();
-            panel4.SuspendLayout();
             SuspendLayout();
             // 
             // panel1
             // 
+            panel1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             panel1.Controls.Add(panel4);
             panel1.Controls.Add(label2);
             panel1.Controls.Add(label1);
@@ -59,8 +60,30 @@ namespace KASIR.OfflineMode
             panel1.Controls.Add(btnKeluar);
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
-            panel1.Size = new Size(493, 243);
+            panel1.Size = new Size(300, 252);
             panel1.TabIndex = 0;
+            // 
+            // panel4
+            // 
+            panel4.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            panel4.BorderStyle = BorderStyle.FixedSingle;
+            panel4.Controls.Add(txtReason);
+            panel4.Location = new Point(13, 162);
+            panel4.Name = "panel4";
+            panel4.Size = new Size(268, 76);
+            panel4.TabIndex = 22;
+            // 
+            // txtReason
+            // 
+            txtReason.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            txtReason.BorderStyle = BorderStyle.None;
+            txtReason.Location = new Point(8, 8);
+            txtReason.Multiline = true;
+            txtReason.Name = "txtReason";
+            txtReason.PlaceholderText = "Masukkan alasan ...";
+            txtReason.Size = new Size(255, 63);
+            txtReason.TabIndex = 2;
+            txtReason.TextAlign = HorizontalAlignment.Center;
             // 
             // label2
             // 
@@ -84,33 +107,36 @@ namespace KASIR.OfflineMode
             // 
             // panel3
             // 
+            panel3.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             panel3.BorderStyle = BorderStyle.FixedSingle;
             panel3.Controls.Add(textPin);
             panel3.Location = new Point(12, 91);
             panel3.Name = "panel3";
-            panel3.Size = new Size(461, 36);
+            panel3.Size = new Size(268, 36);
             panel3.TabIndex = 19;
             // 
             // textPin
             // 
+            textPin.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             textPin.BorderStyle = BorderStyle.None;
             textPin.Location = new Point(0, 9);
             textPin.Name = "textPin";
             textPin.PasswordChar = '*';
-            textPin.Size = new Size(460, 16);
+            textPin.Size = new Size(267, 16);
             textPin.TabIndex = 10;
+            textPin.Text = "@@@";
             textPin.TextAlign = HorizontalAlignment.Center;
             textPin.UseSystemPasswordChar = true;
             // 
             // panel2
             // 
+            panel2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             panel2.BackColor = SystemColors.Window;
             panel2.Controls.Add(button1);
             panel2.Controls.Add(button2);
-            panel2.Dock = DockStyle.Top;
             panel2.Location = new Point(0, 0);
             panel2.Name = "panel2";
-            panel2.Size = new Size(493, 70);
+            panel2.Size = new Size(300, 70);
             panel2.TabIndex = 12;
             // 
             // button1
@@ -137,21 +163,22 @@ namespace KASIR.OfflineMode
             // 
             // button2
             // 
-            button2.BackColor = Color.FromArgb(30, 31, 68);
+            button2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            button2.BackColor = Color.White;
             button2.Cursor = Cursors.Hand;
             button2.FlatAppearance.BorderSize = 0;
             button2.FlatStyle = FlatStyle.Flat;
             button2.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             button2.ForeColor = Color.WhiteSmoke;
             button2.IconChar = IconChar.CheckCircle;
-            button2.IconColor = Color.WhiteSmoke;
+            button2.IconColor = Color.Black;
             button2.IconFont = IconFont.Auto;
             button2.IconSize = 25;
-            button2.Location = new Point(364, 12);
+            button2.ImageAlign = ContentAlignment.MiddleRight;
+            button2.Location = new Point(171, 12);
             button2.Name = "button2";
             button2.Size = new Size(109, 30);
             button2.TabIndex = 27;
-            button2.Text = "Konfirmasi";
             button2.TextImageRelation = TextImageRelation.ImageBeforeText;
             button2.UseVisualStyleBackColor = false;
             button2.Click += button2_Click;
@@ -183,31 +210,12 @@ namespace KASIR.OfflineMode
             btnKeluar.UseVisualStyleBackColor = false;
             btnKeluar.Click += btnKeluar_Click;
             // 
-            // panel4
-            // 
-            panel4.BorderStyle = BorderStyle.FixedSingle;
-            panel4.Controls.Add(txtReason);
-            panel4.Location = new Point(13, 162);
-            panel4.Name = "panel4";
-            panel4.Size = new Size(461, 67);
-            panel4.TabIndex = 22;
-            // 
-            // txtReason
-            // 
-            txtReason.BorderStyle = BorderStyle.None;
-            txtReason.Location = new Point(8, 8);
-            txtReason.Multiline = true;
-            txtReason.Name = "txtReason";
-            txtReason.PlaceholderText = "Masukkan alasan ...";
-            txtReason.Size = new Size(438, 54);
-            txtReason.TabIndex = 2;
-            // 
             // Offline_updatePerItemForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
-            ClientSize = new Size(493, 241);
+            ClientSize = new Size(300, 250);
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
             Name = "Offline_updatePerItemForm";
@@ -216,11 +224,11 @@ namespace KASIR.OfflineMode
             TopMost = true;
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
+            panel4.ResumeLayout(false);
+            panel4.PerformLayout();
             panel3.ResumeLayout(false);
             panel3.PerformLayout();
             panel2.ResumeLayout(false);
-            panel4.ResumeLayout(false);
-            panel4.PerformLayout();
             ResumeLayout(false);
         }
 

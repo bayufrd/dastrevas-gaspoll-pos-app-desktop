@@ -67,7 +67,7 @@ namespace KASIR.Komponen
             // 
             // btnKeluar
             // 
-            btnKeluar.BackColor = Color.WhiteSmoke;
+            btnKeluar.BackColor = Color.White;
             btnKeluar.Cursor = Cursors.Hand;
             btnKeluar.FlatAppearance.BorderSize = 0;
             btnKeluar.FlatStyle = FlatStyle.Flat;
@@ -78,11 +78,11 @@ namespace KASIR.Komponen
             btnKeluar.IconColor = Color.FromArgb(30, 31, 68);
             btnKeluar.IconFont = IconFont.Auto;
             btnKeluar.IconSize = 25;
+            btnKeluar.ImageAlign = ContentAlignment.MiddleLeft;
             btnKeluar.Location = new Point(12, 21);
             btnKeluar.Name = "btnKeluar";
             btnKeluar.Size = new Size(88, 30);
             btnKeluar.TabIndex = 24;
-            btnKeluar.Text = "Keluar";
             btnKeluar.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnKeluar.UseVisualStyleBackColor = false;
             btnKeluar.Click += btnKeluar_Click;
@@ -96,7 +96,7 @@ namespace KASIR.Komponen
             // 
             // TambahMember
             // 
-            TambahMember.BackColor = Color.FromArgb(30, 31, 68);
+            TambahMember.BackColor = Color.FromArgb(15, 90, 94);
             TambahMember.Cursor = Cursors.Hand;
             TambahMember.FlatAppearance.BorderSize = 0;
             TambahMember.FlatStyle = FlatStyle.Flat;
@@ -253,7 +253,7 @@ namespace KASIR.Komponen
             label7.TabIndex = 4;
             label7.Text = "MEMBERSHIP AREA";
             // 
-            // dataMember
+            // Offline_MemberData
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -262,7 +262,7 @@ namespace KASIR.Komponen
             Controls.Add(panel4);
             Controls.Add(panel2);
             FormBorderStyle = FormBorderStyle.None;
-            Name = "dataMember";
+            Name = "Offline_MemberData";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "dataBill";
             TopMost = true;

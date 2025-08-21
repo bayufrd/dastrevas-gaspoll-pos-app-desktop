@@ -145,14 +145,14 @@ namespace KASIR.OfflineMode
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Gagal tampil data " + ex, "Gaspol");
+                    NotifyHelper.Error("Gagal tampil data " + ex);
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
 
             try
             {
-                MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                NotifyHelper.Error("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
                 CacheDataApp form3 = new("Sync");
                 Close();
                 form3.Show();
@@ -163,7 +163,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data " + ex, "Gaspol");
+                NotifyHelper.Error("Gagal tampil data " + ex);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -212,27 +212,26 @@ namespace KASIR.OfflineMode
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Gagal tampil data " + ex, "Gaspol");
+                    NotifyHelper.Error("Gagal tampil data " + ex);
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
 
             try
             {
-                MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                NotifyHelper.Error("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
                 CacheDataApp form3 = new("Sync");
                 Close();
                 form3.Show();
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data tipe serving " + ex, "Gaspol");
+                NotifyHelper.Error("Gagal tampil data tipe serving " + ex);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         } // Helper method to set ComboBox selection by name (search by name/text)
@@ -316,7 +315,7 @@ namespace KASIR.OfflineMode
         {
             if (comboBox1.Text == "Pilih Tipe Serving")
             {
-                MessageBox.Show("Pilih tipe serving", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                NotifyHelper.Warning("Pilih tipe serving");
                 return false;
             }
 
@@ -324,15 +323,13 @@ namespace KASIR.OfflineMode
             {
                 if (quantity <= 0)
                 {
-                    MessageBox.Show("Masukan jumlah kuantitas!", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Masukan jumlah kuantitas!");
                     return false;
                 }
             }
             else
             {
-                MessageBox.Show("Masukan jumlah kuantitas yang valid!", "Gaspol", MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                NotifyHelper.Warning("Masukan jumlah kuantitas yang valid!");
                 return false;
             }
 
@@ -347,7 +344,7 @@ namespace KASIR.OfflineMode
                 if (diskonMinimum > price * quantity)
                 {
                     int resultDiskon = diskonMinimum - (price * quantity);
-                    MessageBox.Show("Minimum diskon kurang Rp " + resultDiskon + " lagi", "Gaspol");
+                    NotifyHelper.Error("Minimum diskon kurang Rp " + resultDiskon + " lagi");
                     return false;
                 }
             }
@@ -809,7 +806,7 @@ namespace KASIR.OfflineMode
 
                 // Save the jsonString to the cache file
                 File.WriteAllText(cacheFilePath, jsonString);
-                //MessageBox.Show("File saved successfully at: " + cacheFilePath);
+                //NotifyHelper.Error("File saved successfully at: " + cacheFilePath);
             }
             catch (Exception ex)
             {
@@ -873,7 +870,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tambah Menu, silakan coba ulang: " + ex.Message, "Gaspol");
+                NotifyHelper.Error("Gagal tambah Menu, silakan coba ulang: " + ex.Message);
                 LoggerUtil.LogError(ex, "Terjadi kesalahan: {ErrorMessage}", ex.Message);
             }
             finally
@@ -950,26 +947,26 @@ namespace KASIR.OfflineMode
                 }
                 catch (Exception ex)
                 {
-                    //MessageBox.Show("Gagal tambah data " + ex.Message, "Gaspol");
+                    //NotifyHelper.Error("Gagal tambah data " + ex.Message, "Gaspol");
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
 
             try
             {
-                MessageBox.Show("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
+                NotifyHelper.Error("Terjadi kesalahan Load Cache, Akan Syncronize ulang");
                 CacheDataApp form3 = new("Sync");
                 Close();
                 form3.Show();
             }
             catch (TaskCanceledException ex)
             {
-                //MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                //NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal tampil data diskon " + ex.Message, "Gaspol");
+                NotifyHelper.Error("Gagal tampil data diskon " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }

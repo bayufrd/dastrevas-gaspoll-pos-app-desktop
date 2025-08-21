@@ -50,6 +50,7 @@ namespace KASIR.OfflineMode
             // 
             // panel1
             // 
+            panel1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             panel1.Controls.Add(panel5);
             panel1.Controls.Add(label2);
             panel1.Controls.Add(label5);
@@ -57,29 +58,30 @@ namespace KASIR.OfflineMode
             panel1.Controls.Add(panel2);
             panel1.Controls.Add(btnSimpan);
             panel1.Controls.Add(btnKeluar);
-            panel1.Dock = DockStyle.Fill;
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
-            panel1.Size = new Size(600, 530);
+            panel1.Size = new Size(300, 250);
             panel1.TabIndex = 0;
             // 
             // panel5
             // 
+            panel5.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             panel5.BorderStyle = BorderStyle.FixedSingle;
             panel5.Controls.Add(txtPin);
             panel5.Location = new Point(12, 105);
             panel5.Name = "panel5";
-            panel5.Size = new Size(576, 36);
+            panel5.Size = new Size(276, 36);
             panel5.TabIndex = 17;
             // 
             // txtPin
             // 
             txtPin.BorderStyle = BorderStyle.None;
-            txtPin.Location = new Point(24, 15);
+            txtPin.Location = new Point(8, 15);
             txtPin.Name = "txtPin";
             txtPin.PasswordChar = '*';
-            txtPin.Size = new Size(521, 16);
+            txtPin.Size = new Size(263, 16);
             txtPin.TabIndex = 6;
+            txtPin.Text = "@@@";
             txtPin.TextAlign = HorizontalAlignment.Center;
             txtPin.UseSystemPasswordChar = true;
             // 
@@ -105,36 +107,40 @@ namespace KASIR.OfflineMode
             // 
             // panel4
             // 
+            panel4.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             panel4.BorderStyle = BorderStyle.FixedSingle;
             panel4.Controls.Add(txtReason);
             panel4.Location = new Point(12, 183);
             panel4.Name = "panel4";
-            panel4.Size = new Size(576, 187);
+            panel4.Size = new Size(276, 55);
             panel4.TabIndex = 14;
             // 
             // txtReason
             // 
+            txtReason.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             txtReason.BorderStyle = BorderStyle.None;
             txtReason.Location = new Point(8, 8);
             txtReason.Multiline = true;
             txtReason.Name = "txtReason";
             txtReason.PlaceholderText = "Masukan alasan hapus ...";
-            txtReason.Size = new Size(556, 166);
+            txtReason.Size = new Size(256, 34);
             txtReason.TabIndex = 2;
+            txtReason.TextAlign = HorizontalAlignment.Center;
             // 
             // panel2
             // 
+            panel2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             panel2.BackColor = SystemColors.Window;
             panel2.Controls.Add(Button2);
             panel2.Controls.Add(Button1);
-            panel2.Dock = DockStyle.Top;
             panel2.Location = new Point(0, 0);
             panel2.Name = "panel2";
-            panel2.Size = new Size(600, 70);
+            panel2.Size = new Size(300, 70);
             panel2.TabIndex = 12;
             // 
             // Button2
             // 
+            Button2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             Button2.BackColor = Color.DarkRed;
             Button2.Cursor = Cursors.Hand;
             Button2.FlatAppearance.BorderSize = 0;
@@ -145,7 +151,7 @@ namespace KASIR.OfflineMode
             Button2.IconColor = Color.WhiteSmoke;
             Button2.IconFont = IconFont.Auto;
             Button2.IconSize = 25;
-            Button2.Location = new Point(500, 21);
+            Button2.Location = new Point(200, 21);
             Button2.Name = "Button2";
             Button2.Size = new Size(88, 30);
             Button2.TabIndex = 25;
@@ -156,22 +162,22 @@ namespace KASIR.OfflineMode
             // 
             // Button1
             // 
-            Button1.BackColor = Color.WhiteSmoke;
+            Button1.BackColor = Color.White;
             Button1.Cursor = Cursors.Hand;
             Button1.FlatAppearance.BorderSize = 0;
             Button1.FlatStyle = FlatStyle.Flat;
             Button1.Flip = FlipOrientation.Horizontal;
             Button1.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            Button1.ForeColor = Color.FromArgb(30, 31, 68);
+            Button1.ForeColor = Color.Black;
             Button1.IconChar = IconChar.CircleChevronRight;
             Button1.IconColor = Color.FromArgb(30, 31, 68);
             Button1.IconFont = IconFont.Auto;
             Button1.IconSize = 25;
+            Button1.ImageAlign = ContentAlignment.MiddleLeft;
             Button1.Location = new Point(12, 21);
             Button1.Name = "Button1";
             Button1.Size = new Size(88, 30);
             Button1.TabIndex = 24;
-            Button1.Text = "Keluar";
             Button1.TextImageRelation = TextImageRelation.ImageBeforeText;
             Button1.UseVisualStyleBackColor = false;
             Button1.Click += button1_Click;
@@ -203,16 +209,16 @@ namespace KASIR.OfflineMode
             btnKeluar.UseVisualStyleBackColor = false;
             btnKeluar.Click += btnKeluar_Click;
             // 
-            // deleteForm
+            // Offline_deleteForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
-            ClientSize = new Size(600, 530);
+            ClientSize = new Size(300, 250);
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
             MaximumSize = new Size(600, 530);
-            Name = "deleteForm";
+            Name = "Offline_deleteForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "refund";
             TopMost = true;

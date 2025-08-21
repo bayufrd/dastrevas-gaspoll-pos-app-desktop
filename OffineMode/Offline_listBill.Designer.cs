@@ -61,6 +61,7 @@ namespace KASIR.OffineMode
             btnKeluar.IconColor = Color.Black;
             btnKeluar.IconFont = IconFont.Auto;
             btnKeluar.IconSize = 25;
+            btnKeluar.ImageAlign = ContentAlignment.MiddleLeft;
             btnKeluar.Location = new Point(12, 21);
             btnKeluar.Name = "btnKeluar";
             btnKeluar.Size = new Size(88, 30);

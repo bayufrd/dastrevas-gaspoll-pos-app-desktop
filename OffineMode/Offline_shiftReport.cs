@@ -181,15 +181,13 @@ namespace KASIR.Komponen
             {
                 if (txtNamaKasir.Text == "" || txtNamaKasir.Text == null)
                 {
-                    MessageBox.Show("Nama kasir masih kurang tepat", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Nama kasir masih kurang tepat");
                     return;
                 }
 
                 if (txtActualCash.Text == "" || txtActualCash.Text == null)
                 {
-                    MessageBox.Show("Uang kasir masih kurang tepat", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Uang kasir masih kurang tepat");
                     return;
                 }
 
@@ -215,7 +213,7 @@ namespace KASIR.Komponen
                     "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (yakin != DialogResult.Yes)
                 {
-                    MessageBox.Show("Cetak Shift diCancel");
+                    NotifyHelper.Info("Cetak Shift diCancel");
                 }
                 else
                 {
@@ -616,7 +614,7 @@ namespace KASIR.Komponen
             }
             catch (FormatException)
             {
-                MessageBox.Show("inputan hanya bisa Numeric");
+                NotifyHelper.Warning("inputan hanya bisa Numeric");
                 if (txtActualCash.Text.Length > 0)
                 {
                     txtActualCash.Text = txtActualCash.Text.Substring(0, txtActualCash.Text.Length - 1);
@@ -665,7 +663,7 @@ namespace KASIR.Komponen
                     if (dialogResult == DialogResult.OK)
                     {
                         // Option Pilih
-                        MessageBox.Show("Fiture Under Maintanance");
+                        NotifyHelper.Warning("Fiture Belum Tersedia");
                         return;
                         ShiftData selectedShift = payForm.SelectedShift;
 
@@ -685,7 +683,7 @@ namespace KASIR.Komponen
                         // Option Printing
                         ShiftData selectedShift = payForm.SelectedShift;
 
-                        MessageBox.Show(
+                        NotifyHelper.Info(
                             $"Printing Shift ID : {selectedShift.id}.\n\nCasher Name : {selectedShift.CasherName}\nShift : {selectedShift.ShiftNumber}\nStart at : {selectedShift.StartAt}\nEnd at : {selectedShift.EndAt}");
 
                         printingReportHistory(selectedShift.id);

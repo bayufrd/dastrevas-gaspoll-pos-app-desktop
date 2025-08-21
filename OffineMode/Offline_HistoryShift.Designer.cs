@@ -50,7 +50,7 @@ namespace KASIR.OffineMode
             // 
             // btnKeluar
             // 
-            btnKeluar.BackColor = Color.WhiteSmoke;
+            btnKeluar.BackColor = Color.White;
             btnKeluar.Cursor = Cursors.Hand;
             btnKeluar.FlatAppearance.BorderSize = 0;
             btnKeluar.FlatStyle = FlatStyle.Flat;
@@ -61,11 +61,11 @@ namespace KASIR.OffineMode
             btnKeluar.IconColor = Color.FromArgb(30, 31, 68);
             btnKeluar.IconFont = IconFont.Auto;
             btnKeluar.IconSize = 25;
+            btnKeluar.ImageAlign = ContentAlignment.MiddleLeft;
             btnKeluar.Location = new Point(12, 21);
             btnKeluar.Name = "btnKeluar";
             btnKeluar.Size = new Size(88, 30);
             btnKeluar.TabIndex = 24;
-            btnKeluar.Text = "Keluar";
             btnKeluar.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnKeluar.UseVisualStyleBackColor = false;
             btnKeluar.Click += btnKeluar_Click;

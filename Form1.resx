@@ -598,42 +598,6 @@
   <data name="&gt;&gt;SignalPing.ZOrder" xml:space="preserve">
     <value>3</value>
   </data>
-  <data name="lblPing.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Bottom, Left</value>
-  </data>
-  <data name="lblPing.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="lblPing.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Consolas, 8.25pt, style=Bold</value>
-  </data>
-  <data name="lblPing.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="lblPing.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 460</value>
-  </data>
-  <data name="lblPing.Size" type="System.Drawing.Size, System.Drawing">
-    <value>0, 13</value>
-  </data>
-  <data name="lblPing.TabIndex" type="System.Int32, mscorlib">
-    <value>20</value>
-  </data>
-  <data name="lblPing.Visible" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="&gt;&gt;lblPing.Name" xml:space="preserve">
-    <value>lblPing</value>
-  </data>
-  <data name="&gt;&gt;lblPing.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;lblPing.Parent" xml:space="preserve">
-    <value>gradientPanel2</value>
-  </data>
-  <data name="&gt;&gt;lblPing.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
   <data name="btnShiftLaporan.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
   </data>
@@ -668,7 +632,7 @@
     <value>gradientPanel2</value>
   </data>
   <data name="&gt;&gt;btnShiftLaporan.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>4</value>
   </data>
   <data name="MenuBtn.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
@@ -704,7 +668,7 @@
     <value>gradientPanel2</value>
   </data>
   <data name="&gt;&gt;MenuBtn.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>5</value>
   </data>
   <data name="TransBtn.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
@@ -743,7 +707,7 @@
     <value>gradientPanel2</value>
   </data>
   <data name="&gt;&gt;TransBtn.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>6</value>
   </data>
   <data name="LogoKasir.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
@@ -770,7 +734,7 @@
     <value>gradientPanel2</value>
   </data>
   <data name="&gt;&gt;LogoKasir.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>7</value>
   </data>
   <data name="gradientPanel2.Location" type="System.Drawing.Point, System.Drawing">
     <value>0, 0</value>
@@ -791,39 +755,6 @@
     <value>panel2</value>
   </data>
   <data name="&gt;&gt;gradientPanel2.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="Setting.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Bottom, Left</value>
-  </data>
-  <data name="Setting.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
-    <value>Flat</value>
-  </data>
-  <data name="Setting.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="Setting.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 553</value>
-  </data>
-  <data name="Setting.Size" type="System.Drawing.Size, System.Drawing">
-    <value>23, 27</value>
-  </data>
-  <data name="Setting.TabIndex" type="System.Int32, mscorlib">
-    <value>5</value>
-  </data>
-  <data name="Setting.Visible" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="&gt;&gt;Setting.Name" xml:space="preserve">
-    <value>Setting</value>
-  </data>
-  <data name="&gt;&gt;Setting.Type" xml:space="preserve">
-    <value>FontAwesome.Sharp.IconButton, FontAwesome.Sharp, Culture=neutral, PublicKeyToken=d16d1e4e568ec10f</value>
-  </data>
-  <data name="&gt;&gt;Setting.Parent" xml:space="preserve">
-    <value>panel2</value>
-  </data>
-  <data name="&gt;&gt;Setting.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <data name="panel2.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">

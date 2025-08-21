@@ -4,6 +4,9 @@ using KASIR.Printer;
 using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using KASIR.Helper;
+using System.Windows.Markup;
+
 
 namespace KASIR.OfflineMode
 {
@@ -22,23 +25,28 @@ namespace KASIR.OfflineMode
             InitializeComponent();
 
             LoadData(transactionId);
-            dataGridView1.CellFormatting += DataGridView1_CellFormatting;
+            //dataGridView1.CellFormatting += DataGridView1_CellFormatting;
         }
 
         public bool ReloadDataInBaseForm { get; private set; }
 
         private void button11_Click(object sender, EventArgs e)
         {
+            DialogResult = DialogResult.Cancel;
+
             Close();
         }
 
         private void button13_Click(object sender, EventArgs e)
         {
+            DialogResult = DialogResult.Cancel;
+
             Close();
         }
 
         private void btnKeluar_Click(object sender, EventArgs e)
         {
+            DialogResult = DialogResult.Cancel;
             Close();
         }
 
@@ -48,8 +56,7 @@ namespace KASIR.OfflineMode
             {
                 if (textPin.Text == "" || textPin.Text == null)
                 {
-                    MessageBox.Show("Masukan pin terlebih dahulu", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Masukan pin terlebih dahulu");
                     return;
                 }
 
@@ -83,10 +90,12 @@ namespace KASIR.OfflineMode
 
                         if (dialogResult == DialogResult.OK)
                         {
+                            DialogResult = DialogResult.OK;
                             Close();
                         }
                         else
                         {
+                            DialogResult = DialogResult.Cancel;
                             Close();
                         }
                     }
@@ -103,7 +112,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Autentikasi gagal", "Gaspol", MessageBoxButtons.OK);
+                NotifyHelper.Error("Autentikasi gagal: "+ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -123,10 +132,20 @@ namespace KASIR.OfflineMode
             }
         }
 
+        /// <summary>
+        /// test flowlayout panel
+        /// </summary>
+        /// <param name="transactionId"></param>
+
+
+
         private async void LoadData(string transactionId)
         {
             try
             {
+                // Bersihkan kontrol yang ada di FlowLayoutPanel sebelumnya
+                flowLayoutPanel1.Controls.Clear();
+
                 string transactionDataPath = "DT-Cache\\Transaction\\transaction.data";
 
                 if (File.Exists(transactionDataPath))
@@ -141,197 +160,648 @@ namespace KASIR.OfflineMode
 
                     if (filteredTransaction != null)
                     {
-                        string receiptNumber = filteredTransaction["receipt_number"]?.ToString() ?? "-";
-                        string customerName = filteredTransaction["customer_name"]?.ToString() ?? "-";
-                        string customerSeat = filteredTransaction["customer_seat"]?.ToString() ?? "0";
-                        decimal total = filteredTransaction["total"] != null
-                            ? decimal.Parse(filteredTransaction["total"].ToString())
-                            : 0;
-                        string paymentType = filteredTransaction["payment_type_name"]?.ToString() ?? "-";
-                        DateTime transactionTime;
-                        string formattedDate = "-";
+                        // Buat panel utama untuk informasi transaksi
+                        Panel mainTransactionPanel = CreateTransactionInfoCard(filteredTransaction);
+                        flowLayoutPanel1.Controls.Add(mainTransactionPanel);
 
-                        if (DateTime.TryParse(filteredTransaction["created_at"]?.ToString(), out transactionTime))
-                        {
-                            formattedDate = transactionTime.ToString("dd MMM yyyy, HH:mm");
-                        }
+                        //Informasi Detail
+                        Panel panelDetail = CreateSectionHeaderPanel("Informasi Detail");
+                        Panel detailTransactionPanel = CreateDetailInfoCard(filteredTransaction);
+                        flowLayoutPanel1.Controls.Add(panelDetail);
+                        flowLayoutPanel1.Controls.Add(detailTransactionPanel);
 
-                        lblCustomerReceipt.Text = receiptNumber;
-                        lblWaktu.Text = formattedDate;
-                        lblCustomerName.Text = customerName;
-                        lblCustomerSeat.Text = customerSeat;
-                        lblPaymentType.Text = "Payment Type: " + paymentType;
-                        lblTotal.Text = "Total: " + string.Format("{0:n0}", total);
-                        int cash = filteredTransaction["customer_cash"] != null
-                            ? int.Parse(filteredTransaction["customer_cash"].ToString())
-                            : 0;
-                        int kembalian = filteredTransaction["customer_change"] != null
-                            ? int.Parse(filteredTransaction["customer_change"].ToString())
-                            : 0;
-                        int refund = filteredTransaction["total_refund"] != null
-                            ? int.Parse(filteredTransaction["total_refund"].ToString())
-                            : 0;
-                        string? discountPrice = filteredTransaction["discounted_price"]?.ToString() != "0"
-                            ? string.Format("{0:n0}", int.Parse(filteredTransaction["discounted_price"]?.ToString()))
-                            : "-";
-                        lblDiscountCode.Text = "Discount Code: ";
-                        lblDiscountValue.Text = "Discount Value: ";
-                        lblDiscountPrice.Text = "Discount Price: ";
-                        lblCustomerCash.Text = "Customer Cash: ";
-                        lblKembalian.Text = "Change: ";
-                        lblTotalRefund.Text = "Refund: ";
 
-                        lblDiscountCode.Text += filteredTransaction["discount_code"].ToString() != null
-                            ? filteredTransaction["discount_code"].ToString()
-                            : "-";
-                        lblDiscountValue.Text += filteredTransaction["discounts_value"]?.ToString() != "0"
-                            ? filteredTransaction["discounts_value"]?.ToString()
-                            : "-";
-                        lblDiscountPrice.Text += discountPrice;
-                        lblCustomerCash.Text += string.Format("{0:n0}", cash);
-                        lblKembalian.Text += string.Format("{0:n0}", kembalian);
-                        lblTotalRefund.Text += string.Format("{0:n0}", refund);
-
-                        // Ambil data cart_details dan refund_details
+                        // Buat panel untuk item terjual
                         JArray? cartDetails = filteredTransaction["cart_details"] as JArray;
-                        JArray? refundDetails = filteredTransaction["refund_details"] as JArray;
-                        JArray? cancelDetails = filteredTransaction["canceled_items"] as JArray;
-
-                        DataTable dataTable = new();
-                        dataTable.Columns.Add("MenuID", typeof(string));
-                        dataTable.Columns.Add("CartDetailID", typeof(int));
-                        dataTable.Columns.Add("Jenis", typeof(string));
-                        dataTable.Columns.Add("Menu", typeof(string));
-                        dataTable.Columns.Add("Total Harga", typeof(string));
-
                         if (cartDetails != null && cartDetails.Count > 0)
                         {
-                            // Tambahkan separator untuk item yang terjual
-                            //dataTable.Rows.Add(null, null, null, "Sold items: ", null);
-                            bool hasItems = false; // Variabel untuk memeriksa apakah ada item dengan qty > 0
-
-                            AddSeparatorRow(dataTable, "  #Sold items: ", dataGridView1);
+                            Panel soldItemsHeaderPanel = CreateSectionHeaderPanel("Sold Items");
+                            flowLayoutPanel1.Controls.Add(soldItemsHeaderPanel);
 
                             foreach (JToken item in cartDetails)
                             {
                                 if (int.Parse(item["qty"].ToString()) != 0)
                                 {
-                                    hasItems = true; // Set menjadi true jika ada item dengan qty > 0
-
-                                    dataTable.Rows.Add(
-                                        item["menu_id"]?.ToString(),
-                                        item["cart_detail_id"]?.ToObject<int>(),
-                                        item["menu_type"]?.ToString(),
-                                        $"{item["qty"]}x {item["menu_name"]} {item["menu_detail_name"]} {item["note_item"]}",
-                                        string.Format("{0:n0}", item["total_price"])
-                                    );
-                                    if (!string.IsNullOrEmpty(item["note_item"].ToString()))
-                                    {
-                                        dataTable.Rows.Add(null, null, null, $"  *Notes: {item["note_item"]} ", null);
-                                    }
+                                    Panel itemPanel = CreateItemCard(item);
+                                    flowLayoutPanel1.Controls.Add(itemPanel);
                                 }
-                            }
-
-                            int points = 0;
-                            if (!string.IsNullOrEmpty(filteredTransaction["member_id"].ToString()) && !string.IsNullOrEmpty(filteredTransaction["member_name"].ToString()))
-                            {
-                                points = int.Parse(filteredTransaction["member_point"].ToString());
-                                dataTable.Rows.Add(null, null, null, $"  *Data Member:", null);
-                                dataTable.Rows.Add(null, null, null, $"    Member Name: {filteredTransaction["member_name"].ToString()} ", null);
-                                dataTable.Rows.Add(null, null, null, $"    Member Points: {points.ToString("#,#")} ", null);
-                                if (!string.IsNullOrEmpty(filteredTransaction["member_use_point"].ToString()))
-                                {
-                                    points = int.Parse(filteredTransaction["member_use_point"].ToString());
-                                    dataTable.Rows.Add(null, null, null, $"    Member Use Points: {points.ToString("#,#")} ", null);
-                                }
-                            }
-
-                            btnSimpan.Enabled = hasItems; // Aktifkan atau nonaktifkan tombol Simpan
-                            if (btnSimpan.Enabled != true)
-                            {
-                                btnSimpan.Text = "No Item to refund!";
-                                btnSimpan.BackColor = Color.Gainsboro;
                             }
                         }
 
+                        // Buat panel untuk item refund
+                        JArray? refundDetails = filteredTransaction["refund_details"] as JArray;
                         if (refundDetails != null && refundDetails.Count > 0)
                         {
-                            AddSeparatorRow(dataTable, "  #Refund items: ", dataGridView1);
+                            Panel refundHeaderPanel = CreateSectionHeaderPanel("Refund Items");
+                            flowLayoutPanel1.Controls.Add(refundHeaderPanel);
 
                             foreach (JToken refundItem in refundDetails)
                             {
-                                dataTable.Rows.Add(
-                                    refundItem["menu_id"]?.ToString(),
-                                    refundItem["cart_detail_id"]?.ToObject<int>(),
-                                    refundItem["menu_type"]?.ToString(),
-                                    $"{refundItem["refund_qty"]}x {refundItem["menu_name"]} {refundItem["menu_detail_name"]} {refundItem["note_item"]}",
-                                    string.Format("{0:n0}", refundItem["refund_total"]) + " (Refunded)"
-                                );
-                                dataTable.Rows.Add(null, null, null, $"  *Reason: {refundItem["refund_reason_item"]} ",
-                                    null);
+                                Panel refundItemPanel = CreateRefundItemCard(refundItem);
+                                flowLayoutPanel1.Controls.Add(refundItemPanel);
                             }
                         }
 
-                        // Menampilkan data pada DataGridView
-                        dataGridView1.DataSource = dataTable;
-
-                        // Menyembunyikan kolom yang tidak diperlukan
-                        if (dataGridView1.Columns.Contains("MenuID"))
-                        {
-                            dataGridView1.Columns["MenuID"].Visible = false;
-                        }
-
-                        if (dataGridView1.Columns.Contains("CartDetailID"))
-                        {
-                            dataGridView1.Columns["CartDetailID"].Visible = false;
-                        }
-
-                        if (dataGridView1.Columns.Contains("Jenis"))
-                        {
-                            dataGridView1.Columns["Jenis"].Visible = false;
-                        }
                     }
                     else
                     {
-                        MessageBox.Show("Transaction with the specified ID not found.");
+                        NotifyHelper.Error("Transaksi dengan ID yang ditentukan tidak ditemukan.");
                     }
                 }
                 else
                 {
-                    MessageBox.Show("Transaction data file not found.");
+                    NotifyHelper.Error("File data transaksi tidak ditemukan.");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal load Cart " + ex);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                NotifyHelper.Error("Gagal memuat Cart: " + ex.Message + ex.ToString());
+                LoggerUtil.LogError(ex, "Terjadi kesalahan: {ErrorMessage}", ex.Message);
             }
         }
 
-        private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
+        private Panel CreateTransactionInfoCard(JToken transactionData)
         {
-            // Tambahkan separator row ke DataTable
-            dataTable.Rows.Add(null, null, null, groupKey + "\n", null); // Add a separator row
-
-            // Ambil indeks baris terakhir yang baru saja ditambahkan
-            int lastRowIndex = dataTable.Rows.Count - 1;
-
-            // Menambahkan row ke DataGridView
-            dataGridView.DataSource = dataTable;
-
-            // Mengatur gaya sel untuk kolom tertentu
-            int[] cellIndexesToStyle = { 1, 2, 3, 4 }; // Indeks kolom yang ingin diatur
-            SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
-        }
-
-        private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)
-        {
-            foreach (int index in cellIndexes)
+            Panel cardPanel = new Panel
             {
-                row.Cells[index].Style.BackColor = backgroundColor;
-                row.Cells[index].Style.Font = new Font(dataGridView1.Font, fontStyle);
+                Width = flowLayoutPanel1.Width - 40,
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                Margin = new Padding(10),
+                Padding = new Padding(15)
+            };
+
+            // Tambahkan efek bayangan
+            cardPanel.Paint += (sender, e) =>
+            {
+                using (Pen shadowPen = new Pen(Color.FromArgb(200, 200, 200), 1))
+                {
+                    e.Graphics.DrawRectangle(shadowPen, 0, 0, cardPanel.Width - 1, cardPanel.Height - 1);
+                }
+            };
+
+            int currentY = 15;
+
+            // Informasi transaksi
+            Label lblReceiptNumber = CreateLabel("No. Struk: " +
+                (transactionData["receipt_number"]?.ToString() ?? "-"),
+                new Font("Segoe UI", 12, FontStyle.Bold));
+            lblReceiptNumber.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblReceiptNumber);
+            currentY += 30;
+
+            Label lblTransactionTime = CreateLabel(
+                DateTime.TryParse(transactionData["created_at"]?.ToString(), out DateTime transactionTime)
+                    ? transactionTime.ToString("dd MMM yyyy, HH:mm")
+                    : "-",
+                new Font("Segoe UI", 10, FontStyle.Regular));
+            lblTransactionTime.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblTransactionTime);
+            currentY += 30;
+
+            // Helper method untuk parsing decimal dengan penanganan error
+            string FormatDecimal(JToken token)
+            {
+                try
+                {
+                    // Coba parsing sebagai string, hilangkan koma atau spasi yang tidak diperlukan
+                    if (token != null)
+                    {
+                        string valueStr = token.ToString().Trim().Replace(",", "").Replace(" ", "");
+                        if (decimal.TryParse(valueStr, out decimal value))
+                        {
+                            return value.ToString("N0");
+                        }
+                    }
+                    return "-";
+                }
+                catch
+                {
+                    return "-";
+                }
             }
+
+            // Helper method untuk parsing integer dengan penanganan error
+            string FormatInteger(JToken token)
+            {
+                try
+                {
+                    if (token != null)
+                    {
+                        string valueStr = token.ToString().Trim().Replace(",", "").Replace(" ", "");
+                        if (int.TryParse(valueStr, out int value))
+                        {
+                            return value.ToString("#,#");
+                        }
+                    }
+                    return "-";
+                }
+                catch
+                {
+                    return "-";
+                }
+            }
+
+            // Detail pelanggan
+            Label lblCustomerName = CreateLabel("Nama: " +
+                (transactionData["customer_name"]?.ToString() ?? "-"),
+                new Font("Segoe UI", 10, FontStyle.Regular));
+            lblCustomerName.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblCustomerName);
+            currentY += 30;
+
+            Label lblCustomerSeat = CreateLabel("Tempat Duduk: " +
+                (transactionData["customer_seat"]?.ToString() ?? "-"),
+                new Font("Segoe UI", 10, FontStyle.Regular));
+            lblCustomerSeat.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblCustomerSeat);
+            currentY += 30;
+
+            // Metode Pembayaran
+            Label lblPaymentType = CreateLabel("Metode Pembayaran: " +
+                (transactionData["payment_type_name"]?.ToString() ?? "-"),
+                new Font("Segoe UI", 10, FontStyle.Regular));
+            lblPaymentType.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblPaymentType);
+            currentY += 30;
+
+            // Total Pembayaran
+            Label lblTotal = CreateLabel("Total: Rp " +
+                FormatDecimal(transactionData["total"]),
+                new Font("Segoe UI", 12, FontStyle.Bold));
+            lblTotal.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblTotal);
+            currentY += 30;
+
+            // Atur tinggi panel berdasarkan kontrol
+            cardPanel.Height = currentY + 20;
+
+            return cardPanel;
         }
+
+        private Panel CreateDetailInfoCard(JToken transactionData)
+        {
+            Panel cardPanel = new Panel
+            {
+                Width = flowLayoutPanel1.Width - 40,
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                Margin = new Padding(10),
+                Padding = new Padding(15)
+            };
+
+            // Tambahkan efek bayangan
+            cardPanel.Paint += (sender, e) =>
+            {
+                using (Pen shadowPen = new Pen(Color.FromArgb(200, 200, 200), 1))
+                {
+                    e.Graphics.DrawRectangle(shadowPen, 0, 0, cardPanel.Width - 1, cardPanel.Height - 1);
+                }
+            };
+
+            int currentY = 15;
+
+            // Helper method untuk parsing decimal dengan penanganan error
+            string FormatDecimal(JToken token)
+            {
+                try
+                {
+                    // Coba parsing sebagai string, hilangkan koma atau spasi yang tidak diperlukan
+                    if (token != null)
+                    {
+                        string valueStr = token.ToString().Trim().Replace(",", "").Replace(" ", "");
+                        if (decimal.TryParse(valueStr, out decimal value))
+                        {
+                            return value.ToString("N0");
+                        }
+                    }
+                    return "-";
+                }
+                catch
+                {
+                    return "-";
+                }
+            }
+
+            // Helper method untuk parsing integer dengan penanganan error
+            string FormatInteger(JToken token)
+            {
+                try
+                {
+                    if (token != null)
+                    {
+                        string valueStr = token.ToString().Trim().Replace(",", "").Replace(" ", "");
+                        if (int.TryParse(valueStr, out int value))
+                        {
+                            return value.ToString("#,#");
+                        }
+                    }
+                    return "-";
+                }
+                catch
+                {
+                    return "-";
+                }
+            }
+
+            // Informasi Diskon
+            Label lblDiscountCode = CreateLabel("Kode Diskon: " +
+                (transactionData["discount_code"]?.ToString() ?? "-"),
+                new Font("Segoe UI", 10, FontStyle.Regular));
+            lblDiscountCode.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblDiscountCode);
+            currentY += 30;
+
+            Label lblDiscountValue = CreateLabel("Nilai Diskon: Rp " +
+                FormatDecimal(transactionData["discounts_value"]),
+                new Font("Segoe UI", 10, FontStyle.Regular));
+            lblDiscountValue.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblDiscountValue);
+            currentY += 30;
+
+            Label lblDiscountPrice = CreateLabel("Harga Setelah Diskon: Rp " +
+                FormatDecimal(transactionData["discounted_price"]),
+                new Font("Segoe UI", 10, FontStyle.Regular));
+            lblDiscountPrice.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblDiscountPrice);
+            currentY += 30;
+
+            // Pembayaran Tunai dan Kembalian
+            Label lblCustomerCash = CreateLabel("Pembayaran Tunai: Rp " +
+                FormatDecimal(transactionData["customer_cash"]),
+                new Font("Segoe UI", 10, FontStyle.Regular));
+            lblCustomerCash.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblCustomerCash);
+            currentY += 30;
+
+            Label lblKembalian = CreateLabel("Kembalian: Rp " +
+                FormatDecimal(transactionData["customer_change"]),
+                new Font("Segoe UI", 10, FontStyle.Regular));
+            lblKembalian.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblKembalian);
+            currentY += 30;
+
+            // Total Refund (jika ada)
+            Label lblTotalRefund = CreateLabel("Total Refund: Rp " +
+                FormatDecimal(transactionData["total_refund"]),
+                new Font("Segoe UI", 10, FontStyle.Regular));
+            lblTotalRefund.Location = new Point(15, currentY);
+            cardPanel.Controls.Add(lblTotalRefund);
+            currentY += 30;
+
+            // Informasi Member (jika ada)
+            if (!string.IsNullOrEmpty(transactionData["member_id"]?.ToString()))
+            {
+                Label lblMemberName = CreateLabel("Nama Member: " +
+                    (transactionData["member_name"]?.ToString() ?? "-"),
+                    new Font("Segoe UI", 10, FontStyle.Regular));
+                lblMemberName.Location = new Point(15, currentY);
+                cardPanel.Controls.Add(lblMemberName);
+                currentY += 30;
+
+                Label lblMemberPoints = CreateLabel("Poin Member: " +
+                    FormatInteger(transactionData["member_point"]),
+                    new Font("Segoe UI", 10, FontStyle.Regular));
+                lblMemberPoints.Location = new Point(15, currentY);
+                cardPanel.Controls.Add(lblMemberPoints);
+                currentY += 30;
+            }
+
+            cardPanel.Height = currentY + 20;
+
+            return cardPanel;
+        }
+
+        private Panel CreateItemCard(JToken item)
+        {
+            Panel cardPanel = new Panel
+            {
+                Width = flowLayoutPanel1.Width - 40,
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                Margin = new Padding(10),
+                Padding = new Padding(15)
+            };
+
+            // Tambahkan efek bayangan ringan
+            cardPanel.Paint += (sender, e) =>
+            {
+                using (Pen shadowPen = new Pen(Color.FromArgb(220, 220, 220), 1))
+                {
+                    e.Graphics.DrawRectangle(shadowPen, 0, 0, cardPanel.Width - 1, cardPanel.Height - 1);
+                }
+            };
+
+            // Nama menu dan detail
+            Label lblMenuName = CreateLabel(
+                $"{item["qty"]}x {item["menu_name"]} {item["menu_detail_name"]}",
+                new Font("Segoe UI", 11, FontStyle.Regular));
+            lblMenuName.Location = new Point(15, 15);
+            cardPanel.Controls.Add(lblMenuName);
+
+            // Catatan item jika ada
+            if (!string.IsNullOrEmpty(item["note_item"]?.ToString()))
+            {
+                Label lblNote = CreateLabel(
+                    $"Catatan: {item["note_item"]}",
+                    new Font("Segoe UI", 9, FontStyle.Italic));
+                lblNote.Location = new Point(15, 45);
+                cardPanel.Controls.Add(lblNote);
+            }
+
+            // Harga total
+            Label lblTotalPrice = CreateLabel(
+                "Rp " + string.Format("{0:N0}", item["total_price"]),
+                new Font("Segoe UI", 11, FontStyle.Bold));
+            lblTotalPrice.Location = new Point(15,
+                (!string.IsNullOrEmpty(item["note_item"]?.ToString()) ? 75 : 45));
+            cardPanel.Controls.Add(lblTotalPrice);
+
+            // Atur tinggi panel
+            cardPanel.Height = (!string.IsNullOrEmpty(item["note_item"]?.ToString()) ? 110 : 80);
+
+            return cardPanel;
+        }
+
+        private Panel CreateRefundItemCard(JToken refundItem)
+        {
+            Panel cardPanel = new Panel
+            {
+                Width = flowLayoutPanel1.Width - 40,
+                BackColor = Color.FromArgb(255, 240, 240),  // Warna merah muda ringan
+                BorderStyle = BorderStyle.None,
+                Margin = new Padding(10),
+                Padding = new Padding(15)
+            };
+
+            // Nama menu dan detail refund
+            Label lblMenuName = CreateLabel(
+                $"{refundItem["refund_qty"]}x {refundItem["menu_name"]} {refundItem["menu_detail_name"]}",
+                new Font("Segoe UI", 11, FontStyle.Regular));
+            lblMenuName.Location = new Point(15, 15);
+            cardPanel.Controls.Add(lblMenuName);
+
+            // Alasan refund
+            Label lblRefundReason = CreateLabel(
+                $"Alasan: {refundItem["refund_reason_item"]}",
+                new Font("Segoe UI", 9, FontStyle.Italic));
+            lblRefundReason.Location = new Point(15, 45);
+            cardPanel.Controls.Add(lblRefundReason);
+
+            // Harga total refund
+            Label lblRefundTotal = CreateLabel(
+                "Rp " + string.Format("{0:N0}", refundItem["refund_total"]) + " (Refunded)",
+                new Font("Segoe UI", 11, FontStyle.Bold));
+            lblRefundTotal.Location = new Point(15, 75);
+            cardPanel.Controls.Add(lblRefundTotal);
+
+            // Atur tinggi panel
+            cardPanel.Height = 110;
+
+            return cardPanel;
+        }
+
+        private Panel CreateSectionHeaderPanel(string title)
+        {
+            Panel headerPanel = new Panel
+            {
+                Width = flowLayoutPanel1.Width - 40,
+                Height = 40,
+                BackColor = Color.FromArgb(240, 240, 240),
+                Margin = new Padding(10, 10, 10, 5)
+            };
+
+            Label lblHeader = CreateLabel(title, new Font("Segoe UI", 12, FontStyle.Bold));
+            lblHeader.Location = new Point(15, 10);
+            headerPanel.Controls.Add(lblHeader);
+
+            return headerPanel;
+        }
+
+        private Label CreateLabel(string text, Font font)
+        {
+            return new Label
+            {
+                Text = text,
+                Font = font,
+                AutoSize = true,
+                ForeColor = Color.Black
+            };
+        }
+
+
+
+        //////////////////////
+
+        //private async void LoadDataDATAGRIDVIEW(string transactionId)
+        //{
+        //    try
+        //    {
+        //        string transactionDataPath = "DT-Cache\\Transaction\\transaction.data";
+
+        //        if (File.Exists(transactionDataPath))
+        //        {
+        //            string transactionJson = File.ReadAllText(transactionDataPath);
+        //            JObject? transactionData = JsonConvert.DeserializeObject<JObject>(transactionJson);
+
+        //            JArray? transactionDetails = transactionData["data"] as JArray;
+
+        //            JToken? filteredTransaction =
+        //                transactionDetails.FirstOrDefault(t => t["transaction_id"]?.ToString() == transactionId);
+
+        //            if (filteredTransaction != null)
+        //            {
+        //                string receiptNumber = filteredTransaction["receipt_number"]?.ToString() ?? "-";
+        //                string customerName = filteredTransaction["customer_name"]?.ToString() ?? "-";
+        //                string customerSeat = filteredTransaction["customer_seat"]?.ToString() ?? "0";
+        //                decimal total = filteredTransaction["total"] != null
+        //                    ? decimal.Parse(filteredTransaction["total"].ToString())
+        //                    : 0;
+        //                string paymentType = filteredTransaction["payment_type_name"]?.ToString() ?? "-";
+        //                DateTime transactionTime;
+        //                string formattedDate = "-";
+
+        //                if (DateTime.TryParse(filteredTransaction["created_at"]?.ToString(), out transactionTime))
+        //                {
+        //                    formattedDate = transactionTime.ToString("dd MMM yyyy, HH:mm");
+        //                }
+
+        //                lblCustomerReceipt.Text = receiptNumber;
+        //                lblWaktu.Text = formattedDate;
+        //                lblCustomerName.Text = customerName;
+        //                lblCustomerSeat.Text = customerSeat;
+        //                lblPaymentType.Text = "Payment Type: " + paymentType;
+        //                lblTotal.Text = "Total: " + string.Format("{0:n0}", total);
+        //                int cash = filteredTransaction["customer_cash"] != null
+        //                    ? int.Parse(filteredTransaction["customer_cash"].ToString())
+        //                    : 0;
+        //                int kembalian = filteredTransaction["customer_change"] != null
+        //                    ? int.Parse(filteredTransaction["customer_change"].ToString())
+        //                    : 0;
+        //                int refund = filteredTransaction["total_refund"] != null
+        //                    ? int.Parse(filteredTransaction["total_refund"].ToString())
+        //                    : 0;
+        //                string? discountPrice = filteredTransaction["discounted_price"]?.ToString() != "0"
+        //                    ? string.Format("{0:n0}", int.Parse(filteredTransaction["discounted_price"]?.ToString()))
+        //                    : "-";
+        //                lblDiscountCode.Text = "Discount Code: ";
+        //                lblDiscountValue.Text = "Discount Value: ";
+        //                lblDiscountPrice.Text = "Discount Price: ";
+        //                lblCustomerCash.Text = "Customer Cash: ";
+        //                lblKembalian.Text = "Change: ";
+        //                lblTotalRefund.Text = "Refund: ";
+
+        //                lblDiscountCode.Text += filteredTransaction["discount_code"].ToString() != null
+        //                    ? filteredTransaction["discount_code"].ToString()
+        //                    : "-";
+        //                lblDiscountValue.Text += filteredTransaction["discounts_value"]?.ToString() != "0"
+        //                    ? filteredTransaction["discounts_value"]?.ToString()
+        //                    : "-";
+        //                lblDiscountPrice.Text += discountPrice;
+        //                lblCustomerCash.Text += string.Format("{0:n0}", cash);
+        //                lblKembalian.Text += string.Format("{0:n0}", kembalian);
+        //                lblTotalRefund.Text += string.Format("{0:n0}", refund);
+
+        //                // Ambil data cart_details dan refund_details
+        //                JArray? cartDetails = filteredTransaction["cart_details"] as JArray;
+        //                JArray? refundDetails = filteredTransaction["refund_details"] as JArray;
+        //                JArray? cancelDetails = filteredTransaction["canceled_items"] as JArray;
+
+        //                DataTable dataTable = new();
+        //                dataTable.Columns.Add("MenuID", typeof(string));
+        //                dataTable.Columns.Add("CartDetailID", typeof(int));
+        //                dataTable.Columns.Add("Jenis", typeof(string));
+        //                dataTable.Columns.Add("Menu", typeof(string));
+        //                dataTable.Columns.Add("Total Harga", typeof(string));
+
+        //                if (cartDetails != null && cartDetails.Count > 0)
+        //                {
+        //                    // Tambahkan separator untuk item yang terjual
+        //                    //dataTable.Rows.Add(null, null, null, "Sold items: ", null);
+        //                    bool hasItems = false; // Variabel untuk memeriksa apakah ada item dengan qty > 0
+
+        //                    AddSeparatorRow(dataTable, "  #Sold items: ", dataGridView1);
+
+        //                    foreach (JToken item in cartDetails)
+        //                    {
+        //                        if (int.Parse(item["qty"].ToString()) != 0)
+        //                        {
+        //                            hasItems = true; // Set menjadi true jika ada item dengan qty > 0
+
+        //                            dataTable.Rows.Add(
+        //                                item["menu_id"]?.ToString(),
+        //                                item["cart_detail_id"]?.ToObject<int>(),
+        //                                item["menu_type"]?.ToString(),
+        //                                $"{item["qty"]}x {item["menu_name"]} {item["menu_detail_name"]} {item["note_item"]}",
+        //                                string.Format("{0:n0}", item["total_price"])
+        //                            );
+        //                            if (!string.IsNullOrEmpty(item["note_item"].ToString()))
+        //                            {
+        //                                dataTable.Rows.Add(null, null, null, $"  *Notes: {item["note_item"]} ", null);
+        //                            }
+        //                        }
+        //                    }
+
+        //                    int points = 0;
+        //                    if (!string.IsNullOrEmpty(filteredTransaction["member_id"].ToString()) && !string.IsNullOrEmpty(filteredTransaction["member_name"].ToString()))
+        //                    {
+        //                        points = int.Parse(filteredTransaction["member_point"].ToString());
+        //                        dataTable.Rows.Add(null, null, null, $"  *Data Member:", null);
+        //                        dataTable.Rows.Add(null, null, null, $"    Member Name: {filteredTransaction["member_name"].ToString()} ", null);
+        //                        dataTable.Rows.Add(null, null, null, $"    Member Points: {points.ToString("#,#")} ", null);
+        //                        if (!string.IsNullOrEmpty(filteredTransaction["member_use_point"].ToString()))
+        //                        {
+        //                            points = int.Parse(filteredTransaction["member_use_point"].ToString());
+        //                            dataTable.Rows.Add(null, null, null, $"    Member Use Points: {points.ToString("#,#")} ", null);
+        //                        }
+        //                    }
+
+        //                    btnSimpan.Enabled = hasItems; // Aktifkan atau nonaktifkan tombol Simpan
+        //                    if (btnSimpan.Enabled != true)
+        //                    {
+        //                        btnSimpan.Text = "No Item to refund!";
+        //                        btnSimpan.BackColor = Color.Gainsboro;
+        //                    }
+        //                }
+
+        //                if (refundDetails != null && refundDetails.Count > 0)
+        //                {
+        //                    AddSeparatorRow(dataTable, "  #Refund items: ", dataGridView1);
+
+        //                    foreach (JToken refundItem in refundDetails)
+        //                    {
+        //                        dataTable.Rows.Add(
+        //                            refundItem["menu_id"]?.ToString(),
+        //                            refundItem["cart_detail_id"]?.ToObject<int>(),
+        //                            refundItem["menu_type"]?.ToString(),
+        //                            $"{refundItem["refund_qty"]}x {refundItem["menu_name"]} {refundItem["menu_detail_name"]} {refundItem["note_item"]}",
+        //                            string.Format("{0:n0}", refundItem["refund_total"]) + " (Refunded)"
+        //                        );
+        //                        dataTable.Rows.Add(null, null, null, $"  *Reason: {refundItem["refund_reason_item"]} ",
+        //                            null);
+        //                    }
+        //                }
+
+        //                // Menampilkan data pada DataGridView
+        //                dataGridView1.DataSource = dataTable;
+
+        //                // Menyembunyikan kolom yang tidak diperlukan
+        //                if (dataGridView1.Columns.Contains("MenuID"))
+        //                {
+        //                    dataGridView1.Columns["MenuID"].Visible = false;
+        //                }
+
+        //                if (dataGridView1.Columns.Contains("CartDetailID"))
+        //                {
+        //                    dataGridView1.Columns["CartDetailID"].Visible = false;
+        //                }
+
+        //                if (dataGridView1.Columns.Contains("Jenis"))
+        //                {
+        //                    dataGridView1.Columns["Jenis"].Visible = false;
+        //                }
+        //            }
+        //            else
+        //            {
+        //                NotifyHelper.Error("Transaction with the specified ID not found.");
+        //            }
+        //        }
+        //        else
+        //        {
+        //            NotifyHelper.Error("Transaction data file not found.");
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        NotifyHelper.Error("Gagal load Cart " + ex);
+        //        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+        //    }
+        //}
+
+        //private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
+        //{
+        //    // Tambahkan separator row ke DataTable
+        //    dataTable.Rows.Add(null, null, null, groupKey + "\n", null); // Add a separator row
+
+        //    // Ambil indeks baris terakhir yang baru saja ditambahkan
+        //    int lastRowIndex = dataTable.Rows.Count - 1;
+
+        //    // Menambahkan row ke DataGridView
+        //    dataGridView.DataSource = dataTable;
+
+        //    // Mengatur gaya sel untuk kolom tertentu
+        //    int[] cellIndexesToStyle = { 1, 2, 3, 4 }; // Indeks kolom yang ingin diatur
+        //    SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
+        //}
+
+        //private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)
+        //{
+        //    foreach (int index in cellIndexes)
+        //    {
+        //        row.Cells[index].Style.BackColor = backgroundColor;
+        //        row.Cells[index].Style.Font = new Font(dataGridView1.Font, fontStyle);
+        //    }
+        //}
 
         private async void btnCetakStruk_Click(object sender, EventArgs e)
         {
@@ -342,7 +812,7 @@ namespace KASIR.OfflineMode
             // Memastikan file ada
             if (!File.Exists(transactionDataPath))
             {
-                MessageBox.Show("File transaction.data tidak ditemukan.", "Error");
+                NotifyHelper.Error("File transaction.data tidak ditemukan.");
                 return;
             }
 
@@ -354,7 +824,7 @@ namespace KASIR.OfflineMode
 
                 if (restrukModel == null || restrukModel.data == null || restrukModel.data.Count == 0)
                 {
-                    MessageBox.Show("Tidak ada data transaksi di dalam file.", "Error");
+                    NotifyHelper.Error("Tidak ada data transaksi di dalam file.");
                     return;
                 }
 
@@ -365,7 +835,7 @@ namespace KASIR.OfflineMode
 
                 if (targetTransaksi == null)
                 {
-                    MessageBox.Show("Transaksi dengan ID tersebut tidak ditemukan.", "Error");
+                    NotifyHelper.Error("Transaksi dengan ID tersebut tidak ditemukan.");
                     return;
                 }
 
@@ -406,7 +876,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal membaca atau memproses file transaction.data: " + ex.Message, "Error");
+                NotifyHelper.Error("Gagal membaca atau memproses file transaction.data: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred while processing transaction data: {ErrorMessage}",
                     ex.Message);
             }

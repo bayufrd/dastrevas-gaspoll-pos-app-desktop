@@ -50,12 +50,10 @@ namespace KASIR
             btnDev = new IconButton();
             btnContact = new IconButton();
             SignalPing = new IconButton();
-            lblPing = new Label();
             btnShiftLaporan = new IconButton();
             MenuBtn = new IconButton();
             TransBtn = new IconButton();
             LogoKasir = new PictureBox();
-            Setting = new IconButton();
             panel2 = new Panel();
             panel1.SuspendLayout();
             panelTitleBar.SuspendLayout();
@@ -203,7 +201,6 @@ namespace KASIR
             gradientPanel2.Controls.Add(btnDev);
             gradientPanel2.Controls.Add(btnContact);
             gradientPanel2.Controls.Add(SignalPing);
-            gradientPanel2.Controls.Add(lblPing);
             gradientPanel2.Controls.Add(btnShiftLaporan);
             gradientPanel2.Controls.Add(MenuBtn);
             gradientPanel2.Controls.Add(TransBtn);
@@ -266,12 +263,6 @@ namespace KASIR
             SignalPing.UseVisualStyleBackColor = false;
             SignalPing.Click += btnTestSpeed_Click;
             // 
-            // lblPing
-            // 
-            resources.ApplyResources(lblPing, "lblPing");
-            lblPing.ForeColor = Color.Lime;
-            lblPing.Name = "lblPing";
-            // 
             // btnShiftLaporan
             // 
             btnShiftLaporan.BackColor = Color.Transparent;
@@ -324,22 +315,9 @@ namespace KASIR
             LogoKasir.TabStop = false;
             LogoKasir.Click += link_Click;
             // 
-            // Setting
-            // 
-            resources.ApplyResources(Setting, "Setting");
-            Setting.FlatAppearance.BorderSize = 0;
-            Setting.IconChar = IconChar.Gear;
-            Setting.IconColor = Color.WhiteSmoke;
-            Setting.IconFont = IconFont.Auto;
-            Setting.IconSize = 20;
-            Setting.Name = "Setting";
-            Setting.UseVisualStyleBackColor = true;
-            Setting.Click += btnEditSettings_Click;
-            // 
             // panel2
             // 
             panel2.BackColor = Color.FromArgb(15, 90, 94);
-            panel2.Controls.Add(Setting);
             panel2.Controls.Add(gradientPanel2);
             resources.ApplyResources(panel2, "panel2");
             panel2.Name = "panel2";
@@ -392,12 +370,10 @@ namespace KASIR
         private IconButton btnDev;
         private IconButton btnContact;
         private IconButton SignalPing;
-        private Label lblPing;
         private IconButton btnShiftLaporan;
         private IconButton MenuBtn;
         private IconButton TransBtn;
         private PictureBox LogoKasir;
-        private IconButton Setting;
         private Panel panel2;
         private PictureBox NavBarBtn;
     }

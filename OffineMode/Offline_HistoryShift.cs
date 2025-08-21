@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text.RegularExpressions;
+using KASIR.Helper;
 using KASIR.Model;
 using KASIR.Properties;
 using Newtonsoft.Json.Linq;
@@ -84,7 +85,7 @@ namespace KASIR.OffineMode
             }
             else
             {
-                MessageBox.Show("The ShiftData.data file does not exist.");
+                NotifyHelper.Warning("The ShiftData.data file does not exist.");
             }
 
             // Next, check if the directory exists for other .data files

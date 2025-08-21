@@ -54,6 +54,7 @@ namespace KASIR.OfflineMode
             cmbPayform = new ComboBox();
             label6 = new Label();
             panel4 = new Panel();
+            lblBonusMember = new Label();
             lblUsePoint = new Label();
             ButtonSwitchUsePoint = new Model.SButton();
             lblPoint = new Label();
@@ -72,7 +73,6 @@ namespace KASIR.OfflineMode
             panel7 = new Panel();
             btnTunai = new Button();
             label2 = new Label();
-            lblBonusMember = new Label();
             panel1.SuspendLayout();
             flowLayoutPanel1.SuspendLayout();
             panel9.SuspendLayout();
@@ -355,6 +355,19 @@ namespace KASIR.OfflineMode
             panel4.Size = new Size(592, 102);
             panel4.TabIndex = 12;
             // 
+            // lblBonusMember
+            // 
+            lblBonusMember.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            lblBonusMember.AutoSize = true;
+            lblBonusMember.Font = new Font("Segoe UI", 9F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point);
+            lblBonusMember.ForeColor = Color.Black;
+            lblBonusMember.Location = new Point(421, 8);
+            lblBonusMember.Name = "lblBonusMember";
+            lblBonusMember.Size = new Size(108, 15);
+            lblBonusMember.TabIndex = 29;
+            lblBonusMember.Text = "Bonus Member : %";
+            lblBonusMember.Visible = false;
+            // 
             // lblUsePoint
             // 
             lblUsePoint.AutoSize = true;
@@ -398,7 +411,7 @@ namespace KASIR.OfflineMode
             // 
             // btnDataMember
             // 
-            btnDataMember.BackColor = Color.FromArgb(30, 31, 68);
+            btnDataMember.BackColor = Color.FromArgb(15, 90, 94);
             btnDataMember.Cursor = Cursors.Hand;
             btnDataMember.FlatAppearance.BorderSize = 0;
             btnDataMember.FlatStyle = FlatStyle.Flat;
@@ -517,7 +530,7 @@ namespace KASIR.OfflineMode
             // 
             // btnSimpan
             // 
-            btnSimpan.BackColor = Color.FromArgb(30, 31, 68);
+            btnSimpan.BackColor = Color.FromArgb(15, 90, 94);
             btnSimpan.Cursor = Cursors.Hand;
             btnSimpan.FlatAppearance.BorderSize = 0;
             btnSimpan.FlatStyle = FlatStyle.Flat;
@@ -538,7 +551,7 @@ namespace KASIR.OfflineMode
             // 
             // btnKeluar
             // 
-            btnKeluar.BackColor = Color.WhiteSmoke;
+            btnKeluar.BackColor = Color.White;
             btnKeluar.Cursor = Cursors.Hand;
             btnKeluar.FlatAppearance.BorderSize = 0;
             btnKeluar.FlatStyle = FlatStyle.Flat;
@@ -549,11 +562,11 @@ namespace KASIR.OfflineMode
             btnKeluar.IconColor = Color.FromArgb(30, 31, 68);
             btnKeluar.IconFont = IconFont.Auto;
             btnKeluar.IconSize = 25;
+            btnKeluar.ImageAlign = ContentAlignment.MiddleLeft;
             btnKeluar.Location = new Point(12, 21);
             btnKeluar.Name = "btnKeluar";
             btnKeluar.Size = new Size(88, 30);
             btnKeluar.TabIndex = 23;
-            btnKeluar.Text = "Keluar";
             btnKeluar.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnKeluar.UseVisualStyleBackColor = false;
             btnKeluar.Click += btnKeluar_Click;
@@ -587,19 +600,6 @@ namespace KASIR.OfflineMode
             label2.Size = new Size(110, 15);
             label2.TabIndex = 1;
             label2.Text = "TIPE PEMBAYARAN";
-            // 
-            // lblBonusMember
-            // 
-            lblBonusMember.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            lblBonusMember.AutoSize = true;
-            lblBonusMember.Font = new Font("Segoe UI", 9F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point);
-            lblBonusMember.ForeColor = Color.Black;
-            lblBonusMember.Location = new Point(421, 8);
-            lblBonusMember.Name = "lblBonusMember";
-            lblBonusMember.Size = new Size(108, 15);
-            lblBonusMember.TabIndex = 29;
-            lblBonusMember.Text = "Bonus Member : %";
-            lblBonusMember.Visible = false;
             // 
             // Offline_payForm
             // 

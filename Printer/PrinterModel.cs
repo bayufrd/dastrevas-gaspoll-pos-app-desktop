@@ -28,20 +28,20 @@ namespace KASIR.Printer
         private const string SEPARATOR = "--------------------------------\n";
         private const string PRINT_POWERED_BY = "Powered By Dastrevas\n";
         private static readonly ConcurrentDictionary<string, BluetoothClient> _activeBluetoothConnections =
-    new ConcurrentDictionary<string, BluetoothClient>();
-        private static readonly object _connectionLock = new object();
+    new();
+        private static readonly object _connectionLock = new();
         public PrinterModel()
         {
             baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "setting");
             if (!Directory.Exists(baseDirectory))
             {
-                Directory.CreateDirectory(baseDirectory);
+                _ = Directory.CreateDirectory(baseDirectory);
             }
         }
         public static class PrinterConfig
         {
             private static readonly Dictionary<string, (string NormalSize, string BigSize, int Width)> _printerPresets =
-        new Dictionary<string, (string, string, int)>(StringComparer.OrdinalIgnoreCase)
+        new(StringComparer.OrdinalIgnoreCase)
     {
         // Format: (Ukuran Normal, Ukuran Besar, Lebar Karakter)
         { "66:22:F7:10:58:5B", ("\x1D\x21\x11", "\x1D\x21\x22", 24) }, // Moka - double size sebagai normal
@@ -71,7 +71,7 @@ namespace KASIR.Printer
         {
             if (!Directory.Exists(path))
             {
-                Directory.CreateDirectory(path);
+                _ = Directory.CreateDirectory(path);
             }
         }
         public async Task SavePrinterBluetoothMACSettings(string comboBoxName, string printerId)
@@ -90,7 +90,7 @@ namespace KASIR.Printer
         {
             if (printerSettings.ContainsKey(comboBoxName))
             {
-                printerSettings.Remove(comboBoxName);
+                _ = printerSettings.Remove(comboBoxName);
                 await SaveSettingsToFileAsync("printerSettings.data", SerializePrinterSettings());
             }
         }
@@ -134,7 +134,7 @@ namespace KASIR.Printer
             StringBuilder sb = new();
             foreach (KeyValuePair<string, string> kvp in printerSettings)
             {
-                sb.AppendLine($"{kvp.Key}:{kvp.Value}");
+                _ = sb.AppendLine($"{kvp.Key}:{kvp.Value}");
             }
 
             return sb.ToString();
@@ -247,7 +247,7 @@ namespace KASIR.Printer
             StringBuilder sb = new();
             foreach (KeyValuePair<string, bool> kvp in checkBoxSettings)
             {
-                sb.AppendLine($"{kvp.Key}:{kvp.Value}");
+                _ = sb.AppendLine($"{kvp.Key}:{kvp.Value}");
             }
 
             return sb.ToString();
@@ -370,9 +370,9 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += SEPARATOR;
                             strukText += CenterText("Test Tengah");
-                            strukText += FormatSimpleLine(printerName, "Test Data Kiri", "Test Data Kanan") + "\n";
+                            strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                             strukText += kodeHeksadesimalBold;
-                            strukText += FormatSimpleLine(printerName, "Test Data Kiri Tebal", "Bold") + "\n";
+                            strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
 
                             strukText += kodeHeksadesimalNormal;
 
@@ -433,9 +433,9 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += SEPARATOR;
                             strukText += CenterText("Test Tengah");
-                            strukText += FormatSimpleLine(printerName, "Test Data Kiri", "Test Data Kanan") + "\n";
+                            strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                             strukText += kodeHeksadesimalBold;
-                            strukText += FormatSimpleLine(printerName, "Test Data Kiri Tebal", "Bold") + "\n";
+                            strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
 
                             strukText += kodeHeksadesimalNormal;
 
@@ -496,9 +496,9 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += SEPARATOR;
                             strukText += CenterText("Test Tengah");
-                            strukText += FormatSimpleLine(printerName, "Test Data Kiri", "Test Data Kanan") + "\n";
+                            strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                             strukText += kodeHeksadesimalBold;
-                            strukText += FormatSimpleLine(printerName, "Test Data Kiri Tebal", "Bold") + "\n";
+                            strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
 
                             strukText += kodeHeksadesimalNormal;
 
@@ -559,9 +559,9 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
                             strukText += SEPARATOR;
                             strukText += CenterText("Test Tengah");
-                            strukText += FormatSimpleLine(printerName, "Test Data Kiri", "Test Data Kanan") + "\n";
+                            strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                             strukText += kodeHeksadesimalBold;
-                            strukText += FormatSimpleLine(printerName, "Test Data Kiri Tebal", "Bold") + "\n";
+                            strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
 
                             strukText += kodeHeksadesimalNormal;
 
@@ -742,9 +742,9 @@ namespace KASIR.Printer
                                 strukText += kodeHeksadesimalNormal;
                                 strukText += SEPARATOR;
                                 strukText += CenterText("Test Tengah");
-                                strukText += FormatSimpleLine(printerName, "Test Data Kiri", "Test Data Kanan") + "\n";
+                                strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
                                 strukText += kodeHeksadesimalBold;
-                                strukText += FormatSimpleLine(printerName, "Test Data Kiri Tebal", "Bold") + "\n";
+                                strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
 
                                 strukText += kodeHeksadesimalNormal;
 
@@ -832,11 +832,11 @@ namespace KASIR.Printer
                             e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                 leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                             yPos += font.GetHeight(e.Graphics);
-                            currentLine.Clear();
+                            _ = currentLine.Clear();
                         }
 
                         // Tambahkan kata ke baris saat ini
-                        currentLine.Append(word + " ");
+                        _ = currentLine.Append(word + " ");
                     }
 
                     // Gambar baris terakhir
@@ -1002,18 +1002,21 @@ namespace KASIR.Printer
                         {
                             if (IsNotMacAddressOrIpAddress(printerName))
                             {
-                                Ex_PrintModelCetakLaporanShift(dataShifts, expenditures, cartDetailsSuccess,
+                                _ = Ex_PrintModelCetakLaporanShift(dataShifts, expenditures, cartDetailsSuccess,
                                     cartDetailsPendings, cartDetailsCanceled, refundDetails, paymentDetails,
                                     printerId, printerName
                                 );
                                 return;
                             }
-
-                            if (ShouldPrint(printerId, "Kasir"))
+                            // 🔑 buat koneksi sekali saja
+                            using (Stream stream = await EstablishPrinterConnection(printerName))
                             {
-                                await GenerateStrukTextShiftLaporan(dataShifts, expenditures,
-                                    cartDetailsSuccess, cartDetailsPendings, cartDetailsCanceled, refundDetails,
-                                    paymentDetails, printerName);
+                                if (ShouldPrint(printerId, "Kasir"))
+                                {
+                                    await GenerateStrukTextShiftLaporan(dataShifts, expenditures,
+                                        cartDetailsSuccess, cartDetailsPendings, cartDetailsCanceled, refundDetails, paymentDetails, stream);
+                                }
+                                stream.Flush();
                             }
                         }
                         catch (Exception ex)
@@ -1041,240 +1044,223 @@ namespace KASIR.Printer
     List<CartDetailsCanceledStrukShift> cartDetailsCanceled,
     List<RefundDetailStrukShift> refundDetails,
     List<PaymentDetailStrukShift> paymentDetails,
-    string printerName)
+    Stream stream)
         {
-            Stream stream = Stream.Null;
 
-            try
+            int totalItems = cartDetailsSuccess.Count +
+                             cartDetailsPendings.Count +
+                             cartDetailsCanceled.Count +
+                             refundDetails.Count +
+                             expenditures.Count +
+                             paymentDetails.Count;
+            var capacity = GetOptimalCapacity(totalItems);
+            var strukBuilder = new StringBuilder(capacity);
+
+            string kodeHeksadesimalBold = "\x1B\x45\x01";
+            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
+            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+            _ = strukBuilder.AppendFormat("\n{0}{1}",
+                kodeHeksadesimalBold,
+                CenterText(dataShifts.outlet_name));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.Append(CenterText(dataShifts.outlet_address));
+            _ = strukBuilder.Append(CenterText(dataShifts.outlet_phone_number));
+
+            _ = strukBuilder.Append(SEPARATOR);
+
+            _ = strukBuilder.AppendFormat("{0}{1}",
+                kodeHeksadesimalSizeBesar,
+                CenterText("SHIFT PRINT"));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Start Date", dataShifts.start_date));
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("End Date", dataShifts.end_date));
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Casher Name", dataShifts.casher_name));
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Shift Number", dataShifts.shift_number.ToString()));
+            _ = strukBuilder.Append(SEPARATOR);
+
+            void AppendSortedDetails<T>(
+                List<T> details,
+                string sectionTitle,
+                Func<T, string> menuNameSelector,
+                Func<T, int> qtySelector,
+                Func<T, decimal> totalPriceSelector,
+                Func<T, string> varianSelector = null)
             {
-                stream = await EstablishPrinterConnection(printerName);
+                if (!details.Any()) return;
 
-                int totalItems = cartDetailsSuccess.Count +
-                                 cartDetailsPendings.Count +
-                                 cartDetailsCanceled.Count +
-                                 refundDetails.Count +
-                                 expenditures.Count +
-                                 paymentDetails.Count;
-                var capacity = GetOptimalCapacity(totalItems);
-                var strukBuilder = new StringBuilder(capacity);
+                _ = strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, sectionTitle + "\n");
+                _ = strukBuilder.Append(kodeHeksadesimalNormal);
 
-                string kodeHeksadesimalBold = "\x1B\x45\x01";
-                string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-
-                strukBuilder.AppendFormat("\n{0}{1}",
-                    kodeHeksadesimalBold,
-                    CenterText(dataShifts.outlet_name));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.Append(CenterText(dataShifts.outlet_address));
-                strukBuilder.Append(CenterText(dataShifts.outlet_phone_number));
-
-                strukBuilder.Append(SEPARATOR);
-
-                strukBuilder.AppendFormat("{0}{1}",
-                    kodeHeksadesimalSizeBesar,
-                    CenterText("SHIFT PRINT"));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Start Date", dataShifts.start_date));
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "End Date", dataShifts.end_date));
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Casher Name", dataShifts.casher_name));
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Shift Number", dataShifts.shift_number.ToString()));
-                strukBuilder.Append(SEPARATOR);
-
-                void AppendSortedDetails<T>(
-                    List<T> details,
-                    string sectionTitle,
-                    Func<T, string> menuNameSelector,
-                    Func<T, int> qtySelector,
-                    Func<T, decimal> totalPriceSelector,
-                    Func<T, string> varianSelector = null)
-                {
-                    if (!details.Any()) return;
-
-                    strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, sectionTitle + "\n");
-                    strukBuilder.Append(kodeHeksadesimalNormal);
-
-                    var sortedDetails = details
-                        .OrderBy(x =>
-                        {
-                            var menuType = x.GetType().GetProperty("menu_type")?.GetValue(x) as string ?? "";
-                            return menuType.Contains("Minuman") ? 1 :
-                                   menuType.Contains("Additional Minuman") ? 2 :
-                                   menuType.Contains("Makanan") ? 3 :
-                                   menuType.Contains("Additional Makanan") ? 4 : 5;
-                        })
-                        .ThenBy(x => menuNameSelector(x));
-
-                    foreach (var detail in sortedDetails)
+                var sortedDetails = details
+                    .OrderBy(x =>
                     {
-                        strukBuilder.AppendFormat("{0}",
-                            FormatSimpleLine(printerName,
-                                $"{qtySelector(detail)} {menuNameSelector(detail)}",
-                                $"{totalPriceSelector(detail):n0}"));
+                        var menuType = x.GetType().GetProperty("menu_type")?.GetValue(x) as string ?? "";
+                        return menuType.Contains("Minuman") ? 1 :
+                               menuType.Contains("Additional Minuman") ? 2 :
+                               menuType.Contains("Makanan") ? 3 :
+                               menuType.Contains("Additional Makanan") ? 4 : 5;
+                    })
+                    .ThenBy(x => menuNameSelector(x));
 
-                        if (varianSelector != null && !string.IsNullOrEmpty(varianSelector(detail)))
-                        {
-                            strukBuilder.AppendFormat("{0}\n",
-                                FormatDetailItemLine("Varian", varianSelector(detail)));
-                        }
+                foreach (var detail in sortedDetails)
+                {
+                    _ = strukBuilder.AppendFormat("{0}",
+                        FormatSimpleLine(
+                            $"{qtySelector(detail)} {menuNameSelector(detail)}",
+                            $"{totalPriceSelector(detail):n0}"));
+
+                    if (varianSelector != null && !string.IsNullOrEmpty(varianSelector(detail)))
+                    {
+                        _ = strukBuilder.AppendFormat("{0}\n",
+                            FormatDetailItemLine("Varian", varianSelector(detail)));
                     }
                 }
+            }
 
-                strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, CenterText("ORDER DETAILS"));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, CenterText("ORDER DETAILS"));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.Append(SEPARATOR);
 
-                strukBuilder.AppendFormat("{0}{1}\n", kodeHeksadesimalBold, "SOLD ITEMS");
-                strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.AppendFormat("{0}{1}\n", kodeHeksadesimalBold, "SOLD ITEMS");
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
 
+            AppendSortedDetails(
+                cartDetailsSuccess,
+                "SOLD ITEMS",
+                x => x.menu_name,
+                x => x.qty,
+                x => x.total_price,
+                x => x.varian
+            );
+
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Item Sold Qty", dataShifts.totalSuccessQty.ToString()));
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Item Sold Amount", $"{dataShifts.totalCartSuccessAmount:n0}"));
+
+            if (cartDetailsPendings.Any())
+            {
+                _ = strukBuilder.Append(SEPARATOR);
                 AppendSortedDetails(
-                    cartDetailsSuccess,
-                    "SOLD ITEMS",
+                    cartDetailsPendings,
+                    "PENDING ITEMS",
                     x => x.menu_name,
                     x => x.qty,
                     x => x.total_price,
                     x => x.varian
                 );
 
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Item Sold Qty", dataShifts.totalSuccessQty.ToString()));
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Item Sold Amount", $"{dataShifts.totalCartSuccessAmount:n0}"));
-
-                if (cartDetailsPendings.Any())
-                {
-                    strukBuilder.Append(SEPARATOR);
-                    AppendSortedDetails(
-                        cartDetailsPendings,
-                        "PENDING ITEMS",
-                        x => x.menu_name,
-                        x => x.qty,
-                        x => x.total_price,
-                        x => x.varian
-                    );
-
-                    strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(printerName, "Item Pending Qty", dataShifts.totalPendingQty.ToString()));
-                    strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(printerName, "Item Pending Amount", $"{dataShifts.totalCartPendingAmount:n0}"));
-                }
-
-                if (cartDetailsCanceled.Any())
-                {
-                    strukBuilder.Append(SEPARATOR);
-                    AppendSortedDetails(
-                        cartDetailsCanceled,
-                        "CANCEL ITEMS",
-                        x => x.menu_name,
-                        x => x.qty,
-                        x => x.total_price,
-                        x => x.varian
-                    );
-
-                    strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(printerName, "Item Cancel Qty", dataShifts.totalCanceledQty.ToString()));
-                    strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(printerName, "Item Cancel Amount", $"{dataShifts.totalCartCanceledAmount:n0}"));
-                }
-
-                if (refundDetails.Any())
-                {
-                    strukBuilder.Append(SEPARATOR);
-                    AppendSortedDetails(
-                        refundDetails,
-                        "REFUND ITEMS",
-                        x => x.menu_name,
-                        x => x.qty_refund_item,
-                        x => x.total_refund_price,
-                        x => x.varian
-                    );
-
-                    strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(printerName, "Item Refund Qty", dataShifts.totalRefundQty.ToString()));
-                    strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(printerName, "Item Refund Amount", $"{dataShifts.totalCartRefundAmount:n0}"));
-                }
-
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, CenterText("CASH MANAGEMENT"));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.Append(SEPARATOR);
-
-                if (expenditures.Any())
-                {
-                    strukBuilder.AppendFormat("{0}EXPENSE\n", kodeHeksadesimalBold);
-                    strukBuilder.Append(kodeHeksadesimalNormal);
-
-                    foreach (var expense in expenditures)
-                    {
-                        strukBuilder.AppendFormat("{0}\n",
-                            FormatSimpleLine(printerName, expense.description, $"{expense.nominal:n0}"));
-                    }
-                }
-
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Expected Ending Cash", $"{dataShifts.ending_cash_expected:n0}"));
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Actual Ending Cash", $"{dataShifts.ending_cash_actual:n0}"));
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Cash Difference", $"{dataShifts.cash_difference:n0}"));
-
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}DISCOUNTS\n", kodeHeksadesimalBold);
-                strukBuilder.Append(kodeHeksadesimalNormal);
-
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "All Discount items", $"{dataShifts.discount_amount_per_items:n0}"));
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "All Discount Cart", $"{dataShifts.discount_amount_per_items:n0}"));
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "TOTAL AMOUNT", $"{dataShifts.discount_total_amount:n0}"));
-
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, CenterText("PAYMENT DETAIL"));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.Append(SEPARATOR);
-
-                foreach (var paymentDetail in paymentDetails)
-                {
-                    strukBuilder.AppendLine(paymentDetail.payment_category);
-                    foreach (var paymentType in paymentDetail.payment_type_detail)
-                    {
-                        strukBuilder.AppendFormat("{0}\n",
-                            FormatSimpleLine(printerName, paymentType.payment_type, $"{paymentType.total_payment:n0}"));
-                    }
-
-                    strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(printerName, "TOTAL AMOUNT", $"{paymentDetail.total_amount:n0}"));
-                    strukBuilder.Append(SEPARATOR);
-                }
-
-                strukBuilder.AppendFormat("{0}{1}\n",
-                    kodeHeksadesimalBold,
-                    FormatSimpleLine(printerName, "TOTAL TRANSACTION", $"{dataShifts.total_transaction:n0}"));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-
-                strukBuilder.Append("--------------------------------\n\n\n\n\n");
-
-                byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
-                stream.Write(buffer, 0, buffer.Length);
-                stream.Flush();
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("Item Pending Qty", dataShifts.totalPendingQty.ToString()));
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("Item Pending Amount", $"{dataShifts.totalCartPendingAmount:n0}"));
             }
-            catch (Exception ex)
+
+            if (cartDetailsCanceled.Any())
             {
-                LoggerUtil.LogError(ex, $"Error in GenerateStrukTextShiftLaporan: {ex.Message}");
-                throw;
+                _ = strukBuilder.Append(SEPARATOR);
+                AppendSortedDetails(
+                    cartDetailsCanceled,
+                    "CANCEL ITEMS",
+                    x => x.menu_name,
+                    x => x.qty,
+                    x => x.total_price,
+                    x => x.varian
+                );
+
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("Item Cancel Qty", dataShifts.totalCanceledQty.ToString()));
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("Item Cancel Amount", $"{dataShifts.totalCartCanceledAmount:n0}"));
             }
-            finally
+
+            if (refundDetails.Any())
             {
-                stream?.Close();
-                stream?.Dispose();
+                _ = strukBuilder.Append(SEPARATOR);
+                AppendSortedDetails(
+                    refundDetails,
+                    "REFUND ITEMS",
+                    x => x.menu_name,
+                    x => x.qty_refund_item,
+                    x => x.total_refund_price,
+                    x => x.varian
+                );
+
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("Item Refund Qty", dataShifts.totalRefundQty.ToString()));
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("Item Refund Amount", $"{dataShifts.totalCartRefundAmount:n0}"));
             }
+
+            _ = strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, CenterText("CASH MANAGEMENT"));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.Append(SEPARATOR);
+
+            if (expenditures.Any())
+            {
+                _ = strukBuilder.AppendFormat("{0}EXPENSE\n", kodeHeksadesimalBold);
+                _ = strukBuilder.Append(kodeHeksadesimalNormal);
+
+                foreach (var expense in expenditures)
+                {
+                    _ = strukBuilder.AppendFormat("{0}\n",
+                        FormatSimpleLine(expense.description, $"{expense.nominal:n0}"));
+                }
+            }
+
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Expected Ending Cash", $"{dataShifts.ending_cash_expected:n0}"));
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Actual Ending Cash", $"{dataShifts.ending_cash_actual:n0}"));
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Cash Difference", $"{dataShifts.cash_difference:n0}"));
+
+            _ = strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}DISCOUNTS\n", kodeHeksadesimalBold);
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("All Discount items", $"{dataShifts.discount_amount_per_items:n0}"));
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("All Discount Cart", $"{dataShifts.discount_amount_per_items:n0}"));
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("TOTAL AMOUNT", $"{dataShifts.discount_total_amount:n0}"));
+
+            _ = strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, CenterText("PAYMENT DETAIL"));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.Append(SEPARATOR);
+
+            foreach (var paymentDetail in paymentDetails)
+            {
+                _ = strukBuilder.AppendLine(paymentDetail.payment_category);
+                foreach (var paymentType in paymentDetail.payment_type_detail)
+                {
+                    _ = strukBuilder.AppendFormat("{0}\n",
+                        FormatSimpleLine(paymentType.payment_type, $"{paymentType.total_payment:n0}"));
+                }
+
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("TOTAL AMOUNT", $"{paymentDetail.total_amount:n0}"));
+                _ = strukBuilder.Append(SEPARATOR);
+            }
+
+            _ = strukBuilder.AppendFormat("{0}{1}\n",
+                kodeHeksadesimalBold,
+                FormatSimpleLine("TOTAL TRANSACTION", $"{dataShifts.total_transaction:n0}"));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+
+            _ = strukBuilder.Append("--------------------------------\n\n\n\n\n");
+
+            byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
+            stream.Write(buffer, 0, buffer.Length);
         }
 
         private string CenterText(string text)
@@ -1310,10 +1296,10 @@ namespace KASIR.Printer
         private void AppendLineWithPadding(StringBuilder centeredText, StringBuilder line, int maxLength)
         {
             int spaces = (maxLength - line.Length) / 2;
-            centeredText.AppendLine(new string(' ', spaces) + line.ToString().TrimEnd());
+            _ = centeredText.AppendLine(new string(' ', spaces) + line.ToString().TrimEnd());
         }
 
-        public string FormatSimpleLine(string printerIdentifier, string left, object right)
+        public string FormatSimpleLine(string left, object right)
         {
             // Jika objek right null, maka atur rightString sebagai string kosong
             string rightString = right != null ? right.ToString() : string.Empty;
@@ -1354,7 +1340,7 @@ namespace KASIR.Printer
                 }
                 else
                 {
-                    await RetryPolicyAsync(async () =>
+                    _ = await RetryPolicyAsync(async () =>
                     {
                         BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
@@ -1443,11 +1429,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                         leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -1480,11 +1466,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
                                         yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -1813,7 +1799,7 @@ namespace KASIR.Printer
 
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
-                        Ex_PrintModelCetakUlangShift(dataShifts, expenditures, cartDetailsSuccess, cartDetailsPendings,
+                        _ = Ex_PrintModelCetakUlangShift(dataShifts, expenditures, cartDetailsSuccess, cartDetailsPendings,
                             cartDetailsCanceled, refundDetails, paymentDetails,
                             printerId, printerName
                         );
@@ -1902,10 +1888,10 @@ namespace KASIR.Printer
             strukText += kodeHeksadesimalSizeBesar + CenterText("SHIFT PRINT");
             strukText += kodeHeksadesimalNormal;
             strukText += SEPARATOR;
-            strukText += FormatSimpleLine(printerName, "Start Date", dataShifts.start_date) + "\n";
-            strukText += FormatSimpleLine(printerName, "End Date", dataShifts.end_date) + "\n";
-            strukText += FormatSimpleLine(printerName, "Casher Name", dataShifts.casher_name) + "\n";
-            strukText += FormatSimpleLine(printerName, "Shift Number", dataShifts.shift_number.ToString()) + "\n";
+            strukText += FormatSimpleLine("Start Date", dataShifts.start_date) + "\n";
+            strukText += FormatSimpleLine("End Date", dataShifts.end_date) + "\n";
+            strukText += FormatSimpleLine("Casher Name", dataShifts.casher_name) + "\n";
+            strukText += FormatSimpleLine("Shift Number", dataShifts.shift_number.ToString()) + "\n";
             strukText += SEPARATOR;
 
             strukText += kodeHeksadesimalBold + CenterText("ORDER DETAILS");
@@ -1942,7 +1928,7 @@ namespace KASIR.Printer
 
             foreach (CartDetailsSuccessStrukShift cartDetail in sortedCartDetailsSuccess)
             {
-                strukText += FormatSimpleLine(printerName, cartDetail.qty + " " + cartDetail.menu_name,
+                strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
                     string.Format("{0:n0}", cartDetail.total_price));
                 if (!string.IsNullOrEmpty(cartDetail.varian))
                 {
@@ -1950,9 +1936,9 @@ namespace KASIR.Printer
                 }
             }
 
-            strukText += FormatSimpleLine(printerName, "Item Sold Qty", dataShifts.totalSuccessQty.ToString()) + "\n";
+            strukText += FormatSimpleLine("Item Sold Qty", dataShifts.totalSuccessQty.ToString()) + "\n";
             strukText +=
-                FormatSimpleLine(printerName, "Item Sold Amount", string.Format("{0:n0}", dataShifts.totalCartSuccessAmount)) + "\n";
+                FormatSimpleLine("Item Sold Amount", string.Format("{0:n0}", dataShifts.totalCartSuccessAmount)) + "\n";
 
             if (cartDetailsPendings.Count != 0)
             {
@@ -1988,7 +1974,7 @@ namespace KASIR.Printer
 
                 foreach (CartDetailsPendingStrukShift cartDetail in sortedCartDetailsPendings)
                 {
-                    strukText += FormatSimpleLine(printerName, cartDetail.qty + " " + cartDetail.menu_name,
+                    strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
                         string.Format("{0:n0}", cartDetail.total_price));
                     if (!string.IsNullOrEmpty(cartDetail.varian))
                     {
@@ -1996,8 +1982,8 @@ namespace KASIR.Printer
                     }
                 }
 
-                strukText += FormatSimpleLine(printerName, "Item Pending Qty", dataShifts.totalPendingQty.ToString()) + "\n";
-                strukText += FormatSimpleLine(printerName, "Item Pending Amount",
+                strukText += FormatSimpleLine("Item Pending Qty", dataShifts.totalPendingQty.ToString()) + "\n";
+                strukText += FormatSimpleLine("Item Pending Amount",
                     string.Format("{0:n0}", dataShifts.totalCartPendingAmount)) + "\n";
             }
 
@@ -2035,7 +2021,7 @@ namespace KASIR.Printer
 
                 foreach (CartDetailsCanceledStrukShift cartDetail in sortedCartDetailsCanceled)
                 {
-                    strukText += FormatSimpleLine(printerName, cartDetail.qty + " " + cartDetail.menu_name,
+                    strukText += FormatSimpleLine(cartDetail.qty + " " + cartDetail.menu_name,
                         string.Format("{0:n0}", cartDetail.total_price));
                     if (!string.IsNullOrEmpty(cartDetail.varian))
                     {
@@ -2043,8 +2029,8 @@ namespace KASIR.Printer
                     }
                 }
 
-                strukText += FormatSimpleLine(printerName, "Item Cancel Qty", dataShifts.totalCanceledQty.ToString()) + "\n";
-                strukText += FormatSimpleLine(printerName, "Item Cancel Amount",
+                strukText += FormatSimpleLine("Item Cancel Qty", dataShifts.totalCanceledQty.ToString()) + "\n";
+                strukText += FormatSimpleLine("Item Cancel Amount",
                     string.Format("{0:n0}", dataShifts.totalCartCanceledAmount)) + "\n";
             }
 
@@ -2081,7 +2067,7 @@ namespace KASIR.Printer
 
                 foreach (RefundDetailStrukShift refundDetail in sortedRefundDetails)
                 {
-                    strukText += FormatSimpleLine(printerName, refundDetail.qty_refund_item + " " + refundDetail.menu_name,
+                    strukText += FormatSimpleLine(refundDetail.qty_refund_item + " " + refundDetail.menu_name,
                         string.Format("{0:n0}", refundDetail.total_refund_price));
                     if (!string.IsNullOrEmpty(refundDetail.varian))
                     {
@@ -2089,8 +2075,8 @@ namespace KASIR.Printer
                     }
                 }
 
-                strukText += FormatSimpleLine(printerName, "Item Refund Qty", dataShifts.totalRefundQty.ToString()) + "\n";
-                strukText += FormatSimpleLine(printerName, "Item Refund Amount",
+                strukText += FormatSimpleLine("Item Refund Qty", dataShifts.totalRefundQty.ToString()) + "\n";
+                strukText += FormatSimpleLine("Item Refund Amount",
                     string.Format("{0:n0}", dataShifts.totalCartRefundAmount)) + "\n";
             }
 
@@ -2107,27 +2093,27 @@ namespace KASIR.Printer
 
                 foreach (ExpenditureStrukShift expense in expenditures)
                 {
-                    strukText += FormatSimpleLine(printerName, expense.description, string.Format("{0:n0}", expense.nominal)) + "\n";
+                    strukText += FormatSimpleLine(expense.description, string.Format("{0:n0}", expense.nominal)) + "\n";
                 }
             }
 
             strukText +=
-                FormatSimpleLine(printerName, "Expected Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_expected)) +
+                FormatSimpleLine("Expected Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_expected)) +
                 "\n";
             strukText +=
-                FormatSimpleLine(printerName, "Actual Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_actual)) + "\n";
-            strukText += FormatSimpleLine(printerName, "Cash Difference", string.Format("{0:n0}", dataShifts.cash_difference)) +
+                FormatSimpleLine("Actual Ending Cash", string.Format("{0:n0}", dataShifts.ending_cash_actual)) + "\n";
+            strukText += FormatSimpleLine("Cash Difference", string.Format("{0:n0}", dataShifts.cash_difference)) +
                          "\n";
 
             strukText += SEPARATOR;
             strukText += kodeHeksadesimalBold + "DISCOUNTS\n";
             strukText += kodeHeksadesimalNormal;
 
-            strukText += FormatSimpleLine(printerName, "All Discount items",
+            strukText += FormatSimpleLine("All Discount items",
                 string.Format("{0:n0}", dataShifts.discount_amount_per_items)) + "\n";
-            strukText += FormatSimpleLine(printerName, "All Discount Cart",
+            strukText += FormatSimpleLine("All Discount Cart",
                 string.Format("{0:n0}", dataShifts.discount_amount_per_items)) + "\n";
-            strukText += FormatSimpleLine(printerName, "TOTAL AMOUNT", string.Format("{0:n0}", dataShifts.discount_total_amount)) +
+            strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", dataShifts.discount_total_amount)) +
                          "\n";
 
             strukText += SEPARATOR;
@@ -2141,17 +2127,17 @@ namespace KASIR.Printer
                 strukText += paymentDetail.payment_category + "\n";
                 foreach (PaymentTypeDetailStrukShift paymentType in paymentDetail.payment_type_detail)
                 {
-                    strukText += FormatSimpleLine(printerName, paymentType.payment_type,
+                    strukText += FormatSimpleLine(paymentType.payment_type,
                         string.Format("{0:n0}", paymentType.total_payment)) + "\n";
                 }
 
-                strukText += FormatSimpleLine(printerName, "TOTAL AMOUNT", string.Format("{0:n0}", paymentDetail.total_amount)) +
+                strukText += FormatSimpleLine("TOTAL AMOUNT", string.Format("{0:n0}", paymentDetail.total_amount)) +
                              "\n";
                 strukText += SEPARATOR;
             }
 
             strukText += kodeHeksadesimalBold +
-                         FormatSimpleLine(printerName, "TOTAL TRANSACTION", string.Format("{0:n0}", dataShifts.total_transaction)) +
+                         FormatSimpleLine("TOTAL TRANSACTION", string.Format("{0:n0}", dataShifts.total_transaction)) +
                          "\n";
             strukText += kodeHeksadesimalNormal;
 
@@ -2182,7 +2168,7 @@ namespace KASIR.Printer
                 }
                 else
                 {
-                    await RetryPolicyAsync(async () =>
+                    _ = await RetryPolicyAsync(async () =>
                     {
                         BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
@@ -2271,11 +2257,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                         leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -2308,11 +2294,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
                                         yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -2632,58 +2618,21 @@ namespace KASIR.Printer
                     string printerId = printer.Key.Replace("inter", "");
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
-                        Ex_PrintModelRefund(datas, refundDetailStruks, totalTransactions,
+                        _ = Ex_PrintModelRefund(datas, refundDetailStruks, totalTransactions,
                             printerId, printerName);
                         continue;
                     }
 
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        Stream stream = Stream.Null;
-
-                        try
+                        // 🔑 buat koneksi sekali saja
+                        using (Stream stream = await EstablishPrinterConnection(printerName))
                         {
-                            if (IPAddress.TryParse(printerName, out _))
-                            {
-                                // Connect via LAN
-                                TcpClient client = new(printerName, 9100);
-                                stream = client.GetStream();
-                            }
-                            else
-                            {
-                                // Connect via Bluetooth
-                                BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
-                                if (printerDevice == null)
-                                {
-                                    continue;
-                                }
+                            PrintRefundReceipt(datas, refundDetailStruks, totalTransactions, stream);
 
-                                BluetoothClient client = new();
-                                BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress,
-                                    BluetoothService.SerialPort);
-
-                                if (!printerDevice.Authenticated) // cek sudah paired?
-                                {
-                                    if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                    {
-                                        NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
-                                        continue;
-                                    }
-                                }
-
-                                client.Connect(endpoint);
-                                stream = client.GetStream();
-                            }
-
-                            PrintRefundReceipt(stream, datas, refundDetailStruks, totalTransactions, printerName);
+                            stream.Flush();
                         }
-                        finally
-                        {
-                            if (stream != null)
-                            {
-                                stream.Close();
-                            }
-                        }
+
                     }
                 }
             }
@@ -2693,22 +2642,13 @@ namespace KASIR.Printer
             }
         }
 
-        private void PrintRefundReceipt(Stream stream, DataRefundStruk datas,
-            List<RefundDetailStruk> refundDetailStruks, int totalTransactions, string printerName)
+        private void PrintRefundReceipt(DataRefundStruk datas,
+            List<RefundDetailStruk> refundDetailStruks, int totalTransactions, Stream stream)
         {
             string kodeHeksadesimalBold = "\x1B\x45\x01";
             string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
             string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
 
-            byte[] InitPrinter = { 0x1B, 0x40 }; // Initialize printer
-            byte[] NewLine = { 0x0A }; // New line
-
-            // Write initialization bytes
-            stream.Write(InitPrinter, 0, InitPrinter.Length);
-
-            // Print logo (assuming logo is already in a proper format for the printer)
-
-            // Print the rest of the receipt
             //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
             string strukText = kodeHeksadesimalNormal;
             strukText += SEPARATOR;
@@ -2740,7 +2680,7 @@ namespace KASIR.Printer
 
                 foreach (RefundDetailStruk refundDetail in itemsForServingType)
                 {
-                    strukText += FormatSimpleLine(printerName, refundDetail.qty_refund_item + " " + refundDetail.menu_name,
+                    strukText += FormatSimpleLine(refundDetail.qty_refund_item + " " + refundDetail.menu_name,
                         string.Format("{0:n0}", refundDetail.menu_price));
                     if (!string.IsNullOrEmpty(refundDetail.varian))
                     {
@@ -2772,7 +2712,7 @@ namespace KASIR.Printer
             }
 
             strukText += SEPARATOR;
-            strukText += FormatSimpleLine(printerName, "Subtotal", string.Format("{0:n0}", datas.subtotal)) + "\n";
+            strukText += FormatSimpleLine("Subtotal", string.Format("{0:n0}", datas.subtotal)) + "\n";
             if (!string.IsNullOrEmpty(datas.discount_code))
             {
                 strukText += "Discount Code: " + datas.discount_code + "\n";
@@ -2780,20 +2720,20 @@ namespace KASIR.Printer
 
             if (datas.discounts_value.HasValue && datas.discounts_value != 0)
             {
-                strukText += FormatSimpleLine(printerName, "Discount Value",
+                strukText += FormatSimpleLine("Discount Value",
                     datas.discounts_is_percent != "1"
                         ? string.Format("{0:n0}", datas.discounts_value)
                         : datas.discounts_value + " %") + "\n";
             }
 
-            strukText += FormatSimpleLine(printerName, "Total", string.Format("{0:n0}", datas.total)) + "\n";
+            strukText += FormatSimpleLine("Total", string.Format("{0:n0}", datas.total)) + "\n";
             strukText += "Payment Type: " + datas.payment_type + "\n";
             if (!string.IsNullOrEmpty(datas.refund_reason))
             {
                 strukText += "Refund Reason: " + datas.refund_reason + "\n";
             }
 
-            strukText += FormatSimpleLine(printerName, "Total Refund", string.Format("{0:n0}", datas.total_refund)) + "\n";
+            strukText += FormatSimpleLine("Total Refund", string.Format("{0:n0}", datas.total_refund)) + "\n";
             strukText += SEPARATOR;
             strukText += CenterText("Meja No. " + datas.customer_seat);
             strukText += SEPARATOR;
@@ -2809,9 +2749,6 @@ namespace KASIR.Printer
             PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
             stream.Write(buffer, 0, buffer.Length);
             //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
-            stream.Write(NewLine, 0, NewLine.Length);
-
-            stream.Flush();
         }
 
         public async Task Ex_PrintModelRefund
@@ -2833,7 +2770,7 @@ namespace KASIR.Printer
                 }
                 else
                 {
-                    await RetryPolicyAsync(async () =>
+                    _ = await RetryPolicyAsync(async () =>
                     {
                         BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
@@ -2922,11 +2859,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                         leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -2959,11 +2896,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
                                         yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -3221,7 +3158,7 @@ namespace KASIR.Printer
 
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
-                        Ex_PrintModelInputPin(datas, cartDetails, cartRefundDetails, canceledItems, totalTransactions,
+                        _ = Ex_PrintModelInputPin(datas, cartDetails, cartRefundDetails, canceledItems, totalTransactions,
                             printerId, printerName
                         );
                         continue;
@@ -3229,8 +3166,12 @@ namespace KASIR.Printer
 
                     if (ShouldPrint(printerId, "Kasir"))
                     {
-                        await PrintInputPinReceipt(datas, cartDetails, cartRefundDetails, canceledItems,
-                                totalTransactions, printerName);
+                        // 🔑 buat koneksi sekali saja
+                        using (Stream stream = await EstablishPrinterConnection(printerName))
+                        {
+                            await PrintInputPinReceipt(datas, cartDetails, cartRefundDetails, canceledItems,
+                                totalTransactions, stream);
+                        }
                     }
                 }
             }
@@ -3246,309 +3187,288 @@ namespace KASIR.Printer
     List<RefundDetailRestruk> cartRefundDetails,
     List<CanceledItemStrukCustomerRestruk> canceledItems,
     int totalTransactions,
-    string printerName)
+    Stream stream)
         {
-            Stream stream = Stream.Null;
+            // Hitung kapasitas optimal
+            int totalItems = (cartDetails?.Count ?? 0) +
+                             (canceledItems?.Count ?? 0) +
+                             (cartRefundDetails?.Count ?? 0);
+            var capacity = GetOptimalCapacity(totalItems);
+            var strukBuilder = new StringBuilder(capacity);
 
-            try
+            // Kode Heksadesimal
+            string kodeHeksadesimalBold = "\x1B\x45\x01";
+            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
+            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+            // Header
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.AppendFormat("{0}{1}",
+                kodeHeksadesimalBold,
+                CenterText("RE-PRINT STRUCT"));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+
+            _ = strukBuilder.AppendFormat("{0}",
+                CenterText($"Receipt No. {datas?.receipt_number}"));
+
+            if (datas?.invoice_due_date != null)
             {
-                // Establish connection
-                stream = await EstablishPrinterConnection(printerName);
+                _ = strukBuilder.AppendFormat("{0}",
+                    CenterText(datas.invoice_due_date));
+            }
 
-                // Hitung kapasitas optimal
-                int totalItems = (cartDetails?.Count ?? 0) +
-                                 (canceledItems?.Count ?? 0) +
-                                 (cartRefundDetails?.Count ?? 0);
-                var capacity = GetOptimalCapacity(totalItems);
-                var strukBuilder = new StringBuilder(capacity);
+            // Member/Customer Information
+            if (datas != null && (datas.member_id != 0 || !string.IsNullOrEmpty(datas.member_name)))
+            {
+                _ = strukBuilder.AppendFormat("Name Member: {0}\n", datas.member_name ?? "-");
+                _ = strukBuilder.AppendFormat("Number Member: {0}\n", datas.member_phone_number ?? "-");
+                _ = strukBuilder.AppendFormat("Point Member: {0}\n",
+                    datas.member_point.ToString("#,#") ?? "0");
 
-                // Kode Heksadesimal
-                string kodeHeksadesimalBold = "\x1B\x45\x01";
-                string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-
-                // Header
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.AppendFormat("{0}{1}",
-                    kodeHeksadesimalBold,
-                    CenterText("RE-PRINT STRUCT"));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-
-                strukBuilder.AppendFormat("{0}",
-                    CenterText($"Receipt No. {datas?.receipt_number}"));
-
-                if (datas?.invoice_due_date != null)
+                if (!string.IsNullOrEmpty(datas.member_use_point.ToString()) && datas.member_use_point > 0)
                 {
-                    strukBuilder.AppendFormat("{0}",
-                        CenterText(datas.invoice_due_date));
+                    _ = strukBuilder.AppendFormat("Point Member Terpakai: {0}\n", datas.member_use_point);
                 }
+            }
+            else
+            {
+                _ = strukBuilder.AppendFormat("Name: {0}\n",
+                    datas?.customer_name ?? "Walk-in Customer");
+            }
 
-                // Member/Customer Information
-                if (datas != null && (datas.member_id != 0 || !string.IsNullOrEmpty(datas.member_name)))
+            // Ordered Items
+            if (cartDetails?.Any() == true)
+            {
+                var servingTypes = cartDetails
+                    .Select(cd => cd.serving_type_name)
+                    .Distinct();
+
+                foreach (string servingType in servingTypes)
                 {
-                    strukBuilder.AppendFormat("Name Member: {0}\n", datas.member_name ?? "-");
-                    strukBuilder.AppendFormat("Number Member: {0}\n", datas.member_phone_number ?? "-");
-                    strukBuilder.AppendFormat("Point Member: {0}\n",
-                        datas.member_point.ToString("#,#") ?? "0");
+                    var itemsForServingType = cartDetails
+                        .Where(cd => cd.serving_type_name == servingType)
+                        .ToList();
 
-                    if (!string.IsNullOrEmpty(datas.member_use_point.ToString()) && datas.member_use_point > 0)
+                    if (!itemsForServingType.Any()) continue;
+
+                    _ = strukBuilder.Append(SEPARATOR);
+                    _ = strukBuilder.AppendFormat("{0}", CenterText("ORDERED"));
+                    _ = strukBuilder.AppendFormat("{0}\n", CenterText(servingType));
+
+                    foreach (var cartDetail in itemsForServingType)
                     {
-                        strukBuilder.AppendFormat("Point Member Terpakai: {0}\n", datas.member_use_point);
+                        _ = strukBuilder.Append(kodeHeksadesimalBold);
+                        _ = strukBuilder.AppendFormat("{0}\n", cartDetail.menu_name);
+                        _ = strukBuilder.Append(kodeHeksadesimalNormal);
+
+                        _ = strukBuilder.AppendFormat("{0}\n",
+                            FormatSimpleLine(
+                                $"@{cartDetail.price:n0} x{cartDetail.qty}",
+                                $"{cartDetail.total_price:n0}"));
+
+                        if (!string.IsNullOrEmpty(cartDetail.varian))
+                        {
+                            _ = strukBuilder.AppendFormat("  Varian: {0}\n", cartDetail.varian);
+                        }
+                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                        {
+                            _ = strukBuilder.AppendFormat("  Note: {0}\n", cartDetail.note_item);
+                        }
+
+                        if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                        {
+                            _ = strukBuilder.AppendFormat("  Discount Code: {0}\n", cartDetail.discount_code);
+                        }
+
+                        if (cartDetail.discounts_value != null && Convert.ToDecimal(cartDetail.discounts_value) != 0)
+                        {
+                            _ = strukBuilder.AppendFormat("  Discount Value: {0}\n",
+cartDetail.discounts_is_percent.ToString() != "1"
+    ? string.Format("{0:n0}", cartDetail.discounts_value.ToString())
+    : $"{cartDetail.discounts_value} %");
+                        }
+
                     }
                 }
-                else
-                {
-                    strukBuilder.AppendFormat("Name: {0}\n",
-                        datas?.customer_name ?? "Walk-in Customer");
-                }
+            }
 
-                // Ordered Items
-                if (cartDetails?.Any() == true)
-                {
-                    var servingTypes = cartDetails
-                        .Select(cd => cd.serving_type_name)
-                        .Distinct();
+            // Canceled Items
+            if (canceledItems?.Any() == true)
+            {
+                var servingTypesCancel = canceledItems
+                    .Select(cd => cd.serving_type_name)
+                    .Distinct();
 
-                    foreach (string servingType in servingTypes)
+                _ = strukBuilder.Append(SEPARATOR);
+                _ = strukBuilder.AppendFormat("{0}", CenterText("CANCELED"));
+
+                foreach (string servingType in servingTypesCancel)
+                {
+                    var itemsForServingType = canceledItems
+                        .Where(cd => cd.serving_type_name == servingType)
+                        .ToList();
+
+                    if (!itemsForServingType.Any()) continue;
+
+                    _ = strukBuilder.AppendFormat("{0}\n", CenterText(servingType));
+
+                    foreach (var cancelItem in itemsForServingType)
                     {
-                        var itemsForServingType = cartDetails
-                            .Where(cd => cd.serving_type_name == servingType)
-                            .ToList();
+                        _ = strukBuilder.Append(kodeHeksadesimalBold);
+                        _ = strukBuilder.AppendFormat("{0}\n", cancelItem.menu_name);
+                        _ = strukBuilder.Append(kodeHeksadesimalNormal);
 
-                        if (!itemsForServingType.Any()) continue;
+                        _ = strukBuilder.AppendFormat("{0}\n",
+                            FormatSimpleLine(
+                                $"@{cancelItem.price:n0} x{cancelItem.qty}",
+                                $"{cancelItem.total_price:n0}"));
 
-                        strukBuilder.Append(SEPARATOR);
-                        strukBuilder.AppendFormat("{0}", CenterText("ORDERED"));
-                        strukBuilder.AppendFormat("{0}\n", CenterText(servingType));
-
-                        foreach (var cartDetail in itemsForServingType)
+                        if (!string.IsNullOrEmpty(cancelItem.varian))
                         {
-                            strukBuilder.Append(kodeHeksadesimalBold);
-                            strukBuilder.AppendFormat("{0}\n", cartDetail.menu_name);
-                            strukBuilder.Append(kodeHeksadesimalNormal);
+                            _ = strukBuilder.AppendFormat("  Varian: {0}\n", cancelItem.varian);
+                        }
 
-                            strukBuilder.AppendFormat("{0}\n",
-                                FormatSimpleLine(printerName,
-                                    $"@{cartDetail.price:n0} x{cartDetail.qty}",
-                                    $"{cartDetail.total_price:n0}"));
+                        if (!string.IsNullOrEmpty(cancelItem.note_item.ToString()))
+                        {
+                            _ = strukBuilder.AppendFormat("  Note: {0}\n", cancelItem.note_item);
+                        }
 
-                            if (!string.IsNullOrEmpty(cartDetail.varian))
-                            {
-                                strukBuilder.AppendFormat("  Varian: {0}\n", cartDetail.varian);
-                            }
-                            if (!string.IsNullOrEmpty(cartDetail.note_item))
-                            {
-                                strukBuilder.AppendFormat("  Note: {0}\n", cartDetail.note_item);
-                            }
+                        if (!string.IsNullOrEmpty(cancelItem.discount_code))
+                        {
+                            _ = strukBuilder.AppendFormat("  Discount Code: {0}\n", cancelItem.discount_code);
+                        }
 
-                            if (!string.IsNullOrEmpty(cartDetail.discount_code))
-                            {
-                                strukBuilder.AppendFormat("  Discount Code: {0}\n", cartDetail.discount_code);
-                            }
-
-                            if (cartDetail.discounts_value != null && Convert.ToDecimal(cartDetail.discounts_value) != 0)
-                            {
-                                strukBuilder.AppendFormat("  Discount Value: {0}\n",
-    cartDetail.discounts_is_percent.ToString() != "1"
-        ? string.Format("{0:n0}", cartDetail.discounts_value.ToString())
-        : $"{cartDetail.discounts_value} %");
-                            }
-
+                        if (cancelItem.discounts_value != null && Convert.ToDecimal(cancelItem.discounts_value) != 0)
+                        {
+                            _ = strukBuilder.AppendFormat("  Discount Value: {0}\n",
+                                cancelItem.discounts_is_percent.ToString() != "1"
+                                    ? string.Format("{0:n0}", cancelItem.discounts_value.ToString())
+                                    : $"{cancelItem.discounts_value} %");
                         }
                     }
                 }
+            }
 
-                // Canceled Items
-                if (canceledItems?.Any() == true)
+            // Refund Details
+            if (cartRefundDetails?.Any() == true)
+            {
+                var servingTypesRefund = cartRefundDetails
+                    .Select(cd => cd.serving_type_name)
+                    .Distinct();
+
+                _ = strukBuilder.Append(SEPARATOR);
+                _ = strukBuilder.AppendFormat("{0}", CenterText("REFUNDED"));
+
+                foreach (string servingType in servingTypesRefund)
                 {
-                    var servingTypesCancel = canceledItems
-                        .Select(cd => cd.serving_type_name)
-                        .Distinct();
+                    var itemsForServingType = cartRefundDetails
+                        .Where(cd => cd.serving_type_name == servingType)
+                        .ToList();
 
-                    strukBuilder.Append(SEPARATOR);
-                    strukBuilder.AppendFormat("{0}", CenterText("CANCELED"));
+                    if (!itemsForServingType.Any()) continue;
 
-                    foreach (string servingType in servingTypesCancel)
+                    _ = strukBuilder.AppendFormat("{0}\n", CenterText(servingType));
+
+                    foreach (var cartDetail in itemsForServingType)
                     {
-                        var itemsForServingType = canceledItems
-                            .Where(cd => cd.serving_type_name == servingType)
-                            .ToList();
+                        _ = strukBuilder.Append(kodeHeksadesimalBold);
+                        _ = strukBuilder.AppendFormat("{0}\n", cartDetail.menu_name);
+                        _ = strukBuilder.Append(kodeHeksadesimalNormal);
 
-                        if (!itemsForServingType.Any()) continue;
+                        _ = strukBuilder.AppendFormat("{0}\n",
+                            FormatSimpleLine(
+                                $"@{cartDetail.menu_price:n0} x{cartDetail.qty_refund_item}",
+                                $"{cartDetail.total_refund_price:n0}"));
 
-                        strukBuilder.AppendFormat("{0}\n", CenterText(servingType));
-
-                        foreach (var cancelItem in itemsForServingType)
+                        if (!string.IsNullOrEmpty(cartDetail.varian))
                         {
-                            strukBuilder.Append(kodeHeksadesimalBold);
-                            strukBuilder.AppendFormat("{0}\n", cancelItem.menu_name);
-                            strukBuilder.Append(kodeHeksadesimalNormal);
+                            _ = strukBuilder.AppendFormat("  Varian: {0}\n", cartDetail.varian);
+                        }
 
-                            strukBuilder.AppendFormat("{0}\n",
-                                FormatSimpleLine(printerName,
-                                    $"@{cancelItem.price:n0} x{cancelItem.qty}",
-                                    $"{cancelItem.total_price:n0}"));
+                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                        {
+                            _ = strukBuilder.AppendFormat("  Note: {0}\n", cartDetail.note_item);
+                        }
 
-                            if (!string.IsNullOrEmpty(cancelItem.varian))
-                            {
-                                strukBuilder.AppendFormat("  Varian: {0}\n", cancelItem.varian);
-                            }
+                        if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                        {
+                            _ = strukBuilder.AppendFormat("  Discount Code: {0}\n", cartDetail.discount_code);
+                        }
 
-                            if (!string.IsNullOrEmpty(cancelItem.note_item.ToString()))
-                            {
-                                strukBuilder.AppendFormat("  Note: {0}\n", cancelItem.note_item);
-                            }
+                        if (cartDetail.discounted_price != null)
+                        {
+                            _ = strukBuilder.AppendFormat("  Total Discount: {0:n0}\n", cartDetail.discounted_price);
+                        }
 
-                            if (!string.IsNullOrEmpty(cancelItem.discount_code))
-                            {
-                                strukBuilder.AppendFormat("  Discount Code: {0}\n", cancelItem.discount_code);
-                            }
+                        if (!string.IsNullOrEmpty(cartDetail.payment_type_name))
+                        {
+                            _ = strukBuilder.AppendFormat("  Payment Type: {0}\n", cartDetail.payment_type_name);
+                        }
 
-                            if (cancelItem.discounts_value != null && Convert.ToDecimal(cancelItem.discounts_value) != 0)
-                            {
-                                strukBuilder.AppendFormat("  Discount Value: {0}\n",
-                                    cancelItem.discounts_is_percent.ToString() != "1"
-                                        ? string.Format("{0:n0}", cancelItem.discounts_value.ToString())
-                                        : $"{cancelItem.discounts_value} %");
-                            }
+                        if (!string.IsNullOrEmpty(cartDetail.refund_reason_item))
+                        {
+                            _ = strukBuilder.AppendFormat("  Refund Reason: {0}\n", cartDetail.refund_reason_item);
                         }
                     }
                 }
-
-                // Refund Details
-                if (cartRefundDetails?.Any() == true)
-                {
-                    var servingTypesRefund = cartRefundDetails
-                        .Select(cd => cd.serving_type_name)
-                        .Distinct();
-
-                    strukBuilder.Append(SEPARATOR);
-                    strukBuilder.AppendFormat("{0}", CenterText("REFUNDED"));
-
-                    foreach (string servingType in servingTypesRefund)
-                    {
-                        var itemsForServingType = cartRefundDetails
-                            .Where(cd => cd.serving_type_name == servingType)
-                            .ToList();
-
-                        if (!itemsForServingType.Any()) continue;
-
-                        strukBuilder.AppendFormat("{0}\n", CenterText(servingType));
-
-                        foreach (var cartDetail in itemsForServingType)
-                        {
-                            strukBuilder.Append(kodeHeksadesimalBold);
-                            strukBuilder.AppendFormat("{0}\n", cartDetail.menu_name);
-                            strukBuilder.Append(kodeHeksadesimalNormal);
-
-                            strukBuilder.AppendFormat("{0}\n",
-                                FormatSimpleLine(printerName,
-                                    $"@{cartDetail.menu_price:n0} x{cartDetail.qty_refund_item}",
-                                    $"{cartDetail.total_refund_price:n0}"));
-
-                            if (!string.IsNullOrEmpty(cartDetail.varian))
-                            {
-                                strukBuilder.AppendFormat("  Varian: {0}\n", cartDetail.varian);
-                            }
-
-                            if (!string.IsNullOrEmpty(cartDetail.note_item))
-                            {
-                                strukBuilder.AppendFormat("  Note: {0}\n", cartDetail.note_item);
-                            }
-
-                            if (!string.IsNullOrEmpty(cartDetail.discount_code))
-                            {
-                                strukBuilder.AppendFormat("  Discount Code: {0}\n", cartDetail.discount_code);
-                            }
-
-                            if (cartDetail.discounted_price != null)
-                            {
-                                strukBuilder.AppendFormat("  Total Discount: {0:n0}\n", cartDetail.discounted_price);
-                            }
-
-                            if (!string.IsNullOrEmpty(cartDetail.payment_type_name))
-                            {
-                                strukBuilder.AppendFormat("  Payment Type: {0}\n", cartDetail.payment_type_name);
-                            }
-
-                            if (!string.IsNullOrEmpty(cartDetail.refund_reason_item))
-                            {
-                                strukBuilder.AppendFormat("  Refund Reason: {0}\n", cartDetail.refund_reason_item);
-                            }
-                        }
-                    }
-                }
-
-                // Tambahkan detail pembayaran, total, dll setelah refund
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Subtotal", $"{datas.subtotal:n0}"));
-
-                if (!string.IsNullOrEmpty(datas.discount_code))
-                {
-                    strukBuilder.AppendFormat("Discount Code: {0}\n", datas.discount_code);
-                }
-
-                if (datas.discounts_value != null)
-                {
-                    strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(printerName, "Discount Value",
-                            datas.discounts_is_percent != "1"
-                                ? string.Format("{0:n0}", datas.discounts_value)
-                                : $"{datas.discounts_value} %"));
-                }
-
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Total", $"{datas.total:n0}"));
-
-                strukBuilder.AppendFormat("Payment Type: {0}\n", datas.payment_type);
-
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Cash", $"{datas.customer_cash:n0}"));
-
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Change", $"{datas.customer_change:n0}"));
-
-                if (datas.total_refund != null)
-                {
-                    strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(printerName, "Total Refund", $"{datas.total_refund:n0}"));
-                }
-
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}",
-                    CenterText($"Meja No. {datas.customer_seat}"));
-                strukBuilder.AppendFormat("{0}",
-                    CenterText("Powered By Dastrevas"));
-
-                // Konversi dan Cetak
-                string nomorUrut = $"\n{kodeHeksadesimalSizeBesar}{kodeHeksadesimalBold}" +
-                                   CenterText($"No. {totalTransactions}") + "\n";
-
-                byte[] bufferNomorUrut = Encoding.UTF8.GetBytes(nomorUrut);
-                byte[] bufferStruk = Encoding.UTF8.GetBytes(strukBuilder.ToString());
-
-                stream.Write(bufferNomorUrut, 0, bufferNomorUrut.Length);
-                PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
-                stream.Write(bufferStruk, 0, bufferStruk.Length);
-
-                // Footer
-                byte[] bufferFooter = Encoding.UTF8.GetBytes("\n\n\n\n\n");
-                stream.Write(bufferFooter, 0, bufferFooter.Length);
-
-                stream.Flush();
             }
-            catch (Exception ex)
+
+            // Tambahkan detail pembayaran, total, dll setelah refund
+            _ = strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Subtotal", $"{datas.subtotal:n0}"));
+
+            if (!string.IsNullOrEmpty(datas.discount_code))
             {
-                // Logging dan error handling
-                LoggerUtil.LogError(ex, $"Error in PrintInputPinReceipt: {ex.Message}");
-                throw;
+                _ = strukBuilder.AppendFormat("Discount Code: {0}\n", datas.discount_code);
             }
-            finally
+
+            if (datas.discounts_value != null)
             {
-                stream?.Close();
-                stream?.Dispose();
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("Discount Value",
+                        datas.discounts_is_percent != "1"
+                            ? string.Format("{0:n0}", datas.discounts_value)
+                            : $"{datas.discounts_value} %"));
             }
+
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Total", $"{datas.total:n0}"));
+
+            _ = strukBuilder.AppendFormat("Payment Type: {0}\n", datas.payment_type);
+
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Cash", $"{datas.customer_cash:n0}"));
+
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Change", $"{datas.customer_change:n0}"));
+
+            if (datas.total_refund != null)
+            {
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("Total Refund", $"{datas.total_refund:n0}"));
+            }
+
+            _ = strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}",
+                CenterText($"Meja No. {datas.customer_seat}"));
+            _ = strukBuilder.AppendFormat("{0}",
+                CenterText("Powered By Dastrevas"));
+
+            // Konversi dan Cetak
+            string nomorUrut = $"\n{kodeHeksadesimalSizeBesar}{kodeHeksadesimalBold}" +
+                               CenterText($"No. {totalTransactions}") + "\n";
+
+            byte[] bufferNomorUrut = Encoding.UTF8.GetBytes(nomorUrut);
+            byte[] bufferStruk = Encoding.UTF8.GetBytes(strukBuilder.ToString());
+
+            stream.Write(bufferNomorUrut, 0, bufferNomorUrut.Length);
+            PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
+            stream.Write(bufferStruk, 0, bufferStruk.Length);
+
+            // Footer
+            byte[] bufferFooter = Encoding.UTF8.GetBytes("\n\n\n\n\n");
+            stream.Write(bufferFooter, 0, bufferFooter.Length);
         }
         private void PrintLogo(Stream stream, string logoPath, int targetWidthPx)
         {
@@ -3576,7 +3496,7 @@ namespace KASIR.Printer
 
                 // Load gambar
                 using (Image logo = Image.FromFile(logoPath))
-                using (Bitmap bmp = new Bitmap(logo))
+                using (Bitmap bmp = new(logo))
                 {
                     // Resize bitmap
                     Bitmap resizedBitmap = ResizeBitmap(bmp, targetWidthPx);
@@ -3692,7 +3612,7 @@ namespace KASIR.Printer
                 }
                 else
                 {
-                    await RetryPolicyAsync(async () =>
+                    _ = await RetryPolicyAsync(async () =>
                     {
                         BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
@@ -3777,11 +3697,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                         leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -3814,11 +3734,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
                                         yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -4196,15 +4116,19 @@ namespace KASIR.Printer
 
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
-                        Ex_PrintModelDataBill(datas, cartDetails, canceledItems, totalTransactions,
+                        _ = Ex_PrintModelDataBill(datas, cartDetails, canceledItems, totalTransactions,
                             printerId, printerName
                         );
                         continue;
                     }
-
-                    if (ShouldPrint(printerId, "Checker"))
+                    // 🔑 buat koneksi sekali saja
+                    using (Stream stream = await EstablishPrinterConnection(printerName))
                     {
-                        await PrintDataBillReceipt(datas, cartDetails, canceledItems, totalTransactions, printerName);
+                        if (ShouldPrint(printerId, "Checker"))
+                        {
+                            await PrintDataBillReceipt(datas, cartDetails, canceledItems, totalTransactions, stream);
+                        }
+                        stream.Flush();
                     }
                 }
             }
@@ -4219,199 +4143,181 @@ namespace KASIR.Printer
     List<CartDetailRestruk> cartDetails,
     List<CanceledItemStrukCustomerRestruk> canceledItems,
     int totalTransactions,
-    string printerName)
+    Stream stream)
         {
-            Stream stream = Stream.Null;
+            int totalItems = (cartDetails?.Count ?? 0) + (canceledItems?.Count ?? 0);
+            var capacity = GetOptimalCapacity(totalItems);
+            var strukBuilder = new StringBuilder(capacity);
 
-            try
+            string kodeHeksadesimalBold = "\x1B\x45\x01";
+            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.AppendFormat("{0}{1}",
+                kodeHeksadesimalBold,
+                CenterText($"SaveBill No. {totalTransactions}"));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.AppendFormat("{0}{1}",
+                kodeHeksadesimalBold,
+                CenterText("CHECKER"));
+
+            if (!string.IsNullOrEmpty(datas?.receipt_number))
             {
-                stream = await EstablishPrinterConnection(printerName);
-
-                int totalItems = (cartDetails?.Count ?? 0) + (canceledItems?.Count ?? 0);
-                var capacity = GetOptimalCapacity(totalItems);
-                var strukBuilder = new StringBuilder(capacity);
-
-                string kodeHeksadesimalBold = "\x1B\x45\x01";
-                string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.AppendFormat("{0}{1}",
-                    kodeHeksadesimalBold,
-                    CenterText($"SaveBill No. {totalTransactions}"));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.AppendFormat("{0}{1}",
-                    kodeHeksadesimalBold,
-                    CenterText("CHECKER"));
-
-                if (!string.IsNullOrEmpty(datas?.receipt_number))
+                if (datas.receipt_number.Length > 32)
                 {
-                    if (datas.receipt_number.Length > 32)
-                    {
-                        strukBuilder.AppendFormat("Receipt No.{0}\n", datas.receipt_number);
-                    }
-                    else
-                    {
-                        strukBuilder.Append(CenterText($"Receipt No.{datas.receipt_number}"));
-                    }
+                    _ = strukBuilder.AppendFormat("Receipt No.{0}\n", datas.receipt_number);
                 }
                 else
                 {
-                    strukBuilder.Append(CenterText("Receipt No. -"));
+                    _ = strukBuilder.Append(CenterText($"Receipt No.{datas.receipt_number}"));
                 }
+            }
+            else
+            {
+                _ = strukBuilder.Append(CenterText("Receipt No. -"));
+            }
 
-                strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
 
-                if (datas?.invoice_due_date != null)
+            if (datas?.invoice_due_date != null)
+            {
+                _ = strukBuilder.Append(CenterText(datas.invoice_due_date));
+            }
+
+            _ = strukBuilder.AppendFormat("Name: {0}\n", datas?.customer_name ?? "");
+
+            void AppendItemDetails<T>(
+                List<T> items,
+                string sectionTitle,
+                Func<T, string> menuNameSelector,
+                Func<T, decimal> priceSelector,
+                Func<T, int> qtySelector,
+                Func<T, decimal> totalPriceSelector,
+                Func<T, string> varianSelector = null,
+                Func<T, string> noteSelector = null,
+                Func<T, string> discountCodeSelector = null,
+                Func<T, string> discountValueSelector = null,
+                Func<T, string> additionalInfoSelector = null)
+            {
+                if (items?.Any() != true) return;
+
+                var servingTypes = items
+                    .Select(i => GetPropertyValue(i, "serving_type_name") as string)
+                    .Distinct();
+
+                _ = strukBuilder.Append(SEPARATOR);
+                _ = strukBuilder.AppendFormat("{0}", CenterText(sectionTitle));
+
+                foreach (string servingType in servingTypes)
                 {
-                    strukBuilder.Append(CenterText(datas.invoice_due_date));
-                }
+                    var itemsForServingType = items
+                        .Where(i => GetPropertyValue(i, "serving_type_name") as string == servingType)
+                        .ToList();
 
-                strukBuilder.AppendFormat("Name: {0}\n", datas?.customer_name ?? "");
+                    if (!itemsForServingType.Any()) continue;
 
-                void AppendItemDetails<T>(
-                    List<T> items,
-                    string sectionTitle,
-                    Func<T, string> menuNameSelector,
-                    Func<T, decimal> priceSelector,
-                    Func<T, int> qtySelector,
-                    Func<T, decimal> totalPriceSelector,
-                    Func<T, string> varianSelector = null,
-                    Func<T, string> noteSelector = null,
-                    Func<T, string> discountCodeSelector = null,
-                    Func<T, string> discountValueSelector = null,
-                    Func<T, string> additionalInfoSelector = null)
-                {
-                    if (items?.Any() != true) return;
+                    _ = strukBuilder.Append(CenterText(servingType));
 
-                    var servingTypes = items
-                        .Select(i => GetPropertyValue(i, "serving_type_name") as string)
-                        .Distinct();
-
-                    strukBuilder.Append(SEPARATOR);
-                    strukBuilder.AppendFormat("{0}", CenterText(sectionTitle));
-
-                    foreach (string servingType in servingTypes)
+                    foreach (var item in itemsForServingType)
                     {
-                        var itemsForServingType = items
-                            .Where(i => GetPropertyValue(i, "serving_type_name") as string == servingType)
-                            .ToList();
+                        _ = strukBuilder.Append(kodeHeksadesimalBold);
+                        _ = strukBuilder.AppendFormat("{0}\n", menuNameSelector(item));
+                        _ = strukBuilder.Append(kodeHeksadesimalNormal);
 
-                        if (!itemsForServingType.Any()) continue;
+                        _ = strukBuilder.AppendFormat("{0}\n",
+                            FormatSimpleLine(
+                                $"@{priceSelector(item):n0} x{qtySelector(item)}",
+                                $"{totalPriceSelector(item):n0}"));
 
-                        strukBuilder.Append(CenterText(servingType));
-
-                        foreach (var item in itemsForServingType)
+                        if (varianSelector != null && !string.IsNullOrEmpty(varianSelector(item)))
                         {
-                            strukBuilder.Append(kodeHeksadesimalBold);
-                            strukBuilder.AppendFormat("{0}\n", menuNameSelector(item));
-                            strukBuilder.Append(kodeHeksadesimalNormal);
+                            _ = strukBuilder.AppendFormat("   Varian: {0}\n", varianSelector(item));
+                        }
 
-                            strukBuilder.AppendFormat("{0}\n",
-                                FormatSimpleLine(printerName,
-                                    $"@{priceSelector(item):n0} x{qtySelector(item)}",
-                                    $"{totalPriceSelector(item):n0}"));
+                        if (noteSelector != null && !string.IsNullOrEmpty(noteSelector(item)))
+                        {
+                            _ = strukBuilder.AppendFormat("   Note: {0}\n", noteSelector(item));
+                        }
 
-                            if (varianSelector != null && !string.IsNullOrEmpty(varianSelector(item)))
+                        if (discountCodeSelector != null && !string.IsNullOrEmpty(discountCodeSelector(item)))
+                        {
+                            _ = strukBuilder.AppendFormat("   Discount Code: {0}\n", discountCodeSelector(item));
+                        }
+
+                        if (discountValueSelector != null)
+                        {
+                            var discountValue = discountValueSelector(item);
+                            if (!string.IsNullOrEmpty(discountValue) && Convert.ToDecimal(discountValue) != 0)
                             {
-                                strukBuilder.AppendFormat("   Varian: {0}\n", varianSelector(item));
+                                _ = strukBuilder.AppendFormat("   Discount Value: {0}\n",
+                                    GetPropertyValue(item, "discounts_is_percent")?.ToString() != "1"
+                                        ? $"{Convert.ToDecimal(discountValue):n0}"
+                                        : $"{discountValue} %");
                             }
+                        }
 
-                            if (noteSelector != null && !string.IsNullOrEmpty(noteSelector(item)))
-                            {
-                                strukBuilder.AppendFormat("   Note: {0}\n", noteSelector(item));
-                            }
-
-                            if (discountCodeSelector != null && !string.IsNullOrEmpty(discountCodeSelector(item)))
-                            {
-                                strukBuilder.AppendFormat("   Discount Code: {0}\n", discountCodeSelector(item));
-                            }
-
-                            if (discountValueSelector != null)
-                            {
-                                var discountValue = discountValueSelector(item);
-                                if (!string.IsNullOrEmpty(discountValue) && Convert.ToDecimal(discountValue) != 0)
-                                {
-                                    strukBuilder.AppendFormat("   Discount Value: {0}\n",
-                                        GetPropertyValue(item, "discounts_is_percent")?.ToString() != "1"
-                                            ? $"{Convert.ToDecimal(discountValue):n0}"
-                                            : $"{discountValue} %");
-                                }
-                            }
-
-                            if (additionalInfoSelector != null && !string.IsNullOrEmpty(additionalInfoSelector(item)))
-                            {
-                                strukBuilder.AppendFormat("   Reason: {0}\n", additionalInfoSelector(item));
-                            }
+                        if (additionalInfoSelector != null && !string.IsNullOrEmpty(additionalInfoSelector(item)))
+                        {
+                            _ = strukBuilder.AppendFormat("   Reason: {0}\n", additionalInfoSelector(item));
                         }
                     }
                 }
-
-                AppendItemDetails(
-                    cartDetails,
-                    "ORDERED",
-                    x => x.menu_name,
-                    x => x.price,
-                    x => x.qty,
-                    x => x.total_price,
-                    x => x.varian,
-                    x => x.note_item,
-                    x => x.discount_code,
-                    x => x.discounts_value?.ToString()
-                );
-
-                AppendItemDetails(
-                    canceledItems,
-                    "CANCELED",
-                    x => x.menu_name,
-                    x => x.price,
-                    x => x.qty,
-                    x => x.total_price,
-                    x => x.varian,
-                    x => x.note_item?.ToString(),
-                    null,
-                    null,
-                    x => x.cancel_reason
-                );
-
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Subtotal", $"{datas.subtotal:n0}"));
-
-                if (!string.IsNullOrEmpty(datas.discount_code))
-                {
-                    strukBuilder.AppendFormat("Discount Code: {0}\n", datas.discount_code);
-                }
-
-                if (datas?.discounts_value != null && datas.discounts_value != "")
-                {
-                    strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(printerName, "Discount Value",
-                            datas.discounts_is_percent != "1"
-                                ? $"{datas.discounts_value:n0}"
-                                : $"{datas.discounts_value} %"));
-                }
-
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Total", $"{datas.total:n0}"));
-
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.AppendFormat("{0}", CenterText($"Meja No. {datas?.customer_seat}"));
-                strukBuilder.Append(SEPARATOR);
-
-                byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
-                stream.Write(buffer, 0, buffer.Length);
-                stream.Flush();
             }
-            catch (Exception ex)
+
+            AppendItemDetails(
+                cartDetails,
+                "ORDERED",
+                x => x.menu_name,
+                x => x.price,
+                x => x.qty,
+                x => x.total_price,
+                x => x.varian,
+                x => x.note_item,
+                x => x.discount_code,
+                x => x.discounts_value?.ToString()
+            );
+
+            AppendItemDetails(
+                canceledItems,
+                "CANCELED",
+                x => x.menu_name,
+                x => x.price,
+                x => x.qty,
+                x => x.total_price,
+                x => x.varian,
+                x => x.note_item?.ToString(),
+                null,
+                null,
+                x => x.cancel_reason
+            );
+
+            _ = strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Subtotal", $"{datas.subtotal:n0}"));
+
+            if (!string.IsNullOrEmpty(datas.discount_code))
             {
-                LoggerUtil.LogError(ex, $"Error in PrintDataBillReceipt: {ex.Message}");
-                throw;
+                _ = strukBuilder.AppendFormat("Discount Code: {0}\n", datas.discount_code);
             }
-            finally
+
+            if (datas?.discounts_value != null && datas.discounts_value != "")
             {
-                stream?.Close();
-                stream?.Dispose();
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("Discount Value",
+                        datas.discounts_is_percent != "1"
+                            ? $"{datas.discounts_value:n0}"
+                            : $"{datas.discounts_value} %"));
             }
+
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Total", $"{datas.total:n0}"));
+
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.AppendFormat("{0}", CenterText($"Meja No. {datas?.customer_seat}"));
+            _ = strukBuilder.Append(SEPARATOR);
+
+            byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
+            stream.Write(buffer, 0, buffer.Length);
         }
 
 
@@ -4437,7 +4343,7 @@ namespace KASIR.Printer
                 }
                 else
                 {
-                    await RetryPolicyAsync(async () =>
+                    _ = await RetryPolicyAsync(async () =>
                     {
                         BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
@@ -4522,11 +4428,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                         leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -4559,11 +4465,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
                                         yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -4742,7 +4648,7 @@ namespace KASIR.Printer
             }
         }
 
-        // Struct Simpan bill / save bill / savebill
+        // Struct savebill Simpan bill / save bill / savebill
         public async Task PrinterModelSimpan(
             GetStrukCustomerTransaction datas,
             List<CartDetailStrukCustomerTransaction> KitchenCartDetails,
@@ -4753,7 +4659,7 @@ namespace KASIR.Printer
         {
             try
             {
-                if(totalTransactions == null) { totalTransactions = 0; }
+                if (totalTransactions == null) { totalTransactions = 0; }
                 await LoadPrinterSettings(); // Load printer settings
                 await LoadSettingsAsync(); // Load additional settings
                 var printTasks = new ConcurrentBag<Task>();
@@ -4785,7 +4691,7 @@ namespace KASIR.Printer
                             bool shouldSkip = false;
                             if (IsNotMacAddressOrIpAddress(printerName))
                             {
-                                Ex_PrinterModelSimpan(datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails,
+                                _ = Ex_PrinterModelSimpan(datas, KitchenCartDetails, KitchenCancelItems, BarCartDetails,
                                     BarCancelItems, totalTransactions,
                                     printerId, printerName
                                 );
@@ -4794,31 +4700,38 @@ namespace KASIR.Printer
                             if (!shouldSkip)
                             {
 
-                                if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
+                                // 🔑 buat koneksi sekali saja
+                                using (Stream stream = await EstablishPrinterConnection(printerName))
                                 {
-                                    if (ShouldPrint(printerId, "Makanan"))
+                                    if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
                                     {
-                                        await PrintSimpanReceipt(datas, KitchenCartDetails, KitchenCancelItems,
-                                              BarCartDetails, BarCancelItems, totalTransactions, "Makanan", printerName);
+                                        if (ShouldPrint(printerId, "Makanan"))
+                                        {
+                                            await PrintSimpanReceipt(datas, KitchenCartDetails, KitchenCancelItems,
+                                                  BarCartDetails, BarCancelItems, totalTransactions, "Makanan", stream);
+                                        }
                                     }
-                                }
 
-                                if (BarCartDetails.Any() || BarCancelItems.Any())
-                                {
-                                    if (ShouldPrint(printerId, "Minuman"))
+                                    if (BarCartDetails.Any() || BarCancelItems.Any())
                                     {
-                                        await PrintSimpanReceipt(datas, KitchenCartDetails, KitchenCancelItems,
-                                              BarCartDetails, BarCancelItems, totalTransactions, "Minuman", printerName);
+                                        if (ShouldPrint(printerId, "Minuman"))
+                                        {
+                                            await PrintSimpanReceipt(datas, KitchenCartDetails, KitchenCancelItems,
+                                                  BarCartDetails, BarCancelItems, totalTransactions, "Minuman", stream);
+                                        }
                                     }
-                                }
 
-                                if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
-                                {
-                                    if (ShouldPrint(printerId, "Checker"))
+                                    if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
                                     {
-                                        await PrintSimpanReceipt(datas, KitchenCartDetails, KitchenCancelItems,
-                                            BarCartDetails, BarCancelItems, totalTransactions, "Checker", printerName);
+                                        if (ShouldPrint(printerId, "Checker"))
+                                        {
+                                            await PrintSimpanReceipt(datas, KitchenCartDetails, KitchenCancelItems,
+                                                BarCartDetails, BarCancelItems, totalTransactions, "Checker", stream);
+                                        }
                                     }
+                                    NotifyHelper.Success($"Struk printed savebill printerID: #{printerName}{printerId}.");
+
+                                    stream.Flush();
                                 }
                             }
                         }
@@ -4846,249 +4759,231 @@ namespace KASIR.Printer
     List<CanceledItemStrukCustomerTransaction> BarCancelItems,
     int totalTransactions,
     string type,
-    string printerName)
+    Stream stream)
         {
-            Stream stream = Stream.Null;
+            int totalItems = (KitchenCartDetails?.Count ?? 0) +
+                             (KitchenCancelItems?.Count ?? 0) +
+                             (BarCartDetails?.Count ?? 0) +
+                             (BarCancelItems?.Count ?? 0);
+            var capacity = GetOptimalCapacity(totalItems);
+            var strukBuilder = new StringBuilder(capacity);
 
-            try
+            string kodeHeksadesimalBold = "\x1B\x45\x01";
+            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
+            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+            _ = strukBuilder.AppendFormat("\n{0}{1}",
+                kodeHeksadesimalBold,
+                CenterText($"SaveBill No. {totalTransactions}"));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}{1}",
+                kodeHeksadesimalBold,
+                CenterText(type.ToUpper()));
+            _ = strukBuilder.AppendFormat("{0}",
+                CenterText($"Receipt No.: {datas.data?.receipt_number}"));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}",
+                CenterText(datas.data?.invoice_due_date ?? ""));
+            _ = strukBuilder.AppendFormat("Name: {0}\n",
+                datas.data?.customer_name ?? "");
+
+            void AppendItemDetails<T>(
+                List<T> items,
+                string sectionTitle,
+                Func<T, string> menuNameSelector,
+                Func<T, int> qtySelector,
+                Func<T, string> varianSelector = null,
+                Func<T, string> noteSelector = null,
+                Func<T, string> additionalInfoSelector = null)
             {
-                stream = await EstablishPrinterConnection(printerName);
+                if (items?.Any() != true) return;
 
-                int totalItems = (KitchenCartDetails?.Count ?? 0) +
-                                 (KitchenCancelItems?.Count ?? 0) +
-                                 (BarCartDetails?.Count ?? 0) +
-                                 (BarCancelItems?.Count ?? 0);
-                var capacity = GetOptimalCapacity(totalItems);
-                var strukBuilder = new StringBuilder(capacity);
+                var servingTypes = items
+                    .Select(i => GetPropertyValue(i, "serving_type_name") as string)
+                    .Distinct();
 
-                string kodeHeksadesimalBold = "\x1B\x45\x01";
-                string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+                _ = strukBuilder.Append(SEPARATOR);
+                _ = strukBuilder.AppendFormat("{0}", CenterText(sectionTitle));
 
-                strukBuilder.AppendFormat("\n{0}{1}",
-                    kodeHeksadesimalBold,
-                    CenterText($"SaveBill No. {totalTransactions}"));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}{1}",
-                    kodeHeksadesimalBold,
-                    CenterText(type.ToUpper()));
-                strukBuilder.AppendFormat("{0}",
-                    CenterText($"Receipt No.: {datas.data?.receipt_number}"));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}",
-                    CenterText(datas.data?.invoice_due_date ?? ""));
-                strukBuilder.AppendFormat("Name: {0}\n",
-                    datas.data?.customer_name ?? "");
-
-                void AppendItemDetails<T>(
-                    List<T> items,
-                    string sectionTitle,
-                    Func<T, string> menuNameSelector,
-                    Func<T, int> qtySelector,
-                    Func<T, string> varianSelector = null,
-                    Func<T, string> noteSelector = null,
-                    Func<T, string> additionalInfoSelector = null)
+                foreach (string servingType in servingTypes)
                 {
-                    if (items?.Any() != true) return;
+                    var itemsForServingType = items
+                        .Where(i => GetPropertyValue(i, "serving_type_name") as string == servingType)
+                        .ToList();
 
-                    var servingTypes = items
-                        .Select(i => GetPropertyValue(i, "serving_type_name") as string)
+                    if (!itemsForServingType.Any()) continue;
+
+                    _ = strukBuilder.Append(SEPARATOR);
+                    _ = strukBuilder.AppendFormat("{0}", CenterText(servingType));
+                    _ = strukBuilder.Append("\n");
+
+                    foreach (var item in itemsForServingType)
+                    {
+                        _ = strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
+                        _ = strukBuilder.AppendFormat("{0}\n",
+                            FormatSimpleLine(menuNameSelector(item), qtySelector(item)));
+
+                        if (varianSelector != null && !string.IsNullOrEmpty(varianSelector(item)))
+                        {
+                            _ = strukBuilder.AppendFormat("Varian: {0}\n", varianSelector(item));
+                        }
+
+                        if (noteSelector != null && !string.IsNullOrEmpty(noteSelector(item)))
+                        {
+                            _ = strukBuilder.AppendFormat("Note: {0}\n", noteSelector(item));
+                        }
+
+                        if (additionalInfoSelector != null && !string.IsNullOrEmpty(additionalInfoSelector(item)))
+                        {
+                            _ = strukBuilder.AppendFormat("Additional Info: {0}\n", additionalInfoSelector(item));
+                        }
+
+                        _ = strukBuilder.Append(kodeHeksadesimalNormal);
+                        _ = strukBuilder.Append("\n");
+                    }
+                }
+            }
+
+            switch (type)
+            {
+                case "Makanan":
+                    AppendItemDetails(
+                        KitchenCartDetails,
+                        "ORDER",
+                        x => x.menu_name,
+                        x => x.qty,
+                        x => x.varian,
+                        x => x.note_item
+                    );
+                    AppendItemDetails(
+                        KitchenCancelItems,
+                        "CANCELED",
+                        x => x.menu_name,
+                        x => x.qty,
+                        x => x.varian,
+                        x => x.note_item?.ToString(),
+                        x => x.cancel_reason
+                    );
+                    break;
+
+                case "Minuman":
+                    AppendItemDetails(
+                        BarCartDetails,
+                        "ORDER",
+                        x => x.menu_name,
+                        x => x.qty,
+                        x => x.varian,
+                        x => x.note_item
+                    );
+                    AppendItemDetails(
+                        BarCancelItems,
+                        "CANCELED",
+                        x => x.menu_name,
+                        x => x.qty,
+                        x => x.varian,
+                        x => x.note_item?.ToString(),
+                        x => x.cancel_reason
+                    );
+                    break;
+
+                case "Checker":
+                    var allCartDetails = new List<CartDetailStrukCustomerTransaction>();
+                    allCartDetails.AddRange(KitchenCartDetails);
+                    allCartDetails.AddRange(BarCartDetails);
+
+                    var allCancelItems = new List<CanceledItemStrukCustomerTransaction>();
+                    allCancelItems.AddRange(KitchenCancelItems);
+                    allCancelItems.AddRange(BarCancelItems);
+
+                    var servingTypes = allCartDetails
+                        .Select(x => x.serving_type_name)
                         .Distinct();
 
-                    strukBuilder.Append(SEPARATOR);
-                    strukBuilder.AppendFormat("{0}", CenterText(sectionTitle));
+                    _ = strukBuilder.Append(SEPARATOR);
+                    _ = strukBuilder.AppendFormat("{0}", CenterText("ORDER"));
 
                     foreach (string servingType in servingTypes)
                     {
-                        var itemsForServingType = items
-                            .Where(i => GetPropertyValue(i, "serving_type_name") as string == servingType)
+                        var orderedItems = allCartDetails
+                            .Where(x => x.serving_type_name == servingType)
                             .ToList();
 
-                        if (!itemsForServingType.Any()) continue;
+                        _ = strukBuilder.Append(SEPARATOR);
+                        _ = strukBuilder.AppendFormat("{0}", CenterText(servingType));
+                        _ = strukBuilder.Append("\n");
 
-                        strukBuilder.Append(SEPARATOR);
-                        strukBuilder.AppendFormat("{0}", CenterText(servingType));
-                        strukBuilder.Append("\n");
-
-                        foreach (var item in itemsForServingType)
+                        foreach (var item in orderedItems)
                         {
-                            strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
-                            strukBuilder.AppendFormat("{0}\n",
-                                FormatSimpleLine(printerName, menuNameSelector(item), qtySelector(item)));
+                            _ = strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
+                            _ = strukBuilder.AppendFormat("{0}\n",
+                                FormatSimpleLine(item.menu_name, item.qty));
 
-                            if (varianSelector != null && !string.IsNullOrEmpty(varianSelector(item)))
+                            if (!string.IsNullOrEmpty(item.varian))
                             {
-                                strukBuilder.AppendFormat("Varian: {0}\n", varianSelector(item));
+                                _ = strukBuilder.AppendFormat("Varian: {0}\n", item.varian);
                             }
 
-                            if (noteSelector != null && !string.IsNullOrEmpty(noteSelector(item)))
+                            if (!string.IsNullOrEmpty(item.note_item))
                             {
-                                strukBuilder.AppendFormat("Note: {0}\n", noteSelector(item));
+                                _ = strukBuilder.AppendFormat("Note: {0}\n", item.note_item);
                             }
 
-                            if (additionalInfoSelector != null && !string.IsNullOrEmpty(additionalInfoSelector(item)))
-                            {
-                                strukBuilder.AppendFormat("Additional Info: {0}\n", additionalInfoSelector(item));
-                            }
-
-                            strukBuilder.Append(kodeHeksadesimalNormal);
-                            strukBuilder.Append("\n");
+                            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+                            _ = strukBuilder.Append("\n");
                         }
                     }
-                }
 
-                switch (type)
-                {
-                    case "Makanan":
-                        AppendItemDetails(
-                            KitchenCartDetails,
-                            "ORDER",
-                            x => x.menu_name,
-                            x => x.qty,
-                            x => x.varian,
-                            x => x.note_item
-                        );
-                        AppendItemDetails(
-                            KitchenCancelItems,
-                            "CANCELED",
-                            x => x.menu_name,
-                            x => x.qty,
-                            x => x.varian,
-                            x => x.note_item?.ToString(),
-                            x => x.cancel_reason
-                        );
-                        break;
+                    var canceledServingTypes = allCancelItems
+                        .Select(x => x.serving_type_name)
+                        .Distinct();
 
-                    case "Minuman":
-                        AppendItemDetails(
-                            BarCartDetails,
-                            "ORDER",
-                            x => x.menu_name,
-                            x => x.qty,
-                            x => x.varian,
-                            x => x.note_item
-                        );
-                        AppendItemDetails(
-                            BarCancelItems,
-                            "CANCELED",
-                            x => x.menu_name,
-                            x => x.qty,
-                            x => x.varian,
-                            x => x.note_item?.ToString(),
-                            x => x.cancel_reason
-                        );
-                        break;
+                    _ = strukBuilder.Append(SEPARATOR);
+                    _ = strukBuilder.AppendFormat("{0}", CenterText("CANCELED"));
 
-                    case "Checker":
-                        var allCartDetails = new List<CartDetailStrukCustomerTransaction>();
-                        allCartDetails.AddRange(KitchenCartDetails);
-                        allCartDetails.AddRange(BarCartDetails);
+                    foreach (string servingType in canceledServingTypes)
+                    {
+                        var canceledItems = allCancelItems
+                            .Where(x => x.serving_type_name == servingType)
+                            .ToList();
 
-                        var allCancelItems = new List<CanceledItemStrukCustomerTransaction>();
-                        allCancelItems.AddRange(KitchenCancelItems);
-                        allCancelItems.AddRange(BarCancelItems);
+                        _ = strukBuilder.Append(SEPARATOR);
+                        _ = strukBuilder.AppendFormat("{0}", CenterText(servingType));
+                        _ = strukBuilder.Append("\n");
 
-                        var servingTypes = allCartDetails
-                            .Select(x => x.serving_type_name)
-                            .Distinct();
-
-                        strukBuilder.Append(SEPARATOR);
-                        strukBuilder.AppendFormat("{0}", CenterText("ORDER"));
-
-                        foreach (string servingType in servingTypes)
+                        foreach (var item in canceledItems)
                         {
-                            var orderedItems = allCartDetails
-                                .Where(x => x.serving_type_name == servingType)
-                                .ToList();
+                            _ = strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
+                            _ = strukBuilder.AppendFormat("{0}\n",
+                                FormatSimpleLine(item.menu_name, item.qty));
 
-                            strukBuilder.Append(SEPARATOR);
-                            strukBuilder.AppendFormat("{0}", CenterText(servingType));
-                            strukBuilder.Append("\n");
-
-                            foreach (var item in orderedItems)
+                            if (!string.IsNullOrEmpty(item.varian))
                             {
-                                strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
-                                strukBuilder.AppendFormat("{0}\n",
-                                    FormatSimpleLine(printerName, item.menu_name, item.qty));
-
-                                if (!string.IsNullOrEmpty(item.varian))
-                                {
-                                    strukBuilder.AppendFormat("Varian: {0}\n", item.varian);
-                                }
-
-                                if (!string.IsNullOrEmpty(item.note_item))
-                                {
-                                    strukBuilder.AppendFormat("Note: {0}\n", item.note_item);
-                                }
-
-                                strukBuilder.Append(kodeHeksadesimalNormal);
-                                strukBuilder.Append("\n");
+                                _ = strukBuilder.AppendFormat("Varian: {0}\n", item.varian);
                             }
-                        }
 
-                        var canceledServingTypes = allCancelItems
-                            .Select(x => x.serving_type_name)
-                            .Distinct();
-
-                        strukBuilder.Append(SEPARATOR);
-                        strukBuilder.AppendFormat("{0}", CenterText("CANCELED"));
-
-                        foreach (string servingType in canceledServingTypes)
-                        {
-                            var canceledItems = allCancelItems
-                                .Where(x => x.serving_type_name == servingType)
-                                .ToList();
-
-                            strukBuilder.Append(SEPARATOR);
-                            strukBuilder.AppendFormat("{0}", CenterText(servingType));
-                            strukBuilder.Append("\n");
-
-                            foreach (var item in canceledItems)
+                            if (!string.IsNullOrEmpty(item.note_item?.ToString()))
                             {
-                                strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
-                                strukBuilder.AppendFormat("{0}\n",
-                                    FormatSimpleLine(printerName, item.menu_name, item.qty));
-
-                                if (!string.IsNullOrEmpty(item.varian))
-                                {
-                                    strukBuilder.AppendFormat("Varian: {0}\n", item.varian);
-                                }
-
-                                if (!string.IsNullOrEmpty(item.note_item?.ToString()))
-                                {
-                                    strukBuilder.AppendFormat("Note: {0}\n", item.note_item);
-                                }
-
-                                if (!string.IsNullOrEmpty(item.cancel_reason))
-                                {
-                                    strukBuilder.AppendFormat("Canceled Reason: {0}\n", item.cancel_reason);
-                                }
-
-                                strukBuilder.Append(kodeHeksadesimalNormal);
-                                strukBuilder.Append("\n");
+                                _ = strukBuilder.AppendFormat("Note: {0}\n", item.note_item);
                             }
+
+                            if (!string.IsNullOrEmpty(item.cancel_reason))
+                            {
+                                _ = strukBuilder.AppendFormat("Canceled Reason: {0}\n", item.cancel_reason);
+                            }
+
+                            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+                            _ = strukBuilder.Append("\n");
                         }
-                        break;
-                }
+                    }
+                    break;
+            }
 
-                strukBuilder.Append("--------------------------------\n\n\n\n\n");
+            _ = strukBuilder.Append("--------------------------------\n\n\n\n\n");
 
-                byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
-                stream.Write(buffer, 0, buffer.Length);
-                stream.Flush();
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, $"Error in PrintSimpanReceipt: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                stream?.Close();
-                stream?.Dispose();
-            }
+            byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
+            stream.Write(buffer, 0, buffer.Length);
         }
         private object GetPropertyValue(object obj, string propertyName)
         {
@@ -5116,7 +5011,7 @@ namespace KASIR.Printer
                 }
                 else
                 {
-                    await RetryPolicyAsync(async () =>
+                    _ = await RetryPolicyAsync(async () =>
                     {
                         BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
@@ -5219,11 +5114,11 @@ namespace KASIR.Printer
                                         e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                             leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                         yPos += font.GetHeight(e.Graphics);
-                                        currentLine.Clear();
+                                        _ = currentLine.Clear();
                                     }
 
                                     // Tambahkan kata ke baris saat ini
-                                    currentLine.Append(word + " ");
+                                    _ = currentLine.Append(word + " ");
                                 }
 
                                 // Gambar baris terakhir
@@ -5267,11 +5162,11 @@ namespace KASIR.Printer
                                         e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
                                             yPos);
                                         yPos += font.GetHeight(e.Graphics);
-                                        currentLine.Clear();
+                                        _ = currentLine.Clear();
                                     }
 
                                     // Tambahkan kata ke baris saat ini
-                                    currentLine.Append(word + " ");
+                                    _ = currentLine.Append(word + " ");
                                 }
 
                                 // Gambar baris terakhir
@@ -5489,11 +5384,11 @@ namespace KASIR.Printer
                                         e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                             leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                         yPos += font.GetHeight(e.Graphics);
-                                        currentLine.Clear();
+                                        _ = currentLine.Clear();
                                     }
 
                                     // Tambahkan kata ke baris saat ini
-                                    currentLine.Append(word + " ");
+                                    _ = currentLine.Append(word + " ");
                                 }
 
                                 // Gambar baris terakhir
@@ -5537,11 +5432,11 @@ namespace KASIR.Printer
                                         e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
                                             yPos);
                                         yPos += font.GetHeight(e.Graphics);
-                                        currentLine.Clear();
+                                        _ = currentLine.Clear();
                                     }
 
                                     // Tambahkan kata ke baris saat ini
-                                    currentLine.Append(word + " ");
+                                    _ = currentLine.Append(word + " ");
                                 }
 
                                 // Gambar baris terakhir
@@ -5677,7 +5572,7 @@ namespace KASIR.Printer
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
-        // Struct Payform
+        // Struct Payform | Pembayaran
         public async Task PrintModelPayform(
             GetStrukCustomerTransaction datas,
             List<CartDetailStrukCustomerTransaction> cartDetails,
@@ -5690,7 +5585,7 @@ namespace KASIR.Printer
         {
             try
             {
-                if(totalTransactions == null) { totalTransactions = 0; }
+                if (totalTransactions == null) { totalTransactions = 0; }
                 if (string.IsNullOrEmpty(Kakimu)) { Kakimu = ""; }
                 await LoadPrinterSettings(); // Load printer settings
                 await LoadSettingsAsync(); // Load additional settings
@@ -5733,49 +5628,54 @@ namespace KASIR.Printer
                             }
                             if (!shouldSkip)
                             {
-                                // Struct Customer ====
-                                if (ShouldPrint(printerId, "Kasir"))
+                                // 🔑 buat koneksi sekali saja
+                                using (Stream stream = await EstablishPrinterConnection(printerName))
                                 {
-                                    // Setelah koneksi berhasil, cetak struk
-                                    await PrintCustomerReceipt(datas, cartDetails, totalTransactions, Kakimu, printerName);
-                                }
-
-                                // Struct Checker
-                                if (ShouldPrint(printerId, "Checker"))
-                                {
-                                    // Setelah koneksi berhasil, cetak struk
-                                    await PrintCheckerReceipt(datas, cartDetails, totalTransactions, printerName);
-                                }
-
-                                // Struct Kitchen
-                                if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
-                                {
-                                    if (ShouldPrint(printerId, "Makanan"))
+                                    // Struct Customer
+                                    if (ShouldPrint(printerId, "Kasir"))
                                     {
-                                        // Filter kitchen cart details yang is_ordered == 1
-                                        List<KitchenAndBarCartDetails> orderedKitchenItems =
-                                            KitchenCartDetails.Where(x => x.is_ordered != 1).ToList();
+                                        await PrintCustomerReceipt(datas, cartDetails, totalTransactions, Kakimu, stream);
+                                    }
 
-                                        if (orderedKitchenItems.Any())
+                                    // Struct Checker
+                                    if (ShouldPrint(printerId, "Checker"))
+                                    {
+                                        await PrintCheckerReceipt(datas, cartDetails, totalTransactions, stream);
+                                    }
+
+                                    // Struct Kitchen
+                                    if (KitchenCartDetails.Any() || KitchenCancelItems.Any())
+                                    {
+                                        if (ShouldPrint(printerId, "Makanan"))
                                         {
-                                            // Setelah koneksi berhasil, cetak struk
-                                            await PrintKitchenOrBarReceipt(datas, KitchenCartDetails, KitchenCancelItems,
-                                                totalTransactions, "Makanan", printerName);
+                                            List<KitchenAndBarCartDetails> orderedKitchenItems =
+                                                KitchenCartDetails.Where(x => x.is_ordered != 1).ToList();
 
+                                            if (orderedKitchenItems.Any())
+                                            {
+                                                await PrintKitchenOrBarReceipt(datas, KitchenCartDetails, KitchenCancelItems,
+                                                    totalTransactions, "Makanan", stream);
+                                            }
                                         }
                                     }
-                                }
-                                // Struct Bar
-                                if (BarCartDetails.Any() || BarCancelItems.Any())
-                                {
-                                    if (ShouldPrint(printerId, "Minuman"))
+
+                                    // Struct Bar
+                                    if (BarCartDetails.Any() || BarCancelItems.Any())
                                     {
-                                        // Setelah koneksi berhasil, cetak struk
-                                        await PrintKitchenOrBarReceipt(datas, BarCartDetails, BarCancelItems,
-                                             totalTransactions, "Minuman", printerName);
+                                        if (ShouldPrint(printerId, "Minuman"))
+                                        {
+                                            await PrintKitchenOrBarReceipt(datas, BarCartDetails, BarCancelItems,
+                                                 totalTransactions, "Minuman", stream);
+                                        }
                                     }
+
+                                    // 👉 di sini setelah semua kategori tercetak
+                                    stream.Flush();
+                                    NotifyHelper.Success($"Struk printed payform printerID: #{printerName}{printerId}.");
                                 }
+
                             }
+
                         }
                         catch (Exception ex)
                         {
@@ -5817,7 +5717,7 @@ namespace KASIR.Printer
             else
             {
                 // Connect via Bluetooth dengan retry policy
-                await RetryPolicyAsync(async () =>
+                _ = await RetryPolicyAsync(async () =>
                 {
                     var printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
                     if (printerDevice == null)
@@ -5860,341 +5760,194 @@ namespace KASIR.Printer
 
         private async Task PrintCustomerReceipt(GetStrukCustomerTransaction datas,
     List<CartDetailStrukCustomerTransaction> cartDetails,
-    int totalTransactions, string Kakimu, string printerName)
+    int totalTransactions, string Kakimu, Stream stream)
         {
-            Stream stream = Stream.Null;
+            var capacity = GetOptimalCapacity(cartDetails.Count);
+            var strukBuilder = new StringBuilder(capacity);
 
-            try
+            // Kode Heksadesimal  
+            string kodeFontKecil = "\x1B\x4D\x01";
+            string kodeHeksadesimalBold = "\x1B\x45\x01";
+            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
+            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+            // Header Struk  
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, CenterText(datas.data?.outlet_name ?? ""));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.AppendFormat("{0}{1}", "", CenterText(datas.data?.outlet_address ?? ""));
+            _ = strukBuilder.AppendFormat("{0}{1}", "", CenterText(datas.data?.outlet_phone_number ?? ""));
+            _ = strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold,
+                CenterText($"Receipt No.: {datas.data?.receipt_number ?? ""}"));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.AppendFormat("{0}{1}", "", CenterText(datas.data?.invoice_due_date ?? ""));
+
+            // Informasi Member/Customer  
+            if (datas?.data != null &&
+                (datas.data.member_id != 0 || !string.IsNullOrEmpty(datas.data.member_name)))
             {
-                stream = await EstablishPrinterConnection(printerName);
+                _ = strukBuilder.AppendFormat("Name Member: {0}\n", datas.data.member_name ?? "-");
+                _ = strukBuilder.AppendFormat("Number Member: {0}\n", datas.data.member_phone_number ?? "-");
+                _ = strukBuilder.AppendFormat("Point Member: {0}\n",
+                    datas.data.member_point?.ToString("#,#") ?? "0");
 
-                var capacity = GetOptimalCapacity(cartDetails.Count);
-                var strukBuilder = new StringBuilder(capacity);
-
-                // Kode Heksadesimal  
-                string kodeHeksadesimalBold = "\x1B\x45\x01";
-                string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-
-                // Header Struk  
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, CenterText(datas.data?.outlet_name ?? ""));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.AppendFormat("{0}{1}", "", CenterText(datas.data?.outlet_address ?? ""));
-                strukBuilder.AppendFormat("{0}{1}", "", CenterText(datas.data?.outlet_phone_number ?? ""));
-                strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold,
-                    CenterText($"Receipt No.: {datas.data?.receipt_number ?? ""}"));
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.AppendFormat("{0}{1}", "", CenterText(datas.data?.invoice_due_date ?? ""));
-
-                // Informasi Member/Customer  
-                if (datas?.data != null &&
-                    (datas.data.member_id != 0 || !string.IsNullOrEmpty(datas.data.member_name)))
+                if (datas.data.member_use_point.HasValue && datas.data.member_use_point > 0)
                 {
-                    strukBuilder.AppendFormat("Name Member: {0}\n", datas.data.member_name ?? "-");
-                    strukBuilder.AppendFormat("Number Member: {0}\n", datas.data.member_phone_number ?? "-");
-                    strukBuilder.AppendFormat("Point Member: {0}\n",
-                        datas.data.member_point?.ToString("#,#") ?? "0");
-
-                    if (datas.data.member_use_point.HasValue && datas.data.member_use_point > 0)
-                    {
-                        strukBuilder.AppendFormat("Point Member Terpakai: {0}\n",
-                            datas.data.member_use_point);
-                    }
+                    _ = strukBuilder.AppendFormat("Point Member Terpakai: {0}\n",
+                        datas.data.member_use_point);
                 }
-                else
+            }
+            else
+            {
+                _ = strukBuilder.AppendFormat("Name: {0}\n",
+                    datas?.data?.customer_name ?? "Walk-in Customer");
+            }
+
+            // Daftar Pesanan  
+            if (cartDetails != null && cartDetails.Any())
+            {
+                var servingTypes = cartDetails
+                    .Select(cd => cd.serving_type_name)
+                    .Distinct();
+
+                _ = strukBuilder.Append(SEPARATOR);
+                _ = strukBuilder.AppendFormat("{0}", CenterText("ORDER"));
+
+                foreach (var servingType in servingTypes)
                 {
-                    strukBuilder.AppendFormat("Name: {0}\n",
-                        datas?.data?.customer_name ?? "Walk-in Customer");
-                }
+                    var itemsForServingType = cartDetails
+                        .Where(cd => cd.serving_type_name == servingType)
+                        .ToList();
 
-                // Daftar Pesanan  
-                if (cartDetails != null && cartDetails.Any())
-                {
-                    var servingTypes = cartDetails
-                        .Select(cd => cd.serving_type_name)
-                        .Distinct();
+                    if (!itemsForServingType.Any()) continue;
 
-                    strukBuilder.Append(SEPARATOR);
-                    strukBuilder.AppendFormat("{0}", CenterText("ORDER"));
+                    _ = strukBuilder.AppendFormat("{0}", CenterText(servingType));
 
-                    foreach (var servingType in servingTypes)
+                    foreach (var cartDetail in itemsForServingType)
                     {
-                        var itemsForServingType = cartDetails
-                            .Where(cd => cd.serving_type_name == servingType)
-                            .ToList();
+                        _ = strukBuilder.AppendFormat("{0}{1}\n",
+                            kodeHeksadesimalBold, cartDetail.menu_name);
+                        _ = strukBuilder.Append(kodeHeksadesimalNormal);
 
-                        if (!itemsForServingType.Any()) continue;
+                        _ = strukBuilder.AppendFormat("{0}\n",
+                            FormatSimpleLine(
+                                $"@{cartDetail.price:n0} x{cartDetail.qty}",
+                                $"{cartDetail.total_price:n0}"));
 
-                        strukBuilder.AppendFormat("{0}", CenterText(servingType));
-
-                        foreach (var cartDetail in itemsForServingType)
+                        // Varian  
+                        if (!string.IsNullOrEmpty(cartDetail.varian))
                         {
-                            strukBuilder.AppendFormat("{0}{1}\n",
-                                kodeHeksadesimalBold, cartDetail.menu_name);
-                            strukBuilder.Append(kodeHeksadesimalNormal);
+                            _ = strukBuilder.AppendFormat("  Varian: {0}\n", cartDetail.varian);
+                        }
 
-                            strukBuilder.AppendFormat("{0}\n",
-                                FormatSimpleLine(printerName,
-                                    $"@{cartDetail.price:n0} x{cartDetail.qty}",
-                                    $"{cartDetail.total_price:n0}"));
+                        // Catatan Item  
+                        if (!string.IsNullOrEmpty(cartDetail.note_item))
+                        {
+                            _ = strukBuilder.AppendFormat("  Note: {0}\n", cartDetail.note_item);
+                        }
 
-                            // Varian  
-                            if (!string.IsNullOrEmpty(cartDetail.varian))
-                            {
-                                strukBuilder.AppendFormat("  Varian: {0}\n", cartDetail.varian);
-                            }
+                        // Diskon  
+                        if (!string.IsNullOrEmpty(cartDetail.discount_code))
+                        {
+                            _ = strukBuilder.AppendFormat("  Discount Code: {0}\n", cartDetail.discount_code);
+                        }
 
-                            // Catatan Item  
-                            if (!string.IsNullOrEmpty(cartDetail.note_item))
-                            {
-                                strukBuilder.AppendFormat("  Note: {0}\n", cartDetail.note_item);
-                            }
+                        // Nilai Diskon  
+                        if (cartDetail.discounts_value != null &&
+                            Convert.ToDecimal(cartDetail.discounts_value) != 0)
+                        {
+                            var discountDisplay = cartDetail.discounts_is_percent.ToString() != "1"
+                                ? $"{cartDetail.discounts_value:n0}"
+                                : $"{cartDetail.discounts_value}%";
 
-                            // Diskon  
-                            if (!string.IsNullOrEmpty(cartDetail.discount_code))
-                            {
-                                strukBuilder.AppendFormat("  Discount Code: {0}\n", cartDetail.discount_code);
-                            }
-
-                            // Nilai Diskon  
-                            if (cartDetail.discounts_value != null &&
-                                Convert.ToDecimal(cartDetail.discounts_value) != 0)
-                            {
-                                var discountDisplay = cartDetail.discounts_is_percent.ToString() != "1"
-                                    ? $"{cartDetail.discounts_value:n0}"
-                                    : $"{cartDetail.discounts_value}%";
-
-                                strukBuilder.AppendFormat("  Discount Value: {0}\n", discountDisplay);
-                            }
+                            _ = strukBuilder.AppendFormat("  Discount Value: {0}\n", discountDisplay);
                         }
                     }
                 }
-
-                // Ringkasan Transaksi  
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Subtotal", $"{datas.data.subtotal:n0}"));
-
-                // Diskon Transaksi  
-                if (!string.IsNullOrEmpty(datas.data.discount_code))
-                {
-                    strukBuilder.AppendFormat("Discount Code: {0}\n", datas.data.discount_code);
-                }
-
-                if (datas.data.discounts_value.HasValue && datas.data.discounts_value != 0)
-                {
-                    var discountDisplay = datas.data.discounts_is_percent != "1"
-                        ? $"{datas.data.discounts_value:n0}"
-                        : $"{datas.data.discounts_value}%";
-
-                    strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(printerName, "Discount Value: ", discountDisplay));
-                }
-
-                // Total dan Pembayaran  
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Total", $"{datas.data.total:n0}"));
-                strukBuilder.AppendFormat("Payment Type: {0}\n", datas.data.payment_type);
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Cash", $"{datas.data.customer_cash:n0}"));
-                strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine(printerName, "Change", $"{datas.data.customer_change:n0}"));
-
-                // Footer  
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}", CenterText(datas.data.outlet_footer));
-                strukBuilder.AppendFormat("{0}", CenterText(Kakimu));
-                strukBuilder.AppendFormat("{0}", CenterText($"Meja No. {datas.data.customer_seat}"));
-                strukBuilder.Append(SEPARATOR);
-                strukBuilder.AppendFormat("{0}", CenterText("Powered By Dastrevas"));
-
-                // Nomor Urut dengan StringBuilder
-                var nomorUrutBuilder = new StringBuilder();
-                nomorUrutBuilder.AppendFormat("\n{0}{1}",
-                    kodeHeksadesimalSizeBesar + kodeHeksadesimalBold,
-                    CenterText($"No. {totalTransactions}"));
-                nomorUrutBuilder.Append("\n\n\n    ");
-
-                // Konversi dan Cetak
-                byte[] buffer1 = Encoding.UTF8.GetBytes(nomorUrutBuilder.ToString());
-                byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
-
-                stream.Write(buffer1, 0, buffer1.Length);
-                PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
-                stream.Write(buffer, 0, buffer.Length);
-
-                // QR Code
-                if (await IsQRCodeEnabledAsync())
-                {
-                    PrintLogo(stream, "icon\\QRcode.bmp", logoSize);
-                }
-
-                // Tambahan newline
-                strukBuilder.Clear(); // Reuse StringBuilder
-                strukBuilder.Append("--------------------------------\n\n\n");
-                buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
-                stream.Write(buffer, 0, buffer.Length);
-
-                stream.Flush();
             }
-            finally
+
+            // Ringkasan Transaksi  
+            _ = strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Subtotal", $"{datas.data.subtotal:n0}"));
+
+            // Diskon Transaksi  
+            if (!string.IsNullOrEmpty(datas.data.discount_code))
             {
-                if (stream != null)
-                {
-                    stream.Close();
-                }
+                _ = strukBuilder.AppendFormat("Discount Code: {0}\n", datas.data.discount_code);
             }
+
+            if (datas.data.discounts_value.HasValue && datas.data.discounts_value != 0)
+            {
+                var discountDisplay = datas.data.discounts_is_percent != "1"
+                    ? $"{datas.data.discounts_value:n0}"
+                    : $"{datas.data.discounts_value}%";
+
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("Discount Value: ", discountDisplay));
+            }
+
+            // Total dan Pembayaran  
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Total", $"{datas.data.total:n0}"));
+            _ = strukBuilder.AppendFormat("Payment Type: {0}\n", datas.data.payment_type);
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Cash", $"{datas.data.customer_cash:n0}"));
+            _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("Change", $"{datas.data.customer_change:n0}"));
+
+            // Footer  
+            _ = strukBuilder.Append(SEPARATOR);
+            _ = strukBuilder.AppendFormat("{0}", CenterText(datas.data.outlet_footer));
+            _ = strukBuilder.AppendFormat("{0}", CenterText(Kakimu));
+            _ = strukBuilder.AppendFormat("{0}", CenterText($"Meja No. {datas.data.customer_seat}"));
+            _ = strukBuilder.Append(SEPARATOR);
+
+            // Nomor Urut dengan StringBuilder
+            var nomorUrutBuilder = new StringBuilder();
+            _ = nomorUrutBuilder.AppendFormat("\n{0}{1}",
+                kodeHeksadesimalSizeBesar + kodeHeksadesimalBold,
+                CenterText($"No. {totalTransactions}"));
+            _ = nomorUrutBuilder.Append("\n\n\n    ");
+
+            // Konversi dan Cetak
+            byte[] buffer1 = Encoding.UTF8.GetBytes(nomorUrutBuilder.ToString());
+            byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
+
+            stream.Write(buffer1, 0, buffer1.Length);
+            PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
+            stream.Write(buffer, 0, buffer.Length);
+
+            // QR Code
+            if (await IsQRCodeEnabledAsync())
+            {
+                PrintLogo(stream, "icon\\QRcode.bmp", logoSize);
+            }
+
+            // Tambahan newline
+            _ = strukBuilder.Clear(); // Reuse StringBuilder
+            _ = strukBuilder.Append(kodeFontKecil);
+            _ = strukBuilder.AppendFormat("{0}", CenterText("Powered By Dastrevas"));
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.Append("--------------------------------\n\n\n");
+            buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
+            stream.Write(buffer, 0, buffer.Length);
+
         }
 
         private async Task PrintCheckerReceipt(
     GetStrukCustomerTransaction datas,
     List<CartDetailStrukCustomerTransaction> cartDetails,
-    int totalTransactions, string printerName)
+    int totalTransactions, Stream stream)
         {
-            Stream stream = null;
-            try
+            // Filter checker cart details yang is_ordered == 1
+            List<CartDetailStrukCustomerTransaction> orderedCheckerItems =
+                cartDetails.Where(x => x.is_ordered != 1).ToList();
+
+            if (orderedCheckerItems.Any())
             {
-                // Filter checker cart details yang is_ordered == 1
-                List<CartDetailStrukCustomerTransaction> orderedCheckerItems =
-                    cartDetails.Where(x => x.is_ordered != 1).ToList();
-
-                if (orderedCheckerItems.Any())
-                {
-                    // Koneksi printer (tetap sama)
-                    stream = await EstablishPrinterConnection(printerName);
-
-                    // Gunakan kapasitas optimal
-                    var capacity = GetOptimalCapacity(cartDetails.Count);
-                    var strukBuilder = new StringBuilder(capacity);
-
-                    var printerSettings = PrinterConfig.GetPrinterSettings(printerName);
-
-                    // Kode Heksadesimal
-                    string kodeHeksadesimalBold = "\x1B\x45\x01";
-                    string kodeHeksadesimalSizeBesar = printerSettings.BigSize;
-                    string kodeHeksadesimalNormal = "\x1B\x45\x00" + printerSettings.NormalSize;
-
-                    // Header Checker
-                    strukBuilder.Append(kodeHeksadesimalNormal);
-                    strukBuilder.AppendFormat("{0}{1}",
-                        kodeHeksadesimalBold,
-                        CenterText($"CHECKER No. {totalTransactions}"));
-                    strukBuilder.Append(kodeHeksadesimalNormal);
-
-                    strukBuilder.AppendFormat("{0}{1}",
-                        kodeHeksadesimalBold,
-                        CenterText($"Receipt No.: {datas.data?.receipt_number}"));
-
-                    strukBuilder.Append(kodeHeksadesimalNormal);
-                    strukBuilder.AppendFormat("{0}", CenterText(datas.data?.invoice_due_date));
-
-                    // Informasi Member/Customer
-                    if (datas.data?.member_id != null && !string.IsNullOrEmpty(datas.data?.member_name))
-                    {
-                        strukBuilder.AppendFormat("Name Member: {0}\n", datas.data?.member_name);
-                        strukBuilder.AppendFormat("Number Member: {0}\n", datas.data?.member_phone_number);
-                        strukBuilder.AppendFormat("Point Member: {0}\n",
-                            datas.data?.member_point?.ToString("#,#") ?? "0");
-
-                        if (datas.data?.member_use_point > 0)
-                        {
-                            strukBuilder.AppendFormat("Point Member Terpakai: {0}\n",
-                                datas.data?.member_use_point);
-                        }
-                    }
-                    else
-                    {
-                        strukBuilder.AppendFormat("Name: {0}\n", datas.data?.customer_name);
-                    }
-
-                    // Filter items untuk checker
-                    var checkerItems = cartDetails
-                        .Where(x => x.is_ordered == 0 && !string.IsNullOrEmpty(x.menu_name))
-                        .ToList();
-
-                    // Cetak jika ada item
-                    if (checkerItems.Any())
-                    {
-                        var servingTypes = cartDetails
-                            .Select(cd => cd.serving_type_name)
-                            .Distinct();
-
-                        strukBuilder.Append(SEPARATOR);
-                        strukBuilder.AppendFormat("{0}", CenterText("ORDER"));
-
-                        foreach (string servingType in servingTypes)
-                        {
-                            var itemsForServingType = cartDetails
-                                .Where(cd => cd.serving_type_name == servingType)
-                                .ToList();
-
-                            if (itemsForServingType.Count == 0) continue;
-
-                            strukBuilder.AppendFormat("{0}", CenterText(servingType));
-
-                            foreach (var cartDetail in itemsForServingType)
-                            {
-                                strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
-                                strukBuilder.AppendFormat("{0}\n",
-                                    FormatSimpleLine(printerName, cartDetail.menu_name, cartDetail.qty.ToString()));
-
-                                if (!string.IsNullOrEmpty(cartDetail.varian))
-                                {
-                                    strukBuilder.AppendFormat("   Varian: {0}\n", cartDetail.varian);
-                                }
-
-                                if (!string.IsNullOrEmpty(cartDetail.note_item))
-                                {
-                                    strukBuilder.AppendFormat("   Note: {0}\n", cartDetail.note_item);
-                                }
-
-                                strukBuilder.Append(kodeHeksadesimalNormal);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show("no check");
-                    }
-
-                    // Footer
-                    strukBuilder.AppendFormat("{0}", CenterText($"Meja No.{datas.data?.customer_seat}"));
-                    strukBuilder.Append("--------------------------------\n\n\n\n\n");
-
-                    // Konversi dan Cetak
-                    byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
-                    stream.Write(buffer, 0, buffer.Length);
-                    stream.Flush();
-                }
-            }
-            finally
-            {
-                // Cleanup stream
-                stream?.Close();
-                stream?.Dispose();
-
-                // Optional: Force garbage collection
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-            }
-        }
-        private async Task PrintKitchenOrBarReceipt(
-    GetStrukCustomerTransaction datas,
-    List<KitchenAndBarCartDetails> CartDetails,
-    List<KitchenAndBarCanceledItems> CancelItems,
-    int totalTransactions, string type, string printerName)
-        {
-            Stream stream = Stream.Null;
-
-            try
-            {
-                // Koneksi printer (tetap sama)
-                stream = await EstablishPrinterConnection(printerName);
-
-                // Hitung kapasitas optimal
-                int totalItems = (CartDetails?.Count ?? 0) + (CancelItems?.Count ?? 0);
-                var capacity = GetOptimalCapacity(totalItems);
+                // Gunakan kapasitas optimal
+                var capacity = GetOptimalCapacity(cartDetails.Count);
                 var strukBuilder = new StringBuilder(capacity);
 
                 // Kode Heksadesimal
@@ -6202,128 +5955,225 @@ namespace KASIR.Printer
                 string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
                 string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
 
-                // Header
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.AppendFormat("{0}{1}",
+                // Header Checker
+                _ = strukBuilder.Append(kodeHeksadesimalNormal);
+                _ = strukBuilder.AppendFormat("{0}{1}",
                     kodeHeksadesimalBold,
-                    CenterText($"{type.ToUpper()} No. {totalTransactions}"));
+                    CenterText($"CHECKER No. {totalTransactions}"));
+                _ = strukBuilder.Append(kodeHeksadesimalNormal);
 
-                strukBuilder.AppendFormat("{0}{1}",
+                _ = strukBuilder.AppendFormat("{0}{1}",
                     kodeHeksadesimalBold,
                     CenterText($"Receipt No.: {datas.data?.receipt_number}"));
 
-                strukBuilder.Append(kodeHeksadesimalNormal);
-                strukBuilder.AppendFormat("{0}", CenterText(datas.data?.invoice_due_date));
-                strukBuilder.AppendFormat("Name: {0}\n", datas.data?.customer_name);
+                _ = strukBuilder.Append(kodeHeksadesimalNormal);
+                _ = strukBuilder.AppendFormat("{0}", CenterText(datas.data?.invoice_due_date));
 
-                // Order Items
-                if (CartDetails?.Count > 0)
+                // Informasi Member/Customer
+                if (datas.data?.member_id != null && !string.IsNullOrEmpty(datas.data?.member_name))
                 {
-                    var servingTypes = CartDetails
+                    _ = strukBuilder.AppendFormat("Name Member: {0}\n", datas.data?.member_name);
+                    _ = strukBuilder.AppendFormat("Number Member: {0}\n", datas.data?.member_phone_number);
+                    _ = strukBuilder.AppendFormat("Point Member: {0}\n",
+                        datas.data?.member_point?.ToString("#,#") ?? "0");
+
+                    if (datas.data?.member_use_point > 0)
+                    {
+                        _ = strukBuilder.AppendFormat("Point Member Terpakai: {0}\n",
+                            datas.data?.member_use_point);
+                    }
+                }
+                else
+                {
+                    _ = strukBuilder.AppendFormat("Name: {0}\n", datas.data?.customer_name);
+                }
+
+                // Filter items untuk checker
+                var checkerItems = cartDetails
+                    .Where(x => x.is_ordered == 0 && !string.IsNullOrEmpty(x.menu_name))
+                    .ToList();
+
+                // Cetak jika ada item
+                if (checkerItems.Any())
+                {
+                    var servingTypes = cartDetails
                         .Select(cd => cd.serving_type_name)
                         .Distinct();
 
-                    strukBuilder.Append(SEPARATOR);
-                    strukBuilder.AppendFormat("{0}", CenterText("ORDER"));
+                    _ = strukBuilder.Append(SEPARATOR);
+                    _ = strukBuilder.AppendFormat("{0}", CenterText("ORDER"));
 
                     foreach (string servingType in servingTypes)
                     {
-                        var itemsForServingType = CartDetails
+                        var itemsForServingType = cartDetails
                             .Where(cd => cd.serving_type_name == servingType)
                             .ToList();
 
                         if (itemsForServingType.Count == 0) continue;
 
-                        strukBuilder.AppendFormat("{0}\n", CenterText(servingType));
+                        _ = strukBuilder.AppendFormat("{0}", CenterText(servingType));
 
                         foreach (var cartDetail in itemsForServingType)
                         {
-                            strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
-                            strukBuilder.AppendFormat("{0}\n",
-                                FormatSimpleLine(printerName, cartDetail.menu_name, cartDetail.qty.ToString()));
+                            _ = strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
+                            _ = strukBuilder.AppendFormat("{0}\n",
+                                FormatSimpleLine(cartDetail.menu_name, cartDetail.qty.ToString()));
 
                             if (!string.IsNullOrEmpty(cartDetail.varian))
                             {
-                                strukBuilder.AppendFormat("   Varian: {0}\n", cartDetail.varian);
+                                _ = strukBuilder.AppendFormat("   Varian: {0}\n", cartDetail.varian);
                             }
 
-                            if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                            if (!string.IsNullOrEmpty(cartDetail.note_item))
                             {
-                                strukBuilder.AppendFormat("   Note: {0}\n", cartDetail.note_item);
+                                _ = strukBuilder.AppendFormat("   Note: {0}\n", cartDetail.note_item);
                             }
 
-                            strukBuilder.Append(kodeHeksadesimalNormal);
-                            strukBuilder.Append("\n");
+                            _ = strukBuilder.Append(kodeHeksadesimalNormal);
                         }
                     }
                 }
-
-                // Canceled Items
-                if (CancelItems?.Count > 0)
+                else
                 {
-                    var servingTypes = CancelItems
-                        .Select(cd => cd.serving_type_name)
-                        .Distinct();
-
-                    strukBuilder.Append(SEPARATOR);
-                    strukBuilder.AppendFormat("{0}", CenterText("CANCELED"));
-
-                    foreach (string servingType in servingTypes)
-                    {
-                        var itemsForServingType = CancelItems
-                            .Where(cd => cd.serving_type_name == servingType)
-                            .ToList();
-
-                        if (itemsForServingType.Count == 0) continue;
-
-                        strukBuilder.AppendFormat("{0}\n", CenterText(servingType));
-
-                        foreach (var cancelItem in itemsForServingType)
-                        {
-                            strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
-                            strukBuilder.AppendFormat("{0}\n",
-                                FormatSimpleLine(printerName, cancelItem.menu_name, cancelItem.qty.ToString()));
-
-                            if (!string.IsNullOrEmpty(cancelItem.varian))
-                            {
-                                strukBuilder.AppendFormat("   Varian: {0}\n", cancelItem.varian);
-                            }
-
-                            if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
-                            {
-                                strukBuilder.AppendFormat("   Note: {0}\n", cancelItem.note_item);
-                            }
-
-                            if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
-                            {
-                                strukBuilder.AppendFormat("   Canceled Reason: {0}\n", cancelItem.cancel_reason);
-                            }
-
-                            strukBuilder.Append(kodeHeksadesimalNormal);
-                        }
-                    }
+                    _ = MessageBox.Show("no check");
                 }
 
                 // Footer
-                strukBuilder.AppendFormat("{0}",
-                    CenterText($"Meja No.{datas.data?.customer_seat}\n"));
-                strukBuilder.Append("--------------------------------\n\n\n\n\n");
+                _ = strukBuilder.AppendFormat("{0}", CenterText($"Meja No.{datas.data?.customer_seat}"));
+                _ = strukBuilder.Append("--------------------------------\n\n\n\n\n");
 
                 // Konversi dan Cetak
                 byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
                 stream.Write(buffer, 0, buffer.Length);
-                stream.Flush();
             }
-            finally
-            {
-                // Cleanup stream
-                stream?.Close();
-                stream?.Dispose();
+        }
+        private async Task PrintKitchenOrBarReceipt(
+    GetStrukCustomerTransaction datas,
+    List<KitchenAndBarCartDetails> CartDetails,
+    List<KitchenAndBarCanceledItems> CancelItems,
+    int totalTransactions, string type, Stream stream)
+        {
 
-                // Optional: Force garbage collection
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
+            // Hitung kapasitas optimal
+            int totalItems = (CartDetails?.Count ?? 0) + (CancelItems?.Count ?? 0);
+            var capacity = GetOptimalCapacity(totalItems);
+            var strukBuilder = new StringBuilder(capacity);
+
+            // Kode Heksadesimal
+            string kodeHeksadesimalBold = "\x1B\x45\x01";
+            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
+            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+            // Header
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.AppendFormat("{0}{1}",
+                kodeHeksadesimalBold,
+                CenterText($"{type.ToUpper()} No. {totalTransactions}"));
+
+            _ = strukBuilder.AppendFormat("{0}{1}",
+                kodeHeksadesimalBold,
+                CenterText($"Receipt No.: {datas.data?.receipt_number}"));
+
+            _ = strukBuilder.Append(kodeHeksadesimalNormal);
+            _ = strukBuilder.AppendFormat("{0}", CenterText(datas.data?.invoice_due_date));
+            _ = strukBuilder.AppendFormat("Name: {0}\n", datas.data?.customer_name);
+
+            // Order Items
+            if (CartDetails?.Count > 0)
+            {
+                var servingTypes = CartDetails
+                    .Select(cd => cd.serving_type_name)
+                    .Distinct();
+
+                _ = strukBuilder.Append(SEPARATOR);
+                _ = strukBuilder.AppendFormat("{0}", CenterText("ORDER"));
+
+                foreach (string servingType in servingTypes)
+                {
+                    var itemsForServingType = CartDetails
+                        .Where(cd => cd.serving_type_name == servingType)
+                        .ToList();
+
+                    if (itemsForServingType.Count == 0) continue;
+
+                    _ = strukBuilder.AppendFormat("{0}\n", CenterText(servingType));
+
+                    foreach (var cartDetail in itemsForServingType)
+                    {
+                        _ = strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
+                        _ = strukBuilder.AppendFormat("{0}\n",
+                            FormatSimpleLine(cartDetail.menu_name, cartDetail.qty.ToString()));
+
+                        if (!string.IsNullOrEmpty(cartDetail.varian))
+                        {
+                            _ = strukBuilder.AppendFormat("   Varian: {0}\n", cartDetail.varian);
+                        }
+
+                        if (!string.IsNullOrEmpty(cartDetail.note_item?.ToString()))
+                        {
+                            _ = strukBuilder.AppendFormat("   Note: {0}\n", cartDetail.note_item);
+                        }
+
+                        _ = strukBuilder.Append(kodeHeksadesimalNormal);
+                        _ = strukBuilder.Append("\n");
+                    }
+                }
             }
+
+            // Canceled Items
+            if (CancelItems?.Count > 0)
+            {
+                var servingTypes = CancelItems
+                    .Select(cd => cd.serving_type_name)
+                    .Distinct();
+
+                _ = strukBuilder.Append(SEPARATOR);
+                _ = strukBuilder.AppendFormat("{0}", CenterText("CANCELED"));
+
+                foreach (string servingType in servingTypes)
+                {
+                    var itemsForServingType = CancelItems
+                        .Where(cd => cd.serving_type_name == servingType)
+                        .ToList();
+
+                    if (itemsForServingType.Count == 0) continue;
+
+                    _ = strukBuilder.AppendFormat("{0}\n", CenterText(servingType));
+
+                    foreach (var cancelItem in itemsForServingType)
+                    {
+                        _ = strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
+                        _ = strukBuilder.AppendFormat("{0}\n",
+                            FormatSimpleLine(cancelItem.menu_name, cancelItem.qty.ToString()));
+
+                        if (!string.IsNullOrEmpty(cancelItem.varian))
+                        {
+                            _ = strukBuilder.AppendFormat("   Varian: {0}\n", cancelItem.varian);
+                        }
+
+                        if (!string.IsNullOrEmpty(cancelItem.note_item?.ToString()))
+                        {
+                            _ = strukBuilder.AppendFormat("   Note: {0}\n", cancelItem.note_item);
+                        }
+
+                        if (!string.IsNullOrEmpty(cancelItem.cancel_reason))
+                        {
+                            _ = strukBuilder.AppendFormat("   Canceled Reason: {0}\n", cancelItem.cancel_reason);
+                        }
+
+                        _ = strukBuilder.Append(kodeHeksadesimalNormal);
+                    }
+                }
+            }
+
+            // Footer
+            _ = strukBuilder.AppendFormat("{0}",
+                CenterText($"Meja No.{datas.data?.customer_seat}\n"));
+            _ = strukBuilder.Append("--------------------------------\n\n\n\n\n");
+
+            // Konversi dan Cetak
+            byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
+            stream.Write(buffer, 0, buffer.Length);
         }
         public async Task Ex_PrintModelPayform
         (GetStrukCustomerTransaction datas,
@@ -6351,7 +6201,7 @@ namespace KASIR.Printer
                 else
                 {
                     // Bluetooth connection with retry policy
-                    await RetryPolicyAsync(async () =>
+                    _ = await RetryPolicyAsync(async () =>
                     {
                         BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
                         if (printerDevice == null)
@@ -6438,11 +6288,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                         leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -6475,11 +6325,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
                                         yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -6745,11 +6595,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                         leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -6782,11 +6632,11 @@ namespace KASIR.Printer
                                     e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black, leftMargin,
                                         yPos);
                                     yPos += font.GetHeight(e.Graphics);
-                                    currentLine.Clear();
+                                    _ = currentLine.Clear();
                                 }
 
                                 // Tambahkan kata ke baris saat ini
-                                currentLine.Append(word + " ");
+                                _ = currentLine.Append(word + " ");
                             }
 
                             // Gambar baris terakhir
@@ -6936,11 +6786,11 @@ namespace KASIR.Printer
                                         e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                             leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                         yPos += font.GetHeight(e.Graphics);
-                                        currentLine.Clear();
+                                        _ = currentLine.Clear();
                                     }
 
                                     // Tambahkan kata ke baris saat ini
-                                    currentLine.Append(word + " ");
+                                    _ = currentLine.Append(word + " ");
                                 }
 
                                 // Gambar baris terakhir
@@ -7138,11 +6988,11 @@ namespace KASIR.Printer
                                         e.Graphics.DrawString(currentLine.ToString(), font, Brushes.Black,
                                             leftMargin + ((printableWidth - currentSize.Width) / 2), yPos);
                                         yPos += font.GetHeight(e.Graphics);
-                                        currentLine.Clear();
+                                        _ = currentLine.Clear();
                                     }
 
                                     // Tambahkan kata ke baris saat ini
-                                    currentLine.Append(word + " ");
+                                    _ = currentLine.Append(word + " ");
                                 }
 
                                 // Gambar baris terakhir

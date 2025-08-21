@@ -7,6 +7,7 @@ using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using KASIR.Helper;
 
 namespace KASIR.Komponen
 {
@@ -229,15 +230,13 @@ namespace KASIR.Komponen
             {
                 if (fulus == null || fulus == "")
                 {
-                    MessageBox.Show("Format nominal kurang tepat", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Format nominal kurang tepat");
                     return;
                 }
 
                 if (txtNotes.Text == null || txtNotes.ToString() == "")
                 {
-                    MessageBox.Show("Format notes kurang tepat", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Format notes kurang tepat");
                     return;
                 }
 
@@ -247,7 +246,7 @@ namespace KASIR.Komponen
                         "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (yakin != DialogResult.Yes)
                 {
-                    MessageBox.Show("Penambahan Expenditure Shift diCancel");
+                    NotifyHelper.Error("Penambahan Expenditure Shift diCancel");
                     return;
                     Close();
                 }
@@ -317,7 +316,7 @@ namespace KASIR.Komponen
             {
                 // The text could not be parsed as a decimal number.
                 // You can handle this exception in different ways, such as displaying a message to the user.
-                MessageBox.Show("inputan hanya bisa Numeric");
+                NotifyHelper.Error("inputan hanya bisa Numeric");
                 if (txtNominal.Text.Length > 0)
                 {
                     txtNominal.Text = txtNominal.Text.Substring(0, txtNominal.Text.Length - 1);

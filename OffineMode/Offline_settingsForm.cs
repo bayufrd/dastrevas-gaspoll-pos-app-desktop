@@ -30,6 +30,8 @@ namespace KASIR.Komponen
         private PrinterModel printerModel;
         private InternetService _internetService;
         private ImageUploadHelper _imageUploadHelper;
+        private readonly UpdaterHelper _updaterHelper;
+
         public Offline_settingsForm()
         {
             //ControlBox = false;
@@ -52,6 +54,8 @@ namespace KASIR.Komponen
             Offline_masterPos m = new Offline_masterPos();
             m.RoundedPanel(LogPanel);
             _internetService = new InternetService();
+            _updaterHelper = new UpdaterHelper(_internetService);
+
             LoadConfig();
             InitializeUpdateSettings();
             LoadPrintersAndSettings().ConfigureAwait(false);
@@ -676,17 +680,14 @@ namespace KASIR.Komponen
         {
             try
             {
-                using (HttpClient httpClient = new())
-                {
-                    string? urlVersion = Settings.Default.BaseAddressVersion;
-                    string newVersion = await httpClient.GetStringAsync(urlVersion);
+                    string versinew = await _updaterHelper.CheckVersionNewAppAsync();
                     string currentVersion = Settings.Default.Version;
 
-                    newVersion = newVersion.Replace(".", "");
+                    string newVersion = versinew.Replace(".", "");
                     currentVersion = currentVersion.Replace(".", "");
 
                     // Fetch the version string for display
-                    string displayVersion = await httpClient.GetStringAsync(urlVersion);
+                    string displayVersion = newVersion;
 
                     if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
                     {
@@ -696,7 +697,6 @@ namespace KASIR.Komponen
                     {
                         UpdateUIForNewVersion(displayVersion, "Fix");
                     }
-                }
             }
             catch (Exception ex)
             {

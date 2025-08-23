@@ -138,6 +138,7 @@ namespace KASIR.OfflineMode
             textPin.PasswordChar = '*';
             textPin.Size = new Size(521, 16);
             textPin.TabIndex = 5;
+            textPin.Text = "@@@";
             textPin.TextAlign = HorizontalAlignment.Center;
             textPin.UseSystemPasswordChar = true;
             textPin.MaskInputRejected += texttPin_MaskInputRejected;

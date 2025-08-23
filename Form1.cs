@@ -1,9 +1,12 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.IO.Compression;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
 using FontAwesome.Sharp;
 using KASIR.Helper;
 using KASIR.Komponen;
@@ -14,12 +17,11 @@ using KASIR.OfflineMode;
 using KASIR.Properties;
 using KASIR.Services;
 using Newtonsoft.Json;
-using SharpCompress.Archives;
-using SharpCompress.Common;
 using Color = System.Drawing.Color;
 using DrawingColor = System.Drawing.Color;
 using Path = System.IO.Path;
 using Timer = System.Windows.Forms.Timer;
+
 
 namespace KASIR
 {
@@ -29,13 +31,16 @@ namespace KASIR
         private readonly Panel leftBorderBtn;
         private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet.ToString();
         private readonly OutletService _outletService;
-        private string DownloadPath, VersionUpdaterApp, PathKasir, baseOutletName;
+        private string baseOutletName;
         private static readonly Random random = new();
         private readonly IInternetService _internetServices;
+        private readonly UpdaterHelper _updaterHelper;
+
         public Form1()
         {
             InitializeComponent();
             _internetServices = new InternetService();
+            _updaterHelper = new UpdaterHelper(_internetServices);
 
             _outletService = new OutletService(
                 Settings.Default.BaseOutlet,
@@ -120,6 +125,10 @@ namespace KASIR
             {
                 await File.WriteAllTextAsync(configPath, "ON");
             }
+            else
+            {
+                await File.WriteAllTextAsync(configPath, "ON");
+            }
         }
 
         private async void ConfigOfflineMode()
@@ -136,9 +145,11 @@ namespace KASIR
             }
             else
             {
-                await LoadMasterPos();
+                await LoadOfflineMasterPos();
                 UpdateOutletLabel(outletName + " (Online)");
             }
+            LoadingAllSetting(allSettingsData);
+
         }
 
         private async Task LoadOfflineMasterPos()
@@ -150,22 +161,6 @@ namespace KASIR
             offlineMasterPos.Show();
             await offlineMasterPos.LoadCart();
         }
-
-        private async Task LoadMasterPos()
-        {
-        }
-
-        private void RemoveExistingForm<T>() where T : Form
-        {
-            foreach (Control c in panel1.Controls)
-            {
-                if (c is T)
-                {
-                    c.Dispose();
-                }
-            }
-        }
-
         public async void UpdateContent()
         {
             ConfigOfflineMode();
@@ -214,33 +209,38 @@ namespace KASIR
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+        private void SignApplication()
+        {
+            string executablePath = Application.ExecutablePath;
+            string certificatePath = "DastrevasPOS.pfx";
 
+            bool signingResult = CodeSigner.SignExecutable(
+                executablePath,
+                certificatePath,
+                "DT2025"
+            );
+
+            if (signingResult)
+            {
+                NotifyHelper.Success("Aplikasi berhasil ditandatangani!");
+            }
+            else
+            {
+                NotifyHelper.Error("Signing Aplikasi gagal.");
+            }
+        }
         private async void StarterApp()
         {
             await headerName();
+            SignApplication();
             initPingTest();
             ConfigOfflineMode();
-            string Config = "setting\\OfflineMode.data";
-            string directoryPath = Path.GetDirectoryName(Config);
-            if (!Directory.Exists(directoryPath))
-            {
-                _ = Directory.CreateDirectory(directoryPath);
-            }
-
-            if (!File.Exists(Config))
-            {
-                File.WriteAllText(Config, "ON");
-            }
-
-            string allSettingsData = File.ReadAllText(Config); 
-
             await Task.Run(async () =>
             {
                 await DualMonitorChecker();
-                await cekLastUpdaterApp();
-                await cekVersionAndData();
+                await checkVersionAppWindows();
+                await _updaterHelper.CheckLastUpdaterAppAsync();
             });
-            LoadingAllSetting(allSettingsData);
 
             if (await _internetServices.IsInternetConnectedAsync())
             {
@@ -317,7 +317,8 @@ namespace KASIR
         {
             if (string.IsNullOrWhiteSpace(text))
             {
-                return;             }
+                return;
+            }
 
             if (lblNamaOutlet.InvokeRequired)
             {
@@ -332,181 +333,57 @@ namespace KASIR
             }
         }
 
-        private async Task cekLastUpdaterApp()
-        {
-            try
-            {
-                if (!_internetServices.IsInternetConnected())
-                {
-                    return;
-                }
-
-                NotifyHelper.Success("Check Last Update..");
-                findingdownloadpath();
-                string startupPath = AppDomain.CurrentDomain.BaseDirectory;
-                PathKasir = startupPath;
-                string directoryPath = "update";
-                string filePath = Path.Combine(directoryPath, "versionUpdater.txt");
-
-                if (Directory.Exists(directoryPath) && File.Exists(filePath))
-                {
-                    VersionUpdaterApp = File.ReadAllText(filePath);
-                    NotifyHelper.Success($"Version Updater {VersionUpdaterApp.ToString()}");
-                }
-                else
-                {
-                    // Jika folder tidak ada, buat foldernya
-                    if (!Directory.Exists(directoryPath))
-                    {
-                        _ = Directory.CreateDirectory(directoryPath);
-                    }
-
-                    // Tulis konten default ke file
-                    string contentToWrite = "1.0.0.1";
-                    File.WriteAllText(filePath, contentToWrite);
-                    VersionUpdaterApp = File.ReadAllText(filePath);
-                    NotifyHelper.Success($"Version Updater {VersionUpdaterApp.ToString()}");
-                }
-
-                await DownloadUpdaterApp();
-            }
-            catch (Exception ex)
-            {
-                NotifyHelper.Error("Error" + ex.Message);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
-
-        private async Task DownloadUpdaterApp()
-        {
-            try
-            {
-                NotifyHelper.Success("Checking New Updater...");
-
-                using (HttpClient httpClient = new())
-                {
-                    string urlVersion = "https://raw.githubusercontent.com/bayufrd/update/main/updaterVersionApp.txt";
-                    string newVersion = await httpClient.GetStringAsync(urlVersion);
-                    if (string.IsNullOrWhiteSpace(newVersion))
-                    {
-                        throw new Exception("Version data is empty.");
-                    }
-
-                    string changeVersion = newVersion.Trim();
-                    NotifyHelper.Success($"New Version Updater is {changeVersion}");
-
-                    // Version comparison
-                    newVersion = newVersion.Replace(".", "");
-                    VersionUpdaterApp = VersionUpdaterApp.Replace(".", "");
-                    if (Convert.ToInt32(newVersion) > Convert.ToInt32(VersionUpdaterApp))
-                    {
-                        NotifyHelper.Success("Downloading New Updater...");
-                        string fileUrl = "https://raw.githubusercontent.com/bayufrd/update/main/Dastrevas.rar";
-                        string destinationPath =
-                            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                                $"{DownloadPath}\\Dastrevas.rar");
-
-                        await DownloadFileAsync(httpClient, fileUrl, destinationPath);
-                        await ExtractAndUpdateAsync(destinationPath, changeVersion);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                NotifyHelper.Error($"Error: {ex.Message}");
-                LoggerUtil.LogError(ex, "An error occurred during updating: {ErrorMessage}", ex.Message);
-            }
-        }
 
         private async Task DownloadFileAsync(HttpClient httpClient, string fileUrl, string destinationPath)
         {
-            _ = Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
-
-            byte[] fileData = await httpClient.GetByteArrayAsync(fileUrl);
-            await File.WriteAllBytesAsync(destinationPath, fileData);
-        }
-
-        private async Task ExtractAndUpdateAsync(string rarFilePath, string changeVersion)
-        {
             try
             {
-                NotifyHelper.Success("Extracting New Updater...");
+                _ = Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
 
-                string extractDirectory = $"{PathKasir}\\update";
-
-                _ = Directory.CreateDirectory(extractDirectory);
-
-                using (IArchive archive = ArchiveFactory.Open(rarFilePath))
+                using (var request = new HttpRequestMessage(HttpMethod.Get, fileUrl))
                 {
-                    foreach (IArchiveEntry entry in archive.Entries.Where(e => !e.IsDirectory))
+                    using (var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
                     {
-                        entry.WriteToDirectory(extractDirectory,
-                            new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
+                        _ = response.EnsureSuccessStatusCode();
+
+                        long? totalBytes = response.Content.Headers.ContentLength;
+
+                        using (var contentStream = await response.Content.ReadAsStreamAsync())
+                        using (var fileStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                        {
+                            byte[] buffer = new byte[8192];
+                            long totalBytesRead = 0;
+                            int bytesRead;
+
+                            while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                            {
+                                await fileStream.WriteAsync(buffer, 0, bytesRead);
+
+                                totalBytesRead += bytesRead;
+
+                                if (totalBytes.HasValue)
+                                {
+                                    int percentComplete = (int)((totalBytesRead * 100) / totalBytes.Value);
+
+                                    if (percentComplete % 10 == 0)
+                                    {
+                                        NotifyHelper.Success($"Mengunduh Pembaruan: {percentComplete}%");
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
-                string versionFilePath = $"{PathKasir}\\update\\versionUpdater.txt";
-                await File.WriteAllTextAsync(versionFilePath, changeVersion);
-
-                await Task.Delay(3000);
-                _ = OpenUpdaterExe();
+                NotifyHelper.Success("Unduhan Pembaruan Selesai");
             }
             catch (Exception ex)
             {
-                NotifyHelper.Error($"Extraction Error: {ex.Message}");
-                LoggerUtil.LogError(ex, "Extraction failed: {ErrorMessage}", ex.Message);
+                LoggerUtil.LogError(ex, "Gagal mengunduh file");
+                NotifyHelper.Error($"Kesalahan Unduhan: {ex.Message}");
+                throw;
             }
         }
-
-        private async void findingdownloadpath()
-        {
-            try
-            {
-                string cariFolder1 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    "Downloads");
-                string cariFolder2 = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Downloads";
-                string userName = Environment.UserName;
-                string cariFolder3 = Path.Combine("C:\\Users", userName, "Downloads");
-
-
-                if (Directory.Exists(cariFolder1))
-                {
-                    DownloadPath = cariFolder1;
-                }
-                else if (Directory.Exists(cariFolder2))
-                {
-                    DownloadPath = cariFolder2;
-                }
-                else if (Directory.Exists(cariFolder3))
-                {
-                    DownloadPath = cariFolder3;
-                }
-                else
-                {
-                    throw new DirectoryNotFoundException("Download directory not found.");
-                }
-
-                string filePath = Path.Combine(DownloadPath, "Dastrevas.rar");
-                if (File.Exists(filePath))
-                {
-                    File.Delete(filePath);
-                }
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                LoggerUtil.LogError(ex, "Unauthorized access: {ErrorMessage}", ex.Message);
-            }
-            catch (DirectoryNotFoundException ex)
-            {
-                LoggerUtil.LogError(ex, "Directory not found: {ErrorMessage}", ex.Message);
-            }
-            catch (Exception ex)
-            {
-                NotifyHelper.Error("Error" + ex.Message);
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            }
-        }
-
 
         private static bool IsValidVersion(string version)
         {
@@ -519,16 +396,16 @@ namespace KASIR
             {
                 string cacheOutlet = File.ReadAllText($"DT-Cache\\DataOutlet{baseOutlet}.data");
                 CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheOutlet);
-
+                string versionUpdaterApp = await _updaterHelper.CheckVersionNewAppAsync();
                 var json = new
                 {
                     outlet_name = dataOutlet.data.name,
-                    version = currentVersion + " UpdaterVer: " + VersionUpdaterApp,
+                    version = currentVersion + " UpdaterVer: " + versionUpdaterApp,
                     new_version = newVersion,
                     last_updated = GetCurrentTimeInIndonesianFormat()
                 };
                 string jsonString =
-                    JsonConvert.SerializeObject(json, Formatting.Indented); // Tidak ada indentasi
+                    JsonConvert.SerializeObject(json, Newtonsoft.Json.Formatting.Indented); // Tidak ada indentasi
                 IApiService apiService = new ApiService();
                 HttpResponseMessage response =
                     await apiService.notifikasiPengeluaran(jsonString, $"/update-confirm?outlet_id={baseOutlet}");
@@ -546,11 +423,15 @@ namespace KASIR
             return localTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         }
 
-        private async Task cekVersionAndData()
+        /// <summary>
+        /// Proses utama pengecekan dan manajemen versi aplikasi
+        /// </summary>
+        private async Task checkVersionAppWindows()
         {
             try
             {
-                NotifyHelper.Success("Checking Kasir Version...");
+                // Langkah 1: Validasi Koneksi Internet
+                NotifyHelper.Success("Memeriksa Versi Kasir...");
                 if (!_internetServices.IsInternetConnected())
                 {
                     return;
@@ -558,108 +439,296 @@ namespace KASIR
 
                 using (HttpClient httpClient = new())
                 {
-                    string urlVersion = Properties.Settings.Default.BaseAddressVersion.ToString();
-                    string newVersion = await httpClient.GetStringAsync(urlVersion);
+                    // Langkah 2: Persiapan URL Versi
+                    string oldUrl = Properties.Settings.Default.BaseAddressProd.ToString();
+                    string urlVersion = RemoveApiPrefix(oldUrl);
+
+                    // Langkah 3: Ambil Informasi Versi
+                    string newVersion = await httpClient.GetStringAsync(urlVersion + "/server/version.txt");
                     string currentVersion = Properties.Settings.Default.Version.ToString();
 
-                    NotifyHelper.Success($"Current Version is {currentVersion}, New is {newVersion}");
-                    await ConfirmUpdate(newVersion.ToString(), currentVersion);
+                    NotifyHelper.Success($"Versi Saat Ini: {currentVersion}, Versi Baru: {newVersion}");
 
+                    // Langkah 4: Konfirmasi Update
+                    await ConfirmUpdate(newVersion.ToString(), currentVersion);
+                    string newVersionAppBatch = newVersion;
+
+                    // Langkah 5: Persiapan Versi untuk Perbandingan
                     newVersion = newVersion.Replace(".", "");
+                    string currentAppNow = currentVersion;
                     currentVersion = currentVersion.Replace(".", "");
 
+                    // Validasi versi
                     if (!IsValidVersion(currentVersion))
                     {
-                        currentVersion = "1080"; // Set default version jika tidak valid
+                        currentVersion = "1080"; // Versi default jika tidak valid
                     }
 
+                    // Langkah 6: Pemeriksaan Kebutuhan Update
                     bool shouldUpdate = false;
                     if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
                     {
-                        string originalUrl = Properties.Settings.Default.BaseAddressDev.ToString();
-                        string urlOutletFocus = RemoveApiPrefix(originalUrl);
-                        string focusOutletData =
-                            await httpClient.GetStringAsync($"{urlOutletFocus}/update/outletUpdate.txt");
-
-                        string[] focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
-                            .Split(',')
-                            .Select(s => s.Trim()) 
-                            .ToArray();
-
-                        if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
+                        try
                         {
-                            shouldUpdate = true;
-                            NotifyHelper.Success("Opening Kasir Updater...");
+                            // Dialog konfirmasi update
+                            DialogResult UpdateApp = MessageBox.Show(
+                                $"Update tersedia Versi: #{newVersionAppBatch}. Versi saat ini: #{currentAppNow}. Lanjutkan update?",
+                                "Konfirmasi Update",
+                                MessageBoxButtons.YesNo,
+                                MessageBoxIcon.Question);
+
+                            if (UpdateApp == DialogResult.No)
+                            {
+                                return;
+                            }
+
+                            // Langkah 7: Validasi Outlet untuk Update
+                            string focusOutletData =
+                                await httpClient.GetStringAsync($"{urlVersion}/server/outletUpdate.txt");
+
+                            string[] focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
+                                .Split(',')
+                                .Select(s => s.Trim())
+                                .ToArray();
+
+                            // Periksa izin update untuk outlet
+                            if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
+                            {
+                                shouldUpdate = true;
+                                NotifyHelper.Success("Mempersiapkan Updater Kasir...");
+                            }
+
+                            // Langkah 8: Eksekusi Update
+                            if (shouldUpdate)
+                            {
+                                LoggerUtil.LogNetwork("Memulai Proses Update");
+                                await OpenUpdaterAsync(currentAppNow, urlVersion, newVersionAppBatch);
+                            }
                         }
-
-                        if (shouldUpdate)
+                        catch (Exception updateEx)
                         {
-                            LoggerUtil.LogNetwork("Open Updater");
-                            await OpenUpdaterExe();
-
-                            return; 
+                            // Fallback: Paksa update jika terjadi kesalahan
+                            LoggerUtil.LogError(updateEx, "Kesalahan saat memeriksa update");
+                            await OpenUpdaterAsync(currentAppNow, urlVersion, newVersionAppBatch);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                LoggerUtil.LogError(ex, "Kesalahan umum dalam proses update");
             }
         }
 
+        /// <summary>
+        /// Menghapus prefix API dari URL
+        /// </summary>
         private string RemoveApiPrefix(string url)
         {
-            if (url.Contains("api."))
-            {
-                return url.Replace("api.", "");
-            }
-
-            return url; 
+            return url.Contains("api.") ? url.Replace("api.", "") : url;
         }
 
-        private async Task OpenUpdaterExe()
+        /// <summary>
+        /// Proses update aplikasi
+        /// </summary>
+        private async Task OpenUpdaterAsync(string version, string urlVersion, string newVersionAppBatch)
         {
             try
             {
-                string updatePath = Path.Combine(
-                    Application.StartupPath,
-                    "update",
-                    "update.exe"
-                );
+                // Langkah 1: Inisialisasi Proses Update
+                NotifyHelper.Success("Memulai Proses Update...");
 
-                if (!File.Exists(updatePath))
+                // Langkah 2: Siapkan Path dan Folder
+                string rootPath = AppDomain.CurrentDomain.BaseDirectory;
+                string backupFolder = Path.Combine("TempData", "BackupApp", version);
+                string updateTempFolder = Path.Combine("TempData", "updateTemp");
+                string updateFile = Path.Combine(updateTempFolder, "update.zip");
+                string fileUrl = urlVersion + "/server/update.zip";
+
+                // Buat folder backup dan temp
+                _ = Directory.CreateDirectory(backupFolder);
+                _ = Directory.CreateDirectory(updateTempFolder);
+
+                // Langkah 3: Backup File Aplikasi
+                string[] backupFiles = {
+            "KASIR.deps.json",
+            "KASIR.dll",
+            "KASIR.exe",
+            "KASIR.pdb",
+            "KASIR.runtimeconfig.json"
+        };
+
+                // Proses backup file
+                foreach (var fileName in backupFiles)
                 {
-                    LoggerUtil.LogWarning($"Update file not found: {updatePath}");
-                    return;
+                    string sourcePath = Path.Combine(rootPath, fileName);
+                    string destPath = Path.Combine(backupFolder, fileName);
+
+                    if (File.Exists(sourcePath))
+                    {
+                        File.Copy(sourcePath, destPath, true);
+                    }
                 }
 
-                if (!_internetServices.IsInternetConnected())
+
+                // Langkah 4: Kompres Backup
+                string backupZipPath = Path.Combine("TempData", "BackupApp", $"{version}.zip"); // Gunakan .zip
+
+                // Proses backup file
+                foreach (var fileName in backupFiles)
                 {
-                    LoggerUtil.LogWarning("No internet connection");
-                    return;
+                    string sourcePath = Path.Combine(rootPath, fileName);
+                    string destPath = Path.Combine(backupFolder, fileName);
+
+                    if (File.Exists(sourcePath))
+                    {
+                        File.Copy(sourcePath, destPath, true);
+                    }
                 }
 
-                ProcessStartInfo startInfo = new()
+                try
                 {
-                    FileName = updatePath,
-                    Arguments = "",
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
+                    // Kompresi file-file spesifik
+                    using (FileStream zipToCreate = new(backupZipPath, FileMode.Create))
+                    {
+                        using (ZipArchive archive = new(zipToCreate, ZipArchiveMode.Create))
+                        {
+                            foreach (var fileName in backupFiles)
+                            {
+                                string filePath = Path.Combine(backupFolder, fileName);
+                                if (File.Exists(filePath))
+                                {
+                                    // Tambahkan setiap file ke dalam arsip
+                                    _ = archive.CreateEntryFromFile(filePath, fileName, CompressionLevel.Optimal);
+                                }
+                            }
+                        }
+                    }
 
-                _ = Process.Start(startInfo);
+                    LoggerUtil.LogNetwork($"Berhasil membuat arsip: {backupZipPath}");
+                }
+                catch (Exception compressEx)
+                {
+                    LoggerUtil.LogError(compressEx, "Gagal membuat arsip backup");
+                    NotifyHelper.Error($"Kesalahan kompresi: {compressEx.Message}");
+                }
 
-                await Task.Delay(1000);
+
+                // Langkah 5: Download Pembaruan
+                using (HttpClient httpClient = new())
+                {
+                    NotifyHelper.Success("Mengunduh Pembaruan...");
+                    await DownloadFileAsync(httpClient, fileUrl, updateFile);
+                }
+
+                // Langkah 6: Persiapan Update Mandiri
+                await PrepareSelfUpdate(rootPath, newVersionAppBatch);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Gagal melakukan update");
+                NotifyHelper.Error($"Kesalahan update: {ex.Message}");
+            }
+        }
+
+        public async Task PrepareSelfUpdate(string rootPath, string newVersionAppBatch)
+        {
+            try
+            {
+                string updateTempPath = Path.Combine(rootPath, "TempData", "updateTemp");
+                _ = Directory.CreateDirectory(updateTempPath);
+
+                string logPath = Path.Combine(updateTempPath, "update_log.txt");
+                string zipPath = Path.Combine(updateTempPath, "update.zip");
+                string configPath = Path.Combine(rootPath, "KASIR.dll.config");
+                string exePath = Path.Combine(rootPath, "KASIR.exe");
+
+                string batchFile = Path.Combine(Path.GetTempPath(), "self_update.bat");
+
+                string batchScript = $@"
+@echo off
+setlocal enabledelayedexpansion
+
+cd /d ""{rootPath}""
+
+echo ================================================ >> ""{logPath}""
+echo [INFO] Update dimulai pada %date% %time% >> ""{logPath}""
+echo ================================================ >> ""{logPath}""
+
+echo [INFO] Menutup aplikasi lama...
+:waitloop
+tasklist /FI ""IMAGENAME eq {Path.GetFileName(exePath)}"" | find /I ""{Path.GetFileName(exePath)}"" >nul
+if not errorlevel 1 (
+    echo [WAIT] Menunggu aplikasi tertutup...
+    ping 127.0.0.1 -n 2 > nul
+    goto waitloop
+)
+echo [OK] Aplikasi tertutup >> ""{logPath}""
+echo [OK] Aplikasi tertutup
+
+echo [INFO] Ekstrak file update...
+powershell -ExecutionPolicy Bypass -NoLogo -NoProfile -Command ""Expand-Archive -Force '{zipPath}' '{rootPath}'""
+if %errorlevel% neq 0 (
+    echo [ERR] Ekstraksi gagal >> ""{logPath}""
+    echo [ERR] Ekstraksi gagal
+    pause
+    exit /b 1
+)
+echo [OK] Ekstraksi berhasil >> ""{logPath}""
+echo [OK] Ekstraksi berhasil
+
+echo [INFO] Update konfigurasi KASIR.dll.config...
+
+echo [INFO] Menjalankan ulang aplikasi...
+start """" ""{exePath}""
+echo [OK] Aplikasi dimulai kembali >> ""{logPath}""
+echo [OK] Aplikasi dimulai kembali
+
+echo.
+echo [DONE] Update selesai. Tekan ENTER untuk keluar.
+pause > nul
+";
+                string kasirConfig = "KASIR.dll.config";
+
+                // Pastikan file konfigurasi ada
+                if (!File.Exists(kasirConfig))
+                {
+                    NotifyHelper.Error($"Konfigurasi tidak ditemukan di: {kasirConfig}");
+                    return;
+                }
+                NotifyHelper.Success($"Sukses Konfigurasi");
+
+                var doc = new XmlDocument();
+                doc.Load(kasirConfig);
+
+                // Update versi
+                XmlNode versionNode = doc.SelectSingleNode("//applicationSettings/KASIR.Properties.Settings/setting[@name='Version']/value");
+                if (versionNode != null)
+                {
+                    versionNode.InnerText = newVersionAppBatch;
+                }
+
+                // Simpan perubahan
+                doc.Save(kasirConfig);
+
+                File.WriteAllText(batchFile, batchScript, Encoding.Default);
+
+                var proc = new Process();
+                proc.StartInfo.FileName = batchFile;
+                proc.StartInfo.CreateNoWindow = false; // tampilkan CMD
+                proc.StartInfo.UseShellExecute = true;
+                _ = proc.Start();
 
                 Application.Exit();
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex, "Failed to open updater");
-                NotifyHelper.Error($"Error opening updater: {ex.Message}");
+                File.WriteAllText(Path.Combine(rootPath, "TempData", "updateTemp", "error_log.txt"),
+                    $"Kesalahan update: {ex.Message}\n{ex.StackTrace}");
             }
         }
+
+        // Dalam method utama
         public async Task headerName()
         {
             try
@@ -759,8 +828,8 @@ namespace KASIR
                 closeNavbar();
                 isOpenNavbar = false;
             }
-            Color randomColor = PickRandomColor(); 
-            ActivateButton(sender, randomColor); 
+            Color randomColor = PickRandomColor();
+            ActivateButton(sender, randomColor);
 
             try
             {
@@ -780,7 +849,7 @@ namespace KASIR
                 btnShiftLaporan.Enabled = true;
                 MenuBtn.Enabled = true;
                 TransBtn.Enabled = true;
-                lblTitleChildForm.Text = "Menu - Offline Mode Transaksi"; 
+                lblTitleChildForm.Text = "Menu - Offline Mode Transaksi";
             }
             catch (Exception ex)
             {
@@ -955,7 +1024,7 @@ namespace KASIR
                     NotifyHelper.Success($"Berhasil syncron server at ${DateTime.Now:HH:mm}");
                     await Task.Run(async () =>
                     {
-                        await cekVersionAndData();
+                        await checkVersionAppWindows();
                         //await headerName();
                     });
                 }

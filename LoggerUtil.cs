@@ -21,16 +21,16 @@ namespace KASIR
 
             string logCode = GenerateLogCode(ex, message);
 
-            if (ex is SocketException socketEx)
-            {
-                if (socketEx.ErrorCode == 10048 || socketEx.ErrorCode == 10060 || socketEx.ErrorCode == 10049)
-                {
-                    _log.Error(
-                        $"Ignored SocketException(Bluetooth Connection) ({socketEx.ErrorCode}): {ex}", message,
-                        properties);
-                    return;
-                }
-            }
+            //if (ex is SocketException socketEx)
+            //{
+            //    if (socketEx.ErrorCode == 10048 || socketEx.ErrorCode == 10060 || socketEx.ErrorCode == 10049)
+            //    {
+            //        _log.Error(
+            //            $"Ignored SocketException(Bluetooth Connection) ({socketEx.ErrorCode}): {ex}", message,
+            //            properties);
+            //        return;
+            //    }
+            //}
 
             var payload = CreatePayload(
                new LogEvent(DateTimeOffset.Now, LogEventLevel.Error, ex,
@@ -39,9 +39,11 @@ namespace KASIR
                logCode
            );
 
-            _ = SendLogAsync(payload);
 
             _log.Error(ex, message, properties);
+
+            if(payload.OutletId == "4") { return; }
+            _ = SendLogAsync(payload);
 
         }
 

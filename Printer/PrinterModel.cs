@@ -27,9 +27,26 @@ namespace KASIR.Printer
         private readonly int logoSize = 250; //default 250 PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
         private const string SEPARATOR = "--------------------------------\n";
         private const string PRINT_POWERED_BY = "Powered By Dastrevas\n";
-        private static readonly ConcurrentDictionary<string, BluetoothClient> _activeBluetoothConnections =
-    new();
-        private static readonly object _connectionLock = new();
+
+        private readonly string kodeSizeNormal = "\x1D\x21\x00"; // 1x1
+        private readonly string kodeSizeLebar = "\x1D\x21\x01"; // 2x1
+        private readonly string kodeSizeTinggi = "\x1D\x21\x10"; // 1x2
+        private readonly string kodeSizeBesar = "\x1D\x21\x11"; // 2x2
+
+        //Encoding encoding = Encoding.GetEncoding("IBM437");
+        //byte[] buffer = encoding.GetBytes(strukText);
+
+
+        private readonly string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1B\x4D\x00" + "\x1D\x21\x00";
+        // reset bold + font normal (A) + ukuran normal
+
+
+        private readonly string kodeHeksadesimalBold = "\x1B\x45\x01";
+        private readonly string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
+        //private string kodeHeksadesimalSizeBesar = "\x1D\x21\x11"; // double width + height
+        //private string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+        //private string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x11";
+        private readonly string kodeFontKecil = "\x1D\x21\x01";
         public PrinterModel()
         {
             baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "setting");
@@ -37,36 +54,19 @@ namespace KASIR.Printer
             {
                 _ = Directory.CreateDirectory(baseDirectory);
             }
+
+            //if(!File.Exists(baseDirectory + "//configFontPrinter.data"))
+            //{
+
+            //}
+
+
+            //kodeHeksadesimalBold = "\x1B\x45\x01";
+            //kodeHeksadesimalSizeBesar = "\x1D\x21\x22";  
+            //kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x11";
+
         }
-        public static class PrinterConfig
-        {
-            private static readonly Dictionary<string, (string NormalSize, string BigSize, int Width)> _printerPresets =
-        new(StringComparer.OrdinalIgnoreCase)
-    {
-        // Format: (Ukuran Normal, Ukuran Besar, Lebar Karakter)
-        { "66:22:F7:10:58:5B", ("\x1D\x21\x11", "\x1D\x21\x22", 24) }, // Moka - double size sebagai normal
-        { "moka", ("\x1D\x21\x11", "\x1D\x21\x22", 24) },               // Moka generic
-        { "xprinter", ("\x1D\x21\x00", "\x1D\x21\x01", 16) },           // XPrinter - normal size
-        { "default", ("\x1D\x21\x00", "\x1D\x21\x01", 16) }             // Default
-    };
 
-            public static (string NormalSize, string BigSize, int Width) GetPrinterSettings(string printerName)
-            {
-                // Coba cari setting berdasarkan nama/alamat lengkap
-                if (_printerPresets.TryGetValue(printerName, out var settings))
-                    return settings;
-
-                // Coba cari berdasarkan substring (mis. jika nama mengandung "moka")
-                foreach (var key in _printerPresets.Keys)
-                {
-                    if (printerName.Contains(key, StringComparison.OrdinalIgnoreCase))
-                        return _printerPresets[key];
-                }
-
-                // Gunakan default jika tidak ditemukan
-                return _printerPresets["default"];
-            }
-        }
         private void EnsureDirectoryExists(string path)
         {
             if (!Directory.Exists(path))
@@ -328,37 +328,14 @@ namespace KASIR.Printer
                         //Ex_PrintDocument_PrintPage();
                         continue;
                     }
-
-                    if (ShouldPrint(printerId, "Kasir"))
+                    // 🔑 buat koneksi sekali saja
+                    using (Stream stream = await EstablishPrinterConnection(printerName))
                     {
-                        _kategori = "Kasir";
-                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
-                        if (printerDevice == null)
+                        if (ShouldPrint(printerId, "Kasir"))
                         {
-                            continue;
-                        }
-
-                        BluetoothClient client = new();
-                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-                        using (BluetoothClient clientSocket = new())
-                        {
-                            if (!printerDevice.Authenticated) // cek sudah paired?
-                            {
-                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                {
-                                    NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
-                                    continue;
-                                }
-                            }
+                            _kategori = "Kasir";
 
 
-                            clientSocket.Connect(endpoint);
-                            Stream stream = clientSocket.GetStream();
-
-                            string kodeHeksadesimalBold = "\x1B\x45\x01";
-                            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
                             string Kategori = _kategori;
 
                             string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
@@ -377,51 +354,86 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
 
                             strukText += SEPARATOR;
-                            strukText += PRINT_POWERED_BY;
                             strukText += "--------------------------------\n\n\n\n\n";
-                            PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
+                            PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
+                            PrintLogo(stream, "icon\\OutletLogo.bmp", logoCredit); // Smaller logo size
 
                             byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
                             stream.Write(buffer, 0, buffer.Length);
-                            stream.Flush();
-
-                            clientSocket.GetStream().Close();
-                            stream.Close();
-                            clientSocket.Close();
-                        }
-                    }
-
-                    if (ShouldPrint(printerId, "Checker"))
-                    {
-                        _kategori = "Checker";
-
-                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
-                        if (printerDevice == null)
-                        {
-                            continue;
+                            NotifyHelper.Success($"Printing printer @{_kategori} pada #{printerName}|{printerId} Success.");
                         }
 
-                        BluetoothClient client = new();
-                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-                        using (BluetoothClient clientSocket = new())
+                        if (ShouldPrint(printerId, "Checker"))
                         {
-                            if (!printerDevice.Authenticated) // cek sudah paired?
-                            {
-                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                {
-                                    NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
-                                    continue;
-                                }
-                            }
+                            _kategori = "Checker";
 
-                            clientSocket.Connect(endpoint);
-                            Stream stream = clientSocket.GetStream();
 
-                            string kodeHeksadesimalBold = "\x1B\x45\x01";
-                            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+                            string Kategori = _kategori;
+
+                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
+                            strukText += kodeHeksadesimalNormal;
+                            strukText += SEPARATOR;
+
+                            strukText += kodeHeksadesimalSizeBesar +
+                                         CenterText("Printed Success at Mac Address" + printerName);
+                            strukText += kodeHeksadesimalNormal;
+                            strukText += SEPARATOR;
+                            strukText += CenterText("Test Tengah");
+                            strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
+                            strukText += kodeHeksadesimalBold;
+                            strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
+
+                            strukText += kodeHeksadesimalNormal;
+
+                            strukText += "--------------------------------\n\n\n\n\n";
+                            PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
+                            PrintLogo(stream, "icon\\OutletLogo.bmp", logoCredit); // Smaller logo size
+
+
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
+
+                            stream.Write(buffer, 0, buffer.Length);
+                            NotifyHelper.Success($"Printing printer @{_kategori} pada #{printerName}|{printerId} Success.");
+
+                        }
+
+                        if (ShouldPrint(printerId, "Makanan"))
+                        {
+                            _kategori = "Makanan";
+
+                            string Kategori = _kategori;
+
+                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
+                            strukText += kodeHeksadesimalNormal;
+                            strukText += SEPARATOR;
+
+                            strukText += kodeHeksadesimalSizeBesar +
+                                         CenterText("Printed Success at Mac Address" + printerName);
+                            strukText += kodeHeksadesimalNormal;
+                            strukText += SEPARATOR;
+                            strukText += CenterText("Test Tengah");
+                            strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
+                            strukText += kodeHeksadesimalBold;
+                            strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
+
+                            strukText += kodeHeksadesimalNormal;
+
+                            strukText += "--------------------------------\n\n\n\n\n";
+                            PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
+                            PrintLogo(stream, "icon\\OutletLogo.bmp", logoCredit); // Smaller logo size
+
+                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
+
+                            stream.Write(buffer, 0, buffer.Length);
+                            NotifyHelper.Success($"Printing printer @{_kategori} pada #{printerName}|{printerId} Success.");
+
+                        }
+
+                        if (ShouldPrint(printerId, "Minuman"))
+                        {
+                            _kategori = "Minuman";
+
                             string Kategori = _kategori;
 
                             string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
@@ -440,145 +452,18 @@ namespace KASIR.Printer
                             strukText += kodeHeksadesimalNormal;
 
                             strukText += SEPARATOR;
-                            strukText += PRINT_POWERED_BY;
                             strukText += "--------------------------------\n\n\n\n\n";
-                            //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
+                            PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
+                            PrintLogo(stream, "icon\\OutletLogo.bmp", logoCredit); // Smaller logo size
 
                             byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
                             stream.Write(buffer, 0, buffer.Length);
-                            stream.Flush();
+                            NotifyHelper.Success($"Printing printer @{_kategori} pada #{printerName}|{printerId} Success.");
 
-                            clientSocket.GetStream().Close();
-                            stream.Close();
-                            clientSocket.Close();
                         }
-                    }
+                        stream.Flush();
 
-                    if (ShouldPrint(printerId, "Makanan"))
-                    {
-                        _kategori = "Makanan";
-
-                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
-                        if (printerDevice == null)
-                        {
-                            continue;
-                        }
-
-                        BluetoothClient client = new();
-                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-                        using (BluetoothClient clientSocket = new())
-                        {
-                            if (!printerDevice.Authenticated) // cek sudah paired?
-                            {
-                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                {
-                                    NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
-                                    continue;
-                                }
-                            }
-
-                            clientSocket.Connect(endpoint);
-                            Stream stream = clientSocket.GetStream();
-
-                            string kodeHeksadesimalBold = "\x1B\x45\x01";
-                            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-                            string Kategori = _kategori;
-
-                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
-                            strukText += kodeHeksadesimalNormal;
-                            strukText += SEPARATOR;
-
-                            strukText += kodeHeksadesimalSizeBesar +
-                                         CenterText("Printed Success at Mac Address" + printerName);
-                            strukText += kodeHeksadesimalNormal;
-                            strukText += SEPARATOR;
-                            strukText += CenterText("Test Tengah");
-                            strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
-                            strukText += kodeHeksadesimalBold;
-                            strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
-
-                            strukText += kodeHeksadesimalNormal;
-
-                            strukText += SEPARATOR;
-                            strukText += PRINT_POWERED_BY;
-                            strukText += "--------------------------------\n\n\n\n\n";
-                            //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
-
-                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
-
-                            stream.Write(buffer, 0, buffer.Length);
-                            stream.Flush();
-
-                            clientSocket.GetStream().Close();
-                            stream.Close();
-                            clientSocket.Close();
-                        }
-                    }
-
-                    if (ShouldPrint(printerId, "Minuman"))
-                    {
-                        _kategori = "Minuman";
-
-                        BluetoothDeviceInfo printerDevice = new(BluetoothAddress.Parse(printerName));
-                        if (printerDevice == null)
-                        {
-                            continue;
-                        }
-
-                        BluetoothClient client = new();
-                        BluetoothEndPoint endpoint = new(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-                        using (BluetoothClient clientSocket = new())
-                        {
-                            if (!printerDevice.Authenticated) // cek sudah paired?
-                            {
-                                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                                {
-                                    NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
-                                    continue;
-                                }
-                            }
-
-                            clientSocket.Connect(endpoint);
-                            Stream stream = clientSocket.GetStream();
-
-                            string kodeHeksadesimalBold = "\x1B\x45\x01";
-                            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-                            string Kategori = _kategori;
-
-                            string strukText = "\n" + kodeHeksadesimalBold + CenterText(Kategori);
-                            strukText += kodeHeksadesimalNormal;
-                            strukText += SEPARATOR;
-
-                            strukText += kodeHeksadesimalSizeBesar +
-                                         CenterText("Printed Success at Mac Address" + printerName);
-                            strukText += kodeHeksadesimalNormal;
-                            strukText += SEPARATOR;
-                            strukText += CenterText("Test Tengah");
-                            strukText += FormatSimpleLine("Test Data Kiri", "Test Data Kanan") + "\n";
-                            strukText += kodeHeksadesimalBold;
-                            strukText += FormatSimpleLine("Test Data Kiri Tebal", "Bold") + "\n";
-
-                            strukText += kodeHeksadesimalNormal;
-
-                            strukText += SEPARATOR;
-                            strukText += PRINT_POWERED_BY;
-                            strukText += "--------------------------------\n\n\n\n\n";
-                            //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
-
-                            byte[] buffer = Encoding.UTF8.GetBytes(strukText);
-
-                            stream.Write(buffer, 0, buffer.Length);
-                            stream.Flush();
-
-                            clientSocket.GetStream().Close();
-                            stream.Close();
-                            clientSocket.Close();
-                        }
                     }
                 }
             }
@@ -729,9 +614,9 @@ namespace KASIR.Printer
                                 clientSocket.Connect(endpoint);
                                 Stream stream = clientSocket.GetStream();
 
-                                string kodeHeksadesimalBold = "\x1B\x45\x01";
-                                string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                                string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+
+
 
                                 string strukText = "\n" + kodeHeksadesimalBold + CenterText(kategori);
                                 strukText += kodeHeksadesimalNormal;
@@ -1056,9 +941,9 @@ namespace KASIR.Printer
             var capacity = GetOptimalCapacity(totalItems);
             var strukBuilder = new StringBuilder(capacity);
 
-            string kodeHeksadesimalBold = "\x1B\x45\x01";
-            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+
+
 
             _ = strukBuilder.AppendFormat("\n{0}{1}",
                 kodeHeksadesimalBold,
@@ -1261,9 +1146,55 @@ namespace KASIR.Printer
 
             byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
             stream.Write(buffer, 0, buffer.Length);
+
+            // Footer
+            byte[] bufferFooter = Encoding.UTF8.GetBytes("\n\n\n\n\n");
+            stream.Write(bufferFooter, 0, bufferFooter.Length);
+
         }
 
         private string CenterText(string text)
+        {
+            if (text == null)
+            {
+                LoggerUtil.LogWarning("Text parameter is null");
+                return string.Empty;
+            }
+
+            int maxLength = 32; // Maksimal panjang karakter dalam satu baris
+            StringBuilder centeredText = new();
+            string[] words = text.Split(' ');
+
+            StringBuilder currentLine = new();
+
+            foreach (var word in words)
+            {
+                // Jika satu kata lebih panjang dari maxLength, maka perlu dipotong
+                if (word.Length > maxLength)
+                {
+                    SplitLongWord(word, maxLength, centeredText, currentLine);
+                }
+                else
+                {
+                    if (currentLine.Length + word.Length + 1 > maxLength)
+                    {
+                        AppendLineWithPadding(centeredText, currentLine, maxLength);
+                        _ = currentLine.Clear();
+                    }
+                    _ = currentLine.Append(word + " ");
+                }
+            }
+
+            // Tambahkan sisa baris yang belum diproses
+            if (currentLine.Length > 0)
+            {
+                AppendLineWithPadding(centeredText, currentLine, maxLength);
+            }
+
+            return centeredText.ToString();
+        }
+
+        private string New_CenterText(string text)
         {
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
@@ -1297,6 +1228,55 @@ namespace KASIR.Printer
         {
             int spaces = (maxLength - line.Length) / 2;
             _ = centeredText.AppendLine(new string(' ', spaces) + line.ToString().TrimEnd());
+        }
+
+        private string Ex_FormatSimpleLine(string left, string right)
+        {
+            if (left == null)
+            {
+                left = string.Empty;
+            }
+            if (right == null)
+            {
+                right = string.Empty;
+            }
+
+            int maxLength = 32; // Maximum length of a line on the receipt
+            StringBuilder formattedText = new();
+            string[] leftWords = left.Split(' ');
+
+            StringBuilder currentLine = new();
+            int currentLineLength = 0;
+
+            // Add left words to the line, ensuring no word is cut off
+            foreach (var word in leftWords)
+            {
+                if (currentLineLength + word.Length + 1 > maxLength - right.Length - 1)
+                {
+                    _ = formattedText.Append(currentLine.ToString().TrimEnd() + "\n");
+                    _ = currentLine.Clear();
+                    currentLineLength = 0;
+                }
+                _ = currentLine.Append(word + " ");
+                currentLineLength += word.Length + 1;
+            }
+
+            // Ensure the current line is added if there's remaining text
+            if (currentLine.Length > 0)
+            {
+                // Calculate remaining spaces after left text
+                int spaces = maxLength - currentLine.Length - right.Length;
+                spaces = spaces < 0 ? 0 : spaces;
+
+                _ = formattedText.Append(currentLine.ToString().TrimEnd() + new string(' ', spaces) + right);
+            }
+            else
+            {
+                // If current line is empty, add the right text directly
+                _ = formattedText.Append(new string(' ', maxLength - right.Length) + right);
+            }
+
+            return formattedText.ToString();
         }
 
         public string FormatSimpleLine(string left, object right)
@@ -1874,9 +1854,9 @@ namespace KASIR.Printer
             List<RefundDetailStrukShift> refundDetails,
             List<PaymentDetailStrukShift> paymentDetails, string printerName)
         {
-            string kodeHeksadesimalBold = "\x1B\x45\x01";
-            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+
+
 
             string strukText = "\n" + kodeHeksadesimalBold + CenterText(dataShifts.outlet_name);
             strukText += kodeHeksadesimalNormal;
@@ -2645,9 +2625,9 @@ namespace KASIR.Printer
         private void PrintRefundReceipt(DataRefundStruk datas,
             List<RefundDetailStruk> refundDetailStruks, int totalTransactions, Stream stream)
         {
-            string kodeHeksadesimalBold = "\x1B\x45\x01";
-            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+
+
 
             //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
             string strukText = kodeHeksadesimalNormal;
@@ -2748,7 +2728,9 @@ namespace KASIR.Printer
             stream.Write(buffer1, 0, buffer1.Length);
             PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
             stream.Write(buffer, 0, buffer.Length);
-            //PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit); // Smaller logo size
+            // Footer
+            byte[] bufferFooter = Encoding.UTF8.GetBytes("\n\n\n\n\n");
+            stream.Write(bufferFooter, 0, bufferFooter.Length);
         }
 
         public async Task Ex_PrintModelRefund
@@ -3197,9 +3179,9 @@ namespace KASIR.Printer
             var strukBuilder = new StringBuilder(capacity);
 
             // Kode Heksadesimal
-            string kodeHeksadesimalBold = "\x1B\x45\x01";
-            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+
+
 
             // Header
             _ = strukBuilder.Append(kodeHeksadesimalNormal);
@@ -3458,6 +3440,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
             // Konversi dan Cetak
             string nomorUrut = $"\n{kodeHeksadesimalSizeBesar}{kodeHeksadesimalBold}" +
                                CenterText($"No. {totalTransactions}") + "\n";
+
 
             byte[] bufferNomorUrut = Encoding.UTF8.GetBytes(nomorUrut);
             byte[] bufferStruk = Encoding.UTF8.GetBytes(strukBuilder.ToString());
@@ -4149,8 +4132,8 @@ cartDetail.discounts_is_percent.ToString() != "1"
             var capacity = GetOptimalCapacity(totalItems);
             var strukBuilder = new StringBuilder(capacity);
 
-            string kodeHeksadesimalBold = "\x1B\x45\x01";
-            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+
 
             _ = strukBuilder.Append(kodeHeksadesimalNormal);
             _ = strukBuilder.AppendFormat("{0}{1}",
@@ -4318,6 +4301,10 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
             byte[] buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
             stream.Write(buffer, 0, buffer.Length);
+            // Footer
+            byte[] bufferFooter = Encoding.UTF8.GetBytes("\n\n\n\n\n");
+            stream.Write(bufferFooter, 0, bufferFooter.Length);
+
         }
 
 
@@ -4768,9 +4755,9 @@ cartDetail.discounts_is_percent.ToString() != "1"
             var capacity = GetOptimalCapacity(totalItems);
             var strukBuilder = new StringBuilder(capacity);
 
-            string kodeHeksadesimalBold = "\x1B\x45\x01";
-            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+
+
 
             _ = strukBuilder.AppendFormat("\n{0}{1}",
                 kodeHeksadesimalBold,
@@ -4823,7 +4810,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
                     {
                         _ = strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
                         _ = strukBuilder.AppendFormat("{0}\n",
-                            FormatSimpleLine(menuNameSelector(item), qtySelector(item)));
+                            FormatSimpleLine(menuNameSelector(item), qtySelector(item).ToString()));
 
                         if (varianSelector != null && !string.IsNullOrEmpty(varianSelector(item)))
                         {
@@ -4918,7 +4905,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
                         {
                             _ = strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
                             _ = strukBuilder.AppendFormat("{0}\n",
-                                FormatSimpleLine(item.menu_name, item.qty));
+                                FormatSimpleLine(item.menu_name, item.qty.ToString()));
 
                             if (!string.IsNullOrEmpty(item.varian))
                             {
@@ -4956,7 +4943,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
                         {
                             _ = strukBuilder.Append(kodeHeksadesimalSizeBesar + kodeHeksadesimalBold);
                             _ = strukBuilder.AppendFormat("{0}\n",
-                                FormatSimpleLine(item.menu_name, item.qty));
+                                FormatSimpleLine(item.menu_name, item.qty.ToString()));
 
                             if (!string.IsNullOrEmpty(item.varian))
                             {
@@ -5766,10 +5753,9 @@ cartDetail.discounts_is_percent.ToString() != "1"
             var strukBuilder = new StringBuilder(capacity);
 
             // Kode Heksadesimal  
-            string kodeFontKecil = "\x1B\x4D\x01";
-            string kodeHeksadesimalBold = "\x1B\x45\x01";
-            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+
+
 
             // Header Struk  
             _ = strukBuilder.Append(kodeHeksadesimalNormal);
@@ -5932,6 +5918,9 @@ cartDetail.discounts_is_percent.ToString() != "1"
             _ = strukBuilder.Append("--------------------------------\n\n\n");
             buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
             stream.Write(buffer, 0, buffer.Length);
+            // Footer
+            byte[] bufferFooter = Encoding.UTF8.GetBytes("\n\n\n\n\n");
+            stream.Write(bufferFooter, 0, bufferFooter.Length);
 
         }
 
@@ -5951,9 +5940,9 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 var strukBuilder = new StringBuilder(capacity);
 
                 // Kode Heksadesimal
-                string kodeHeksadesimalBold = "\x1B\x45\x01";
-                string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-                string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+
+
 
                 // Header Checker
                 _ = strukBuilder.Append(kodeHeksadesimalNormal);
@@ -6060,9 +6049,9 @@ cartDetail.discounts_is_percent.ToString() != "1"
             var strukBuilder = new StringBuilder(capacity);
 
             // Kode Heksadesimal
-            string kodeHeksadesimalBold = "\x1B\x45\x01";
-            string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-            string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
+
+
+
 
             // Header
             _ = strukBuilder.Append(kodeHeksadesimalNormal);

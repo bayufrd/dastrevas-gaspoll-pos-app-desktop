@@ -869,10 +869,9 @@ namespace KASIR.OfflineMode
                     refund_reason =
                         targetTransaksi.refund_reason ?? string.Empty // Handling null value for refund_reason
                 };
-                // Memanggil metode untuk menangani pencetakan
+                
                 await HandlePrint(dataRestruk, MapCartDetails(targetTransaksi.cart_details), dataRestruk.refund_details,
                     dataRestruk.canceled_items); // Menyertakan refund dan canceled items jika ada
-                Close(); // Menutup form setelah proses selesai
             }
             catch (Exception ex)
             {
@@ -1000,6 +999,8 @@ namespace KASIR.OfflineMode
 
                     try
                     {
+                        Close(); // Menutup form setelah proses selesai
+
                         // Execute print operation with timeout
                         await Task.Run(async () =>
                         {

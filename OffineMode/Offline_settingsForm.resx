@@ -117,4 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="lblDetail1.Text" xml:space="preserve">
+    <value>Pilihan untuk Via USB/LAN /Bluetooth terdaftar, Pengisian Manual Bluetooth dengan Mac Address yang dapat dimunculkan pada printer. Untuk setiap perinter dapat memunculkan struk tipe (Kasir/Checker/Makanan/Minuman) Lebih dari satu. Jika tidak sesuai bisa diisi ulang.</value>
+  </data>
 </root>

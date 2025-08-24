@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
 using System.Timers;
+using Guna.UI2.WinForms;
 using KASIR.Helper;
 using KASIR.Model;
 using KASIR.Network;
@@ -12,6 +13,8 @@ using KASIR.Properties;
 using KASIR.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Polly.Caching;
+using SharpCompress.Common;
 using Application = System.Windows.Forms.Application;
 using CheckBox = System.Windows.Forms.CheckBox;
 using Color = System.Drawing.Color;
@@ -49,8 +52,6 @@ namespace KASIR.Komponen
                 textBoxFont: new Font("Segoe UI", 9F, FontStyle.Regular)
             );
 
-            Offline_masterPos m = new();
-            m.RoundedPanel(LogPanel);
             _internetService = new InternetService();
             _updaterHelper = new UpdaterHelper(_internetService);
 
@@ -59,7 +60,22 @@ namespace KASIR.Komponen
             _ = LoadPrintersAndSettings().ConfigureAwait(false);
             cekUpdate();
             _ = loadLogo();
+            UpdateDetailLabels();
+
         }
+        private void UpdateDetailLabels()
+        {
+            for (int i = 1; i <= 8; i++)
+            {
+                Control[] found = this.Controls.Find($"lblDetail{i}", true); // true biar nyari sampai ke dalam panel
+                if (found.Length > 0 && found[0] is Label lbl)
+                {
+                    lbl.Font = new Font("Segoe UI", 7F, FontStyle.Italic);
+                }
+            }
+        }
+
+
         private void SetAllLabelsToBlack(Control container = null)
         {
             // If no container is provided, use the current form/control
@@ -918,10 +934,17 @@ namespace KASIR.Komponen
         {
             try
             {
+                // simpan setting dulu
                 btnSave_Click(sender, null);
+
                 if (printerModel != null)
                 {
-                    await printerModel.SelectAndPrintAsync();
+                    // jalan di background thread, UI tetap responsive
+                    await Task.Run(async () =>
+                    {
+                        NotifyHelper.Success("Test Printer berlajan");
+                        await printerModel.SelectAndPrintAsync();
+                    });
                 }
             }
             catch (Exception ex)
@@ -930,6 +953,7 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
 
         public async Task OpenDualMonitor()
         {
@@ -1082,6 +1106,19 @@ namespace KASIR.Komponen
             lblOutletPhoneNumber.Text = "Phone Number : " + dataOutlet.data.phone_number.ToString();
 
             DisplayLogInPanel(LoggerMsg);
+            if (PajakHelper.TryGetPajak(out string pajakText))
+            {
+                int pajak = int.Parse(pajakText);
+                if (pajak > 0)
+                {
+                    sbtnPajak.Checked = true;
+                    txtPajak.Text = pajakText;
+                }
+            }
+            else
+            {
+                sbtnPajak.Checked = false;
+            }
         }
         public async void DisplayLogInPanel(Panel logggerMsg)
         {
@@ -1185,7 +1222,7 @@ namespace KASIR.Komponen
                 NotifyHelper.Success($"Loading Config.. {filePath}\nstatus : {content}");
                 if (!string.IsNullOrEmpty(content))
                 {
-                    if (controlToUpdate is TextBox textBox)
+                    if (controlToUpdate is Guna2TextBox textBox)
                     {
                         textBox.Text = content;
                     }
@@ -1197,6 +1234,7 @@ namespace KASIR.Komponen
                     {
                         radioButton.Checked = content == "ON";
                     }
+
                     // Tambah jenis kontrol lain jika diperlukan
                 }
             }
@@ -1505,6 +1543,72 @@ namespace KASIR.Komponen
         }
 
         private void Offline_settingsForm_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private async void sbtnPajak_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!Directory.Exists(configFolderPath))
+                _ = Directory.CreateDirectory(configFolderPath);
+
+            if (sbtnPajak.Checked)
+            {
+                // Saat ON → tampilkan textbox dan load pajak terakhir
+                if (PajakHelper.TryGetPajak(out string pajakValue))
+                {
+                    txtPajak.Text = pajakValue;
+                }
+                else
+                {
+                    txtPajak.Text = "0"; // default
+                }
+                txtPajak.Visible = true;
+            }
+            else
+            {
+                // Saat OFF → sembunyikan textbox dan clear pajak
+                txtPajak.Visible = false;
+                txtPajak.Text = "";
+                await File.WriteAllTextAsync("setting\\PajakTemp.data", string.Empty);
+            }
+        }
+
+        private async void txtPajak_TextChanged(object sender, EventArgs e)
+        {
+            txtPajak.KeyPress += txtNumberOnly_KeyPress;
+
+            if (!sbtnPajak.Checked)
+                return; // abaikan kalau toggle off
+
+            if (string.IsNullOrWhiteSpace(txtPajak.Text))
+                return;
+
+            if (int.TryParse(txtPajak.Text, out int pajak) && pajak >= 0)
+            {
+                await File.WriteAllTextAsync("setting\\PajakTemp.data", pajak.ToString());
+            }
+        }
+
+        private void txtNumberOnly_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsDigit(e.KeyChar) && e.KeyChar != (char)Keys.Back)
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label8_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void guna2Panel8_Paint(object sender, PaintEventArgs e)
         {
 
         }

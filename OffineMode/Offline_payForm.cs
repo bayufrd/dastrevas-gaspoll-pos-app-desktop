@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using KASIR.Helper;
 using Newtonsoft.Json.Linq;
 using System.Runtime.InteropServices;
+using Polly.Caching;
 
 namespace KASIR.OfflineMode
 {
@@ -78,6 +79,16 @@ namespace KASIR.OfflineMode
             LoadDataPaymentType();
 
             txtCash.Text = CleanInput(totalCart);
+            //=========================Pajak Checker=============================\\
+            if (PajakHelper.TryGetPajak(out string pajakText))
+            {
+                int pajak = int.Parse(pajakText);
+                string totalTempPajakString = CleanInput(totalCart);
+                int totalPajak = int.Parse(totalTempPajakString);
+                totalPajak = totalPajak * (pajak + 100) / 100;
+                txtCash.Text = CleanInput(totalPajak.ToString());
+            }
+            //=======================End Pajak Checker============================\\
 
             panel8.Visible = false;
             panel13.Visible = false;

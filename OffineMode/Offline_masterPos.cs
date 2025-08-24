@@ -16,6 +16,7 @@ using KASIR.Services;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using TheArtOfDevHtmlRenderer.Adapters;
 using FontStyle = System.Drawing.FontStyle;
 using Menu = KASIR.Model.Menu;
 using Point = System.Drawing.Point;
@@ -56,6 +57,7 @@ namespace KASIR.OfflineMode
         private int selectedServingTypeallItems;
         private int subTotalPrice;
         private int totalPageCount;
+        private int hardcodePajak = 10;
 
         public Offline_masterPos()
         {
@@ -2080,6 +2082,19 @@ namespace KASIR.OfflineMode
                         subTotalPrice = 0;
                         diskonID = 0;
 
+                        //Pajak Checker
+                        if (PajakHelper.TryGetPajak(out string pajakText))
+                        {
+                            Pajak.Visible = true;
+                            lblPajak.Text = "Rp. 0,-";
+                            lblPajak.Visible = true;
+                        }
+                        else
+                        {
+                            Pajak.Visible = false;
+                            lblPajak.Visible = false;
+                        }
+
                         //set tombol disc
                         iconButtonGet.Text = "Pakai";
                         iconButtonGet.ForeColor = Color.Black;
@@ -2134,8 +2149,8 @@ namespace KASIR.OfflineMode
                         if (cartData["discount_id"] != null && int.Parse(cartData["discount_id"].ToString()) != 0)
                         {
                             iconButtonGet.Text = "Hapus Disc";
-                            iconButtonGet.ForeColor = Color.White;
-                            iconButtonGet.BackColor = Color.DarkRed;
+                            //iconButtonGet.ForeColor = Color.White;
+                            iconButtonGet.ForeColor = Color.DarkRed;
                             isDiscountActive = true;
                             iconButtonGet.Font = new Font("Segoe UI Semibold", 8.25f, FontStyle.Bold);
                         }
@@ -2170,6 +2185,24 @@ namespace KASIR.OfflineMode
                         subTotalPrice = subtotal;
                         lblTotal1.Text = string.Format("Rp. {0:n0},-", total);
                         buttonPayment.Text = string.Format("Bayar Rp. {0:n0},-", total);
+
+                        //=========================Pajak Checker=============================\\
+                        if (PajakHelper.TryGetPajak(out string pajakText))
+                        {
+                            int pajak = int.Parse(pajakText);
+                            Pajak.Visible = true;
+                            lblPajak.Text = string.Format("Rp. {0:n0},-", total * pajak / 100);
+                            lblPajak.Visible = true;
+                            lblTotal1.Text = string.Format("Rp. {0:n0},-", total * (pajak+100) / 100);
+                            buttonPayment.Text = string.Format("Bayar Rp. {0:n0},-", total * (pajak + 100) / 100);
+                        }
+                        else
+                        {
+                            Pajak.Visible = false;
+                            lblPajak.Visible = false;
+                        }
+                        //=======================End Pajak Checker============================\\
+
 
                         DataTable dataTable = new();
                         _ = dataTable.Columns.Add("MenuID", typeof(string));
@@ -2315,6 +2348,18 @@ namespace KASIR.OfflineMode
 
                     //reset servingtype
                     selectedServingTypeallItems = 1;
+                    //Pajak Checker
+                    if (PajakHelper.TryGetPajak(out string pajakText))
+                    {
+                        Pajak.Visible = true;
+                        lblPajak.Text = "Rp. 0,-";
+                        lblPajak.Visible = true;
+                    }
+                    else
+                    {
+                        Pajak.Visible = false;
+                        lblPajak.Visible = false;
+                    }
                 }
 
                 ReloadDisc();

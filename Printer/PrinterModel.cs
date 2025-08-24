@@ -38,7 +38,7 @@ namespace KASIR.Printer
 
         private readonly string kodeHeksadesimalBold = "\x1B\x45\x01";
         private readonly string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-        private readonly string kodeFontKecil = "\x1D\x21\x01";
+        private readonly string kodeFontKecil = "\x1B\x45\x00" + "\x1B\x4D\x00" + "\x1D\x21\x00";//"\x1D\x21\x01";
         public PrinterModel()
         {
             baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "setting");
@@ -2566,7 +2566,7 @@ namespace KASIR.Printer
         }
 
 
-        // Struct Refund
+        // Struct Refund / refund bill
         public async Task PrintModelRefund(DataRefundStruk datas,
             List<RefundDetailStruk> refundDetailStruks)
         {
@@ -2620,7 +2620,7 @@ namespace KASIR.Printer
             string strukText = kodeHeksadesimalNormal;
             strukText += SEPARATOR;
             strukText += kodeHeksadesimalBold + CenterText("REFUND");
-            strukText += CenterText("Receipt No. " + datas?.receipt_number);
+            strukText += CenterText(datas?.receipt_number);
             strukText += kodeHeksadesimalNormal;
             strukText += SEPARATOR;
             if (datas?.invoice_due_date != null)
@@ -2680,6 +2680,33 @@ namespace KASIR.Printer
 
             strukText += SEPARATOR;
             strukText += FormatSimpleLine("Subtotal", string.Format("{0:n0}", datas.subtotal)) + "\n";
+
+            //=========================Pajak Checker=============================\\
+            if (PajakHelper.TryGetPajak(out string pajakText))
+            {
+                int pajak = int.Parse(pajakText);
+                int totalPajak = datas.total;
+                totalPajak = totalPajak * (pajak + 100) / 100;
+                
+                //rubah Total
+                datas.total = totalPajak;
+
+                //rubah total refund
+                int refundPajak = datas.total_refund;
+                refundPajak = refundPajak * (pajak + 100) / 100;
+                datas.total_refund = refundPajak;
+
+                // Rubah Kembalian
+                datas.customer_change = totalPajak - datas.customer_cash;
+
+                // Tambah Line PPN
+                int pajakNominal = datas.total * pajak / 100;
+                strukText += FormatSimpleLine("PPN", string.Format("{0:n0}", pajakNominal)) + "\n";
+
+            }
+            //=======================End Pajak Checker============================\\
+
+
             if (!string.IsNullOrEmpty(datas.discount_code))
             {
                 strukText += "Discount Code: " + datas.discount_code + "\n";
@@ -2977,7 +3004,7 @@ namespace KASIR.Printer
 
                         //Struct Checker
                         DrawCenterText("REFUND", BigboldFont);
-                        DrawCenterText("Receipt No. " + datas?.receipt_number, normalFont);
+                        DrawCenterText(datas?.receipt_number, normalFont);
                         DrawSeparator();
                         if (datas?.invoice_due_date != null)
                         {
@@ -3380,6 +3407,25 @@ cartDetail.discounts_is_percent.ToString() != "1"
             _ = strukBuilder.AppendFormat("{0}\n",
                 FormatSimpleLine("Subtotal", $"{datas.subtotal:n0}"));
 
+            //=========================Pajak Checker=============================\\
+            if (PajakHelper.TryGetPajak(out string pajakText))
+            {
+                int pajak = int.Parse(pajakText);
+                int totalPajak = datas.total;
+                totalPajak = totalPajak * (pajak + 100) / 100;
+                datas.total = totalPajak;
+
+                // Rubah Total
+                datas.customer_change = totalPajak - datas.customer_cash;
+
+                // Tambah Line PPN
+                int pajakNominal = datas.total * pajak / 100;
+                _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("PPN:", $"{pajakNominal:n0}"));
+            }
+            //=======================End Pajak Checker============================\\
+
+
             if (!string.IsNullOrEmpty(datas.discount_code))
             {
                 _ = strukBuilder.AppendFormat("Discount Code: {0}\n", datas.discount_code);
@@ -3427,6 +3473,11 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
             stream.Write(bufferNomorUrut, 0, bufferNomorUrut.Length);
             PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
+
+            // Enter setelah Logo
+            byte[] buffer1 = Encoding.UTF8.GetBytes("\n");
+            stream.Write(buffer1, 0, buffer1.Length);
+
             stream.Write(bufferStruk, 0, bufferStruk.Length);
 
             // Footer
@@ -3816,7 +3867,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
                         //Struct Checker
                         DrawCenterText("CHECKER", BigboldFont);
-                        DrawCenterText("Receipt No. " + datas?.receipt_number, normalFont);
+                        DrawCenterText(datas?.receipt_number, normalFont);
                         DrawSeparator();
                         if (datas?.invoice_due_date != null)
                         {
@@ -4258,6 +4309,22 @@ cartDetail.discounts_is_percent.ToString() != "1"
             _ = strukBuilder.AppendFormat("{0}\n",
                 FormatSimpleLine("Subtotal", $"{datas.subtotal:n0}"));
 
+            //=========================Pajak Checker=============================\\
+            if (PajakHelper.TryGetPajak(out string pajakText))
+            {
+                int pajak = int.Parse(pajakText);
+                int totalPajak = datas.total;
+                totalPajak = totalPajak * (pajak + 100) / 100;
+                datas.total = totalPajak;
+
+                // Tambah Line PPN
+                int pajakNominal = datas.total * pajak / 100;
+                _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("PPN:", $"{pajakNominal:n0}"));
+            }
+            //=======================End Pajak Checker============================\\
+
+
             if (!string.IsNullOrEmpty(datas.discount_code))
             {
                 _ = strukBuilder.AppendFormat("Discount Code: {0}\n", datas.discount_code);
@@ -4472,7 +4539,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
                         //Struct Checker
                         DrawCenterText("CHECKER", BigboldFont);
-                        DrawCenterText("Receipt No. " + datas?.receipt_number, normalFont);
+                        DrawCenterText(datas?.receipt_number, normalFont);
                         DrawSeparator();
                         if (datas?.invoice_due_date != null)
                         {
@@ -4748,7 +4815,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 kodeHeksadesimalBold,
                 CenterText(type.ToUpper()));
             _ = strukBuilder.AppendFormat("{0}",
-                CenterText($"Receipt No.: {datas.data?.receipt_number}"));
+                CenterText($"{datas.data?.receipt_number}"));
             _ = strukBuilder.Append(kodeHeksadesimalNormal);
             _ = strukBuilder.Append(SEPARATOR);
             _ = strukBuilder.AppendFormat("{0}",
@@ -5732,11 +5799,6 @@ cartDetail.discounts_is_percent.ToString() != "1"
             var capacity = GetOptimalCapacity(cartDetails.Count);
             var strukBuilder = new StringBuilder(capacity);
 
-            // Kode Heksadesimal  
-
-
-
-
             // Header Struk  
             _ = strukBuilder.Append(kodeHeksadesimalNormal);
             _ = strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, CenterText(datas.data?.outlet_name ?? ""));
@@ -5744,7 +5806,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
             _ = strukBuilder.AppendFormat("{0}{1}", "", CenterText(datas.data?.outlet_address ?? ""));
             _ = strukBuilder.AppendFormat("{0}{1}", "", CenterText(datas.data?.outlet_phone_number ?? ""));
             _ = strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold,
-                CenterText($"Receipt No.: {datas.data?.receipt_number ?? ""}"));
+                CenterText($"{datas.data?.receipt_number ?? ""}"));
             _ = strukBuilder.Append(kodeHeksadesimalNormal);
             _ = strukBuilder.AppendFormat("{0}{1}", "", CenterText(datas.data?.invoice_due_date ?? ""));
 
@@ -5837,6 +5899,26 @@ cartDetail.discounts_is_percent.ToString() != "1"
             _ = strukBuilder.AppendFormat("{0}\n",
                 FormatSimpleLine("Subtotal", $"{datas.data.subtotal:n0}"));
 
+
+
+            //=========================Pajak Checker=============================\\
+            if (PajakHelper.TryGetPajak(out string pajakText))
+            {
+                int pajak = int.Parse(pajakText);
+                int totalPajak = datas.data.total;
+                totalPajak = totalPajak * (pajak + 100) / 100;
+                datas.data.total = totalPajak;
+                
+                // Rubah Total
+                datas.data.customer_change = totalPajak - datas.data.customer_cash;
+
+                // Tambah Line PPN
+                int pajakNominal = datas.data.total * pajak / 100;
+                _ = strukBuilder.AppendFormat("{0}\n",
+                FormatSimpleLine("PPN:", $"{pajakNominal:n0}"));
+            }
+            //=======================End Pajak Checker============================\\
+
             // Diskon Transaksi  
             if (!string.IsNullOrEmpty(datas.data.discount_code))
             {
@@ -5874,7 +5956,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
             _ = nomorUrutBuilder.AppendFormat("\n{0}{1}",
                 kodeHeksadesimalSizeBesar + kodeHeksadesimalBold,
                 CenterText($"No. {totalTransactions}"));
-            _ = nomorUrutBuilder.Append("\n\n\n    ");
+            _ = nomorUrutBuilder.Append("\n");
 
             // Konversi dan Cetak
             byte[] buffer1 = Encoding.UTF8.GetBytes(nomorUrutBuilder.ToString());
@@ -5882,6 +5964,11 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
             stream.Write(buffer1, 0, buffer1.Length);
             PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
+            
+            // Enter setelah Logo
+            buffer1 = Encoding.UTF8.GetBytes("\n");
+            stream.Write(buffer1, 0, buffer1.Length);
+
             stream.Write(buffer, 0, buffer.Length);
 
             // QR Code
@@ -5898,9 +5985,9 @@ cartDetail.discounts_is_percent.ToString() != "1"
             _ = strukBuilder.Append("--------------------------------\n\n\n");
             buffer = Encoding.UTF8.GetBytes(strukBuilder.ToString());
             stream.Write(buffer, 0, buffer.Length);
-            // Footer
-            byte[] bufferFooter = Encoding.UTF8.GetBytes("\n\n\n\n\n");
-            stream.Write(bufferFooter, 0, bufferFooter.Length);
+            //// Footer
+            //byte[] bufferFooter = Encoding.UTF8.GetBytes("\n\n\n\n\n");
+            //stream.Write(bufferFooter, 0, bufferFooter.Length);
 
         }
 
@@ -5933,7 +6020,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
                 _ = strukBuilder.AppendFormat("{0}{1}",
                     kodeHeksadesimalBold,
-                    CenterText($"Receipt No.: {datas.data?.receipt_number}"));
+                    CenterText($"{datas.data?.receipt_number}"));
 
                 _ = strukBuilder.Append(kodeHeksadesimalNormal);
                 _ = strukBuilder.AppendFormat("{0}", CenterText(datas.data?.invoice_due_date));
@@ -6041,7 +6128,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
             _ = strukBuilder.AppendFormat("{0}{1}",
                 kodeHeksadesimalBold,
-                CenterText($"Receipt No.: {datas.data?.receipt_number}"));
+                CenterText($"{datas.data?.receipt_number}"));
 
             _ = strukBuilder.Append(kodeHeksadesimalNormal);
             _ = strukBuilder.AppendFormat("{0}", CenterText(datas.data?.invoice_due_date));
@@ -6404,7 +6491,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
                         DrawCenterText(datas.data.outlet_address, normalFont);
                         DrawCenterText(datas.data.outlet_phone_number, normalFont);
                         DrawSpace();
-                        DrawCenterText("Receipt No. " + datas.data.receipt_number + "\n", normalFont);
+                        DrawCenterText(datas.data.receipt_number + "\n", normalFont);
 
                         DrawSeparator();
                         string nomorMeja = "Meja No." + datas.data.customer_seat;
@@ -6412,7 +6499,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
                         DrawCenterText(datas.data.outlet_address, normalFont);
                         DrawCenterText(datas.data.outlet_phone_number, normalFont);
                         DrawSpace();
-                        DrawCenterText("Receipt No. " + datas.data.receipt_number + "\n", normalFont);
+                        DrawCenterText(datas.data.receipt_number + "\n", normalFont);
 
                         DrawSeparator();
 
@@ -6637,7 +6724,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
                         //Struct Checker
                         DrawCenterText("CHECKER", BigboldFont);
-                        DrawCenterText("Receipt No. " + datas.data.receipt_number, normalFont);
+                        DrawCenterText(datas.data.receipt_number, normalFont);
                         DrawSeparator();
                         DrawCenterText(datas.data.invoice_due_date, normalFont);
                         DrawSpace();

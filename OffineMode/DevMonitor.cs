@@ -627,11 +627,14 @@ namespace KASIR.OfflineMode
                 Top = 20
             };
 
-            Label messageLabel = new Label
+            TextBox messageTextBox = new TextBox
             {
                 Text = "Message: " + outlet["message"]?.ToString()?.Trim(),
                 Width = (int)(totalWidth * 0.9),
-                TextAlign = ContentAlignment.MiddleLeft,
+                Height = 60,              // atur tinggi supaya bisa nampung beberapa baris
+                Multiline = true,
+                ScrollBars = ScrollBars.Vertical,
+                ReadOnly = true,
                 Top = 60
             };
 
@@ -747,7 +750,7 @@ namespace KASIR.OfflineMode
 
             // Add controls to the details form
             detailsForm.Controls.Add(titleLabel);
-            detailsForm.Controls.Add(messageLabel);
+            detailsForm.Controls.Add(messageTextBox);
             detailsForm.Controls.Add(sentAtLabel);
             detailsForm.Controls.Add(log_last_outlet);
             detailsForm.Controls.Add(logLastOutlet);

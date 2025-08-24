@@ -5,11 +5,23 @@ using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using KASIR.Helper;
+using System.Runtime.InteropServices;
 
 namespace KASIR.OfflineMode
 {
     public partial class Offline_updateCartForm : Form
     {
+        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+        (
+            int nLeftRect,     // x-coordinate of upper-left corner
+            int nTopRect,      // y-coordinate of upper-left corner
+            int nRightRect,    // x-coordinate of lower-right corner
+            int nBottomRect,   // y-coordinate of lower-right corner
+            int nWidthEllipse, // height of ellipse
+            int nHeightEllipse // width of ellipse
+        );
+
         private readonly string baseOutlet;
         public string btnServingType;
         public string cartdetail;
@@ -24,11 +36,14 @@ namespace KASIR.OfflineMode
         private List<MenuDetailDataCart> menuDetailDataCarts;
         private readonly List<Button> radioButtonsList = new();
         private string searchTextserving = "", lblnamaitem;
-        private string updateReason;
+        private string updateReason = "";
 
         public Offline_updateCartForm(string id, string cartdetailid)
         {
             InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 20, 20));
+
             lblNameCart.Text = "Loading Data...";
             btnHapus.Enabled = false;
             btnSimpan.Enabled = false;
@@ -380,20 +395,11 @@ namespace KASIR.OfflineMode
         {
             if (is_ordered == "1")
             {
-                Form background = new()
-                {
-                    StartPosition = FormStartPosition.Manual,
-                    FormBorderStyle = FormBorderStyle.None,
-                    Opacity = 0.7d,
-                    BackColor = Color.Black,
-                    WindowState = FormWindowState.Maximized,
-                    TopMost = true,
-                    Location = Location,
-                    ShowInTaskbar = false
-                };
-
                 using (Offline_deletePerItemForm Offline_deletePerItemForm = new(cartdetail))
                 {
+                    QuestionHelper bg = new(null, null, null, null);
+                    Form background = bg.CreateOverlayForm();
+
                     Offline_deletePerItemForm.Owner = background;
 
                     background.Show();
@@ -548,20 +554,12 @@ namespace KASIR.OfflineMode
             {
                 if (is_ordered == "1")
                 {
-                    Form background = new()
-                    {
-                        StartPosition = FormStartPosition.Manual,
-                        FormBorderStyle = FormBorderStyle.None,
-                        Opacity = 0.7d,
-                        BackColor = Color.Black,
-                        WindowState = FormWindowState.Maximized,
-                        TopMost = true,
-                        Location = Location,
-                        ShowInTaskbar = false
-                    };
 
                     using (Offline_updatePerItemForm Offline_updatePerItemForm = new())
                     {
+                        QuestionHelper bg = new(null, null, null, null);
+                        Form background = bg.CreateOverlayForm();
+
                         Offline_updatePerItemForm.Owner = background;
 
                         background.Show();

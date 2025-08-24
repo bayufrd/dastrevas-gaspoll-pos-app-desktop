@@ -97,6 +97,7 @@ namespace KASIR
             // 
             btnMin.BackColor = Color.FromArgb(15, 90, 94);
             resources.ApplyResources(btnMin, "btnMin");
+            btnMin.Cursor = Cursors.Hand;
             btnMin.FlatAppearance.BorderSize = 0;
             btnMin.ForeColor = Color.Transparent;
             btnMin.IconChar = IconChar.Minus;
@@ -111,6 +112,7 @@ namespace KASIR
             // 
             btnMax.BackColor = Color.FromArgb(15, 90, 94);
             resources.ApplyResources(btnMax, "btnMax");
+            btnMax.Cursor = Cursors.Hand;
             btnMax.FlatAppearance.BorderSize = 0;
             btnMax.ForeColor = Color.Transparent;
             btnMax.IconChar = IconChar.Square;
@@ -125,6 +127,7 @@ namespace KASIR
             // 
             btnExit.BackColor = Color.FromArgb(15, 90, 94);
             resources.ApplyResources(btnExit, "btnExit");
+            btnExit.Cursor = Cursors.Hand;
             btnExit.FlatAppearance.BorderSize = 0;
             btnExit.ForeColor = Color.Transparent;
             btnExit.IconChar = IconChar.Xmark;
@@ -211,6 +214,7 @@ namespace KASIR
             // BtnSettingForm
             // 
             BtnSettingForm.BackColor = Color.Transparent;
+            BtnSettingForm.Cursor = Cursors.Hand;
             BtnSettingForm.FlatAppearance.BorderSize = 0;
             resources.ApplyResources(BtnSettingForm, "BtnSettingForm");
             BtnSettingForm.ForeColor = Color.Gainsboro;
@@ -225,6 +229,7 @@ namespace KASIR
             // btnDev
             // 
             btnDev.BackColor = Color.Transparent;
+            btnDev.Cursor = Cursors.Hand;
             btnDev.FlatAppearance.BorderSize = 0;
             resources.ApplyResources(btnDev, "btnDev");
             btnDev.ForeColor = Color.Gainsboro;
@@ -239,6 +244,7 @@ namespace KASIR
             // btnContact
             // 
             btnContact.BackColor = Color.Transparent;
+            btnContact.Cursor = Cursors.Hand;
             btnContact.FlatAppearance.BorderSize = 0;
             resources.ApplyResources(btnContact, "btnContact");
             btnContact.ForeColor = Color.Gainsboro;
@@ -254,6 +260,7 @@ namespace KASIR
             // 
             resources.ApplyResources(SignalPing, "SignalPing");
             SignalPing.BackColor = Color.Transparent;
+            SignalPing.Cursor = Cursors.Hand;
             SignalPing.FlatAppearance.BorderSize = 0;
             SignalPing.IconChar = IconChar.WifiStrong;
             SignalPing.IconColor = Color.WhiteSmoke;
@@ -266,6 +273,7 @@ namespace KASIR
             // btnShiftLaporan
             // 
             btnShiftLaporan.BackColor = Color.Transparent;
+            btnShiftLaporan.Cursor = Cursors.Hand;
             btnShiftLaporan.FlatAppearance.BorderSize = 0;
             resources.ApplyResources(btnShiftLaporan, "btnShiftLaporan");
             btnShiftLaporan.ForeColor = Color.Gainsboro;
@@ -280,6 +288,7 @@ namespace KASIR
             // MenuBtn
             // 
             MenuBtn.BackColor = Color.Transparent;
+            MenuBtn.Cursor = Cursors.Hand;
             MenuBtn.FlatAppearance.BorderSize = 0;
             resources.ApplyResources(MenuBtn, "MenuBtn");
             MenuBtn.ForeColor = Color.Gainsboro;
@@ -294,6 +303,7 @@ namespace KASIR
             // TransBtn
             // 
             TransBtn.BackColor = Color.Transparent;
+            TransBtn.Cursor = Cursors.Hand;
             TransBtn.FlatAppearance.BorderSize = 0;
             resources.ApplyResources(TransBtn, "TransBtn");
             TransBtn.ForeColor = Color.Gainsboro;

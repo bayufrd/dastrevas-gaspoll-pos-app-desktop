@@ -10,6 +10,8 @@ using KASIR.Printer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using static System.Net.Mime.MediaTypeNames;
+using KASIR.Helper;
+
 namespace KASIR.Komponen
 {
     public partial class shiftReport : UserControl
@@ -1244,7 +1246,7 @@ namespace KASIR.Komponen
         private void ProcessFailedSync(string sourcePath, HttpResponseMessage response, string outletId)
         {
             string errorMessage = $"Gagal mengirim data Transactions. API Response: {response.ReasonPhrase}";
-            //MessageBox.Show(errorMessage);
+            //NotifyHelper.Error(errorMessage);
 
 
             string responseBody = response.Content.ReadAsStringAsync().Result;
@@ -2011,7 +2013,7 @@ namespace KASIR.Komponen
                     if (ShouldShowProgress())
                     {
                         HideLoading();
-                        MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                         CleanFormAndAddRetryButton(ex.Message);
                     }
 
@@ -2227,7 +2229,7 @@ namespace KASIR.Komponen
             {
                 // The text could not be parsed as a decimal number.
                 // You can handle this exception in different ways, such as displaying a message to the user.
-                MessageBox.Show("inputan hanya bisa Numeric");
+                NotifyHelper.Error("inputan hanya bisa Numeric");
                 return;
             }
             txtActualCash.Text = number.ToString("#,#");

@@ -27,7 +27,6 @@ namespace KASIR.Helper
             try
             {
                 // Langkah 1: Validasi Koneksi Internet
-                NotifyHelper.Success("Memeriksa Versi Kasir...");
                 if (!_internetService.IsInternetConnected())
                 {
                     return "1.0.0.0";

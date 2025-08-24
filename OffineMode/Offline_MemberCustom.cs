@@ -1,4 +1,6 @@
-﻿using KASIR.Network;
+﻿using System.Runtime.InteropServices;
+using KASIR.Helper;
+using KASIR.Network;
 using KASIR.Properties;
 using Newtonsoft.Json;
 using Serilog;
@@ -7,7 +9,18 @@ namespace KASIR.komponen
 {
     public partial class Offline_MemberCustom : Form
     {
-         
+        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+        (
+            int nLeftRect,     // x-coordinate of upper-left corner
+            int nTopRect,      // y-coordinate of upper-left corner
+            int nRightRect,    // x-coordinate of lower-right corner
+            int nBottomRect,   // y-coordinate of lower-right corner
+            int nWidthEllipse, // height of ellipse
+            int nHeightEllipse // width of ellipse
+        );
+
+
         private readonly string baseOutlet;
         public string btnPayType;
         private readonly int idid;
@@ -19,6 +32,9 @@ namespace KASIR.komponen
             string emailMember)
         {
             InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 20, 20));
+
             btnSimpan.Enabled = false;
             hapusButton.Visible = false;
             baseOutlet = Settings.Default.BaseOutlet;
@@ -49,7 +65,7 @@ namespace KASIR.komponen
         {
             if (txtNama.Text == null || txtPhone.Text == null)
             {
-                MessageBox.Show("Nama / Nomor Handphone masih kosong!");
+                NotifyHelper.Warning("Nama / Nomor Handphone masih kosong!");
                 return;
             }
 
@@ -72,19 +88,19 @@ namespace KASIR.komponen
                     if (response.IsSuccessStatusCode)
                     {
                         DialogResult = DialogResult.OK;
-                        MessageBox.Show("Data berhasil diTambah");
+                        NotifyHelper.Success("Data berhasil diTambah");
                         Close();
                     }
                     else
                     {
-                        MessageBox.Show("Member gagal ditambahkan silahkan coba ulang", "Gaspol");
+                        NotifyHelper.Warning("Member gagal ditambahkan silahkan coba ulang");
                         DialogResult = DialogResult.Cancel;
                         Close();
                     }
                 }
                 else
                 {
-                    MessageBox.Show("Gagal tambah data silahkan coba ulang" + response, "Gaspol");
+                    NotifyHelper.Error("Gagal tambah data silahkan coba ulang" + response);
                     DialogResult = DialogResult.Cancel;
                 }
             }
@@ -108,19 +124,19 @@ namespace KASIR.komponen
                     if (response.IsSuccessStatusCode)
                     {
                         DialogResult = DialogResult.OK;
-                        MessageBox.Show("Data berhasil diEdit");
+                        NotifyHelper.Success("Data berhasil diEdit");
                         Close();
                     }
                     else
                     {
-                        MessageBox.Show("Member gagal diperbarui, silahkan coba ulang", "Gaspol");
+                        NotifyHelper.Warning("Member gagal diperbarui, silahkan coba ulang");
                         DialogResult = DialogResult.Cancel;
                         Close();
                     }
                 }
                 else
                 {
-                    MessageBox.Show("Gagal memperbarui data, silahkan coba ulang" + response, "Gaspol");
+                    NotifyHelper.Error("Gagal memperbarui data, silahkan coba ulang" + response);
                     DialogResult = DialogResult.Cancel;
                 }
             }
@@ -143,13 +159,13 @@ namespace KASIR.komponen
             if (responseMessage.IsSuccessStatusCode)
             {
                 DialogResult = DialogResult.OK;
-                MessageBox.Show("Data berhasil diHapus");
+                NotifyHelper.Success("Data berhasil diHapus");
 
                 Close();
             }
             else
             {
-                MessageBox.Show("Member gagal dihapus, silahkan coba ulang", "Gaspol");
+                NotifyHelper.Error("Member gagal dihapus, silahkan coba ulang");
                 DialogResult = DialogResult.Cancel;
                 Close();
             }

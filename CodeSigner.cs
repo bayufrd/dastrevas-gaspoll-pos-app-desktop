@@ -66,7 +66,6 @@ namespace KASIR
             }
             catch (Exception ex)
             {
-                NotifyHelper.Error($"Signing Exception: {ex.Message}");
                 LoggerUtil.LogError(ex, "Signing Process Exception", ex);
                 return false;
             }

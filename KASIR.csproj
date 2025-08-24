@@ -63,9 +63,7 @@
     <Compile Update="OffineMode\Offline_deletePerItemForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="OffineMode\Offline_dataDiskon.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Update="OffineMode\Offline_dataDiskon.cs" />
     <Compile Update="OffineMode\Offline_updateCartForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -115,6 +113,7 @@
   <ItemGroup>
     <PackageReference Include="32feet.NET" Version="3.5.0" />
     <PackageReference Include="FontAwesome.Sharp" Version="6.3.0" />
+    <PackageReference Include="Guna.UI2.WinForms" Version="2.0.4.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.0">
       <PrivateAssets>all</PrivateAssets>

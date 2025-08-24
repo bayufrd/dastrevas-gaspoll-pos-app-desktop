@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
 using System.Timers;
-using System.Windows;
 using KASIR.Helper;
 using KASIR.Model;
 using KASIR.Network;
@@ -18,7 +17,6 @@ using CheckBox = System.Windows.Forms.CheckBox;
 using Color = System.Drawing.Color;
 using ComboBox = System.Windows.Forms.ComboBox;
 using FontStyle = System.Drawing.FontStyle;
-using MessageBox = System.Windows.MessageBox;
 using Point = System.Drawing.Point;
 using TextBox = System.Windows.Forms.TextBox;
 namespace KASIR.Komponen
@@ -28,8 +26,8 @@ namespace KASIR.Komponen
         private readonly string baseOutlet = Settings.Default.BaseOutlet;
         private readonly string configFolderPath = "setting";
         private PrinterModel printerModel;
-        private InternetService _internetService;
-        private ImageUploadHelper _imageUploadHelper;
+        private readonly InternetService _internetService;
+        private readonly ImageUploadHelper _imageUploadHelper;
         private readonly UpdaterHelper _updaterHelper;
 
         public Offline_settingsForm()
@@ -51,16 +49,16 @@ namespace KASIR.Komponen
                 textBoxFont: new Font("Segoe UI", 9F, FontStyle.Regular)
             );
 
-            Offline_masterPos m = new Offline_masterPos();
+            Offline_masterPos m = new();
             m.RoundedPanel(LogPanel);
             _internetService = new InternetService();
             _updaterHelper = new UpdaterHelper(_internetService);
 
-            LoadConfig();
+            _ = LoadConfig();
             InitializeUpdateSettings();
-            LoadPrintersAndSettings().ConfigureAwait(false);
+            _ = LoadPrintersAndSettings().ConfigureAwait(false);
             cekUpdate();
-            loadLogo();
+            _ = loadLogo();
         }
         private void SetAllLabelsToBlack(Control container = null)
         {
@@ -199,7 +197,7 @@ namespace KASIR.Komponen
                 try
                 {
                     List<PrinterItem> printers = await printerModel.GetAvailablePrinters();
-                    comboBox.Items.Add(new PrinterItem("Mac Address Manual", null));
+                    _ = comboBox.Items.Add(new PrinterItem("Mac Address Manual", null));
                     comboBox.Items.AddRange(printers.ToArray());
 
                     // Set printer yang sudah disimpan
@@ -251,7 +249,7 @@ namespace KASIR.Komponen
         {
             NotifyHelper.Error($"Error loading printers for {comboBox.Name}: {ex.Message}");
             LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-            comboBox.Items.Add(new PrinterItem("Mac Address Manual", null));
+            _ = comboBox.Items.Add(new PrinterItem("Mac Address Manual", null));
             comboBox.SelectedIndex = 0; // Set default item on error
         }
 
@@ -680,23 +678,23 @@ namespace KASIR.Komponen
         {
             try
             {
-                    string versinew = await _updaterHelper.CheckVersionNewAppAsync();
-                    string currentVersion = Settings.Default.Version;
+                string versinew = await _updaterHelper.CheckVersionNewAppAsync();
+                string currentVersion = Settings.Default.Version;
 
-                    string newVersion = versinew.Replace(".", "");
-                    currentVersion = currentVersion.Replace(".", "");
+                string newVersion = versinew.Replace(".", "");
+                currentVersion = currentVersion.Replace(".", "");
 
-                    // Fetch the version string for display
-                    string displayVersion = newVersion;
+                // Fetch the version string for display
+                string displayVersion = newVersion;
 
-                    if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
-                    {
-                        UpdateUIForNewVersion(displayVersion, "Update");
-                    }
-                    else
-                    {
-                        UpdateUIForNewVersion(displayVersion, "Fix");
-                    }
+                if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
+                {
+                    UpdateUIForNewVersion(displayVersion, "Update");
+                }
+                else
+                {
+                    UpdateUIForNewVersion(displayVersion, "Fix");
+                }
             }
             catch (Exception ex)
             {
@@ -747,20 +745,51 @@ namespace KASIR.Komponen
 
         public async void btnUpdate_Click(object sender, EventArgs e)
         {
-            string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
-            string outletName = await GetOrCreateOutletName(filePath);
-            Util n = new();
-            n.sendLogTelegramNetworkError("Open Updater Manual" + outletName);
-            btnUpdate.Enabled = false;
+            //---------------- Question Begin -----------------\\
+            string titleHelper = "Perbaiki / Update Manual";
+            string msgHelper = "Perbaiki / Update Manual Aplikasi ?";
+            string cancelHelper = "Batal";
+            string okHelper = "Update";
+            QuestionHelper c = new(titleHelper, msgHelper, cancelHelper, okHelper);
+            Form background = c.CreateOverlayForm();
 
-            try
+            c.Owner = background;
+
+            background.Show();
+
+            DialogResult dialogResult = c.ShowDialog();
+            if (dialogResult != DialogResult.OK)
             {
-                await StartUpdaterProcess();
+                return;
             }
-            catch (Exception ex)
+            else
             {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+
+
+                //--------------- Question Result -------------------\\
+
+                string filePath = $"DT-Cache\\DataOutlet{baseOutlet}.data";
+                string outletName = await GetOrCreateOutletName(filePath);
+                Util n = new();
+                n.sendLogTelegramNetworkError("Open Updater Manual" + outletName);
+                btnUpdate.Enabled = false;
+
+                try
+                {
+                    string oldUrl = Properties.Settings.Default.BaseAddressProd.ToString();
+                    string urlVersion = RemoveApiPrefix(oldUrl);
+                    Form1 d = new Form1();
+                    await d.OpenUpdaterAsync(lblVersion.Text, urlVersion, lblNewVersionNow.Text);
+                }
+                catch (Exception ex)
+                {
+                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
+                }
             }
+        }
+        private string RemoveApiPrefix(string url)
+        {
+            return url.Contains("api.") ? url.Replace("api.", "") : url;
         }
 
         private async Task<string> GetOrCreateOutletName(string filePath)
@@ -815,7 +844,7 @@ namespace KASIR.Komponen
                 LoggerUtil.LogWarning($"Memulai proses update dari: {updatePath}");
 
                 // Proses Start dengan Konfigurasi Aman
-                ProcessStartInfo startInfo = new ProcessStartInfo
+                ProcessStartInfo startInfo = new()
                 {
                     FileName = updatePath,
                     UseShellExecute = false,
@@ -840,7 +869,7 @@ namespace KASIR.Komponen
         {
             try
             {
-                FileInfo fileInfo = new FileInfo(filePath);
+                FileInfo fileInfo = new(filePath);
 
                 // Validasi Ukuran File
                 if (fileInfo.Length == 0 || fileInfo.Length > 50_000_000) // Maks 50 MB
@@ -918,7 +947,7 @@ namespace KASIR.Komponen
                 p.StartInfo.CreateNoWindow = false;
                 p.StartInfo.RedirectStandardOutput = true;
                 p.StartInfo.Verb = "runas";
-                p.Start();
+                _ = p.Start();
 
                 Thread.Sleep(1000);
             }
@@ -975,17 +1004,34 @@ namespace KASIR.Komponen
 
         private void Redownload_Click(object sender, EventArgs e)
         {
-            DialogResult yakin = System.Windows.Forms.MessageBox.Show("Reset / Redownload Data lokal Cache ?",
-                "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (yakin != DialogResult.Yes)
+            //---------------- Question Begin -----------------\\
+            string titleHelper = "Reset Cache ?";
+            string msgHelper = "Reset / Redownload Data Lokal Cache ?";
+            string cancelHelper = "Batal";
+            string okHelper = "Reset";
+            QuestionHelper c = new(titleHelper, msgHelper, cancelHelper, okHelper);
+            Form background = c.CreateOverlayForm();
+
+            c.Owner = background;
+
+            background.Show();
+
+            DialogResult dialogResult = c.ShowDialog();
+            if (dialogResult != DialogResult.OK)
             {
+                background.Dispose();
+                return;
             }
             else
             {
+
+
+                //--------------- Question Result -------------------\\
+
+                background.Dispose();
                 string TypeCacheEksekusi = "Reset";
-                CacheDataApp form3 = new(TypeCacheEksekusi);
-                //Close();
-                form3.Show();
+                CacheDataApp ResetForm = new(TypeCacheEksekusi);
+                ResetForm.Show();
             }
         }
 
@@ -1018,7 +1064,7 @@ namespace KASIR.Komponen
         {
             if (!Directory.Exists(configFolderPath))
             {
-                Directory.CreateDirectory(configFolderPath);
+                _ = Directory.CreateDirectory(configFolderPath);
             }
 
             await EnsureFileExistsAsync("setting\\FooterStruk.data", "TERIMAKASIH ATAS KUNJUNGANNYA", txtFooter);
@@ -1121,7 +1167,7 @@ namespace KASIR.Komponen
                     return content;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return string.Empty;
             }
@@ -1160,7 +1206,7 @@ namespace KASIR.Komponen
         {
             if (!Directory.Exists(configFolderPath))
             {
-                Directory.CreateDirectory(configFolderPath);
+                _ = Directory.CreateDirectory(configFolderPath);
             }
 
             if (sButtonListMenu.Checked)
@@ -1231,7 +1277,7 @@ namespace KASIR.Komponen
                 return;
             }
 
-            Process.Start(new ProcessStartInfo
+            _ = Process.Start(new ProcessStartInfo
             {
                 FileName = folderPath,
                 UseShellExecute = true, // Perlu diaktifkan untuk menggunakan shell default sistem operasi
@@ -1297,7 +1343,7 @@ namespace KASIR.Komponen
                 {
                     lblError.Text = "Password Salah!";
                     txtPassword.Clear();
-                    txtPassword.Focus();
+                    _ = txtPassword.Focus();
                 }
             };
 
@@ -1318,7 +1364,7 @@ namespace KASIR.Komponen
         {
             if (!Directory.Exists(configFolderPath))
             {
-                Directory.CreateDirectory(configFolderPath);
+                _ = Directory.CreateDirectory(configFolderPath);
             }
 
             string data, Config = "setting\\OfflineMode.data";
@@ -1352,7 +1398,7 @@ namespace KASIR.Komponen
         {
             if (!Directory.Exists(configFolderPath))
             {
-                Directory.CreateDirectory(configFolderPath);
+                _ = Directory.CreateDirectory(configFolderPath);
             }
 
             string data, Config = "setting\\QRcodeSetting.data";
@@ -1407,7 +1453,7 @@ namespace KASIR.Komponen
             if (File.Exists(defaultImagePath))
             {
                 // Membuka file gambar menggunakan FileStream untuk memastikan file dapat diakses
-                using (FileStream fs = new FileStream(defaultImagePath, FileMode.Open, FileAccess.Read))
+                using (FileStream fs = new(defaultImagePath, FileMode.Open, FileAccess.Read))
                 {
                     picThumbnail.Image = new Bitmap(fs);  // Menampilkan gambar di PictureBox
                 }
@@ -1420,7 +1466,7 @@ namespace KASIR.Komponen
                     return;
                 }
                 // Membuka file gambar menggunakan FileStream untuk memastikan file dapat diakses
-                using (FileStream fs = new FileStream(defaultImagePath, FileMode.Open, FileAccess.Read))
+                using (FileStream fs = new(defaultImagePath, FileMode.Open, FileAccess.Read))
                 {
                     picThumbnail.Image = new Bitmap(fs);  // Menampilkan gambar di PictureBox
                 }
@@ -1435,7 +1481,7 @@ namespace KASIR.Komponen
                 string logoFolder = "icon";
 
                 // Pastikan folder exists
-                Directory.CreateDirectory(logoFolder);
+                _ = Directory.CreateDirectory(logoFolder);
 
                 // Path lengkap file logo
                 string PathLogo = Path.Combine(logoFolder, "QRCode.bmp");

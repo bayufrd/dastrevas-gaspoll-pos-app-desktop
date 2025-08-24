@@ -470,21 +470,13 @@ namespace KASIR.OfflineMode
 
         private async Task HandlePictureBoxClick(Menu menu)
         {
-            Form background = new()
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = Location,
-                ShowInTaskbar = false
-            };
 
             using (Offline_addCartForm Offline_addCartForm =
                    new(menu.id.ToString(), menu.name, selectedServingTypeallItems))
             {
+                QuestionHelper c = new(null,null,null,null);
+                Form background = c.CreateOverlayForm();
+
                 Offline_addCartForm.Owner = background;
                 background.Show();
 
@@ -1057,20 +1049,12 @@ namespace KASIR.OfflineMode
 
         private void CartDetailClick(string id, string nama)
         {
-            Form background = new()
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = Location,
-                ShowInTaskbar = false
-            };
 
             using (Offline_addCartForm Offline_addCartForm = new(id, nama, selectedServingTypeallItems))
             {
+                QuestionHelper bg = new(null, null, null, null);
+                Form background = bg.CreateOverlayForm();
+
                 Offline_addCartForm.Owner = background;
 
                 background.Show();
@@ -1184,22 +1168,14 @@ namespace KASIR.OfflineMode
 
                         pictureBox.Click += async (sender, e) =>
                         {
-                            Form background = new()
-                            {
-                                StartPosition = FormStartPosition.Manual,
-                                FormBorderStyle = FormBorderStyle.None,
-                                Opacity = 0.7d,
-                                BackColor = Color.Black,
-                                WindowState = FormWindowState.Maximized,
-                                TopMost = true,
-                                Location = Location,
-                                ShowInTaskbar = false
-                            };
-
+                            
                             // Create the addCartForm on the UI thread
                             using (Offline_addCartForm Offline_addCartForm = new(menu.id.ToString(),
                                        menu.name, selectedServingTypeallItems))
                             {
+                                QuestionHelper bg = new(null, null, null, null);
+                                Form background = bg.CreateOverlayForm();
+
                                 Offline_addCartForm.Owner = background;
 
                                 background.Show();
@@ -1395,22 +1371,13 @@ namespace KASIR.OfflineMode
                     //{
                     pictureBox.Click += async (sender, e) =>
                     {
-                        Form background = new()
-                        {
-                            StartPosition = FormStartPosition.Manual,
-                            FormBorderStyle = FormBorderStyle.None,
-                            Opacity = 0.7d,
-                            BackColor = Color.Black,
-                            WindowState = FormWindowState.Maximized,
-                            TopMost = true,
-                            Location = Location,
-                            ShowInTaskbar = false
-                        };
-
                         // Create the addCartForm on the UI thread
                         using (Offline_addCartForm Offline_addCartForm = new(menu.id.ToString(),
                                    menu.name, selectedServingTypeallItems))
                         {
+                            QuestionHelper bg = new(null, null, null, null);
+                            Form background = bg.CreateOverlayForm();
+
                             Offline_addCartForm.Owner = background;
 
                             background.Show();
@@ -2159,12 +2126,12 @@ namespace KASIR.OfflineMode
                                  "null";
                         cardDetailID = cartID;
 
-                        diskonID = 0; 
+                        diskonID = 0;
                         int discountId = cartData["discount_id"] != null ? (int)cartData["discount_id"] : -1;
                         if (discountId == -1)
                         {
-                            discountId = 0; 
-                            cartData["discount_id"] = discountId; 
+                            discountId = 0;
+                            cartData["discount_id"] = discountId;
                             File.WriteAllText(cacheFilePath, cartData.ToString());
                         }
 
@@ -2466,22 +2433,13 @@ namespace KASIR.OfflineMode
                     {
                         return;
                     }
-
-                    Form background = new()
-                    {
-                        StartPosition = FormStartPosition.Manual,
-                        FormBorderStyle = FormBorderStyle.None,
-                        Opacity = 0.7d,
-                        BackColor = Color.Black,
-                        WindowState = FormWindowState.Maximized,
-                        TopMost = true,
-                        Location = Location,
-                        ShowInTaskbar = false
-                    };
                     _ = Invoke((MethodInvoker)delegate
                     {
                         using (Offline_updateCartForm Offline_updateCartForm = new(id, cartdetailid))
                         {
+                            QuestionHelper bg = new(null, null, null, null);
+                            Form background = bg.CreateOverlayForm();
+
                             Offline_updateCartForm.Owner = background;
 
                             background.Show();
@@ -2496,6 +2454,8 @@ namespace KASIR.OfflineMode
                                 background.Dispose();
                                 ReloadCart();
                             }
+                            background.Dispose();
+
                         }
                     });
                 }
@@ -2516,20 +2476,12 @@ namespace KASIR.OfflineMode
                 return;
             }
 
-            Form background = new()
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = Location,
-                ShowInTaskbar = false
-            };
-
             using (Offline_saveBill saveBill = new(cartID, customer_name, customer_seat))
             {
+
+                QuestionHelper bg = new(null, null, null, null);
+                Form background = bg.CreateOverlayForm();
+
                 saveBill.Owner = background;
 
                 background.Show();
@@ -2796,20 +2748,12 @@ namespace KASIR.OfflineMode
                     return;
                 }
 
-                Form background = new()
-                {
-                    StartPosition = FormStartPosition.Manual,
-                    FormBorderStyle = FormBorderStyle.None,
-                    Opacity = 0.7d,
-                    BackColor = Color.Black,
-                    WindowState = FormWindowState.Maximized,
-                    TopMost = true,
-                    Location = Location,
-                    ShowInTaskbar = false
-                };
 
                 using (Offline_listBill Offline_listBill = new())
                 {
+                    QuestionHelper bg = new(null, null, null, null);
+                    Form background = bg.CreateOverlayForm();
+
                     Offline_listBill.Owner = background;
                     background.Show();
                     await Offline_listBill.LoadData();
@@ -2871,20 +2815,12 @@ namespace KASIR.OfflineMode
         {
             ////LoggerUtil.LogPrivateMethod(nameof(button3_Click));
 
-            Form background = new()
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = Location,
-                ShowInTaskbar = false
-            };
 
             using (Offline_dataDiskon Offline_dataDiskon = new())
             {
+                QuestionHelper bg = new(null, null, null, null);
+                Form background = bg.CreateOverlayForm();
+
                 Offline_dataDiskon.Owner = background;
 
                 background.Show();
@@ -2983,19 +2919,13 @@ namespace KASIR.OfflineMode
                 return;
             }
 
-            Form background = new()
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = Location,
-                ShowInTaskbar = false
-            };
+
             using (Offline_splitBill splitBill = new(cartID))
             {
+
+                QuestionHelper bg = new(null, null, null, null);
+                Form background = bg.CreateOverlayForm();
+
                 splitBill.Owner = background;
 
                 background.Show();
@@ -3066,19 +2996,6 @@ namespace KASIR.OfflineMode
                         return;
                     }
 
-                    // Existing payment form logic
-                    Form background = new()
-                    {
-                        StartPosition = FormStartPosition.Manual,
-                        FormBorderStyle = FormBorderStyle.None,
-                        Opacity = 0.7d,
-                        BackColor = Color.Black,
-                        WindowState = FormWindowState.Maximized,
-                        TopMost = true,
-                        Location = Location,
-                        ShowInTaskbar = false
-                    };
-
                     // Use values from parsed cart data
                     using (Offline_payForm Offline_payForm = new(
                         baseOutlet,
@@ -3090,6 +3007,10 @@ namespace KASIR.OfflineMode
                         this))
                     {
                         SignalReloadPayform();
+
+                        QuestionHelper bg = new(null, null, null, null);
+                        Form background = bg.CreateOverlayForm();
+
                         Offline_payForm.Owner = background;
                         background.Show();
                         DialogResult result = Offline_payForm.ShowDialog();
@@ -3153,6 +3074,30 @@ namespace KASIR.OfflineMode
                     // Deserialize data file Cart.data using your existing model
                     var cartData = JsonConvert.DeserializeObject<DataCart>(cartJson);
 
+                    //---------------- Question Begin -----------------\\
+                    string titleQuest = "Hapus ?";
+                    string msgQuest = "Hapus Keranjang ?";
+                    string cancelQuest = "Batal";
+                    string okQuest = "Hapus";
+
+                    QuestionHelper c = new(titleQuest, msgQuest, cancelQuest, okQuest);
+                    Form background = c.CreateOverlayForm();
+
+                    c.Owner = background;
+
+                    background.Show();
+
+                    DialogResult dialogResult = c.ShowDialog();
+                    if (dialogResult == DialogResult.Cancel)
+                    {
+                        background.Dispose();
+                        return;
+                    }
+
+                    background.Dispose();
+
+                    //--------------- Question Result -------------------\\
+
                     // Comprehensive cart emptiness check
                     if (cartData.cart_details == null ||
                         !cartData.cart_details.Any() ||
@@ -3177,20 +3122,10 @@ namespace KASIR.OfflineMode
                         return;
                     }
 
-                    // Tampilkan form konfirmasi penghapusan
-                    using (Form background = new()
-                    {
-                        StartPosition = FormStartPosition.Manual,
-                        FormBorderStyle = FormBorderStyle.None,
-                        Opacity = 0.7d,
-                        BackColor = Color.Black,
-                        WindowState = FormWindowState.Maximized,
-                        TopMost = true,
-                        Location = Location,
-                        ShowInTaskbar = false
-                    })
                     using (Offline_deleteForm Offline_deleteForm = new(cartData.cart_id.ToString()))
                     {
+                        background = c.CreateOverlayForm();
+
                         Offline_deleteForm.Owner = background;
                         background.Show();
 
@@ -3203,7 +3138,7 @@ namespace KASIR.OfflineMode
 
                             ReloadCart();
                         }
-                        else if(result == DialogResult.Cancel)
+                        else if (result == DialogResult.Cancel)
                         {
                             background.Dispose();
                             NotifyHelper.Info($"Keranjang ID: #{cardDetailID}. proses hapus dicancel.");

@@ -1,6 +1,8 @@
 ﻿using System.Data;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using KASIR.Helper;
 using KASIR.komponen;
 using KASIR.Model;
 using KASIR.Network;
@@ -13,6 +15,17 @@ namespace KASIR.Komponen
 {
     public partial class Offline_MemberData : Form
     {
+        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+        (
+            int nLeftRect,     // x-coordinate of upper-left corner
+            int nTopRect,      // y-coordinate of upper-left corner
+            int nRightRect,    // x-coordinate of lower-right corner
+            int nBottomRect,   // y-coordinate of lower-right corner
+            int nWidthEllipse, // height of ellipse
+            int nHeightEllipse // width of ellipse
+        );
+
         private string customMember;
         private DataTable listDataTable;
         private readonly string baseOutlet;
@@ -21,6 +34,9 @@ namespace KASIR.Komponen
         public Offline_MemberData()
         {
             InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 20, 20));
+
             _internetServices = new InternetService();
 
             baseOutlet = Settings.Default.BaseOutlet;
@@ -51,17 +67,6 @@ namespace KASIR.Komponen
             try
             {
                 customMember = "Tambah";
-                Form background = new()
-                {
-                    StartPosition = FormStartPosition.Manual,
-                    FormBorderStyle = FormBorderStyle.None,
-                    Opacity = 0.7d,
-                    BackColor = Color.Black,
-                    WindowState = FormWindowState.Maximized,
-                    TopMost = true,
-                    Location = Location,
-                    ShowInTaskbar = false
-                };
                 SelectedMember = new Member
                 {
                     member_id = 0,
@@ -73,6 +78,9 @@ namespace KASIR.Komponen
                 using (Offline_MemberCustom addMember = new(customMember, SelectedMember.member_id,
                            SelectedMember.member_name, SelectedMember.member_phone_number, SelectedMember.member_email))
                 {
+                    QuestionHelper bg = new(null, null, null, null);
+                    Form background = bg.CreateOverlayForm();
+
                     addMember.Owner = background;
                     background.Show();
                     DialogResult result = addMember.ShowDialog();
@@ -83,14 +91,14 @@ namespace KASIR.Komponen
                     }
                     else
                     {
-                        MessageBox.Show("Gagal Simpan, Silahkan coba lagi");
+                        NotifyHelper.Error("Gagal Simpan, Silahkan coba lagi");
                         background.Dispose();
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                NotifyHelper.Error(ex.ToString());
             }
         }
 
@@ -144,7 +152,7 @@ namespace KASIR.Komponen
                     }
                     else
                     {
-                        MessageBox.Show("No Connection Internet to Fetch Membership");
+                        NotifyHelper.Error("No Connection Internet to Fetch Membership");
                     }
                     return;
                 }
@@ -156,7 +164,7 @@ namespace KASIR.Komponen
 
                 if (apiResponse?.data == null)
                 {
-                    MessageBox.Show("Failed to retrieve member data from API");
+                    NotifyHelper.Error("Failed to retrieve member data from API");
                     return;
                 }
 
@@ -170,7 +178,7 @@ namespace KASIR.Komponen
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Failed to display member data: " + ex.Message, "Error");
+                NotifyHelper.Error("Failed to display member data: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -357,7 +365,7 @@ namespace KASIR.Komponen
                 catch (Exception ex)
                 {
                     DialogResult = DialogResult.Cancel;
-                    MessageBox.Show("Gagal load Member " + ex.Message, "Gaspol");
+                    NotifyHelper.Error("Gagal load Member " + ex.Message);
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                     Close();
                 }
@@ -378,20 +386,11 @@ namespace KASIR.Komponen
                 };
                 try
                 {
-                    Form background = new()
-                    {
-                        StartPosition = FormStartPosition.Manual,
-                        FormBorderStyle = FormBorderStyle.None,
-                        Opacity = 0.7d,
-                        BackColor = Color.Black,
-                        WindowState = FormWindowState.Maximized,
-                        TopMost = true,
-                        Location = Location,
-                        ShowInTaskbar = false
-                    };
-
                     using (Offline_MemberCustom editMemberForm = new(customMember, SelectedMember.member_id, SelectedMember.member_name, SelectedMember.member_phone_number, SelectedMember.member_email))
                     {
+                        QuestionHelper bg = new(null, null, null, null);
+                        Form background = bg.CreateOverlayForm();
+
                         editMemberForm.Owner = background;
 
                         background.Show();
@@ -413,7 +412,7 @@ namespace KASIR.Komponen
                 catch (Exception ex)
                 {
                     DialogResult = DialogResult.Cancel;
-                    MessageBox.Show("Gagal load Member " + ex.Message, "Gaspol");
+                    NotifyHelper.Error("Gagal load Member " + ex.Message);
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                     Close();
                 }
@@ -428,7 +427,7 @@ namespace KASIR.Komponen
         private void btnKeluar_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
-            MessageBox.Show("Tidak ada member yang dipilih!");
+            NotifyHelper.Error("Tidak ada member yang dipilih!");
             Close();
         }
     }

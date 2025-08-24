@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Runtime.InteropServices;
 using KASIR.Helper;
 using KASIR.Komponen;
 using KASIR.Model;
@@ -11,7 +12,16 @@ namespace KASIR.OffineMode
 {
     public partial class Offline_Complaint : Form
     {
-         
+        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+       (
+           int nLeftRect,     // x-coordinate of upper-left corner
+           int nTopRect,      // y-coordinate of upper-left corner
+           int nRightRect,    // x-coordinate of lower-right corner
+           int nBottomRect,   // y-coordinate of lower-right corner
+           int nWidthEllipse, // height of ellipse
+           int nHeightEllipse // width of ellipse
+       );
 
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
@@ -25,6 +35,10 @@ namespace KASIR.OffineMode
             Version = Settings.Default.Version;
 
             InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 20, 20));
+
+
             DisplayLogInPanel(LoggerMsg);
             txtNotes.PlaceholderText = "Deskripsi Masalah?";
             txtNotes.PlaceholderText += "\nKronologi : ";
@@ -155,15 +169,13 @@ namespace KASIR.OffineMode
             {
                 if (lblNama.Text == null || lblNama.Text == "")
                 {
-                    MessageBox.Show("Format nama kurang tepat", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Format nama kurang tepat");
                     return;
                 }
 
                 if (txtNotes.Text == null || txtNotes.ToString() == "")
                 {
-                    MessageBox.Show("Format notes kurang tepat", "Gaspol", MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    NotifyHelper.Warning("Format notes kurang tepat");
                     return;
                 }
 
@@ -173,8 +185,7 @@ namespace KASIR.OffineMode
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -261,17 +272,12 @@ namespace KASIR.OffineMode
                 {
                     if (response.IsSuccessStatusCode)
                     {
-                        DialogResult result = MessageBox.Show("Berhasil dikirim", "Gaspol", MessageBoxButtons.OK);
-                        if (result == DialogResult.OK)
-                        {
+                        NotifyHelper.Success("Berhasil dikirim");
                             Close(); // Close the payForm
-                        }
-
-                        DialogResult = result;
                     }
                     else
                     {
-                        MessageBox.Show("Gagal dikirim, Coba cek koneksi internet ulang " + response.StatusCode);
+                        NotifyHelper.Error("Gagal dikirim, Coba cek koneksi internet ulang " + response.StatusCode);
                     }
                 }
             }

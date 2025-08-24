@@ -44,6 +44,8 @@ namespace KASIR.Helper
             button1.ForeColor = Color.White;
             button1.Text = "X";
             button1.Click += button1_Click;
+
+            this.TopMost = true;
         }
 
         private int x, y;

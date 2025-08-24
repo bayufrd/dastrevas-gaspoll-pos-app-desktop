@@ -198,19 +198,11 @@ namespace KASIR.OfflineMode
 
         private void LoadPin(string id, int urutanRiwayat)
         {
-            Form background = new()
-            {
-                StartPosition = FormStartPosition.CenterScreen,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = Location,
-                ShowInTaskbar = false
-            };
             using (Offline_inputPin pinForm = new(id, urutanRiwayat))
             {
+                QuestionHelper bg = new(null, null, null, null);
+                Form background = bg.CreateOverlayForm();
+
                 pinForm.Owner = background;
 
                 background.Show();

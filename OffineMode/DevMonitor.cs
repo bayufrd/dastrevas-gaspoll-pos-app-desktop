@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Diagnostics;
+using KASIR.Helper;
 using KASIR.Network;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -254,7 +255,8 @@ namespace KASIR.OfflineMode
                 if (string.IsNullOrEmpty(response) || response.StartsWith("<"))
                 {
                     HideLoading();
-                    MessageBox.Show("API response is not valid JSON.");
+                    
+                    NotifyHelper.Error("API response is not valid JSON.");
                     CleanFormAndAddRetryButton("API response is not valid JSON.");
                     return;
                 }
@@ -271,7 +273,7 @@ namespace KASIR.OfflineMode
                 if (jsonData == null || !jsonData.HasValues)
                 {
                     HideLoading();
-                    MessageBox.Show("No data found in API response.");
+                    NotifyHelper.Error("No data found in API response.");
                     CleanFormAndAddRetryButton("No data found in API response.");
                     return;
                 }
@@ -422,7 +424,7 @@ namespace KASIR.OfflineMode
                 if (string.IsNullOrEmpty(response) || response.StartsWith("<"))
                 {
                     HideLoading();
-                    MessageBox.Show("API response is not valid JSON.");
+                    NotifyHelper.Error("API response is not valid JSON.");
                     CleanFormAndAddRetryButton("API response is not valid JSON.");
                     return;
                 }
@@ -438,7 +440,7 @@ namespace KASIR.OfflineMode
                 if (jsonData == null || !jsonData.HasValues)
                 {
                     HideLoading();
-                    MessageBox.Show("No data found in API response.");
+                    NotifyHelper.Error("No data found in API response.");
                     CleanFormAndAddRetryButton("No data found in API response.");
                     return;
                 }

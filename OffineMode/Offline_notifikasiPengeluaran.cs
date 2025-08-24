@@ -8,11 +8,23 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using KASIR.Helper;
+using System.Runtime.InteropServices;
 
 namespace KASIR.Komponen
 {
     public partial class Offline_notifikasiPengeluaran : Form
     {
+        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+        (
+            int nLeftRect,     // x-coordinate of upper-left corner
+            int nTopRect,      // y-coordinate of upper-left corner
+            int nRightRect,    // x-coordinate of lower-right corner
+            int nBottomRect,   // y-coordinate of lower-right corner
+            int nWidthEllipse, // height of ellipse
+            int nHeightEllipse // width of ellipse
+        );
+
 
         //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
@@ -21,6 +33,9 @@ namespace KASIR.Komponen
         {
             baseOutlet = Settings.Default.BaseOutlet;
             InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 20, 20));
+
             txtNotes.PlaceholderText = "Tujuan Pengeluaran?";
             button2.Enabled = false;
             LoadData();
@@ -239,17 +254,28 @@ namespace KASIR.Komponen
                     NotifyHelper.Warning("Format notes kurang tepat");
                     return;
                 }
+                //---------------- Question Begin -----------------\\
+                string titleHelper = "Pengeluaran";
+                string msgHelper = $"Tambah pengeluaran Rp.{txtNominal.Text},- Tujuan : {txtNotes.Text} ?";
+                string cancelHelper = "Batal";
+                string okHelper = "Tambah";
+                QuestionHelper c = new QuestionHelper(titleHelper, msgHelper, cancelHelper, okHelper);
+                Form background = c.CreateOverlayForm();
 
-                DialogResult yakin =
-                    MessageBox.Show(
-                        $"Yakin menambahkan Expenditure Rp.{txtNominal.Text},- dengan tujuan \n {txtNotes.Text} ?",
-                        "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (yakin != DialogResult.Yes)
+                c.Owner = background;
+
+                background.Show();
+
+                DialogResult dialogResult = c.ShowDialog();
+                if (dialogResult != DialogResult.OK)
                 {
-                    NotifyHelper.Error("Penambahan Expenditure Shift diCancel");
+                    NotifyHelper.Info("Penambahan Expenditure Shift diCancel");
+                    background.Dispose();
+                    DialogResult = DialogResult.Cancel;
+
                     return;
-                    Close();
                 }
+                background.Dispose();
 
                 var expenditureData = new
                 {
@@ -285,10 +311,10 @@ namespace KASIR.Komponen
                 DialogResult result = DialogResult.OK;
                 if (result == DialogResult.OK)
                 {
+                    DialogResult = result;
                     Close(); // Close the payForm
                 }
 
-                DialogResult = result;
             }
             catch (TaskCanceledException ex)
             {

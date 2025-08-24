@@ -6,12 +6,24 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using KASIR.Helper;
 using System.Windows.Markup;
+using System.Runtime.InteropServices;
 
 
 namespace KASIR.OfflineMode
 {
     public partial class Offline_inputPin : Form
     {
+        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+        (
+            int nLeftRect,     // x-coordinate of upper-left corner
+            int nTopRect,      // y-coordinate of upper-left corner
+            int nRightRect,    // x-coordinate of lower-right corner
+            int nBottomRect,   // y-coordinate of lower-right corner
+            int nWidthEllipse, // height of ellipse
+            int nHeightEllipse // width of ellipse
+        );
+
         private readonly string baseOutlet;
 
         private readonly int totalTransactions;
@@ -23,6 +35,9 @@ namespace KASIR.OfflineMode
             totalTransactions = urutanRiwayat;
             baseOutlet = Settings.Default.BaseOutlet;
             InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 20, 20));
+
 
             LoadData(transactionId);
             //dataGridView1.CellFormatting += DataGridView1_CellFormatting;
@@ -67,19 +82,12 @@ namespace KASIR.OfflineMode
                 if (textPin.Text == dataOutlet.data.pin.ToString())
                 {
                     Close();
-                    Form background = new()
-                    {
-                        StartPosition = FormStartPosition.CenterScreen,
-                        FormBorderStyle = FormBorderStyle.None,
-                        Opacity = 0.7d,
-                        BackColor = Color.Black,
-                        WindowState = FormWindowState.Maximized,
-                        TopMost = true,
-                        Location = Location,
-                        ShowInTaskbar = false
-                    };
                     using (Offline_refund Offline_refund = new(transactionId))
                     {
+
+                        QuestionHelper bg = new(null, null, null, null);
+                        Form background = bg.CreateOverlayForm();
+
                         Offline_refund.Owner = background;
 
                         background.Show();
@@ -588,220 +596,6 @@ namespace KASIR.OfflineMode
                 ForeColor = Color.Black
             };
         }
-
-
-
-        //////////////////////
-
-        //private async void LoadDataDATAGRIDVIEW(string transactionId)
-        //{
-        //    try
-        //    {
-        //        string transactionDataPath = "DT-Cache\\Transaction\\transaction.data";
-
-        //        if (File.Exists(transactionDataPath))
-        //        {
-        //            string transactionJson = File.ReadAllText(transactionDataPath);
-        //            JObject? transactionData = JsonConvert.DeserializeObject<JObject>(transactionJson);
-
-        //            JArray? transactionDetails = transactionData["data"] as JArray;
-
-        //            JToken? filteredTransaction =
-        //                transactionDetails.FirstOrDefault(t => t["transaction_id"]?.ToString() == transactionId);
-
-        //            if (filteredTransaction != null)
-        //            {
-        //                string receiptNumber = filteredTransaction["receipt_number"]?.ToString() ?? "-";
-        //                string customerName = filteredTransaction["customer_name"]?.ToString() ?? "-";
-        //                string customerSeat = filteredTransaction["customer_seat"]?.ToString() ?? "0";
-        //                decimal total = filteredTransaction["total"] != null
-        //                    ? decimal.Parse(filteredTransaction["total"].ToString())
-        //                    : 0;
-        //                string paymentType = filteredTransaction["payment_type_name"]?.ToString() ?? "-";
-        //                DateTime transactionTime;
-        //                string formattedDate = "-";
-
-        //                if (DateTime.TryParse(filteredTransaction["created_at"]?.ToString(), out transactionTime))
-        //                {
-        //                    formattedDate = transactionTime.ToString("dd MMM yyyy, HH:mm");
-        //                }
-
-        //                lblCustomerReceipt.Text = receiptNumber;
-        //                lblWaktu.Text = formattedDate;
-        //                lblCustomerName.Text = customerName;
-        //                lblCustomerSeat.Text = customerSeat;
-        //                lblPaymentType.Text = "Payment Type: " + paymentType;
-        //                lblTotal.Text = "Total: " + string.Format("{0:n0}", total);
-        //                int cash = filteredTransaction["customer_cash"] != null
-        //                    ? int.Parse(filteredTransaction["customer_cash"].ToString())
-        //                    : 0;
-        //                int kembalian = filteredTransaction["customer_change"] != null
-        //                    ? int.Parse(filteredTransaction["customer_change"].ToString())
-        //                    : 0;
-        //                int refund = filteredTransaction["total_refund"] != null
-        //                    ? int.Parse(filteredTransaction["total_refund"].ToString())
-        //                    : 0;
-        //                string? discountPrice = filteredTransaction["discounted_price"]?.ToString() != "0"
-        //                    ? string.Format("{0:n0}", int.Parse(filteredTransaction["discounted_price"]?.ToString()))
-        //                    : "-";
-        //                lblDiscountCode.Text = "Discount Code: ";
-        //                lblDiscountValue.Text = "Discount Value: ";
-        //                lblDiscountPrice.Text = "Discount Price: ";
-        //                lblCustomerCash.Text = "Customer Cash: ";
-        //                lblKembalian.Text = "Change: ";
-        //                lblTotalRefund.Text = "Refund: ";
-
-        //                lblDiscountCode.Text += filteredTransaction["discount_code"].ToString() != null
-        //                    ? filteredTransaction["discount_code"].ToString()
-        //                    : "-";
-        //                lblDiscountValue.Text += filteredTransaction["discounts_value"]?.ToString() != "0"
-        //                    ? filteredTransaction["discounts_value"]?.ToString()
-        //                    : "-";
-        //                lblDiscountPrice.Text += discountPrice;
-        //                lblCustomerCash.Text += string.Format("{0:n0}", cash);
-        //                lblKembalian.Text += string.Format("{0:n0}", kembalian);
-        //                lblTotalRefund.Text += string.Format("{0:n0}", refund);
-
-        //                // Ambil data cart_details dan refund_details
-        //                JArray? cartDetails = filteredTransaction["cart_details"] as JArray;
-        //                JArray? refundDetails = filteredTransaction["refund_details"] as JArray;
-        //                JArray? cancelDetails = filteredTransaction["canceled_items"] as JArray;
-
-        //                DataTable dataTable = new();
-        //                dataTable.Columns.Add("MenuID", typeof(string));
-        //                dataTable.Columns.Add("CartDetailID", typeof(int));
-        //                dataTable.Columns.Add("Jenis", typeof(string));
-        //                dataTable.Columns.Add("Menu", typeof(string));
-        //                dataTable.Columns.Add("Total Harga", typeof(string));
-
-        //                if (cartDetails != null && cartDetails.Count > 0)
-        //                {
-        //                    // Tambahkan separator untuk item yang terjual
-        //                    //dataTable.Rows.Add(null, null, null, "Sold items: ", null);
-        //                    bool hasItems = false; // Variabel untuk memeriksa apakah ada item dengan qty > 0
-
-        //                    AddSeparatorRow(dataTable, "  #Sold items: ", dataGridView1);
-
-        //                    foreach (JToken item in cartDetails)
-        //                    {
-        //                        if (int.Parse(item["qty"].ToString()) != 0)
-        //                        {
-        //                            hasItems = true; // Set menjadi true jika ada item dengan qty > 0
-
-        //                            dataTable.Rows.Add(
-        //                                item["menu_id"]?.ToString(),
-        //                                item["cart_detail_id"]?.ToObject<int>(),
-        //                                item["menu_type"]?.ToString(),
-        //                                $"{item["qty"]}x {item["menu_name"]} {item["menu_detail_name"]} {item["note_item"]}",
-        //                                string.Format("{0:n0}", item["total_price"])
-        //                            );
-        //                            if (!string.IsNullOrEmpty(item["note_item"].ToString()))
-        //                            {
-        //                                dataTable.Rows.Add(null, null, null, $"  *Notes: {item["note_item"]} ", null);
-        //                            }
-        //                        }
-        //                    }
-
-        //                    int points = 0;
-        //                    if (!string.IsNullOrEmpty(filteredTransaction["member_id"].ToString()) && !string.IsNullOrEmpty(filteredTransaction["member_name"].ToString()))
-        //                    {
-        //                        points = int.Parse(filteredTransaction["member_point"].ToString());
-        //                        dataTable.Rows.Add(null, null, null, $"  *Data Member:", null);
-        //                        dataTable.Rows.Add(null, null, null, $"    Member Name: {filteredTransaction["member_name"].ToString()} ", null);
-        //                        dataTable.Rows.Add(null, null, null, $"    Member Points: {points.ToString("#,#")} ", null);
-        //                        if (!string.IsNullOrEmpty(filteredTransaction["member_use_point"].ToString()))
-        //                        {
-        //                            points = int.Parse(filteredTransaction["member_use_point"].ToString());
-        //                            dataTable.Rows.Add(null, null, null, $"    Member Use Points: {points.ToString("#,#")} ", null);
-        //                        }
-        //                    }
-
-        //                    btnSimpan.Enabled = hasItems; // Aktifkan atau nonaktifkan tombol Simpan
-        //                    if (btnSimpan.Enabled != true)
-        //                    {
-        //                        btnSimpan.Text = "No Item to refund!";
-        //                        btnSimpan.BackColor = Color.Gainsboro;
-        //                    }
-        //                }
-
-        //                if (refundDetails != null && refundDetails.Count > 0)
-        //                {
-        //                    AddSeparatorRow(dataTable, "  #Refund items: ", dataGridView1);
-
-        //                    foreach (JToken refundItem in refundDetails)
-        //                    {
-        //                        dataTable.Rows.Add(
-        //                            refundItem["menu_id"]?.ToString(),
-        //                            refundItem["cart_detail_id"]?.ToObject<int>(),
-        //                            refundItem["menu_type"]?.ToString(),
-        //                            $"{refundItem["refund_qty"]}x {refundItem["menu_name"]} {refundItem["menu_detail_name"]} {refundItem["note_item"]}",
-        //                            string.Format("{0:n0}", refundItem["refund_total"]) + " (Refunded)"
-        //                        );
-        //                        dataTable.Rows.Add(null, null, null, $"  *Reason: {refundItem["refund_reason_item"]} ",
-        //                            null);
-        //                    }
-        //                }
-
-        //                // Menampilkan data pada DataGridView
-        //                dataGridView1.DataSource = dataTable;
-
-        //                // Menyembunyikan kolom yang tidak diperlukan
-        //                if (dataGridView1.Columns.Contains("MenuID"))
-        //                {
-        //                    dataGridView1.Columns["MenuID"].Visible = false;
-        //                }
-
-        //                if (dataGridView1.Columns.Contains("CartDetailID"))
-        //                {
-        //                    dataGridView1.Columns["CartDetailID"].Visible = false;
-        //                }
-
-        //                if (dataGridView1.Columns.Contains("Jenis"))
-        //                {
-        //                    dataGridView1.Columns["Jenis"].Visible = false;
-        //                }
-        //            }
-        //            else
-        //            {
-        //                NotifyHelper.Error("Transaction with the specified ID not found.");
-        //            }
-        //        }
-        //        else
-        //        {
-        //            NotifyHelper.Error("Transaction data file not found.");
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        NotifyHelper.Error("Gagal load Cart " + ex);
-        //        LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-        //    }
-        //}
-
-        //private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
-        //{
-        //    // Tambahkan separator row ke DataTable
-        //    dataTable.Rows.Add(null, null, null, groupKey + "\n", null); // Add a separator row
-
-        //    // Ambil indeks baris terakhir yang baru saja ditambahkan
-        //    int lastRowIndex = dataTable.Rows.Count - 1;
-
-        //    // Menambahkan row ke DataGridView
-        //    dataGridView.DataSource = dataTable;
-
-        //    // Mengatur gaya sel untuk kolom tertentu
-        //    int[] cellIndexesToStyle = { 1, 2, 3, 4 }; // Indeks kolom yang ingin diatur
-        //    SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
-        //}
-
-        //private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)
-        //{
-        //    foreach (int index in cellIndexes)
-        //    {
-        //        row.Cells[index].Style.BackColor = backgroundColor;
-        //        row.Cells[index].Style.Font = new Font(dataGridView1.Font, fontStyle);
-        //    }
-        //}
 
         private async void btnCetakStruk_Click(object sender, EventArgs e)
         {

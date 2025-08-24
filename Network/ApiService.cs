@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Windows;
+using KASIR.Helper;
 using KASIR.Properties;
 using Polly;
 using MessageBox = System.Windows.MessageBox;
@@ -327,7 +328,7 @@ namespace KASIR.Network
                 }
                 else
                 {
-                    //MessageBox.Show("Waktu koneksi berakhir, telah dicoba sebanyak 3x. Silakan periksa koneksi internet Anda dan coba lagi.", "Timeout Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    //NotifyHelper.Error("Waktu koneksi berakhir, telah dicoba sebanyak 3x. Silakan periksa koneksi internet Anda dan coba lagi.", "Timeout Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     LoggerUtil.LogError(ex,
                         "Waktu koneksi berakhir, telah dicoba sebanyak 3x: {ErrorMessage} - Timeout", ex.Message);
                 }
@@ -339,13 +340,23 @@ namespace KASIR.Network
                 if (ex is HttpRequestException &&
                     ((HttpRequestException)ex).StatusCode == HttpStatusCode.InternalServerError)
                 {
-                    MessageBoxResult result =
-                        MessageBox.Show(
-                            "Terjadi kesalahan pada server (500 Internal Server Error). Apakah Anda ingin mencoba lagi?",
-                            "Server Error", MessageBoxButton.YesNo, MessageBoxImage.Error);
-                    if (result == MessageBoxResult.Yes)
+
+                    //---------------- Question Begin -----------------\\
+                    string titleQuest = "Kesalahan Jaringan";
+                    string msgQuest = "Terjadi kesalahan pada server. Apakah anda ingin mencoba lagi? ";
+                    string cancelQuest = "Batal";
+                    string okQuest = "Coba Lagi";
+
+                    QuestionHelper c = new(titleQuest, msgQuest, cancelQuest, okQuest);
+                    Form background = c.CreateOverlayForm();
+
+                    c.Owner = background;
+
+                    background.Show();
+
+                    DialogResult dialogResult = c.ShowDialog();
+                    if (dialogResult == DialogResult.OK)
                     {
-                        // Retry logic
                         try
                         {
                             HttpResponseMessage? response = await combinedPolicy.ExecuteAsync(requestFunc);
@@ -358,6 +369,10 @@ namespace KASIR.Network
                         }
                     }
 
+                    background.Dispose();
+
+                    //--------------- Question Result -------------------\\
+                    
                     throw; // rethrow the exception to maintain the original behavior
                 }
 

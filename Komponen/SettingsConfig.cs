@@ -1,5 +1,6 @@
 ﻿using System.Xml;
 using KASIR.Network;
+using KASIR.Helper;
 
 namespace KASIR.Komponen
 {
@@ -209,11 +210,11 @@ namespace KASIR.Komponen
                     // Refresh PictureBox dengan gambar yang baru saja disalin
                     picThumbnail.Image = new Bitmap(destinationPath);  // Muat ulang gambar dari path baru
                     status = 1;
-                    MessageBox.Show("Logo berhasil di-upload dan disimpan.");
+                    NotifyHelper.Error("Logo berhasil di-upload dan disimpan.");
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Terjadi kesalahan saat membuka file: " + ex.Message);
+                    NotifyHelper.Error("Terjadi kesalahan saat membuka file: " + ex.Message);
                     status = 0;
                 }
             }

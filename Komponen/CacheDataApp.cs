@@ -1,10 +1,13 @@
 ﻿using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 using KASIR.Model;
 using KASIR.Network;
 using Newtonsoft.Json;
 using Image = System.Drawing.Image;
 using Menu = KASIR.Model.Menu;
+using Timer = System.Windows.Forms.Timer;
+using KASIR.Helper;
 
 namespace KASIR.Komponen
 {
@@ -19,17 +22,61 @@ namespace KASIR.Komponen
         string folderAddCartForm = "DT-Cache\\addCartForm";
         int items;
         string choice;
+        private Timer slideTimer;
+        private int targetY;
 
+        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+        (
+            int nLeftRect,     // x-coordinate of upper-left corner
+            int nTopRect,      // y-coordinate of upper-left corner
+            int nRightRect,    // x-coordinate of lower-right corner
+            int nBottomRect,   // y-coordinate of lower-right corner
+            int nWidthEllipse, // height of ellipse
+            int nHeightEllipse // width of ellipse
+        );
         public CacheDataApp(string TypeCacheEksekusi)
         {
             InitializeComponent();
-            StartPosition = FormStartPosition.CenterScreen; // Menampilkan form di tengah layar
-            MaximizeBox = false;  // Menonaktifkan tombol maximize untuk menghindari form lebih besar dari layar
-            FormBorderStyle = FormBorderStyle.FixedDialog; // Mengatur border agar tidak bisa diubah-ubah ukuran
+            this.FormBorderStyle = FormBorderStyle.None;
+            Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 8, 8));
+
+            SetupUpdatePosition();
+            this.TopMost = true;
+
             progressBar.Minimum = 0;
             progressBar.Maximum = 100;
             choice = TypeCacheEksekusi.ToString();
             openForm(choice);
+        }
+        private void SetupUpdatePosition()
+        {
+            var screen = Screen.PrimaryScreen.WorkingArea;
+
+            // mulai dari bawah pojok kiri
+            this.StartPosition = FormStartPosition.Manual;
+            this.Left = 0;
+            this.Top = screen.Bottom;
+
+            targetY = screen.Bottom - this.Height;
+
+            slideTimer = new Timer();
+            slideTimer.Interval = 10;
+            slideTimer.Tick += SlideUp;
+            slideTimer.Start();
+        }
+
+        private void SlideUp(object sender, EventArgs e)
+        {
+            if (this.Top > targetY)
+            {
+                this.Top -= 20; // kecepatan naik
+            }
+            else
+            {
+                this.Top = targetY;
+                slideTimer.Stop();
+            }
         }
 
         public async void openForm(string choice)
@@ -161,7 +208,7 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -226,7 +273,7 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -273,7 +320,7 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -316,7 +363,7 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -361,7 +408,7 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -466,12 +513,12 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Gagal Mengunduh data " + ex.Message, "Gaspol");
+                NotifyHelper.Error("Gagal Mengunduh data " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -912,7 +959,7 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -956,7 +1003,7 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -998,7 +1045,7 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -1031,7 +1078,7 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -1065,7 +1112,7 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)
@@ -1101,7 +1148,7 @@ namespace KASIR.Komponen
             }
             catch (TaskCanceledException ex)
             {
-                MessageBox.Show("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)

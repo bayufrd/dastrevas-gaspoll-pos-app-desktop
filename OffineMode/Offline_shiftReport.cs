@@ -202,21 +202,37 @@ namespace KASIR.Komponen
                 TimeSpan timeDifference = akhirshift - startAtDateTime;
                 /*if (timeDifference.TotalHours < 1)
                 {
-                    MessageBox.Show($"Jarak Cetak Laporan Terlalu dekat\n\nStart : {startAt.ToString()}\nEnd : {akhirshift.ToString("yyyy-MM-dd HH:mm:ss")}", "Gaspol", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    NotifyHelper.Error($"Jarak Cetak Laporan Terlalu dekat\n\nStart : {startAt.ToString()}\nEnd : {akhirshift.ToString("yyyy-MM-dd HH:mm:ss")}", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }*/
 
                 string generateIDshift = $"{baseOutlet}{startAtDateTime.ToString("yyyyMMddHHmmss")}";
+                //---------------- Question Begin -----------------\\
+                string titleHelper = $"End Shift {shiftNumber.ToString()}";
+                string msgHelper = $"Waktu: {startAt} - {akhirshift.ToString("yyyy-MM-dd HH:mm:ss")}\nNama Kasir: {txtNamaKasir.Text}\nCash Sekarang: Rp. {txtActualCash.Text},-\nCash Different : {string.Format("{0:n0}", Convert.ToInt32(fulus) - ending_cash)}";
+                string cancelHelper = "Batal";
+                string okHelper = "End Shift";
+                QuestionHelper c = new QuestionHelper(titleHelper, msgHelper, cancelHelper, okHelper);
+                Form background = c.CreateOverlayForm();
 
-                DialogResult yakin = MessageBox.Show(
-                    $"Melakukan End Shift {shiftNumber.ToString()} pada waktu \n{startAt} sampai {akhirshift.ToString("yyyy-MM-dd HH:mm:ss")}\nNama Kasir : {txtNamaKasir.Text}\nActual Cash : Rp.{txtActualCash.Text},- \nCash Different : {string.Format("{0:n0}", Convert.ToInt32(fulus) - ending_cash)}?",
-                    "KONFIRMASI", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (yakin != DialogResult.Yes)
+                c.Owner = background;
+
+                background.Show();
+
+                DialogResult dialogResult = c.ShowDialog();
+                if (dialogResult != DialogResult.OK)
                 {
-                    NotifyHelper.Info("Cetak Shift diCancel");
+                    background.Dispose();
+                    return;
                 }
+
+
+                //--------------- Question Result -------------------\\
+                
                 else
                 {
+                    background.Dispose();
+
                     btnCetakStruk.Enabled = false;
                     btnCetakStruk.Text = "Waiting...";
 
@@ -630,11 +646,11 @@ namespace KASIR.Komponen
 
         private void btnPengeluaran_Click(object sender, EventArgs e)
         {
-            Form background = CreateBackgroundForm();
-
-
             using (Offline_notifikasiPengeluaran notifikasiPengeluaran = new())
             {
+                QuestionHelper bg = new(null, null, null, null);
+                Form background = bg.CreateOverlayForm();
+
                 notifikasiPengeluaran.Owner = background;
 
                 background.Show();
@@ -647,12 +663,13 @@ namespace KASIR.Komponen
 
         private void btnRiwayatShift_Click(object sender, EventArgs e)
         {
-            Form background = CreateBackgroundForm();
-
             Invoke((MethodInvoker)delegate
             {
                 using (Offline_HistoryShift payForm = new())
                 {
+                    QuestionHelper bg = new(null, null, null, null);
+                    Form background = bg.CreateOverlayForm();
+
                     payForm.Owner = background;
                     background.Show();
 
@@ -731,20 +748,6 @@ namespace KASIR.Komponen
         }
 
 
-        private Form CreateBackgroundForm()
-        {
-            return new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = Location,
-                ShowInTaskbar = false
-            };
-        }
 
         public async Task CopyShiftDataAsync(string sourceFilePath, string destinationFilePath)
         {
@@ -1120,6 +1123,7 @@ namespace KASIR.Komponen
                 dataTable.Rows.Add("Cash Out Refund", $"{cashOutRefund:n0}");
                 ending_cash -= cashOutExpenditure;
                 dataTable.Rows.Add("Expected Ending Cash", $"{ending_cash:n0}");
+                txtActualCash.Text = ending_cash.ToString();
 
                 dataTable.Rows.Add("", "");
 

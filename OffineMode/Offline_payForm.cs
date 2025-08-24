@@ -9,11 +9,23 @@ using KASIR.Services;
 using Newtonsoft.Json;
 using KASIR.Helper;
 using Newtonsoft.Json.Linq;
+using System.Runtime.InteropServices;
 
 namespace KASIR.OfflineMode
 {
     public partial class Offline_payForm : Form
     {
+        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+        (
+            int nLeftRect,     // x-coordinate of upper-left corner
+            int nTopRect,      // y-coordinate of upper-left corner
+            int nRightRect,    // x-coordinate of lower-right corner
+            int nBottomRect,   // y-coordinate of lower-right corner
+            int nWidthEllipse, // height of ellipse
+            int nHeightEllipse // width of ellipse
+        );
+
         private IInternetService _internetServices;
 
         private readonly string baseOutlet;
@@ -31,6 +43,9 @@ namespace KASIR.OfflineMode
             string name, Offline_masterPos masterPosForm)
         {
             InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 20, 20));
+
             _internetServices = new InternetService();
             InitializeButtonListeners();
 
@@ -1191,20 +1206,12 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                Form background = new()
-                {
-                    StartPosition = FormStartPosition.Manual,
-                    FormBorderStyle = FormBorderStyle.None,
-                    Opacity = 0.7d,
-                    BackColor = Color.Black,
-                    WindowState = FormWindowState.Maximized,
-                    TopMost = true,
-                    Location = Location,
-                    ShowInTaskbar = false
-                };
 
                 using (Offline_MemberData listMember = new())
                 {
+                    QuestionHelper bg = new(null, null, null, null);
+                    Form background = bg.CreateOverlayForm();
+
                     listMember.Owner = background;
 
                     background.Show();

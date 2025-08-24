@@ -53,14 +53,14 @@
             // 
             // lblProgress
             // 
-            lblProgress.BackColor = Color.FromArgb(15, 90, 94);
+            lblProgress.BackColor = Color.Gainsboro;
             lblProgress.Cursor = Cursors.Hand;
             lblProgress.FlatAppearance.BorderSize = 0;
             lblProgress.FlatStyle = FlatStyle.Flat;
             lblProgress.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            lblProgress.ForeColor = Color.WhiteSmoke;
+            lblProgress.ForeColor = Color.Black;
             lblProgress.IconChar = FontAwesome.Sharp.IconChar.Database;
-            lblProgress.IconColor = Color.WhiteSmoke;
+            lblProgress.IconColor = Color.Black;
             lblProgress.IconFont = FontAwesome.Sharp.IconFont.Auto;
             lblProgress.IconSize = 20;
             lblProgress.ImageAlign = ContentAlignment.MiddleRight;
@@ -74,14 +74,14 @@
             // 
             // lblDetail
             // 
-            lblDetail.BackColor = Color.FromArgb(15, 90, 94);
+            lblDetail.BackColor = Color.Gainsboro;
             lblDetail.Cursor = Cursors.Hand;
             lblDetail.FlatAppearance.BorderSize = 0;
             lblDetail.FlatStyle = FlatStyle.Flat;
-            lblDetail.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            lblDetail.ForeColor = Color.WhiteSmoke;
+            lblDetail.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            lblDetail.ForeColor = Color.Black;
             lblDetail.IconChar = FontAwesome.Sharp.IconChar.Upload;
-            lblDetail.IconColor = Color.WhiteSmoke;
+            lblDetail.IconColor = Color.Black;
             lblDetail.IconFont = FontAwesome.Sharp.IconFont.Auto;
             lblDetail.IconSize = 20;
             lblDetail.ImageAlign = ContentAlignment.MiddleRight;
@@ -95,7 +95,7 @@
             // 
             // progressBar
             // 
-            progressBar.ForeColor = SystemColors.ControlText;
+            progressBar.ForeColor = Color.Transparent;
             progressBar.Location = new Point(0, 59);
             progressBar.MarqueeAnimationSpeed = 30;
             progressBar.Name = "progressBar";
@@ -121,6 +121,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(307, 83);
             Controls.Add(gradientPanel2);
+            ForeColor = Color.Transparent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximumSize = new Size(323, 122);
             Name = "CacheDataApp";

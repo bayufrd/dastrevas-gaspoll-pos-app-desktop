@@ -6024,7 +6024,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 }
                 else
                 {
-                    _ = MessageBox.Show("no check");
+                    NotifyHelper.Error("no check");
                 }
 
                 // Footer

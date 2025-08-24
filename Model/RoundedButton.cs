@@ -19,7 +19,7 @@ namespace KASIR.Model
             UseVisualStyleBackColor = true;
             Cursor = Cursors.Hand;
             TextAlign = ContentAlignment.MiddleCenter;
-            BorderRadius = 25;
+            BorderRadius = 8;
         }
 
         public IconChar Icon

@@ -53,7 +53,7 @@ namespace KASIR.Komponen
     //        }
     //        catch (Exception ex)
     //        {
-    //            MessageBox.Show($"Error scanning devices: {ex.Message}",
+    //            NotifyHelper.Error($"Error scanning devices: {ex.Message}",
     //                "Kesalahan Pencarian",
     //                MessageBoxButtons.OK,
     //                MessageBoxIcon.Error);
@@ -92,7 +92,7 @@ namespace KASIR.Komponen
 
     //                    if (connected)
     //                    {
-    //                        MessageBox.Show($"Berhasil terhubung ke {selectedPrinter.DeviceName}",
+    //                        NotifyHelper.Error($"Berhasil terhubung ke {selectedPrinter.DeviceName}",
     //                            "Koneksi Berhasil",
     //                            MessageBoxButtons.OK,
     //                            MessageBoxIcon.Information);
@@ -102,7 +102,7 @@ namespace KASIR.Komponen
     //                    }
     //                    else
     //                    {
-    //                        MessageBox.Show("Gagal terhubung ke printer",
+    //                        NotifyHelper.Error("Gagal terhubung ke printer",
     //                            "Kesalahan Koneksi",
     //                            MessageBoxButtons.OK,
     //                            MessageBoxIcon.Warning);
@@ -111,7 +111,7 @@ namespace KASIR.Komponen
     //            }
     //            catch (Exception ex)
     //            {
-    //                MessageBox.Show($"Error: {ex.Message}",
+    //                NotifyHelper.Error($"Error: {ex.Message}",
     //                    "Kesalahan",
     //                    MessageBoxButtons.OK,
     //                    MessageBoxIcon.Error);
@@ -125,7 +125,7 @@ namespace KASIR.Komponen
     //        }
     //        else
     //        {
-    //            MessageBox.Show("Pilih printer terlebih dahulu",
+    //            NotifyHelper.Error("Pilih printer terlebih dahulu",
     //                "Peringatan",
     //                MessageBoxButtons.OK,
     //                MessageBoxIcon.Warning);

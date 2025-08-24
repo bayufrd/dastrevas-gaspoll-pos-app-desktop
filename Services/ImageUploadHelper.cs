@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using KASIR.Helper;
 
 namespace KASIR.Services
 {
@@ -94,14 +95,15 @@ namespace KASIR.Services
                         // Validasi ekstensi
                         if (!IsValidImageFile(selectedFilePath))
                         {
-                            MessageBox.Show("Format gambar tidak didukung.");
+                            
+                            NotifyHelper.Warning("Format gambar tidak didukung.");
                             return;
                         }
 
                         // Validasi ukuran file
                         if (!ValidateFileSize(selectedFilePath))
                         {
-                            MessageBox.Show("Ukuran file terlalu besar. Maksimal 5MB.");
+                            NotifyHelper.Warning("Ukuran file terlalu besar. Maksimal 5MB.");
                             return;
                         }
 
@@ -124,11 +126,11 @@ namespace KASIR.Services
                             picThumbnail.Image = new Bitmap(bmpImage);
                         }
 
-                        MessageBox.Show("Logo berhasil di-upload dan disimpan.", "Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        NotifyHelper.Success("Logo berhasil di-upload dan disimpan.");
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Terjadi kesalahan: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        NotifyHelper.Error($"Terjadi kesalahan: {ex.Message}");
                     }
                 }
             }

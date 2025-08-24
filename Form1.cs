@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Net.NetworkInformation;
@@ -59,14 +59,13 @@ namespace KASIR
             panel2.Controls.Add(leftBorderBtn);
             Height += 100;
             LogoKasir.Visible = true;
-            StarterApp();
             if (baseOutlet != "4")
             {
                 btnDev.Visible = false;
             }
+            StarterApp();
             Shown += Form1_Shown;
         }
-
         private void Form1_Shown(object sender, EventArgs e)
         {
             RefreshIconButtons();
@@ -235,23 +234,27 @@ namespace KASIR
             SignApplication();
             initPingTest();
             ConfigOfflineMode();
+
             await Task.Run(async () =>
             {
                 await DualMonitorChecker();
-                await checkVersionAppWindows();
-                await _updaterHelper.CheckLastUpdaterAppAsync();
-            });
 
+                if (await _internetServices.IsInternetConnectedAsync())
+                {
+                    await _updaterHelper.CheckLastUpdaterAppAsync();
+
+                }
+            });
             if (await _internetServices.IsInternetConnectedAsync())
             {
+                await checkVersionAppWindows();
+
                 string TypeCacheEksekusi = "Sync";
 
                 CacheDataApp cacheDataApp = new(TypeCacheEksekusi);
 
                 cacheDataApp.Load += (sender, e) =>
                 {
-                    cacheDataApp.WindowState = FormWindowState.Minimized;
-
                     ShowSystemTrayNotification("Sinkronisasi dimulai", "Proses sinkronisasi data sedang berjalan");
                 };
 
@@ -426,12 +429,11 @@ namespace KASIR
         /// <summary>
         /// Proses utama pengecekan dan manajemen versi aplikasi
         /// </summary>
-        private async Task checkVersionAppWindows()
+        public async Task checkVersionAppWindows()
         {
             try
             {
                 // Langkah 1: Validasi Koneksi Internet
-                NotifyHelper.Success("Memeriksa Versi Kasir...");
                 if (!_internetServices.IsInternetConnected())
                 {
                     return;
@@ -470,39 +472,44 @@ namespace KASIR
                     {
                         try
                         {
-                            // Dialog konfirmasi update
-                            DialogResult UpdateApp = MessageBox.Show(
-                                $"Update tersedia Versi: #{newVersionAppBatch}. Versi saat ini: #{currentAppNow}. Lanjutkan update?",
-                                "Konfirmasi Update",
-                                MessageBoxButtons.YesNo,
-                                MessageBoxIcon.Question);
 
-                            if (UpdateApp == DialogResult.No)
+                            // Dialog konfirmasi update
+                            string titleHelper = "Update tersedia";
+                            string msgHelper = $"Update tersedia Versi: {newVersionAppBatch}. Versi saat ini: #{currentAppNow}. Lanjutkan update ?";
+                            string cancelHelper = "Lain kali";
+                            string okHelper = "Update";
+                            string updateHelper = "update";
+                            QuestionHelper c = new QuestionHelper(titleHelper, msgHelper, cancelHelper, okHelper, updateHelper);
+                            DialogResult update = new DialogResult();
+                            c.Show();
+                            if(update != DialogResult.OK)
                             {
                                 return;
                             }
-
-                            // Langkah 7: Validasi Outlet untuk Update
-                            string focusOutletData =
-                                await httpClient.GetStringAsync($"{urlVersion}/server/outletUpdate.txt");
-
-                            string[] focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
-                                .Split(',')
-                                .Select(s => s.Trim())
-                                .ToArray();
-
-                            // Periksa izin update untuk outlet
-                            if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
+                            else
                             {
-                                shouldUpdate = true;
-                                NotifyHelper.Success("Mempersiapkan Updater Kasir...");
-                            }
+                                // Langkah 7: Validasi Outlet untuk Update
+                                string focusOutletData =
+                                    await httpClient.GetStringAsync($"{urlVersion}/server/outletUpdate.txt");
 
-                            // Langkah 8: Eksekusi Update
-                            if (shouldUpdate)
-                            {
-                                LoggerUtil.LogNetwork("Memulai Proses Update");
-                                await OpenUpdaterAsync(currentAppNow, urlVersion, newVersionAppBatch);
+                                string[] focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
+                                    .Split(',')
+                                    .Select(s => s.Trim())
+                                    .ToArray();
+
+                                // Periksa izin update untuk outlet
+                                if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
+                                {
+                                    shouldUpdate = true;
+                                    NotifyHelper.Success("Mempersiapkan Updater Kasir...");
+                                }
+
+                                // Langkah 8: Eksekusi Update
+                                if (shouldUpdate)
+                                {
+                                    LoggerUtil.LogNetwork("Memulai Proses Update");
+                                    await OpenUpdaterAsync(currentAppNow, urlVersion, newVersionAppBatch);
+                                }
                             }
                         }
                         catch (Exception updateEx)
@@ -531,7 +538,7 @@ namespace KASIR
         /// <summary>
         /// Proses update aplikasi
         /// </summary>
-        private async Task OpenUpdaterAsync(string version, string urlVersion, string newVersionAppBatch)
+        public async Task OpenUpdaterAsync(string version, string urlVersion, string newVersionAppBatch)
         {
             try
             {
@@ -933,7 +940,22 @@ pause > nul
 
         private async void btnExit_Click(object sender, EventArgs e)
         {
+            // coba keluar normal dulu
             Application.Exit();
+
+            // tunggu sebentar (0.5 detik)
+            await Task.Delay(500);
+
+            // cek kalau masih hidup → paksa kill
+            var currentProcess = Process.GetCurrentProcess();
+            try
+            {
+                if (!currentProcess.HasExited)
+                {
+                    currentProcess.Kill();
+                }
+            }
+            catch { /* abaikan error kalau sudah mati */ }
         }
 
         private void btnMaximize_Click(object sender, EventArgs e)
@@ -1267,28 +1289,12 @@ pause > nul
             lblTitleChildForm.Text = "Shift Report (Online)";
         }
 
-        private Form CreateOverlayForm()
-        {
-            return new Form
-            {
-                StartPosition = FormStartPosition.Manual,
-                FormBorderStyle = FormBorderStyle.None,
-                Opacity = 0.7d,
-                BackColor = Color.Black,
-                WindowState = FormWindowState.Maximized,
-                TopMost = true,
-                Location = Location,
-                ShowInTaskbar = false
-            };
-        }
-
         private void btnContact_Click(object sender, EventArgs e)
         {
-            Form background = CreateOverlayForm();
-
             using (Offline_Complaint c = new())
             {
-                c.Owner = background;
+                QuestionHelper bg = new(null, null, null, null);
+                Form background = bg.CreateOverlayForm();
 
                 background.Show();
 

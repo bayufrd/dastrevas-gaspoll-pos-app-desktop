@@ -1,5 +1,6 @@
 ﻿using KASIR.Network;
 using Newtonsoft.Json.Linq;
+using KASIR.Helper;
 
 namespace KASIR.OffineMode
 {
@@ -136,7 +137,7 @@ namespace KASIR.OffineMode
                         string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
                         IApiService apiService = new ApiService();
                         HttpResponseMessage response = await apiService.SyncTransaction(newData1.ToString(), apiUrl);
-                        MessageBox.Show(newData1.ToString());
+                        NotifyHelper.Error(newData1.ToString());
 
 
 
@@ -178,7 +179,7 @@ namespace KASIR.OffineMode
                         }
                         else
                         {
-                            MessageBox.Show(response.ToString());
+                            NotifyHelper.Error(response.ToString());
                             // Jika gagal, pindahkan ke folder FailedSyncTransaction
                             string failedFileName = $"{baseOutlet}_FailedSync_{DateTime.Now:yyyyMMdd}.data";
                             string failedPath = Path.Combine(failedSyncFolder, failedFileName);

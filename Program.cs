@@ -62,11 +62,8 @@ namespace KASIR
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    $"Gagal memulai aplikasi sebagai administrator: {ex.Message}",
-                    "Kesalahan Keamanan",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
+                NotifyHelper.Error(
+                    $"Gagal memulai aplikasi sebagai administrator: {ex.Message}"
                 );
             }
         }

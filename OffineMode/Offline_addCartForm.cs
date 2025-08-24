@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using FontAwesome.Sharp;
 using KASIR.Database;
 using KASIR.Database.ModalDatabase;
@@ -16,6 +17,16 @@ namespace KASIR.OfflineMode
     [Serializable]
     public partial class Offline_addCartForm : Form
     {
+        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+        (
+            int nLeftRect,     // x-coordinate of upper-left corner
+            int nTopRect,      // y-coordinate of upper-left corner
+            int nRightRect,    // x-coordinate of lower-right corner
+            int nBottomRect,   // y-coordinate of lower-right corner
+            int nWidthEllipse, // height of ellipse
+            int nHeightEllipse // width of ellipse
+        );
 
         private readonly string baseOutlet;
         public string btnServingType;
@@ -33,6 +44,9 @@ namespace KASIR.OfflineMode
         {
             baseOutlet = Settings.Default.BaseOutlet;
             InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 20, 20));
+
             SetDoubleBufferedForAllControls(this);
 
             btnSimpan.Enabled = false;
@@ -947,7 +961,7 @@ namespace KASIR.OfflineMode
                 }
                 catch (Exception ex)
                 {
-                    //NotifyHelper.Error("Gagal tambah data " + ex.Message, "Gaspol");
+                    //NotifyHelper.Error("Gagal tambah data " + ex.Message);
                     LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 }
             }
@@ -961,7 +975,7 @@ namespace KASIR.OfflineMode
             }
             catch (TaskCanceledException ex)
             {
-                //NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.", "Timeout Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                //NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
             catch (Exception ex)

@@ -3,6 +3,7 @@ using KASIR.Properties;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using KASIR.Helper;
 
 namespace KASIR.Komponen
 {
@@ -38,7 +39,7 @@ namespace KASIR.Komponen
                 }
                 else
                 {
-                    MessageBox.Show($"Gambar default {imageNames[i]} tidak ditemukan.");
+                    NotifyHelper.Error($"Gambar default {imageNames[i]} tidak ditemukan.");
                 }
             }
         }
@@ -76,7 +77,7 @@ namespace KASIR.Komponen
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Terjadi kesalahan saat membuka file: {ex.Message}");
+                    NotifyHelper.Error($"Terjadi kesalahan saat membuka file: {ex.Message}");
                 }
             }
         }

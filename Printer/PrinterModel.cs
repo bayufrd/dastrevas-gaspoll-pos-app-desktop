@@ -2687,7 +2687,7 @@ namespace KASIR.Printer
                 int pajak = int.Parse(pajakText);
                 int totalPajak = datas.total;
                 totalPajak = totalPajak * (pajak + 100) / 100;
-                
+
                 //rubah Total
                 datas.total = totalPajak;
 
@@ -2700,8 +2700,7 @@ namespace KASIR.Printer
                 datas.customer_change = totalPajak - datas.customer_cash;
 
                 // Tambah Line PPN
-                int pajakNominal = datas.total * pajak / 100;
-                strukText += FormatSimpleLine("PPN", string.Format("{0:n0}", pajakNominal)) + "\n";
+                strukText += FormatSimpleLine("PPN", string.Format("{0:n0}", pajak + "%")) + "\n";
 
             }
             //=======================End Pajak Checker============================\\
@@ -3419,7 +3418,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 datas.customer_change = totalPajak - datas.customer_cash;
 
                 // Tambah Line PPN
-                int pajakNominal = datas.total * pajak / 100;
+                int pajakNominal = datas.total * datas.subtotal;
                 _ = strukBuilder.AppendFormat("{0}\n",
                 FormatSimpleLine("PPN:", $"{pajakNominal:n0}"));
             }
@@ -4318,9 +4317,8 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 datas.total = totalPajak;
 
                 // Tambah Line PPN
-                int pajakNominal = datas.total * pajak / 100;
                 _ = strukBuilder.AppendFormat("{0}\n",
-                FormatSimpleLine("PPN:", $"{pajakNominal:n0}"));
+                FormatSimpleLine("PPN:", $"{pajak}%"));
             }
             //=======================End Pajak Checker============================\\
 
@@ -5908,14 +5906,13 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 int totalPajak = datas.data.total;
                 totalPajak = totalPajak * (pajak + 100) / 100;
                 datas.data.total = totalPajak;
-                
+
                 // Rubah Total
                 datas.data.customer_change = totalPajak - datas.data.customer_cash;
 
                 // Tambah Line PPN
-                int pajakNominal = datas.data.total * pajak / 100;
                 _ = strukBuilder.AppendFormat("{0}\n",
-                FormatSimpleLine("PPN:", $"{pajakNominal:n0}"));
+                FormatSimpleLine("PPN:", $"{pajak}%"));
             }
             //=======================End Pajak Checker============================\\
 
@@ -5964,7 +5961,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
             stream.Write(buffer1, 0, buffer1.Length);
             PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
-            
+
             // Enter setelah Logo
             buffer1 = Encoding.UTF8.GetBytes("\n");
             stream.Write(buffer1, 0, buffer1.Length);

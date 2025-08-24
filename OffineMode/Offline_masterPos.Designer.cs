@@ -30,11 +30,19 @@ namespace KASIR.OfflineMode
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges1 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges2 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges3 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges4 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges5 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges6 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges7 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges8 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             DataGridViewCellStyle dataGridViewCellStyle6 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle7 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle8 = new DataGridViewCellStyle();
@@ -46,9 +54,9 @@ namespace KASIR.OfflineMode
             lblDetailKeranjang = new IconButton();
             listBill1 = new IconButton();
             PanelDetailTotal = new Panel();
+            iconButtonGet = new Guna.UI2.WinForms.Guna2Button();
             cmbDiskon = new ComboBox();
             label6 = new Label();
-            iconButtonGet = new IconButton();
             label7 = new Label();
             lblDiskon1 = new Label();
             label1 = new Label();
@@ -58,10 +66,10 @@ namespace KASIR.OfflineMode
             lblSubTotal = new Label();
             dataGridView1 = new DataGridView();
             panel1 = new Panel();
-            ButtonSplit = new IconButton();
-            buttonPayment = new IconButton();
+            buttonPayment = new Guna.UI2.WinForms.Guna2Button();
+            SimpanBill = new Guna.UI2.WinForms.Guna2Button();
+            ButtonSplit = new Guna.UI2.WinForms.Guna2Button();
             iconButton3 = new IconButton();
-            ButtonSimpan = new IconButton();
             panel4 = new Panel();
             label3 = new Label();
             textBox2 = new TextBox();
@@ -190,9 +198,9 @@ namespace KASIR.OfflineMode
             // 
             PanelDetailTotal.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             PanelDetailTotal.BackColor = Color.WhiteSmoke;
+            PanelDetailTotal.Controls.Add(iconButtonGet);
             PanelDetailTotal.Controls.Add(cmbDiskon);
             PanelDetailTotal.Controls.Add(label6);
-            PanelDetailTotal.Controls.Add(iconButtonGet);
             PanelDetailTotal.Controls.Add(label7);
             PanelDetailTotal.Controls.Add(lblDiskon1);
             PanelDetailTotal.Controls.Add(label1);
@@ -204,6 +212,34 @@ namespace KASIR.OfflineMode
             PanelDetailTotal.Name = "PanelDetailTotal";
             PanelDetailTotal.Size = new Size(392, 135);
             PanelDetailTotal.TabIndex = 15;
+            // 
+            // iconButtonGet
+            // 
+            iconButtonGet.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            iconButtonGet.BackColor = Color.Transparent;
+            iconButtonGet.BorderRadius = 8;
+            iconButtonGet.BorderThickness = 2;
+            iconButtonGet.Cursor = Cursors.Hand;
+            iconButtonGet.CustomizableEdges = customizableEdges1;
+            iconButtonGet.DisabledState.BorderColor = Color.DarkGray;
+            iconButtonGet.DisabledState.CustomBorderColor = Color.DarkGray;
+            iconButtonGet.DisabledState.FillColor = Color.FromArgb(169, 169, 169);
+            iconButtonGet.DisabledState.ForeColor = Color.FromArgb(141, 141, 141);
+            iconButtonGet.FillColor = Color.White;
+            iconButtonGet.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            iconButtonGet.ForeColor = Color.Black;
+            iconButtonGet.Location = new Point(281, 98);
+            iconButtonGet.Margin = new Padding(3, 3, 3, 20);
+            iconButtonGet.Name = "iconButtonGet";
+            iconButtonGet.PressedColor = Color.Gray;
+            iconButtonGet.ShadowDecoration.CustomizableEdges = customizableEdges2;
+            iconButtonGet.ShadowDecoration.Depth = 8;
+            iconButtonGet.ShadowDecoration.Enabled = true;
+            iconButtonGet.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
+            iconButtonGet.Size = new Size(108, 27);
+            iconButtonGet.TabIndex = 26;
+            iconButtonGet.Text = "Pakai";
+            iconButtonGet.Click += btnGet_Click;
             // 
             // cmbDiskon
             // 
@@ -227,27 +263,6 @@ namespace KASIR.OfflineMode
             label6.Size = new Size(71, 21);
             label6.TabIndex = 61;
             label6.Text = "Discount";
-            // 
-            // iconButtonGet
-            // 
-            iconButtonGet.BackColor = Color.White;
-            iconButtonGet.Cursor = Cursors.Hand;
-            iconButtonGet.FlatAppearance.BorderSize = 0;
-            iconButtonGet.FlatStyle = FlatStyle.Flat;
-            iconButtonGet.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            iconButtonGet.ForeColor = Color.Black;
-            iconButtonGet.IconChar = IconChar.None;
-            iconButtonGet.IconColor = Color.FromArgb(15, 90, 94);
-            iconButtonGet.IconFont = IconFont.Auto;
-            iconButtonGet.IconSize = 20;
-            iconButtonGet.Location = new Point(287, 97);
-            iconButtonGet.Name = "iconButtonGet";
-            iconButtonGet.Size = new Size(93, 23);
-            iconButtonGet.TabIndex = 23;
-            iconButtonGet.Text = "Pakai";
-            iconButtonGet.TextImageRelation = TextImageRelation.ImageBeforeText;
-            iconButtonGet.UseVisualStyleBackColor = false;
-            iconButtonGet.Click += btnGet_Click;
             // 
             // label7
             // 
@@ -395,64 +410,107 @@ namespace KASIR.OfflineMode
             dataGridView1.RowTemplate.DefaultCellStyle.SelectionForeColor = Color.Black;
             dataGridView1.RowTemplate.Height = 40;
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView1.Size = new Size(392, 340);
+            dataGridView1.Size = new Size(198, 340);
             dataGridView1.TabIndex = 14;
             dataGridView1.CellContentClick += dataGridView1_CellContentClick;
             // 
             // panel1
             // 
             panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            panel1.Controls.Add(ButtonSplit);
             panel1.Controls.Add(buttonPayment);
+            panel1.Controls.Add(SimpanBill);
+            panel1.Controls.Add(ButtonSplit);
             panel1.Controls.Add(iconButton3);
-            panel1.Controls.Add(ButtonSimpan);
             panel1.Location = new Point(3, 553);
             panel1.Name = "panel1";
             panel1.Size = new Size(401, 104);
             panel1.TabIndex = 8;
             // 
+            // buttonPayment
+            // 
+            buttonPayment.BackColor = Color.Transparent;
+            buttonPayment.BorderColor = Color.FromArgb(15, 90, 94);
+            buttonPayment.BorderRadius = 8;
+            buttonPayment.BorderThickness = 2;
+            buttonPayment.Cursor = Cursors.Hand;
+            buttonPayment.CustomizableEdges = customizableEdges3;
+            buttonPayment.DisabledState.BorderColor = Color.DarkGray;
+            buttonPayment.DisabledState.CustomBorderColor = Color.DarkGray;
+            buttonPayment.DisabledState.FillColor = Color.FromArgb(169, 169, 169);
+            buttonPayment.DisabledState.ForeColor = Color.FromArgb(141, 141, 141);
+            buttonPayment.FillColor = Color.FromArgb(15, 90, 94);
+            buttonPayment.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            buttonPayment.ForeColor = Color.White;
+            buttonPayment.Location = new Point(5, 46);
+            buttonPayment.Margin = new Padding(3, 3, 3, 20);
+            buttonPayment.Name = "buttonPayment";
+            buttonPayment.ShadowDecoration.BorderRadius = 8;
+            customizableEdges4.TopLeft = false;
+            customizableEdges4.TopRight = false;
+            buttonPayment.ShadowDecoration.CustomizableEdges = customizableEdges4;
+            buttonPayment.ShadowDecoration.Depth = 20;
+            buttonPayment.ShadowDecoration.Enabled = true;
+            buttonPayment.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
+            buttonPayment.Size = new Size(392, 45);
+            buttonPayment.TabIndex = 25;
+            buttonPayment.Text = "Proses Pembayaran";
+            buttonPayment.Click += buttonPayment_Click;
+            // 
+            // SimpanBill
+            // 
+            SimpanBill.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            SimpanBill.BackColor = Color.Transparent;
+            SimpanBill.BorderRadius = 8;
+            SimpanBill.BorderThickness = 2;
+            SimpanBill.Cursor = Cursors.Hand;
+            SimpanBill.CustomizableEdges = customizableEdges5;
+            SimpanBill.DisabledState.BorderColor = Color.DarkGray;
+            SimpanBill.DisabledState.CustomBorderColor = Color.DarkGray;
+            SimpanBill.DisabledState.FillColor = Color.FromArgb(169, 169, 169);
+            SimpanBill.DisabledState.ForeColor = Color.FromArgb(141, 141, 141);
+            SimpanBill.FillColor = Color.White;
+            SimpanBill.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            SimpanBill.ForeColor = Color.Black;
+            SimpanBill.Location = new Point(166, 8);
+            SimpanBill.Margin = new Padding(3, 3, 3, 20);
+            SimpanBill.Name = "SimpanBill";
+            SimpanBill.PressedColor = Color.Gray;
+            SimpanBill.ShadowDecoration.CustomizableEdges = customizableEdges6;
+            SimpanBill.ShadowDecoration.Depth = 8;
+            SimpanBill.ShadowDecoration.Enabled = true;
+            SimpanBill.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
+            SimpanBill.Size = new Size(155, 34);
+            SimpanBill.TabIndex = 24;
+            SimpanBill.Text = "Simpan Bill";
+            SimpanBill.Click += SimpanBill_Click;
+            // 
             // ButtonSplit
             // 
             ButtonSplit.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            ButtonSplit.BackColor = Color.Transparent;
+            ButtonSplit.BorderRadius = 8;
+            ButtonSplit.BorderThickness = 2;
             ButtonSplit.Cursor = Cursors.Hand;
-            ButtonSplit.FlatAppearance.BorderSize = 0;
-            ButtonSplit.FlatStyle = FlatStyle.Flat;
+            ButtonSplit.CustomizableEdges = customizableEdges7;
+            ButtonSplit.DisabledState.BorderColor = Color.DarkGray;
+            ButtonSplit.DisabledState.CustomBorderColor = Color.DarkGray;
+            ButtonSplit.DisabledState.FillColor = Color.FromArgb(169, 169, 169);
+            ButtonSplit.DisabledState.ForeColor = Color.FromArgb(141, 141, 141);
+            ButtonSplit.FillColor = Color.White;
             ButtonSplit.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
             ButtonSplit.ForeColor = Color.Black;
-            ButtonSplit.IconChar = IconChar.None;
-            ButtonSplit.IconColor = Color.FromArgb(15, 90, 94);
-            ButtonSplit.IconFont = IconFont.Auto;
-            ButtonSplit.IconSize = 25;
-            ButtonSplit.ImageAlign = ContentAlignment.MiddleRight;
-            ButtonSplit.Location = new Point(8, 7);
+            ButtonSplit.Location = new Point(5, 8);
+            ButtonSplit.Margin = new Padding(3, 3, 3, 20);
             ButtonSplit.Name = "ButtonSplit";
-            ButtonSplit.Size = new Size(155, 35);
+            ButtonSplit.PressedColor = Color.Gray;
+            ButtonSplit.ShadowDecoration.CustomizableEdges = customizableEdges8;
+            ButtonSplit.ShadowDecoration.Depth = 8;
+            ButtonSplit.ShadowDecoration.Enabled = true;
+            ButtonSplit.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
+            ButtonSplit.Size = new Size(155, 34);
             ButtonSplit.TabIndex = 23;
             ButtonSplit.Text = "Split Bill";
-            ButtonSplit.UseVisualStyleBackColor = true;
             ButtonSplit.Click += ButtonSplit_Click;
-            // 
-            // buttonPayment
-            // 
-            buttonPayment.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            buttonPayment.BackColor = Color.FromArgb(15, 90, 94);
-            buttonPayment.Cursor = Cursors.Hand;
-            buttonPayment.FlatAppearance.BorderSize = 0;
-            buttonPayment.FlatStyle = FlatStyle.Flat;
-            buttonPayment.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            buttonPayment.ForeColor = Color.Gainsboro;
-            buttonPayment.IconChar = IconChar.None;
-            buttonPayment.IconColor = Color.Gainsboro;
-            buttonPayment.IconFont = IconFont.Auto;
-            buttonPayment.IconSize = 30;
-            buttonPayment.ImageAlign = ContentAlignment.MiddleRight;
-            buttonPayment.Location = new Point(5, 47);
-            buttonPayment.Name = "buttonPayment";
-            buttonPayment.Size = new Size(392, 49);
-            buttonPayment.TabIndex = 22;
-            buttonPayment.Text = "Proses Pembayaran";
-            buttonPayment.UseVisualStyleBackColor = false;
-            buttonPayment.Click += buttonPayment_Click;
             // 
             // iconButton3
             // 
@@ -471,27 +529,6 @@ namespace KASIR.OfflineMode
             iconButton3.TabIndex = 21;
             iconButton3.UseVisualStyleBackColor = true;
             iconButton3.Click += button3_Click;
-            // 
-            // ButtonSimpan
-            // 
-            ButtonSimpan.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            ButtonSimpan.Cursor = Cursors.Hand;
-            ButtonSimpan.FlatAppearance.BorderSize = 0;
-            ButtonSimpan.FlatStyle = FlatStyle.Flat;
-            ButtonSimpan.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            ButtonSimpan.ForeColor = Color.Black;
-            ButtonSimpan.IconChar = IconChar.None;
-            ButtonSimpan.IconColor = Color.FromArgb(15, 90, 94);
-            ButtonSimpan.IconFont = IconFont.Auto;
-            ButtonSimpan.IconSize = 25;
-            ButtonSimpan.ImageAlign = ContentAlignment.MiddleRight;
-            ButtonSimpan.Location = new Point(166, 7);
-            ButtonSimpan.Name = "ButtonSimpan";
-            ButtonSimpan.Size = new Size(155, 35);
-            ButtonSimpan.TabIndex = 20;
-            ButtonSimpan.Text = "Simpan Bill";
-            ButtonSimpan.UseVisualStyleBackColor = true;
-            ButtonSimpan.Click += SimpanBill_Click;
             // 
             // panel4
             // 
@@ -953,11 +990,8 @@ namespace KASIR.OfflineMode
         private Panel panel8;
         private FlowLayoutPanel dataGridView3;
         private IconButton listBill1;
-        private IconButton ButtonSimpan;
         private IconButton iconButton3;
-        private IconButton buttonPayment;
         private IconDropDownButton iconDropDownButton1;
-        private IconButton ButtonSplit;
         private PictureBox pictureBox2;
         private DataGridView dataGridView2;
         private TextBox txtCariMenuList;
@@ -970,7 +1004,6 @@ namespace KASIR.OfflineMode
         private IconButton btnCari;
         private Panel PanelDetailTotal;
         private Label label6;
-        private IconButton iconButtonGet;
         private Label label7;
         private Label lblDiskon1;
         private Label label1;
@@ -987,5 +1020,9 @@ namespace KASIR.OfflineMode
         private IconButton btnGridView;
         private IconButton btnListView;
         private IconButton btnReload;
+        public Guna.UI2.WinForms.Guna2Button ButtonSplit;
+        public Guna.UI2.WinForms.Guna2Button SimpanBill;
+        public Guna.UI2.WinForms.Guna2Button buttonPayment;
+        public Guna.UI2.WinForms.Guna2Button iconButtonGet;
     }
 }

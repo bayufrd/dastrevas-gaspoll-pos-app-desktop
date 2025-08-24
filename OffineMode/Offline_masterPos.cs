@@ -622,10 +622,6 @@ namespace KASIR.OfflineMode
             RoundedPanel(panelCartArea);
             RoundedPanel(PanelDetailTotal, 8);
             RoundedPanel(panelSearchBox, 8);
-            IconButtonRounded(buttonPayment, true, null, 8);
-            IconButtonRounded(ButtonSplit, true, Color.DarkGray, 8);
-            IconButtonRounded(ButtonSimpan, true, Color.DarkGray, 8);
-            IconButtonRounded(iconButtonGet, true, Color.DarkGray, 4);
         }
         public void IconButtonRounded(IconButton button, bool? isRounded = true, Color? outlineColor = null, int cornerRadius = 20)
         {

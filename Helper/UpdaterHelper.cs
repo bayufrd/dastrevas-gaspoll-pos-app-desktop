@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using KASIR.Services;
 using SharpCompress.Archives;
 using SharpCompress.Common;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace KASIR.Helper
 {
@@ -16,7 +17,6 @@ namespace KASIR.Helper
     {
         private readonly IInternetService _internetService;
         private string _versionUpdaterApp;
-        private string _pathKasir;
 
         public UpdaterHelper(IInternetService internetService)
         {
@@ -110,7 +110,10 @@ namespace KASIR.Helper
                         // URL file unduhan - sesuaikan dengan kebutuhan Anda
                         string fileUrl = urlVersion + "/server/Dastrevas.zip";
                         string destinationPath = Path.Combine("update" , "Dastrevas.rar");
-
+                        LoggerUtil.LogWarning($"Old Url {oldUrl}\n" +
+                                $"NewUrl :{urlVersion}/server/version.txt\n" +
+                                $"Current Version : {_versionUpdaterApp}\n" +
+                                $"Url Version : {urlVersion}\n");
                         await DownloadFileAsync(httpClient, fileUrl, destinationPath);
                         await ExtractAndUpdateAsync(destinationPath, newVersion);
                     }
@@ -171,7 +174,7 @@ namespace KASIR.Helper
         {
             try
             {
-                string extractDirectory = Path.Combine(_pathKasir ?? Application.StartupPath, "update");
+                string extractDirectory = Path.Combine(Application.StartupPath, "update");
                 Directory.CreateDirectory(extractDirectory);
 
                 // Ekstrak arsip

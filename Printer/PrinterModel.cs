@@ -28,11 +28,6 @@ namespace KASIR.Printer
         private const string SEPARATOR = "--------------------------------\n";
         private const string PRINT_POWERED_BY = "Powered By Dastrevas\n";
 
-        private readonly string kodeSizeNormal = "\x1D\x21\x00"; // 1x1
-        private readonly string kodeSizeLebar = "\x1D\x21\x01"; // 2x1
-        private readonly string kodeSizeTinggi = "\x1D\x21\x10"; // 1x2
-        private readonly string kodeSizeBesar = "\x1D\x21\x11"; // 2x2
-
         //Encoding encoding = Encoding.GetEncoding("IBM437");
         //byte[] buffer = encoding.GetBytes(strukText);
 
@@ -43,9 +38,6 @@ namespace KASIR.Printer
 
         private readonly string kodeHeksadesimalBold = "\x1B\x45\x01";
         private readonly string kodeHeksadesimalSizeBesar = "\x1D\x21\x01";
-        //private string kodeHeksadesimalSizeBesar = "\x1D\x21\x11"; // double width + height
-        //private string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x00";
-        //private string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x11";
         private readonly string kodeFontKecil = "\x1D\x21\x01";
         public PrinterModel()
         {
@@ -1832,10 +1824,7 @@ namespace KASIR.Printer
                         }
                         finally
                         {
-                            if (stream != null)
-                            {
-                                stream.Close();
-                            }
+                            stream?.Close();
                         }
                     }
                 }
@@ -2579,8 +2568,7 @@ namespace KASIR.Printer
 
         // Struct Refund
         public async Task PrintModelRefund(DataRefundStruk datas,
-            List<RefundDetailStruk> refundDetailStruks,
-            int totalTransactions)
+            List<RefundDetailStruk> refundDetailStruks)
         {
             try
             {
@@ -2598,7 +2586,7 @@ namespace KASIR.Printer
                     string printerId = printer.Key.Replace("inter", "");
                     if (IsNotMacAddressOrIpAddress(printerName))
                     {
-                        _ = Ex_PrintModelRefund(datas, refundDetailStruks, totalTransactions,
+                        _ = Ex_PrintModelRefund(datas, refundDetailStruks,
                             printerId, printerName);
                         continue;
                     }
@@ -2608,7 +2596,7 @@ namespace KASIR.Printer
                         // 🔑 buat koneksi sekali saja
                         using (Stream stream = await EstablishPrinterConnection(printerName))
                         {
-                            PrintRefundReceipt(datas, refundDetailStruks, totalTransactions, stream);
+                            PrintRefundReceipt(datas, refundDetailStruks, stream);
 
                             stream.Flush();
                         }
@@ -2623,13 +2611,12 @@ namespace KASIR.Printer
         }
 
         private void PrintRefundReceipt(DataRefundStruk datas,
-            List<RefundDetailStruk> refundDetailStruks, int totalTransactions, Stream stream)
+            List<RefundDetailStruk> refundDetailStruks, Stream stream)
         {
 
 
 
 
-            //string strukText = "\n" + kodeHeksadesimalBold + CenterText("No. " + totalTransactions.ToString()) + "\n";
             string strukText = kodeHeksadesimalNormal;
             strukText += SEPARATOR;
             strukText += kodeHeksadesimalBold + CenterText("REFUND");
@@ -2719,13 +2706,8 @@ namespace KASIR.Printer
             strukText += SEPARATOR;
             strukText += CenterText("Powered By Dastrevas");
 
-            string NomorUrut = "\n" + kodeHeksadesimalSizeBesar + kodeHeksadesimalBold +
-                               CenterText("No. " + totalTransactions) + "\n\n\n    ";
-
-            byte[] buffer1 = Encoding.UTF8.GetBytes(NomorUrut);
             byte[] buffer = Encoding.UTF8.GetBytes(strukText);
 
-            stream.Write(buffer1, 0, buffer1.Length);
             PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize); // Smaller logo size
             stream.Write(buffer, 0, buffer.Length);
             // Footer
@@ -2736,7 +2718,6 @@ namespace KASIR.Printer
         public async Task Ex_PrintModelRefund
         (DataRefundStruk datas,
             List<RefundDetailStruk> refundDetailStruks,
-            int totalTransactions,
             string printerId,
             string printerName)
         {
@@ -2966,7 +2947,6 @@ namespace KASIR.Printer
                         }
 
 
-                        DrawCenterText("No. " + totalTransactions, NomorAntrian);
 
                         // Path ke logo Powered by Anda
                         string poweredByLogoPath = "icon\\DT-Logo.bmp"; // Ganti dengan path logo Powered by Anda

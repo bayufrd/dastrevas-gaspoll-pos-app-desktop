@@ -472,44 +472,50 @@ namespace KASIR
                     {
                         try
                         {
-
                             // Dialog konfirmasi update
                             string titleHelper = "Update tersedia";
                             string msgHelper = $"Update tersedia Versi: {newVersionAppBatch}. Versi saat ini: #{currentAppNow}. Lanjutkan update ?";
                             string cancelHelper = "Lain kali";
                             string okHelper = "Update";
                             string updateHelper = "update";
-                            QuestionHelper c = new QuestionHelper(titleHelper, msgHelper, cancelHelper, okHelper, updateHelper);
-                            DialogResult update = new DialogResult();
-                            c.Show();
-                            if(update != DialogResult.OK)
+
+                            using (var c = new QuestionHelper(titleHelper, msgHelper, cancelHelper, okHelper, updateHelper))
                             {
-                                return;
-                            }
-                            else
-                            {
-                                // Langkah 7: Validasi Outlet untuk Update
+                                // Pakai this kalau dipanggil dari Form, agar jadi owner
+                                var result = c.ShowDialog(this); // atau c.ShowDialog();
+
+                                if (result != DialogResult.OK)
+                                    return;
+
+                                // --- lanjut proses update ---
                                 string focusOutletData =
                                     await httpClient.GetStringAsync($"{urlVersion}/server/outletUpdate.txt");
 
-                                string[] focusOutlets = focusOutletData.Trim(new char[] { ' ', '\n', '\r' })
+                                string[] focusOutlets = focusOutletData
+                                    .Trim(' ', '\n', '\r')
                                     .Split(',')
                                     .Select(s => s.Trim())
                                     .ToArray();
 
-                                // Periksa izin update untuk outlet
                                 if (focusOutlets.Contains(baseOutlet) || focusOutlets.Contains("0"))
                                 {
                                     shouldUpdate = true;
                                     NotifyHelper.Success("Mempersiapkan Updater Kasir...");
                                 }
 
-                                // Langkah 8: Eksekusi Update
                                 if (shouldUpdate)
                                 {
                                     LoggerUtil.LogNetwork("Memulai Proses Update");
                                     await OpenUpdaterAsync(currentAppNow, urlVersion, newVersionAppBatch);
                                 }
+
+                                LoggerUtil.LogWarning($"Old Url {oldUrl}\n" +
+                                    $"NewUrl :{urlVersion}/server/version.txt\n" +
+                                    $"Current Version : {currentAppNow}\n" +
+                                    $"New Version : {newVersionAppBatch}\n" +
+                                    $"Url Version : {urlVersion}\n" +
+                                    $"Choose : {result.ToString()}\n" +
+                                    $"FocusOutlet : {focusOutletData.ToString()}");
                             }
                         }
                         catch (Exception updateEx)

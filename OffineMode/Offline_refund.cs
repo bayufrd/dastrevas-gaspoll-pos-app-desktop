@@ -31,7 +31,7 @@ namespace KASIR.OfflineMode
         private readonly List<RefundDetailStruk> refundDetailStruks = new();
         private readonly List<RefundModel> refundItems = new();
         private int TotalRefunded;
-        private readonly int Nomortransaks;
+        private string Nomortransaks;
         private int isrefundall;
 
         public Offline_refund(string transaksiId)
@@ -43,6 +43,7 @@ namespace KASIR.OfflineMode
 
             btnRefund.Visible = true;
             cartId = transaksiId;
+            Nomortransaks = cartId.ToString();
             cmbPayform.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbPayform.DrawMode = DrawMode.OwnerDrawVariable;
             cmbPayform.DrawItem += CmbPayform_DrawItem;
@@ -811,7 +812,7 @@ namespace KASIR.OfflineMode
 
                         await Task.Run(async () =>
                         {
-                            await printerModel.PrintModelRefund(refundData, refundDetailStruks, Nomortransaks);
+                            await printerModel.PrintModelRefund(refundData, refundDetailStruks);
                         }, cts.Token);
 
                         // If successful, remove the saved print job
@@ -836,8 +837,7 @@ namespace KASIR.OfflineMode
                                 PrinterModel backgroundPrinterModel = new();
 
                                 // Retry the print operation in background
-                                await backgroundPrinterModel.PrintModelRefund(refundData, refundDetailStruks,
-                                    Nomortransaks);
+                                await backgroundPrinterModel.PrintModelRefund(refundData, refundDetailStruks);
 
                                 // If successful, remove the saved print job
                                 RemoveSavedRefundPrintJob(Nomortransaks);
@@ -874,7 +874,7 @@ namespace KASIR.OfflineMode
         private void SaveRefundPrintJobForRecovery(
             DataRefundStruk refundData,
             List<RefundDetailStruk> refundDetailStruks,
-            int transactionNumber)
+            string transactionNumber)
         {
             try
             {
@@ -900,7 +900,7 @@ namespace KASIR.OfflineMode
             }
         }
 
-        private void RemoveSavedRefundPrintJob(int transactionNumber)
+        private void RemoveSavedRefundPrintJob(string transactionNumber)
         {
             try
             {
@@ -939,7 +939,7 @@ namespace KASIR.OfflineMode
         {
             public DataRefundStruk RefundData { get; set; }
             public List<RefundDetailStruk> RefundDetails { get; set; }
-            public int TransactionNumber { get; set; }
+            public string TransactionNumber { get; set; }
             public string OutletId { get; set; }
             public DateTime Timestamp { get; set; }
         }

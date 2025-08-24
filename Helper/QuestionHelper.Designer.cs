@@ -156,7 +156,6 @@
         }
 
         #endregion
-        private Guna.UI2.WinForms.Guna2ShadowPanel guna2ShadowPanel1;
         private Panel PanelText;
         public Label lblDisc;
         public Label lblTitle;

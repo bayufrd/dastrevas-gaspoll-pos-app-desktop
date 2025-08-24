@@ -1111,7 +1111,6 @@ namespace KASIR.Komponen
         private IconButton btnSetupPictsDual;
         private Panel LogPanel;
         private Panel LoggerMsg;
-        private Label label3;
         private Label label6;
         private SButton sButtonListMenu;
     }

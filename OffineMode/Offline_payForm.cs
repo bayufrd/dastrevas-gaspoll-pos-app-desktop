@@ -11,6 +11,10 @@ using KASIR.Helper;
 using Newtonsoft.Json.Linq;
 using System.Runtime.InteropServices;
 using Polly.Caching;
+using KASIR.OffineMode;
+using System.Text;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace KASIR.OfflineMode
 {
@@ -858,7 +862,7 @@ namespace KASIR.OfflineMode
                         .Where(cd => cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList();
                     List<KitchenAndBarCanceledItems> canceledBarItems = kitchenBarCanceled
                         .Where(cd => cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList();
-
+                    SendWhatsAppReceiptIfEligible(menuModel, cartDetails);
                     if (btnSimpan != null)
                     {
                         btnSimpan.Text = "Mencetak...";
@@ -938,6 +942,510 @@ namespace KASIR.OfflineMode
                 }
             }
         }
+
+        //======================= Whatsapp Struk Customize =======================
+        private async Task SendWhatsAppReceiptIfEligible(GetStrukCustomerTransaction datas, List<CartDetailStrukCustomerTransaction> cartDetails)
+        {
+            try
+            {
+                if(datas?.data == null || string.IsNullOrEmpty(datas?.data.member_phone_number))
+                {
+                    return;
+                }
+                // Cek apakah koneksi WhatsApp tersedia dan terhubung
+                var whatsappConfig = new Whatsapp_Config();
+                var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
+
+                // Debug logging untuk status koneksi
+                LoggerUtil.LogWarning($"WhatsApp Connection Status: {connectionStatus}");
+
+                // Detail debugging untuk setiap kondisi
+                LoggerUtil.LogWarning($"Debug Kondisi Pengiriman:");
+                LoggerUtil.LogWarning($"1. Koneksi: {connectionStatus.Connected}");
+                LoggerUtil.LogWarning($"2. Data Transaksi: {datas?.data != null}");
+
+                // Cek detail nomor telepon
+                if (datas?.data != null)
+                {
+                    LoggerUtil.LogWarning($"3. Nomor Telepon Member: {datas.data.member_phone_number}");
+                    LoggerUtil.LogWarning($"4. Nama Member: {datas.data.member_name}");
+                    LoggerUtil.LogWarning($"5. ID Member: {datas.data.member_id}");
+                }
+
+                LoggerUtil.LogWarning($"6. Cart Details: {cartDetails?.Count ?? 0}");
+
+                // Cek kondisi untuk pengiriman pesan dengan logika yang lebih fleksibel
+                bool canSendWhatsApp = connectionStatus.Connected &&
+                                        datas?.data != null &&
+                                            // Prioritaskan nomor member
+                                            !string.IsNullOrEmpty(datas.data.member_phone_number)
+                                        &&
+                                        cartDetails != null &&
+                                        cartDetails.Any();
+
+                if (canSendWhatsApp)
+                {
+                    // Pilih nomor telepon (prioritaskan nomor member, jika tidak ada gunakan nomor customer)
+                    string phoneNumber = datas.data.member_phone_number;
+
+                    // Tambahan validasi nomor telepon
+                    if (IsValidPhoneNumber(phoneNumber))
+                    {
+                        // Buat pesan struk
+                        string strukMessage = BuildStrukMessage(datas, cartDetails);
+
+
+                        await SendWhatsAppMessage(phoneNumber, strukMessage);
+                        //// Path QR Code dengan pencarian di beberapa lokasi
+                        //string qrCodePath = FindQRCodePath();
+
+                        //if (!string.IsNullOrEmpty(qrCodePath))
+                        //{
+                        //    // Kirim pesan WhatsApp dengan lampiran
+                        //    await SendWhatsAppMessageWithAttachment(phoneNumber, strukMessage, qrCodePath);
+                        //}
+                        //else
+                        //{
+                        //    LoggerUtil.LogWarning("Tidak dapat menemukan file QR Code");
+                        //}
+                    }
+                    else
+                    {
+                        LoggerUtil.LogWarning($"Nomor telepon tidak valid: {phoneNumber}");
+                    }
+                }
+                else
+                {
+                    LoggerUtil.LogWarning("Kondisi pengiriman WhatsApp tidak terpenuhi");
+
+                    // Log detail kondisi yang tidak terpenuhi
+                    if (!connectionStatus.Connected)
+                        LoggerUtil.LogWarning("Alasan: Koneksi WhatsApp tidak tersambung");
+
+                    if (datas?.data == null)
+                        LoggerUtil.LogWarning("Alasan: Data transaksi kosong");
+
+                    if (string.IsNullOrEmpty(datas?.data?.member_phone_number))
+                        LoggerUtil.LogWarning("Alasan: Nomor telepon kosong");
+
+                    if (cartDetails == null || !cartDetails.Any())
+                        LoggerUtil.LogWarning("Alasan: Keranjang kosong");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error tanpa menghentikan proses utama
+                LoggerUtil.LogError(ex, "Gagal mengirim struk via WhatsApp: {ErrorMessage}", ex.Message);
+            }
+        }
+
+        // Metode validasi nomor telepon
+        private bool IsValidPhoneNumber(string phoneNumber)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                return false;
+
+            // Bersihkan nomor dari karakter non-digit
+            string cleanedNumber = new string(phoneNumber.Where(char.IsDigit).ToArray());
+
+            // Validasi panjang dan awalan
+            return cleanedNumber.Length >= 10 &&
+                   (cleanedNumber.StartsWith("62") ||
+                    cleanedNumber.StartsWith("0"));
+        }
+
+        // Metode pencarian file QR Code
+        private string FindQRCodePath()
+        {
+            // Daftar lokasi kemungkinan file QR Code
+            string[] possiblePaths = new[]
+            {
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "icon", "QRcode.bmp"),
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "QRcode.bmp"),
+        Path.Combine(Application.StartupPath, "icon", "QRcode.bmp"),
+        Path.Combine(Application.StartupPath, "QRcode.bmp"),
+        "QRcode.bmp"
+    };
+
+            foreach (var path in possiblePaths)
+            {
+                if (File.Exists(path))
+                {
+                    LoggerUtil.LogWarning($"QR Code ditemukan di: {path}");
+                    return path;
+                }
+            }
+
+            LoggerUtil.LogWarning("Tidak dapat menemukan file QR Code");
+            return null;
+        }
+
+        private string BuildStrukMessage(GetStrukCustomerTransaction datas, List<CartDetailStrukCustomerTransaction> cartDetails)
+        {
+            var sb = new StringBuilder();
+
+            // Header
+            sb.AppendLine($"*Struk Transaksi - {datas.data.outlet_name}*");
+            sb.AppendLine($"No. Nota: {datas.data.receipt_number}");
+            sb.AppendLine($"Tanggal: {DateTime.Now:dd/MM/yyyy HH:mm}");
+            sb.AppendLine();
+
+            // Informasi Member/Customer
+            if (datas.data.member_id != 0 || !string.IsNullOrEmpty(datas.data.member_name))
+            {
+                sb.AppendLine($"Nama Member: {datas.data.member_name ?? "N/A"}");
+                sb.AppendLine($"No. Member: {datas.data.member_phone_number ?? "N/A"}");
+
+                // Tambahkan informasi poin jika tersedia
+                if (datas.data.member_point.HasValue)
+                {
+                    sb.AppendLine($"Poin Member: {datas.data.member_point.Value}");
+                }
+            }
+            else
+            {
+                sb.AppendLine($"Nama: {datas.data.customer_name ?? "Walk-in Customer"}");
+            }
+
+            sb.AppendLine();
+
+            // Kelompokkan item berdasarkan jenis
+            var foodItems = cartDetails.Where(c =>
+                c.menu_type == "Makanan" || c.menu_type == "Additional Makanan").ToList();
+            var drinkItems = cartDetails.Where(c =>
+                c.menu_type == "Minuman" || c.menu_type == "Additional Minuman").ToList();
+
+            // Detail Transaksi
+            sb.AppendLine("*Detail Pesanan:*");
+
+            // Makanan
+            if (foodItems.Any())
+            {
+                sb.AppendLine("🍽️ Makanan:");
+                foreach (var item in foodItems)
+                {
+                    sb.AppendLine(FormatOrderItem(item));
+                }
+            }
+
+            // Minuman
+            if (drinkItems.Any())
+            {
+                sb.AppendLine("🥤 Minuman:");
+                foreach (var item in drinkItems)
+                {
+                    sb.AppendLine(FormatOrderItem(item));
+                }
+            }
+
+            sb.AppendLine();
+
+            // Ringkasan Pembayaran
+            sb.AppendLine("*Ringkasan Pembayaran:*");
+            sb.AppendLine($"Subtotal: Rp {datas.data.subtotal:N0}");
+
+            // Diskon
+            if (datas.data.discounts_value.HasValue && datas.data.discounts_value != 0)
+            {
+                string discountType = datas.data.discounts_is_percent == "1" ? "%" : "";
+                sb.AppendLine($"Diskon: Rp {datas.data.discounts_value:N0}{discountType}");
+            }
+
+            sb.AppendLine($"Total: Rp {datas.data.total:N0}");
+            sb.AppendLine($"Bayar: Rp {datas.data.customer_cash:N0}");
+            sb.AppendLine($"Kembali: Rp {datas.data.customer_change:N0}");
+
+            // Metode Pembayaran
+            sb.AppendLine($"Metode Bayar: {datas.data.payment_type ?? "Tunai"}");
+
+            return sb.ToString();
+        }
+
+        // Helper method untuk format item pesanan
+        private string FormatOrderItem(CartDetailStrukCustomerTransaction item)
+        {
+            var itemDetails = new List<string>
+    {
+        $"- {item.menu_name} (x{item.qty})",
+        $"  Harga: Rp {item.total_price:N0}"
+    };
+
+            // Tambahkan varian jika ada
+            if (!string.IsNullOrEmpty(item.varian))
+            {
+                itemDetails.Add($"  Varian: {item.varian}");
+            }
+
+            // Tambahkan catatan item jika ada
+            if (!string.IsNullOrEmpty(item.note_item))
+            {
+                itemDetails.Add($"  Catatan: {item.note_item}");
+            }
+
+            return string.Join("\n", itemDetails);
+        }
+        // Method untuk mengirim pesan WhatsApp
+        // Gunakan HttpClient lokal atau static
+        private static readonly HttpClient _httpClient;
+
+        // Inisialisasi statis
+        static Offline_payForm()
+        {
+            _httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(30)
+            };
+        }
+
+        private async Task SendWhatsAppMessageWithAttachment(string phoneNumber, string message, string attachmentPath)
+        {
+            try
+            {
+                // Validasi file lampiran
+                if (!File.Exists(attachmentPath))
+                {
+                    LoggerUtil.LogWarning($"File lampiran tidak ditemukan: {attachmentPath}");
+                    return;
+                }
+
+                // Bersihkan nomor telepon dari karakter non-digit
+                phoneNumber = new string(phoneNumber.Where(char.IsDigit).ToArray());
+
+                // Tambahkan kode negara jika tidak ada
+                if (!phoneNumber.StartsWith("62"))
+                {
+                    phoneNumber = phoneNumber.StartsWith("0")
+                        ? "62" + phoneNumber.Substring(1)
+                        : "62" + phoneNumber;
+                }
+
+                // Konversi gambar ke base64 di compress
+
+                string compressedImagePath = CompressImage(attachmentPath);
+
+
+                byte[] imageBytes = await File.ReadAllBytesAsync(compressedImagePath);
+                string base64Image = Convert.ToBase64String(imageBytes);
+
+                // Siapkan data untuk dikirim
+                var requestData = new Dictionary<string, string>
+                {
+                    ["nomor"] = phoneNumber,
+                    ["pesan"] = $"*Form untuk Kritik dan Saran*\n\n{message}",
+                    ["lampiran"] = base64Image
+                };
+
+                // Kirim pesan via API
+                using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+                var content = new StringContent(
+                    JsonConvert.SerializeObject(requestData),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                // Logging sebelum mengirim
+                LoggerUtil.LogWarning($"Mencoba mengirim pesan ke {phoneNumber}");
+                LoggerUtil.LogWarning($"Panjang lampiran: {base64Image.Length} karakter");
+
+                var response = await _httpClient.PostAsync(
+                    "http://localhost:1234/kirim-lampiran",
+                    content,
+                    cancellationTokenSource.Token
+                );
+
+                // Periksa response
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseObject = JsonConvert.DeserializeObject<dynamic>(responseContent);
+
+                    LoggerUtil.LogWarning($"Struk berhasil dikirim ke {phoneNumber}");
+                    LoggerUtil.LogWarning($"Detail Pengiriman: {responseObject}");
+                }
+                else
+                {
+                    LoggerUtil.LogWarning($"Gagal mengirim struk ke {phoneNumber}");
+                    LoggerUtil.LogWarning($"Error Response: {responseContent}");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                LoggerUtil.LogWarning("Waktu tunggu habis saat mengirim pesan");
+            }
+            catch (ArgumentException ex)
+            {
+                LoggerUtil.LogError(ex, $"Kesalahan parameter: {ex.Message}");
+            }
+            catch (HttpRequestException ex)
+            {
+                LoggerUtil.LogError(ex, $"Kesalahan jaringan saat mengirim pesan ke {phoneNumber}");
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, $"Kesalahan saat mengirim pesan ke {phoneNumber}");
+
+                // Tambahkan detail error untuk debugging
+                LoggerUtil.LogError(ex,$"Detail Error: {ex.GetType().Name} - {ex.Message}");
+                LoggerUtil.LogError(ex,$"Stack Trace: {ex.StackTrace}");
+            }
+        }
+
+        private string CompressImage(string inputPath)
+        {
+            try
+            {
+                // Buat nama file sementara
+                string outputPath = Path.Combine(
+                    Path.GetTempPath(),
+                    $"compressed_{Guid.NewGuid()}.jpg"
+                );
+
+                // Muat gambar
+                using (var image = Image.FromFile(inputPath))
+                {
+                    // Hitung ukuran kompresi
+                    int maxWidth = 800;  // Lebar maksimum
+                    int maxHeight = 600; // Tinggi maksimum
+
+                    // Hitung rasio
+                    float ratioX = (float)maxWidth / image.Width;
+                    float ratioY = (float)maxHeight / image.Height;
+                    float ratio = Math.Min(ratioX, ratioY);
+
+                    // Hitung dimensi baru
+                    int newWidth = (int)(image.Width * ratio);
+                    int newHeight = (int)(image.Height * ratio);
+
+                    // Buat gambar baru dengan ukuran yang dikurangi
+                    using (var resizedImage = new Bitmap(newWidth, newHeight))
+                    {
+                        using (var graphics = Graphics.FromImage(resizedImage))
+                        {
+                            // Atur kualitas
+                            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                            graphics.DrawImage(image, 0, 0, newWidth, newHeight);
+                        }
+
+                        // Simpan dengan kompresi
+                        var encoderParameters = new EncoderParameters(1);
+                        encoderParameters.Param[0] = new EncoderParameter(
+                            System.Drawing.Imaging.Encoder.Quality,
+                            (long)50  // Gunakan cast explicit ke long
+                        );
+
+                        var codec = GetEncoderInfo("image/jpeg");
+                        resizedImage.Save(outputPath, codec, encoderParameters);
+                    }
+                }
+
+                LoggerUtil.LogWarning($"Gambar dikompres: {outputPath}");
+                return outputPath;
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Gagal mengkompresi gambar");
+                return inputPath;  // Kembalikan path asli jika gagal
+            }
+        }
+
+        private ImageCodecInfo GetEncoderInfo(string mimeType)
+        {
+            return ImageCodecInfo.GetImageEncoders()
+                .FirstOrDefault(t => t.MimeType == mimeType);
+        }
+        // Method untuk mengecek dan menyiapkan lampiran
+        private string PrepareLampiranPath(string defaultPath)
+        {
+            try
+            {
+                // Cari path absolut
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                string fullPath = Path.Combine(basePath, defaultPath);
+
+                // Periksa beberapa lokasi umum
+                string[] possiblePaths = new[]
+                {
+                fullPath,
+                Path.Combine(basePath, "icon", "QRcode.bmp"),
+                Path.Combine(basePath, "QRcode.bmp"),
+                defaultPath
+            };
+
+                foreach (var path in possiblePaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        LoggerUtil.LogWarning($"Lampiran ditemukan di: {path}");
+                        return path;
+                    }
+                }
+
+                LoggerUtil.LogWarning($"Lampiran tidak ditemukan di path: {defaultPath}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, $"Kesalahan saat mencari lampiran di {defaultPath}");
+                return null;
+            }
+        }
+        private async Task SendWhatsAppMessage(string phoneNumber, string message)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(phoneNumber))
+                {
+                    LoggerUtil.LogWarning("Nomor telepon kosong");
+                    return;
+                }
+
+                // Bersihkan nomor telepon dari karakter non-digit
+                phoneNumber = new string(phoneNumber.Where(char.IsDigit).ToArray());
+
+                // Tambahkan kode negara jika tidak ada
+                if (!phoneNumber.StartsWith("62"))
+                {
+                    phoneNumber = phoneNumber.StartsWith("0")
+                        ? "62" + phoneNumber.Substring(1)
+                        : "62" + phoneNumber;
+                }
+
+                using (var httpClient = new HttpClient())
+                {
+                    // 🔥 Gunakan JSON, bukan FormUrlEncoded
+                    var payload = new
+                    {
+                        nomor = phoneNumber,
+                        pesan = message
+                    };
+
+                    var json = JsonConvert.SerializeObject(payload);
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                    var response = await httpClient.PostAsync("http://localhost:1234/kirim-pesan", content);
+
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    if (response.IsSuccessStatusCode)
+                    {
+                        LoggerUtil.LogWarning($"Struk berhasil dikirim ke {phoneNumber}");
+                        LoggerUtil.LogWarning($"Response: {responseContent}");
+                    }
+                    else
+                    {
+                        LoggerUtil.LogWarning($"Gagal mengirim struk ke {phoneNumber}");
+                        LoggerUtil.LogWarning($"Error Response: {responseContent}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, $"Kesalahan saat mengirim pesan ke {phoneNumber}");
+            }
+        }
+
+        //===================================================================================================
         private void SavePrintJobForRecovery(PrintJob job)
         {
             try

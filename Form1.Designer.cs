@@ -55,6 +55,7 @@ namespace KASIR
             TransBtn = new IconButton();
             LogoKasir = new PictureBox();
             panel2 = new Panel();
+            btnWhatsapp = new IconButton();
             panel1.SuspendLayout();
             panelTitleBar.SuspendLayout();
             gradientPanel1.SuspendLayout();
@@ -200,6 +201,7 @@ namespace KASIR
             gradientPanel2.Angle = 90F;
             gradientPanel2.BackColor = Color.FromArgb(15, 90, 94);
             gradientPanel2.BottomColor = Color.FromArgb(15, 90, 94);
+            gradientPanel2.Controls.Add(btnWhatsapp);
             gradientPanel2.Controls.Add(BtnSettingForm);
             gradientPanel2.Controls.Add(btnDev);
             gradientPanel2.Controls.Add(btnContact);
@@ -332,6 +334,21 @@ namespace KASIR
             resources.ApplyResources(panel2, "panel2");
             panel2.Name = "panel2";
             // 
+            // btnWhatsapp
+            // 
+            btnWhatsapp.BackColor = Color.Transparent;
+            btnWhatsapp.Cursor = Cursors.Hand;
+            btnWhatsapp.FlatAppearance.BorderSize = 0;
+            resources.ApplyResources(btnWhatsapp, "btnWhatsapp");
+            btnWhatsapp.ForeColor = Color.Gainsboro;
+            btnWhatsapp.IconChar = IconChar.Whatsapp;
+            btnWhatsapp.IconColor = Color.Gainsboro;
+            btnWhatsapp.IconFont = IconFont.Auto;
+            btnWhatsapp.IconSize = 25;
+            btnWhatsapp.Name = "btnWhatsapp";
+            btnWhatsapp.UseVisualStyleBackColor = false;
+            btnWhatsapp.Click += btnWhatsapp_Click;
+            // 
             // Form1
             // 
             resources.ApplyResources(this, "$this");
@@ -386,5 +403,6 @@ namespace KASIR
         private PictureBox LogoKasir;
         private Panel panel2;
         private PictureBox NavBarBtn;
+        private IconButton btnWhatsapp;
     }
 }

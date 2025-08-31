@@ -166,17 +166,41 @@ namespace KASIR
         }
 
 
-        public void initPingTest()
+        public async void initPingTest()
         {
             if (isOpenNavbar)
             {
                 SignalPing.TextImageRelation = TextImageRelation.ImageBeforeText;
                 SignalPing.Text = "Ping Test";
+
+                Whatsapp_Config whatsappConfig = new();
+                var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
+                if (connectionStatus.Connected)
+                {
+                    btnWhatsapp.Text = "Connected";
+                }
+                else
+                {
+                    btnWhatsapp.Text = "Whatsapp Config";
+                }
             }
             else
             {
                 SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
                 SignalPing.Text = "\n\nPing\nTest";
+
+                Whatsapp_Config whatsappConfig = new();
+                var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
+                if (connectionStatus.Connected)
+                {
+                    btnWhatsapp.Text = "";
+                    btnWhatsapp.ForeColor = Color.LimeGreen;
+                }
+                else
+                {
+                    btnWhatsapp.ForeColor = Color.WhiteSmoke;
+                    btnWhatsapp.Text = "";
+                }
             }
             SignalPing.ForeColor = DrawingColor.White;
             SignalPing.IconColor = DrawingColor.White;
@@ -1050,6 +1074,16 @@ pause > nul
                         UpdateSyncStatus(Color.White, $"Last\nSync \n{DateTime.Now:HH:mm}");
                     }
                     NotifyHelper.Success($"Berhasil syncron server at ${DateTime.Now:HH:mm}");
+                    Whatsapp_Config whatsappConfig = new();
+                    var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
+                    if (connectionStatus.Connected)
+                    {
+                        btnWhatsapp.Text = "Connected";
+                    }
+                    else
+                    {
+                        btnWhatsapp.Text = "Whatsapp Config";
+                    }
                     await Task.Run(async () =>
                     {
                         await checkVersionAppWindows();
@@ -1403,6 +1437,23 @@ pause > nul
             btnDev.Text = "";
             SignalPing.Text = "";
             SignalPing.ImageAlign = ContentAlignment.MiddleLeft;
+            btnWhatsapp.Text = "";
+            btnWhatsapp.ImageAlign = ContentAlignment.MiddleLeft;
+        }
+
+        private async void btnWhatsapp_Click(object sender, EventArgs e)
+        {
+            using (Whatsapp_Config wa = new())
+            {
+                QuestionHelper bg = new(null, null, null, null);
+                Form background = bg.CreateOverlayForm();
+
+                wa.Owner = background;
+                background.Show();
+                DialogResult result = wa.ShowDialog();
+
+                background.Dispose();
+            }
         }
     }
 }

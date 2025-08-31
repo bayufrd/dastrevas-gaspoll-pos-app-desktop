@@ -198,10 +198,33 @@ namespace KASIR.Komponen
 
                 bool dataChanged = !AreMenuModelsEqual(menuModel, cachedMenuModel);
 
+                // ✅ Deteksi & hapus menu yang sudah tidak ada di API
+                if (cachedMenuModel != null)
+                {
+                    var apiMenuIds = new HashSet<int>(menuModel.data.Select(m => m.id));
+                    var removedMenus = cachedMenuModel.data
+                        .Where(m => !apiMenuIds.Contains(m.id))
+                        .ToList();
+
+                    if (removedMenus.Any())
+                    {
+                        // Hapus dari cached model
+                        cachedMenuModel.data = cachedMenuModel.data
+                            .Where(m => apiMenuIds.Contains(m.id))
+                            .ToList();
+
+                        // Update file cache
+                        File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(cachedMenuModel));
+                        dataChanged = true;
+                    }
+                }
+
+                // Jika data berbeda atau cache kosong, tulis ulang cache
                 if (dataChanged || cachedMenuModel == null)
                 {
                     File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(menuModel));
                 }
+
                 await UpdateUIWithMenuData(menuModel);
 
                 await CompareAndWriteServingTypeItems();
@@ -216,6 +239,7 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+
 
         private async Task UpdateUIWithMenuData(GetMenuModel menuModel)
         {

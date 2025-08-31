@@ -356,9 +356,14 @@ namespace KASIR.OfflineMode
 
                     JArray? cartDetails = filteredTransaction["cart_details"] as JArray;
                     JArray? refundDetails = filteredTransaction["refund_details"] as JArray;
-
+                    
                     if (selectedRefundType == "Semua")
                     {
+                        if (filteredTransaction["is_refund"].ToString() == "1" && filteredTransaction["is_refund_all"].ToString() == "0")
+                        {
+                            NotifyHelper.Warning("Telah melakukan refund peritem, lanjutkan refund perItem untuk merefund semua");
+                            return;
+                        }
                         // Update TotalRefunded dengan total harga semua item
                         TotalRefunded = cartDetails.Sum(item => int.Parse(item["total_price"]?.ToString() ?? "0"));
                         int refund_payment_id_all = int.Parse(cmbPayform.SelectedValue.ToString());

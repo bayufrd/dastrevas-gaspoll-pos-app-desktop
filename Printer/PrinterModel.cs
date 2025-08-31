@@ -840,13 +840,15 @@ namespace KASIR.Printer
         }
 
         // Struct Print Laporan Shift Cetak Laporan
-        public async Task PrintModelCetakLaporanShift(DataStrukShift dataShifts,
+        public async Task PrintModelCetakLaporanShift(
+            DataStrukShift dataShifts,
             List<ExpenditureStrukShift> expenditures,
             List<CartDetailsSuccessStrukShift> cartDetailsSuccess,
             List<CartDetailsPendingStrukShift> cartDetailsPendings,
             List<CartDetailsCanceledStrukShift> cartDetailsCanceled,
             List<RefundDetailStrukShift> refundDetails,
-            List<PaymentDetailStrukShift> paymentDetails)
+            List<PaymentDetailStrukShift> paymentDetails,
+            List<RefundPaymentDetails> refund_paymentDetails)
         {
             try
             {
@@ -891,7 +893,7 @@ namespace KASIR.Printer
                                 if (ShouldPrint(printerId, "Kasir"))
                                 {
                                     await GenerateStrukTextShiftLaporan(dataShifts, expenditures,
-                                        cartDetailsSuccess, cartDetailsPendings, cartDetailsCanceled, refundDetails, paymentDetails, stream);
+                                        cartDetailsSuccess, cartDetailsPendings, cartDetailsCanceled, refundDetails, paymentDetails, refund_paymentDetails, stream);
                                 }
                                 stream.Flush();
                             }
@@ -921,6 +923,7 @@ namespace KASIR.Printer
     List<CartDetailsCanceledStrukShift> cartDetailsCanceled,
     List<RefundDetailStrukShift> refundDetails,
     List<PaymentDetailStrukShift> paymentDetails,
+    List<RefundPaymentDetails> refund_paymentDetails,
     Stream stream)
         {
 
@@ -1004,9 +1007,6 @@ namespace KASIR.Printer
             _ = strukBuilder.Append(kodeHeksadesimalNormal);
             _ = strukBuilder.Append(SEPARATOR);
 
-            _ = strukBuilder.AppendFormat("{0}{1}\n", kodeHeksadesimalBold, "SOLD ITEMS");
-            _ = strukBuilder.Append(kodeHeksadesimalNormal);
-
             AppendSortedDetails(
                 cartDetailsSuccess,
                 "SOLD ITEMS",
@@ -1080,36 +1080,58 @@ namespace KASIR.Printer
             _ = strukBuilder.Append(kodeHeksadesimalNormal);
             _ = strukBuilder.Append(SEPARATOR);
 
+            // EXPEND DETAILS
             if (expenditures.Any())
             {
-                _ = strukBuilder.AppendFormat("{0}EXPENSE\n", kodeHeksadesimalBold);
+                _ = strukBuilder.AppendFormat("{0}PENGELUARAN\n", kodeHeksadesimalBold);
                 _ = strukBuilder.Append(kodeHeksadesimalNormal);
-
                 foreach (var expense in expenditures)
                 {
                     _ = strukBuilder.AppendFormat("{0}\n",
                         FormatSimpleLine(expense.description, $"{expense.nominal:n0}"));
                 }
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("TOTAL PENGELUARAN", $"{dataShifts.expenditures_total:n0}"));
+                _ = strukBuilder.Append(SEPARATOR);
             }
 
+            // DISCOUNT DETAILS
+            if (dataShifts.discount_total_amount > 0)
+            {
+                _ = strukBuilder.AppendFormat("{0}DISCOUNTS\n", kodeHeksadesimalBold);
+                _ = strukBuilder.Append(kodeHeksadesimalNormal);
+
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("All Discount items", $"{dataShifts.discount_amount_per_items:n0}"));
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("All Discount Cart", $"{dataShifts.discount_amount_transactions:n0}"));
+                _ = strukBuilder.AppendFormat("{0}\n",
+                    FormatSimpleLine("TOTAL AMOUNT", $"{dataShifts.discount_total_amount:n0}"));
+                _ = strukBuilder.Append(SEPARATOR);
+            }
+
+            // REFUND DETAILS
+            if (refundDetails.Any())
+            {
+                _ = strukBuilder.AppendFormat("{0}REFUNDS\n", kodeHeksadesimalBold);
+                _ = strukBuilder.Append(kodeHeksadesimalNormal);
+                foreach (var refundpaymentDetails in refund_paymentDetails)
+                {
+                    _ = strukBuilder.AppendFormat("{0}\n",
+                        FormatSimpleLine(refundpaymentDetails.payment_refund, $"{refundpaymentDetails.total_refund_payment:n0}"));
+                }
+                _ = strukBuilder.Append(SEPARATOR);
+            }
+
+            // EXPECTED
             _ = strukBuilder.AppendFormat("{0}\n",
                 FormatSimpleLine("Expected Ending Cash", $"{dataShifts.ending_cash_expected:n0}"));
             _ = strukBuilder.AppendFormat("{0}\n",
-                FormatSimpleLine("Actual Ending Cash", $"{dataShifts.ending_cash_actual:n0}"));
+                FormatSimpleLine("Uang Tunai Rill", $"{dataShifts.ending_cash_actual:n0}"));
             _ = strukBuilder.AppendFormat("{0}\n",
-                FormatSimpleLine("Cash Difference", $"{dataShifts.cash_difference:n0}"));
+                FormatSimpleLine("Selisih Uang Tunai", $"{dataShifts.cash_difference:n0}"));
 
-            _ = strukBuilder.Append(SEPARATOR);
-            _ = strukBuilder.AppendFormat("{0}DISCOUNTS\n", kodeHeksadesimalBold);
-            _ = strukBuilder.Append(kodeHeksadesimalNormal);
-
-            _ = strukBuilder.AppendFormat("{0}\n",
-                FormatSimpleLine("All Discount items", $"{dataShifts.discount_amount_per_items:n0}"));
-            _ = strukBuilder.AppendFormat("{0}\n",
-                FormatSimpleLine("All Discount Cart", $"{dataShifts.discount_amount_per_items:n0}"));
-            _ = strukBuilder.AppendFormat("{0}\n",
-                FormatSimpleLine("TOTAL AMOUNT", $"{dataShifts.discount_total_amount:n0}"));
-
+            // PAYMENT
             _ = strukBuilder.Append(SEPARATOR);
             _ = strukBuilder.AppendFormat("{0}{1}", kodeHeksadesimalBold, CenterText("PAYMENT DETAIL"));
             _ = strukBuilder.Append(kodeHeksadesimalNormal);
@@ -1117,17 +1139,10 @@ namespace KASIR.Printer
 
             foreach (var paymentDetail in paymentDetails)
             {
-                _ = strukBuilder.AppendLine(paymentDetail.payment_category);
-                foreach (var paymentType in paymentDetail.payment_type_detail)
-                {
-                    _ = strukBuilder.AppendFormat("{0}\n",
-                        FormatSimpleLine(paymentType.payment_type, $"{paymentType.total_payment:n0}"));
-                }
-
                 _ = strukBuilder.AppendFormat("{0}\n",
-                    FormatSimpleLine("TOTAL AMOUNT", $"{paymentDetail.total_amount:n0}"));
-                _ = strukBuilder.Append(SEPARATOR);
+                    FormatSimpleLine(paymentDetail.payment_category, $"{paymentDetail.total_amount:n0}"));
             }
+            _ = strukBuilder.Append(SEPARATOR);
 
             _ = strukBuilder.AppendFormat("{0}{1}\n",
                 kodeHeksadesimalBold,
@@ -1140,7 +1155,7 @@ namespace KASIR.Printer
             stream.Write(buffer, 0, buffer.Length);
 
             // Footer
-            byte[] bufferFooter = Encoding.UTF8.GetBytes("\n\n\n\n\n");
+            byte[] bufferFooter = Encoding.UTF8.GetBytes("\n\n");
             stream.Write(bufferFooter, 0, bufferFooter.Length);
 
         }

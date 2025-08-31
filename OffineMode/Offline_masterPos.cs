@@ -849,17 +849,17 @@ namespace KASIR.OfflineMode
                 }
                 else
                 {
-                    PerformSearch();
+                    //PerformSearch();
+                    _ = LoadDataWithPagingAsync();
+
                     btnCari.Visible = false;
                 }
-                //PerformSearch();
             }
 
             if (dataGridView2.Visible)
             {
                 PerformSearchList();
             }
-            ////LoggerUtil.LogPrivateMethod(nameof(txtCariMenu_TextChanged));
         }
 
         private void PerformSearchList()
@@ -2062,8 +2062,6 @@ namespace KASIR.OfflineMode
                 string cacheFilePath = "DT-Cache\\Transaction\\Cart.data";
                 string cacheFilePathSplit = "DT-Cache\\Transaction\\Cart_main_split.data";
 
-
-
                 if (File.Exists(cacheFilePath))
                 {
                     string cartJson = File.ReadAllText(cacheFilePath);
@@ -2289,6 +2287,85 @@ namespace KASIR.OfflineMode
                                 }
                             }
                         }
+                        if (cartData["canceled_items"] is JArray cardCanceled && cardCanceled.Count > 0)
+                        {
+                            // Group cart items by serving type
+                            List<IGrouping<string, JToken>> menuGroupsCancel =
+                                cardCanceled.GroupBy(x => x["serving_type_name"].ToString()).ToList();
+                            AddSeparatorRow(dataTable, "Canceled", dataGridView1);
+
+                            foreach (IGrouping<string, JToken> group in menuGroupsCancel)
+                            {
+                                foreach (JToken menu in group)
+                                {
+                                    string menuName = menu["menu_name"].ToString();
+                                    string menuType = menu["menu_type"].ToString();
+                                    string? discountedPrice = menu["discounted_price"].ToString();
+                                    string servingTypeName = menu["serving_type_name"].ToString();
+                                    int quantity = menu["qty"] != null ? (int)menu["qty"] : 0;
+                                    decimal price = menu["price"] != null ? decimal.Parse(menu["price"].ToString()) : 0;
+                                    string cancelReason = menu["cancel_reason"]?.ToString() ?? "";
+                                    int totalPrice = menu["total_price"] != null ? (int)menu["total_price"] : 0;
+                                    string ordered = "";
+                                    if (int.Parse(menu["is_ordered"].ToString()) == 1)
+                                    {
+                                        ordered = " (Ordered)";
+                                    }
+
+                                    if (quantity == 0)
+                                    {
+                                        continue;
+                                    }
+
+                                    // Add rows for each cart item
+                                    _ = dataTable.Rows.Add(
+                                        menu["menu_id"],
+                                        menu["cart_detail_id"],
+                                        servingTypeName,
+                                        $"{quantity}X {menuName} {menu["menu_detail_name"]} {ordered}",
+                                        string.Format("Rp. {0:n0},-", totalPrice),
+                                        cancelReason
+                                    );
+                                    if (!string.IsNullOrEmpty(cancelReason))
+                                    {
+                                        if (!string.IsNullOrEmpty(discountedPrice) && discountedPrice != "0")
+                                        {
+                                            _ = dataTable.Rows.Add(
+                                                null,
+                                                null,
+                                                null,
+                                                "  *CancelReason : " + cancelReason,
+                                                null,
+                                                null);
+                                        }
+                                        else
+                                        {
+                                            _ = dataTable.Rows.Add(
+                                                null,
+                                                null,
+                                                null,
+                                                "  *Cancel Reason : " + cancelReason,
+                                                null,
+                                                null);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (!string.IsNullOrEmpty(discountedPrice) && discountedPrice != "0")
+                                        {
+                                            _ = dataTable.Rows.Add(
+                                                null,
+                                                null,
+                                                null,
+                                                null,
+                                                "  *discounted ",
+                                                null);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
 
                         // Bind the data to the DataGridView
                         dataGridView1.DataSource = dataTable;
@@ -3405,19 +3482,25 @@ namespace KASIR.OfflineMode
             }
         }
 
-        private void btnReload_Click(object sender, EventArgs e)
+        private async void btnReload_Click(object sender, EventArgs e)
         {
             try
             {
                 string TypeCacheEksekusi = "Sync";
-                CacheDataApp form3 = new(TypeCacheEksekusi);
-                //Close();
-                form3.Show();
+                using (CacheDataApp form3 = new(TypeCacheEksekusi))
+                {
+                    // ShowDialog akan "block" sampai form ditutup
+                    form3.ShowDialog();
+                }
+
+                // ✅ Baru jalan setelah form3 ditutup
+                await LoadConfig();
             }
             catch (Exception ex)
             {
                 NotifyHelper.Error($"Gagal Download Data : {ex}");
             }
         }
+
     }
 }

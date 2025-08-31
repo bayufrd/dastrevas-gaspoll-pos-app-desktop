@@ -75,6 +75,7 @@ namespace KASIR.Model
         public int totalRefundQty { get; set; }
         public int totalCartRefundAmount { get; set; }
         public List<PaymentDetailStrukShift> payment_details { get; set; }
+        public List<RefundPaymentDetails> refund_paymentDetails { get; set; }
         public long total_transaction { get; set; }
         public int discount_amount_transactions { get; set; }
         public int discount_amount_per_items { get; set; }
@@ -152,6 +153,11 @@ namespace KASIR.Model
         public string payment_category { get; set; }
         public List<PaymentTypeDetailStrukShift> payment_type_detail { get; set; }
         public int total_amount { get; set; }
+    }
+    public class RefundPaymentDetails
+    {
+        public string payment_refund { get; set; }
+        public int total_refund_payment { get; set; }
     }
 
     public class PaymentTypeDetailStrukShift

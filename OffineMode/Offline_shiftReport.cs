@@ -432,66 +432,83 @@ namespace KASIR.Komponen
                 List<PaymentType> paymentTypes = LoadPaymentTypes();
 
                 var groupedPayments = transactionData.data
-                    .GroupBy(t => t.payment_type_id)
+    .GroupBy(t => t.payment_type_id)
+    .Select(g => new
+    {
+        PaymentTypeId = g.Key,
+        PaymentTypeName = paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ?? "Unknown",
+        TotalAmount = g.Sum(x => x.total),
+        MemberUsePoints = g.Sum(x => x.member_use_point ?? 0)
+    }).ToList();
+
+                // Refund full (semua item dikembalikan)
+                var groupedRefunds = transactionData.data
+                    .Where(t => t.is_refund_all == 1)
+                    .Select(t => new
+                    {
+                        PaymentTypeId = t.refund_payment_id_all,
+                        TotalRefund = t.total_refund
+                    }).ToList();
+
+                // Refund per item (ambil dari refund_details, abaikan total_refund di transaksi)
+                var groupedItemRefunds = transactionData.data
+                    .Where(t => t.is_refund_all != 1)
+                    .SelectMany(t => t.refund_details.Select(r => new
+                    {
+                        PaymentTypeId = r.refund_payment_type_id_item,
+                        RefundTotal = r.refund_total
+                    }))
+                    .GroupBy(r => r.PaymentTypeId)
                     .Select(g => new
                     {
                         PaymentTypeId = g.Key,
-                        PaymentTypeName =
-                            paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ??
-                            "Unknown", // Match payment type ID to name
-                        TotalAmount = g.Sum(x => x.total) // Sum the total amount for each payment type
+                        TotalItemRefund = g.Sum(x => x.RefundTotal)
                     }).ToList();
 
-                var groupedRefunds = transactionData.data
-                    .Where(t => t.is_refund_all == 1) // Consider only transactions marked as "all refunded"
-                    .Select(t => new
-                    {
-                        PaymentTypeId = t.refund_payment_id_all, // Refund ID is on the transaction level
-                        TotalRefund = t.total_refund // Use total_refund for the entire transaction
-                    })
-                    .ToList();
-
                 string actual_cash = Regex.Replace(txtActualCash.Text, "[^0-9]", "");
-                List<dynamic> paymentDetails = new();
-                int categoryId = 1; // Inisialisasi ID kategori pembayaran.
-                int CashOnPOS = 0;
+                int categoryId = 1;
+                List<dynamic> paymentDetails = new List<dynamic>();
+                List<dynamic> refund_PaymentDetails = new List<dynamic>();
+
                 foreach (var payment in groupedPayments)
                 {
+                    // ambil refund all
                     var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
-                    int totalRefund = refund?.TotalRefund ?? 0; // Use 0 if no refund is found
+                    int totalRefundAll = refund?.TotalRefund ?? 0;
 
-                    // Calculate netAmount considering transaction-level refunds
+                    // ambil refund per item
+                    var itemRefund = groupedItemRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
+                    int totalItemRefund = itemRefund?.TotalItemRefund ?? 0;
+
+                    // gabungkan
+                    int totalRefund = totalRefundAll + totalItemRefund;
+
+                    // net total = pembayaran - refund
                     int netAmount = payment.TotalAmount - totalRefund;
 
-                    // Match the payment category by name considering both payment type name and refund payment type
-                    var matchingRefunds = refundDetails
-                        .Where(rd => rd.menu_name.Equals(payment.PaymentTypeName, StringComparison.OrdinalIgnoreCase) ||
-                                     rd.menu_type.Equals(payment.PaymentTypeName, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-
-                    // Sum item-level refunds related to this payment type
-                    int totalItemRefund = matchingRefunds.Sum(rd => rd.total_refund_price);
-
-                    // Update netAmount to consider both transaction refunds and item-level refunds
-                    netAmount -= totalItemRefund;
-
-                    string paymentypeString = payment.PaymentTypeName;
-                    // Check if the payment type is "Tunai"
+                    string paymentTypeString = payment.PaymentTypeName;
                     if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
                     {
-                        paymentypeString = "Cash On POS";
-                        //netAmount -= totalExpenditure; // Deduct total expenditures if payment type is "Tunai"
+                        paymentTypeString = "Tunai ON POS";
                     }
 
-                    // Add constructed result object
                     paymentDetails.Add(new
                     {
-                        payment_category = paymentypeString, // Use the formatted payment category
-                        payment_type_detail = new List<dynamic>(), // Initialize as an empty array
+                        payment_category = paymentTypeString,
                         total_amount = netAmount,
-                        payment_category_id = categoryId++ // Increment category ID for each entry
+                        payment_category_id = categoryId++
                     });
+
+                    if (totalRefund > 0)
+                    {
+                        refund_PaymentDetails.Add(new
+                        {
+                            payment_refund = payment.PaymentTypeName,
+                            total_refund_payment = totalRefund
+                        });
+                    }
                 }
+
 
                 int discountsCarts = transactionData.data
                     .Where(t => t.discounted_price > 0) // Filter transactions with discounted_price > 0
@@ -561,6 +578,7 @@ namespace KASIR.Komponen
                         totalRefundQty = refundDetails.Sum(rd => rd.qty_refund_item),
                         totalCartRefundAmount = totalRefundAmount,
                         payment_details = paymentDetails,
+                        refund_paymentDetails = refund_PaymentDetails,
                         total_transaction = totalTransaction
                     }
                 };
@@ -606,7 +624,8 @@ namespace KASIR.Komponen
                     datas.cart_details_pending,
                     datas.cart_details_canceled,
                     datas.refund_details,
-                    datas.payment_details
+                    datas.payment_details,
+                    datas.refund_paymentDetails
                 );
 
             }
@@ -1101,11 +1120,11 @@ namespace KASIR.Komponen
                 dataTable.Rows.Add("", "");
 
                 // Process the Expenditure details
-                ProcessExpenditureDetails(filteredExpenditures, dataTable, "EXPENDITURE ITEMS");
+                ProcessExpenditureDetails(filteredExpenditures, dataTable, "PENGELUARAN");
 
                 decimal totalExpenditureItems = CalculateTotalProcessExpenditures(filteredexpenditureData);
                 cashOutExpenditure = int.Parse(totalExpenditureItems.ToString());
-                dataTable.Rows.Add("Total Expense Items", $"{totalExpenditureItems:n0}");
+                dataTable.Rows.Add("Total Pengeluaran", $"{totalExpenditureItems:n0}");
 
                 dataTable.Rows.Add("", "");
 
@@ -1117,11 +1136,6 @@ namespace KASIR.Komponen
                 // Process payment details
                 ProcessPaymentDetails(filteredTransactions, dataTable, totalExpenditureItems);
                 dataTable.Rows.Add("", "");
-                AddSeparatorRowBold(dataTable, $"CASH DETAILS", dataGridView1);
-                dataTable.Rows.Add("Cash Income (Not Include Exp & Ref)", $"{cashIncomeReal:n0}");
-                dataTable.Rows.Add("Cash Out Expenditure", $"{cashOutExpenditure:n0}");
-                dataTable.Rows.Add("Cash Out Refund", $"{cashOutRefund:n0}");
-                ending_cash -= cashOutExpenditure;
                 dataTable.Rows.Add("Expected Ending Cash", $"{ending_cash:n0}");
                 txtActualCash.Text = ending_cash.ToString();
 
@@ -1347,6 +1361,7 @@ namespace KASIR.Komponen
                 }).ToList();
 
             var groupedItemRefunds = transactionData.data
+                .Where(t => t.is_refund_all != 1)
                 .SelectMany(t => t.refund_details.Select(r => new
                 {
                     PaymentTypeId = r.refund_payment_type_id_item,
@@ -1374,16 +1389,16 @@ namespace KASIR.Komponen
                 string paymentTypeString = payment.PaymentTypeName;
                 if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
                 {
-                    paymentTypeString = "CASH ON POS";
+                    paymentTypeString = "TUNAI ON POS";
                     cashOutRefund = int.Parse(totalRefund.ToString()) + int.Parse(totalItemRefund.ToString());
-                    cashIncomeReal = payment.TotalAmount;
                     //CashOnPOS = netAmount;
                     //netAmount -= expenditures;
-                    txtActualCash.Text = $"{netAmount:n0}";
-                    ending_cash = int.Parse(netAmount.ToString());
+                    decimal actual = netAmount - expenditures;
+                    txtActualCash.Text = $"{actual:n0}";
+                    ending_cash = int.Parse(actual.ToString());
                 }
-
                 dataTable.Rows.Add(paymentTypeString, $"{netAmount:n0}");
+
             }
 
             dataTable.Rows.Add("", $"");

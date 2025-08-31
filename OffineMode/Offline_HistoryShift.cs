@@ -78,7 +78,7 @@ namespace KASIR.OffineMode
                 // Create a button for the ShiftData.data file
                 Button shiftDataButton = new()
                 {
-                    Text = "ShiftData (Latest)", // A generic name for the button
+                    Text = "ShiftData (Terakhir)", // A generic name for the button
                     Width = totalWidth * 98 / 100,
                     ForeColor = Color.Black,
                     Height = 40,

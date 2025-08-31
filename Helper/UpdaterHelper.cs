@@ -38,7 +38,7 @@ namespace KASIR.Helper
                     string urlVersion = RemoveApiPrefix(oldUrl);
 
                     // Gunakan await untuk mendapatkan versi
-                    string newVersion = await httpClient.GetStringAsync($"{urlVersion}/server/version.txt");
+                    string newVersion = await httpClient.GetStringAsync($"{urlVersion}/server/updaterVersion.txt");
 
                     // Bersihkan dan kembalikan versi
                     return newVersion.Trim();
@@ -111,7 +111,7 @@ namespace KASIR.Helper
                         string fileUrl = urlVersion + "/server/Dastrevas.zip";
                         string destinationPath = Path.Combine("update" , "Dastrevas.rar");
                         LoggerUtil.LogWarning($"Old Url {oldUrl}\n" +
-                                $"NewUrl :{urlVersion}/server/version.txt\n" +
+                                $"NewUrl :{urlVersion}/server/updaterVersion.txt\n" +
                                 $"Current Version : {_versionUpdaterApp}\n" +
                                 $"Url Version : {urlVersion}\n");
                         await DownloadFileAsync(httpClient, fileUrl, destinationPath);

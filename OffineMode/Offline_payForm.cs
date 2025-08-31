@@ -1,20 +1,18 @@
-﻿using System.Globalization;
+﻿using System.Drawing.Imaging;
+using System.Globalization;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
+using KASIR.Helper;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
+using KASIR.OffineMode;
 using KASIR.Printer;
 using KASIR.Properties;
 using KASIR.Services;
 using Newtonsoft.Json;
-using KASIR.Helper;
 using Newtonsoft.Json.Linq;
-using System.Runtime.InteropServices;
-using Polly.Caching;
-using KASIR.OffineMode;
-using System.Text;
-using System.Drawing;
-using System.Drawing.Imaging;
 
 namespace KASIR.OfflineMode
 {
@@ -31,7 +29,7 @@ namespace KASIR.OfflineMode
             int nHeightEllipse // width of ellipse
         );
 
-        private IInternetService _internetServices;
+        private readonly IInternetService _internetServices;
 
         private readonly string baseOutlet;
         private readonly int customePrice;
@@ -41,7 +39,7 @@ namespace KASIR.OfflineMode
         public string btnPayType;
         private string FooterTextStruk;
         private string transactionId;
-        private int totalTransactions, membershipUsingPoint = 0, bonusMember = 1;
+        private int totalTransactions, membershipUsingPoint = 0, bonusMember = 1, plusBonusMember = 0;
         public Member getMember { get; private set; } = new();
 
         public Offline_payForm(string outlet_id, string cart_id, string total_cart, string ttl1, string seat,
@@ -315,7 +313,7 @@ namespace KASIR.OfflineMode
                 return SetErrorMessage("Masukkan harga dengan benar.", ref errorMessage);
 
             // Validate that fulus can be parsed to an integer
-            if (!int.TryParse(CashCustomer.ToString(), out int fulusAmount))
+            if (!int.TryParse(CashCustomer.ToString(), out _))
                 return SetErrorMessage("Harga tidak valid", ref errorMessage);
             string total = CleanInput(txtJumlahPembayaran.Text);
             // Validate total cart amount
@@ -451,6 +449,7 @@ namespace KASIR.OfflineMode
                     {
                         if (getMember.member_id > 0)
                         {
+                            plusBonusMember = totalCartAmount;
                             processMembershipArea(totalCartAmount);
                         }
                     }
@@ -521,7 +520,6 @@ namespace KASIR.OfflineMode
 
                     JObject newTransactionData = new() { { "data", transactionDataArray } };
                     WriteJsonFile(transactionDataPath, newTransactionData);
-
                     //membership
                     if (getMember?.member_id > 0 && !string.IsNullOrEmpty(getMember.member_name.ToString()))
                     {
@@ -529,7 +527,7 @@ namespace KASIR.OfflineMode
                     }
 
 
-                    convertData(fulus, change, paymentTypeName, receipt_numberfix, invoiceDue, discount_idConv,
+                    _ = convertData(fulus, change, paymentTypeName, receipt_numberfix, invoiceDue, discount_idConv,
                         discount_codeConv, discounts_valueConv, discounts_is_percentConv);
 
                     DialogResult = DialogResult.OK;
@@ -552,7 +550,7 @@ namespace KASIR.OfflineMode
             try
             {
                 int point = getMember.member_points;
-                if(ButtonSwitchUsePoint.Checked == true)
+                if (ButtonSwitchUsePoint.Checked == true)
                 {
                     point = 0;
                 }
@@ -593,8 +591,8 @@ namespace KASIR.OfflineMode
                 UpdateMemberPointsInOutletFile(getMember.member_id, point);
                 if (_internetServices.IsInternetConnected())
                 {
-                    shiftReport c = new shiftReport();
-                    c.SyncmembershipData(membershipDataPath);
+                    shiftReport c = new();
+                    _ = c.SyncmembershipData(membershipDataPath);
                 }
             }
             catch (Exception ex)
@@ -611,7 +609,8 @@ namespace KASIR.OfflineMode
                 // Validasi file ada
                 if (!File.Exists(outletMemberDataPath))
                 {
-                    Console.WriteLine($"File {outletMemberDataPath} tidak ditemukan.");
+                    NotifyHelper.Warning($"File {outletMemberDataPath} tidak ditemukan.");
+                    LoggerUtil.LogWarning($"File {outletMemberDataPath} tidak ditemukan.");
                     return;
                 }
 
@@ -645,7 +644,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex,$"Error updating member points: {ex.Message}");
+                LoggerUtil.LogError(ex, $"Error updating member points: {ex.Message}");
             }
         }
         private async void processMembershipArea(int totalCartAmount)
@@ -664,7 +663,7 @@ namespace KASIR.OfflineMode
 
                     if (apiMemberList != null)
                     {
-                        List<Member> finalMemberList = new List<Member>();
+                        List<Member> finalMemberList = new();
                         Offline_MemberData c = new();
                         c.PopulateMemberList(apiMemberList, finalMemberList, cacheFilePath);
 
@@ -677,6 +676,7 @@ namespace KASIR.OfflineMode
                 JObject memberData = JObject.Parse(json);
                 JArray memberArray = (JArray)memberData["data"];
                 var memberToUpdate = memberArray.FirstOrDefault(m => (int)m["member_id"] == getMember.member_id);
+                plusBonusMember = plusBonusMember * bonusMember / 100;
 
                 if (memberToUpdate != null)
                 {
@@ -822,7 +822,7 @@ namespace KASIR.OfflineMode
 
                 string response = JsonConvert.SerializeObject(strukCustomerTransaction);
 
-                HandleSuccessfulTransaction(response, fulus);
+                _ = HandleSuccessfulTransaction(response, fulus);
 
                 DialogResult = DialogResult.OK;
 
@@ -862,7 +862,7 @@ namespace KASIR.OfflineMode
                         .Where(cd => cd.menu_type == "Makanan" || cd.menu_type == "Additional Makanan").ToList();
                     List<KitchenAndBarCanceledItems> canceledBarItems = kitchenBarCanceled
                         .Where(cd => cd.menu_type == "Minuman" || cd.menu_type == "Additional Minuman").ToList();
-                    SendWhatsAppReceiptIfEligible(menuModel, cartDetails);
+                    _ = SendWhatsAppReceiptIfEligible(menuModel, cartDetails);
                     if (btnSimpan != null)
                     {
                         btnSimpan.Text = "Mencetak...";
@@ -909,7 +909,7 @@ namespace KASIR.OfflineMode
                                 NotifyHelper.Error("Print operation timed out, will retry in background");
                                 btnSimpan.Text = "Selesai, print akan dilanjutkan di background.";
 
-                                ThreadPool.QueueUserWorkItem(async _ =>
+                                _ = ThreadPool.QueueUserWorkItem(async _ =>
                                 {
                                     try
                                     {
@@ -948,7 +948,7 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                if(datas?.data == null || string.IsNullOrEmpty(datas?.data.member_phone_number))
+                if (datas?.data == null || string.IsNullOrEmpty(datas?.data.member_phone_number))
                 {
                     return;
                 }
@@ -956,23 +956,12 @@ namespace KASIR.OfflineMode
                 var whatsappConfig = new Whatsapp_Config();
                 var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
 
-                // Debug logging untuk status koneksi
-                LoggerUtil.LogWarning($"WhatsApp Connection Status: {connectionStatus}");
+                string phoneNumber = datas.data.member_phone_number;
+                string strukMessage = BuildStrukMessage(datas, cartDetails);
+                string qrCodePath = FindQRCodePath();
 
-                // Detail debugging untuk setiap kondisi
-                LoggerUtil.LogWarning($"Debug Kondisi Pengiriman:");
-                LoggerUtil.LogWarning($"1. Koneksi: {connectionStatus.Connected}");
-                LoggerUtil.LogWarning($"2. Data Transaksi: {datas?.data != null}");
-
-                // Cek detail nomor telepon
-                if (datas?.data != null)
-                {
-                    LoggerUtil.LogWarning($"3. Nomor Telepon Member: {datas.data.member_phone_number}");
-                    LoggerUtil.LogWarning($"4. Nama Member: {datas.data.member_name}");
-                    LoggerUtil.LogWarning($"5. ID Member: {datas.data.member_id}");
-                }
-
-                LoggerUtil.LogWarning($"6. Cart Details: {cartDetails?.Count ?? 0}");
+                //await SendWhatsAppMessage(phoneNumber, strukMessage);
+                await SendWhatsAppMessageWithAttachment(phoneNumber, strukMessage, qrCodePath);
 
                 // Cek kondisi untuk pengiriman pesan dengan logika yang lebih fleksibel
                 bool canSendWhatsApp = connectionStatus.Connected &&
@@ -982,17 +971,15 @@ namespace KASIR.OfflineMode
                                         &&
                                         cartDetails != null &&
                                         cartDetails.Any();
-
+                return;
                 if (canSendWhatsApp)
                 {
                     // Pilih nomor telepon (prioritaskan nomor member, jika tidak ada gunakan nomor customer)
-                    string phoneNumber = datas.data.member_phone_number;
 
                     // Tambahan validasi nomor telepon
                     if (IsValidPhoneNumber(phoneNumber))
                     {
                         // Buat pesan struk
-                        string strukMessage = BuildStrukMessage(datas, cartDetails);
 
 
                         await SendWhatsAppMessage(phoneNumber, strukMessage);
@@ -1046,7 +1033,7 @@ namespace KASIR.OfflineMode
                 return false;
 
             // Bersihkan nomor dari karakter non-digit
-            string cleanedNumber = new string(phoneNumber.Where(char.IsDigit).ToArray());
+            string cleanedNumber = new(phoneNumber.Where(char.IsDigit).ToArray());
 
             // Validasi panjang dan awalan
             return cleanedNumber.Length >= 10 &&
@@ -1085,29 +1072,32 @@ namespace KASIR.OfflineMode
             var sb = new StringBuilder();
 
             // Header
-            sb.AppendLine($"*Struk Transaksi - {datas.data.outlet_name}*");
-            sb.AppendLine($"No. Nota: {datas.data.receipt_number}");
-            sb.AppendLine($"Tanggal: {DateTime.Now:dd/MM/yyyy HH:mm}");
-            sb.AppendLine();
+            _ = sb.AppendLine($"*Struk Transaksi - {datas.data.outlet_name}*");
+            _ = sb.AppendLine($"No. Nota: {datas.data.receipt_number}");
+            _ = sb.AppendLine($"Tanggal: {DateTime.Now:dd/MM/yyyy HH:mm}");
+            _ = sb.AppendLine();
 
             // Informasi Member/Customer
             if (datas.data.member_id != 0 || !string.IsNullOrEmpty(datas.data.member_name))
             {
-                sb.AppendLine($"Nama Member: {datas.data.member_name ?? "N/A"}");
-                sb.AppendLine($"No. Member: {datas.data.member_phone_number ?? "N/A"}");
+                _ = sb.AppendLine($"ID Member: {datas.data.member_id.ToString() ?? "-"}");
+                _ = sb.AppendLine($"Nama Member: {datas.data.member_name ?? "-"}");
+                _ = sb.AppendLine($"Email Member: {datas.data.member_email ?? "-"}");
+                _ = sb.AppendLine($"No. Member: {datas.data.member_phone_number ?? "-"}");
 
                 // Tambahkan informasi poin jika tersedia
                 if (datas.data.member_point.HasValue)
                 {
-                    sb.AppendLine($"Poin Member: {datas.data.member_point.Value}");
+                    _ = sb.AppendLine($"Penambahan Point: Rp {plusBonusMember:N0}");
+                    _ = sb.AppendLine($"Poin Member: Rp {datas.data.member_point.Value:N0}");
                 }
             }
             else
             {
-                sb.AppendLine($"Nama: {datas.data.customer_name ?? "Walk-in Customer"}");
+                _ = sb.AppendLine($"Nama: {datas.data.customer_name ?? "Walk-in Customer"}");
             }
 
-            sb.AppendLine();
+            _ = sb.AppendLine();
 
             // Kelompokkan item berdasarkan jenis
             var foodItems = cartDetails.Where(c =>
@@ -1116,47 +1106,52 @@ namespace KASIR.OfflineMode
                 c.menu_type == "Minuman" || c.menu_type == "Additional Minuman").ToList();
 
             // Detail Transaksi
-            sb.AppendLine("*Detail Pesanan:*");
+            _ = sb.AppendLine("*Detail Pesanan:*");
 
             // Makanan
             if (foodItems.Any())
             {
-                sb.AppendLine("🍽️ Makanan:");
+                _ = sb.AppendLine("🍽️ Makanan:");
                 foreach (var item in foodItems)
                 {
-                    sb.AppendLine(FormatOrderItem(item));
+                    _ = sb.AppendLine(FormatOrderItem(item));
                 }
             }
 
             // Minuman
             if (drinkItems.Any())
             {
-                sb.AppendLine("🥤 Minuman:");
+                _ = sb.AppendLine("🥤 Minuman:");
                 foreach (var item in drinkItems)
                 {
-                    sb.AppendLine(FormatOrderItem(item));
+                    _ = sb.AppendLine(FormatOrderItem(item));
                 }
             }
 
-            sb.AppendLine();
+            _ = sb.AppendLine();
 
             // Ringkasan Pembayaran
-            sb.AppendLine("*Ringkasan Pembayaran:*");
-            sb.AppendLine($"Subtotal: Rp {datas.data.subtotal:N0}");
+            _ = sb.AppendLine("*Ringkasan Pembayaran:*");
+            _ = sb.AppendLine($"Subtotal: Rp {datas.data.subtotal:N0}");
 
             // Diskon
             if (datas.data.discounts_value.HasValue && datas.data.discounts_value != 0)
             {
                 string discountType = datas.data.discounts_is_percent == "1" ? "%" : "";
-                sb.AppendLine($"Diskon: Rp {datas.data.discounts_value:N0}{discountType}");
+                _ = sb.AppendLine($"Diskon: Rp {datas.data.discounts_value:N0}{discountType}");
             }
 
-            sb.AppendLine($"Total: Rp {datas.data.total:N0}");
-            sb.AppendLine($"Bayar: Rp {datas.data.customer_cash:N0}");
-            sb.AppendLine($"Kembali: Rp {datas.data.customer_change:N0}");
+            _ = sb.AppendLine($"Total: Rp {datas.data.total:N0}");
+            _ = sb.AppendLine($"Bayar: Rp {datas.data.customer_cash:N0}");
+            _ = sb.AppendLine($"Kembali: Rp {datas.data.customer_change:N0}");
 
             // Metode Pembayaran
-            sb.AppendLine($"Metode Bayar: {datas.data.payment_type ?? "Tunai"}");
+            _ = sb.AppendLine($"Metode Bayar: {datas.data.payment_type ?? "Tunai"}");
+            _ = sb.AppendLine();
+
+            _ = sb.AppendLine();
+
+            _ = sb.AppendLine($"POS by Dastrevas");
 
             return sb.ToString();
         }
@@ -1196,11 +1191,27 @@ namespace KASIR.OfflineMode
                 Timeout = TimeSpan.FromSeconds(30)
             };
         }
+        /// <summary>
+        /// Menghapus prefix API dari URL
+        /// </summary>
+        private string RemoveApiPrefix(string url)
+        {
+            return url.Contains("api.") ? url.Replace("api.", "whatsapp.") : url;
+        }
+
+        /// <summary>
+        /// Proses update aplikasi
+        /// </summary>
+        // Method async untuk inisialisasi
 
         private async Task SendWhatsAppMessageWithAttachment(string phoneNumber, string message, string attachmentPath)
         {
             try
             {
+                string oldUrl = Properties.Settings.Default.BaseAddressProd.ToString();
+
+                string BASEURL = RemoveApiPrefix(oldUrl);
+
                 // Validasi file lampiran
                 if (!File.Exists(attachmentPath))
                 {
@@ -1249,7 +1260,7 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogWarning($"Panjang lampiran: {base64Image.Length} karakter");
 
                 var response = await _httpClient.PostAsync(
-                    "http://localhost:1234/kirim-lampiran",
+                    $"{BASEURL}/kirim-lampiran",
                     content,
                     cancellationTokenSource.Token
                 );
@@ -1287,8 +1298,8 @@ namespace KASIR.OfflineMode
                 LoggerUtil.LogError(ex, $"Kesalahan saat mengirim pesan ke {phoneNumber}");
 
                 // Tambahkan detail error untuk debugging
-                LoggerUtil.LogError(ex,$"Detail Error: {ex.GetType().Name} - {ex.Message}");
-                LoggerUtil.LogError(ex,$"Stack Trace: {ex.StackTrace}");
+                LoggerUtil.LogError(ex, $"Detail Error: {ex.GetType().Name} - {ex.Message}");
+                LoggerUtil.LogError(ex, $"Stack Trace: {ex.StackTrace}");
             }
         }
 
@@ -1451,7 +1462,7 @@ namespace KASIR.OfflineMode
             try
             {
                 string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs");
-                Directory.CreateDirectory(printJobsDir);
+                _ = Directory.CreateDirectory(printJobsDir);
 
                 string filename = Path.Combine(printJobsDir,
                     $"PrintJob_{job.TransactionNumber}_{DateTime.Now.Ticks}.json");
@@ -1571,7 +1582,7 @@ namespace KASIR.OfflineMode
                 };
 
                 // Pastikan direktori ada
-                Directory.CreateDirectory(Path.GetDirectoryName(settingsFilePath));
+                _ = Directory.CreateDirectory(Path.GetDirectoryName(settingsFilePath));
 
                 // Serialize dan simpan
                 string jsonSettings = JsonConvert.SerializeObject(settings, Formatting.Indented);
@@ -1704,7 +1715,7 @@ namespace KASIR.OfflineMode
                 ButtonSwitchUsePoint.Enabled = false;
                 lblUsePoint.Visible = true;
                 lblBonusMember.Visible = true;
-                loadBonusMember();
+                _ = loadBonusMember();
             }
             else
             {

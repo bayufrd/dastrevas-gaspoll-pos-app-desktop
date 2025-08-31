@@ -63,6 +63,14 @@ namespace KASIR
             {
                 btnDev.Visible = false;
             }
+
+            //whatsapp fiture 
+            btnWhatsapp.Visible = false;
+            if (baseOutlet == "4" || baseOutlet == "1")
+            {
+                btnWhatsapp.Visible = true;
+            }
+            //====
             StarterApp();
             Shown += Form1_Shown;
         }

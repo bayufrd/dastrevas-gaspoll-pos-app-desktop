@@ -33,6 +33,10 @@
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges2 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges3 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges4 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges5 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges6 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges7 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges8 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             QRPictureBox = new Guna.UI2.WinForms.Guna2PictureBox();
             btnResetQR = new Guna.UI2.WinForms.Guna2Button();
             LogPanel = new Panel();
@@ -42,6 +46,8 @@
             btnReload = new FontAwesome.Sharp.IconButton();
             lblStatus = new Label();
             timer1 = new System.Windows.Forms.Timer(components);
+            numberTesting = new Guna.UI2.WinForms.Guna2TextBox();
+            btnTest = new Guna.UI2.WinForms.Guna2Button();
             ((System.ComponentModel.ISupportInitialize)QRPictureBox).BeginInit();
             LogPanel.SuspendLayout();
             SuspendLayout();
@@ -96,9 +102,9 @@
             LogPanel.Controls.Add(label6);
             LogPanel.Controls.Add(LoggerMsg);
             LogPanel.ForeColor = SystemColors.Control;
-            LogPanel.Location = new Point(12, 286);
+            LogPanel.Location = new Point(12, 307);
             LogPanel.Name = "LogPanel";
-            LogPanel.Size = new Size(376, 133);
+            LogPanel.Size = new Size(376, 112);
             LogPanel.TabIndex = 110;
             // 
             // label6
@@ -182,12 +188,68 @@
             timer1.Interval = 10000;
             timer1.Tick += timer1_Tick;
             // 
+            // numberTesting
+            // 
+            numberTesting.BackColor = Color.Transparent;
+            numberTesting.BorderRadius = 8;
+            numberTesting.CustomizableEdges = customizableEdges5;
+            numberTesting.DefaultText = "";
+            numberTesting.DisabledState.BorderColor = Color.FromArgb(208, 208, 208);
+            numberTesting.DisabledState.FillColor = Color.FromArgb(226, 226, 226);
+            numberTesting.DisabledState.ForeColor = Color.FromArgb(138, 138, 138);
+            numberTesting.DisabledState.PlaceholderForeColor = Color.FromArgb(138, 138, 138);
+            numberTesting.FocusedState.BorderColor = Color.FromArgb(94, 148, 255);
+            numberTesting.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            numberTesting.HoverState.BorderColor = Color.FromArgb(94, 148, 255);
+            numberTesting.Location = new Point(99, 271);
+            numberTesting.Name = "numberTesting";
+            numberTesting.PlaceholderText = "082177177";
+            numberTesting.SelectedText = "";
+            numberTesting.ShadowDecoration.CustomizableEdges = customizableEdges6;
+            numberTesting.ShadowDecoration.Enabled = true;
+            numberTesting.Size = new Size(139, 26);
+            numberTesting.TabIndex = 113;
+            numberTesting.TextAlign = HorizontalAlignment.Center;
+            // 
+            // btnTest
+            // 
+            btnTest.BackColor = Color.Transparent;
+            btnTest.BorderColor = Color.LimeGreen;
+            btnTest.BorderRadius = 8;
+            btnTest.BorderThickness = 2;
+            btnTest.Cursor = Cursors.Hand;
+            btnTest.CustomizableEdges = customizableEdges7;
+            btnTest.DisabledState.BorderColor = Color.DarkGray;
+            btnTest.DisabledState.CustomBorderColor = Color.DarkGray;
+            btnTest.DisabledState.FillColor = Color.FromArgb(169, 169, 169);
+            btnTest.DisabledState.ForeColor = Color.FromArgb(141, 141, 141);
+            btnTest.FillColor = Color.LimeGreen;
+            btnTest.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            btnTest.ForeColor = Color.White;
+            btnTest.Location = new Point(248, 268);
+            btnTest.Margin = new Padding(3, 3, 3, 20);
+            btnTest.Name = "btnTest";
+            btnTest.PressedColor = Color.LimeGreen;
+            btnTest.ShadowDecoration.BorderRadius = 8;
+            customizableEdges8.TopLeft = false;
+            customizableEdges8.TopRight = false;
+            btnTest.ShadowDecoration.CustomizableEdges = customizableEdges8;
+            btnTest.ShadowDecoration.Depth = 20;
+            btnTest.ShadowDecoration.Enabled = true;
+            btnTest.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
+            btnTest.Size = new Size(49, 29);
+            btnTest.TabIndex = 114;
+            btnTest.Text = "Test";
+            btnTest.Click += btnTest_Click;
+            // 
             // Whatsapp_Config
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(400, 431);
             ControlBox = false;
+            Controls.Add(btnTest);
+            Controls.Add(numberTesting);
             Controls.Add(lblStatus);
             Controls.Add(btnReload);
             Controls.Add(Button1);
@@ -220,5 +282,7 @@
         private FontAwesome.Sharp.IconButton btnReload;
         private Label lblStatus;
         private System.Windows.Forms.Timer timer1;
+        private Guna.UI2.WinForms.Guna2TextBox numberTesting;
+        public Guna.UI2.WinForms.Guna2Button btnTest;
     }
 }

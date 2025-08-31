@@ -15,9 +15,12 @@ namespace KASIR.OffineMode
         private string CONNECTION_STATUS_URL = "http://localhost:1234/wa-connection-status";
         private string oldUrl = Properties.Settings.Default.BaseAddressProd.ToString();
         private string BASEURL = "";
+        private RichTextBox logRichTextBox;
+
         public Whatsapp_Config()
         {
             InitializeComponent();
+            InitializeLoggerMsg();
 
             // Inisialisasi HttpClient
             httpClient = new HttpClient();
@@ -30,6 +33,22 @@ namespace KASIR.OffineMode
             // Panggil async method dengan ConfigureAwait
             InitializeFormAsync();
         }
+
+        private void InitializeLoggerMsg()
+        {
+            // Hapus kode sebelumnya untuk Label
+
+            logRichTextBox = new RichTextBox
+            {
+                Dock = DockStyle.Fill,
+                ReadOnly = true,
+                BackColor = Color.White,
+                ScrollBars = RichTextBoxScrollBars.Vertical
+            };
+
+            LoggerMsg.Controls.Add(logRichTextBox);
+        }
+
         /// <summary>
         /// Menghapus prefix API dari URL
         /// </summary>
@@ -46,6 +65,7 @@ namespace KASIR.OffineMode
         {
             try
             {
+                FetchLogsFromApi();
                 // Panggil method check status
                 var status = await CheckConnectionStatusAsync();
 
@@ -62,7 +82,111 @@ namespace KASIR.OffineMode
                 NotifyHelper.Error("Gagal memuat form: " + ex.Message);
             }
         }
+        private async Task FetchLogsFromApi()
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    var response = await client.GetAsync($"{BASEURL}/logs");
+                    var logContent = await response.Content.ReadAsStringAsync();
 
+                    // Parse JSON
+                    var logs = JsonConvert.DeserializeObject<List<string>>(logContent);
+
+                    // Filter dan format logs
+                    var formattedLogs = FormatLogs(logs);
+
+                    // Pastikan update UI di main thread
+                    if (this.InvokeRequired)
+                    {
+                        this.Invoke((MethodInvoker)delegate {
+                            UpdateLogDisplay(formattedLogs);
+                        });
+                    }
+                    else
+                    {
+                        UpdateLogDisplay(formattedLogs);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                //MessageBox.Show($"Gagal mengambil logs: {ex.Message}");
+            }
+        }
+
+        private List<string> FormatLogs(List<string> rawLogs)
+        {
+            var formattedLogs = new List<string>();
+            var currentGroup = new List<string>();
+
+            foreach (var log in rawLogs.Where(l => !string.IsNullOrWhiteSpace(l)))
+            {
+                // Kelompokkan log berdasarkan blok QR Code atau pesan penting
+                if (log.Contains("===== QR CODE ====="))
+                {
+                    // Simpan kelompok sebelumnya jika ada
+                    if (currentGroup.Any())
+                    {
+                        formattedLogs.AddRange(currentGroup);
+                        currentGroup.Clear();
+                    }
+
+                    // Tambahkan header QR Code
+                    formattedLogs.Add("🔍 [QR CODE]");
+                }
+                else if (log.Contains("Caranya:"))
+                {
+                    // Abaikan baris "Caranya:"
+                    continue;
+                }
+                else if (log.Contains("Scan QR Code di bawah ini:"))
+                {
+                    // Abaikan
+                    continue;
+                }
+                else if (log.Contains("QR Code Generated"))
+                {
+                    formattedLogs.Add("🟢 QR Code Baru Dibuat");
+                }
+                else if (log.Contains("Koneksi terputus"))
+                {
+                    formattedLogs.Add("🔴 " + log.Substring(24).Trim());
+                }
+                else
+                {
+                    // Parsing timestamp
+                    if (DateTime.TryParse(log.Substring(0, 24), out DateTime timestamp))
+                    {
+                        string message = log.Substring(24).Trim();
+                        if (!string.IsNullOrWhiteSpace(message))
+                        {
+                            formattedLogs.Add($"[{timestamp:HH:mm:ss}] {message}");
+                        }
+                    }
+                    else
+                    {
+                        // Jika tidak bisa parsing timestamp, tambahkan langsung
+                        formattedLogs.Add(log);
+                    }
+                }
+            }
+
+            return formattedLogs;
+        }
+
+        private void UpdateLogDisplay(List<string> logs)
+        {
+            // Gabungkan logs dengan enter
+            string logText = string.Join(Environment.NewLine, logs);
+
+            logRichTextBox.Text = logText;
+
+            // Scroll ke bawah
+            logRichTextBox.SelectionStart = logRichTextBox.Text.Length;
+            logRichTextBox.ScrollToCaret();
+        }
         // Ubah method menjadi async dengan nama yang jelas
         private async Task LoadQRCodeAsync()
         {
@@ -127,7 +251,7 @@ namespace KASIR.OffineMode
             }
             else
             {
-                lblStatus.Text = $"Status: \n{status.Status}";
+                lblStatus.Text = $"Status: \nConnected";
                 lblStatus.BackColor = Color.Transparent;
                 lblStatus.ForeColor = Color.Black;
             }
@@ -140,7 +264,7 @@ namespace KASIR.OffineMode
             }
             else
             {
-                btnResetQR.Text = "QR Tidak Tersedia\nReset?";
+                btnResetQR.Text = "Connected, Relogin?";
             }
         }
 
@@ -319,6 +443,8 @@ namespace KASIR.OffineMode
 
                 // Update UI berdasarkan status
                 UpdateUIBasedOnStatus(status);
+                LoadQRCodeAsync();
+                FetchLogsFromApi();
             }
             catch (Exception ex)
             {
@@ -331,6 +457,7 @@ namespace KASIR.OffineMode
         {
             try
             {
+                FetchLogsFromApi();
                 // Panggil method check status
                 var status = await CheckConnectionStatusAsync();
 

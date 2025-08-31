@@ -104,7 +104,7 @@
             LogPanel.ForeColor = SystemColors.Control;
             LogPanel.Location = new Point(12, 307);
             LogPanel.Name = "LogPanel";
-            LogPanel.Size = new Size(376, 112);
+            LogPanel.Size = new Size(376, 242);
             LogPanel.TabIndex = 110;
             // 
             // label6
@@ -121,12 +121,14 @@
             // 
             // LoggerMsg
             // 
-            LoggerMsg.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            LoggerMsg.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            LoggerMsg.AutoScroll = true;
             LoggerMsg.BackColor = Color.White;
-            LoggerMsg.Location = new Point(3, 27);
+            LoggerMsg.ForeColor = SystemColors.ActiveCaptionText;
+            LoggerMsg.Location = new Point(9, 34);
             LoggerMsg.Name = "LoggerMsg";
-            LoggerMsg.Size = new Size(370, 106);
-            LoggerMsg.TabIndex = 0;
+            LoggerMsg.Size = new Size(357, 203);
+            LoggerMsg.TabIndex = 78976;
             // 
             // Button1
             // 
@@ -246,7 +248,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(400, 431);
+            ClientSize = new Size(400, 561);
             ControlBox = false;
             Controls.Add(btnTest);
             Controls.Add(numberTesting);

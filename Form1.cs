@@ -59,18 +59,24 @@ namespace KASIR
             panel2.Controls.Add(leftBorderBtn);
             Height += 100;
             LogoKasir.Visible = true;
+
+            //======================================== Developer Config ========================================
+
             if (baseOutlet != "4")
             {
                 btnDev.Visible = false;
             }
+            //======================================== Developer Config ========================================
 
-            //whatsapp fiture 
+            //======================================== Whatsapp Config ========================================
+
             btnWhatsapp.Visible = false;
             if (baseOutlet == "4" || baseOutlet == "1")
             {
                 btnWhatsapp.Visible = true;
             }
-            //====
+            //======================================== Whatsapp Config ========================================
+
             StarterApp();
             Shown += Form1_Shown;
         }
@@ -189,7 +195,7 @@ namespace KASIR
                 }
                 else
                 {
-                    btnWhatsapp.Text = "Whatsapp Config";
+                    btnWhatsapp.Text = "";
                 }
             }
             else
@@ -322,6 +328,7 @@ namespace KASIR
                 await fileMover.refreshCacheTransaction();
             }
         }
+        private bool isOpenOpenDualMonitor = false; // Tambahkan variabel status navbar
 
         private async Task DualMonitorChecker()
         {
@@ -337,6 +344,7 @@ namespace KASIR
                     string allSettingsData = await File.ReadAllTextAsync("setting\\configDualMonitor.data");
                     if (allSettingsData == "ON")
                     {
+                        isOpenOpenDualMonitor = true;
                         await OpenDualMonitor();
                         return;
                     }
@@ -978,13 +986,19 @@ pause > nul
 
         private async void btnExit_Click(object sender, EventArgs e)
         {
-            // coba keluar normal dulu
+            if (isOpenNavbar)
+            {
+                Offline_settingsForm dualm = new();
+
+                dualm.CloseDualMonitor();
+
+                await Task.Delay(500);
+            }
+
             Application.Exit();
 
-            // tunggu sebentar (0.5 detik)
             await Task.Delay(500);
 
-            // cek kalau masih hidup → paksa kill
             var currentProcess = Process.GetCurrentProcess();
             try
             {
@@ -1082,16 +1096,43 @@ pause > nul
                         UpdateSyncStatus(Color.White, $"Last\nSync \n{DateTime.Now:HH:mm}");
                     }
                     NotifyHelper.Success($"Berhasil syncron server at ${DateTime.Now:HH:mm}");
-                    Whatsapp_Config whatsappConfig = new();
-                    var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
-                    if (connectionStatus.Connected)
+
+
+                    //======================================== Whatsapp Config ========================================
+                    if (baseOutlet == "4" || baseOutlet == "1")
                     {
-                        btnWhatsapp.Text = "Connected";
+                        Whatsapp_Config whatsappConfig = new();
+                        var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
+                        if (connectionStatus.Connected)
+                        {
+                            if (isOpenNavbar)
+                            {
+                                btnWhatsapp.Text = "Connected";
+
+                            }
+                            else
+                            {
+                                btnWhatsapp.Text = "";
+                                btnWhatsapp.ForeColor = Color.LimeGreen;
+                                SignalPing.ImageAlign = ContentAlignment.MiddleLeft;
+                            }
+                        }
+                        else
+                        {
+                            if (isOpenNavbar)
+                            {
+                                btnWhatsapp.Text = "Whatsapp Config";
+                            }
+                            else
+                            {
+                                btnWhatsapp.Text = "";
+                                btnWhatsapp.ForeColor = Color.DarkGray;
+                                SignalPing.ImageAlign = ContentAlignment.MiddleLeft;
+                            }
+                        }
                     }
-                    else
-                    {
-                        btnWhatsapp.Text = "Whatsapp Config";
-                    }
+                    //======================================== Whatsapp Config ========================================
+
                     await Task.Run(async () =>
                     {
                         await checkVersionAppWindows();
@@ -1445,8 +1486,16 @@ pause > nul
             btnDev.Text = "";
             SignalPing.Text = "";
             SignalPing.ImageAlign = ContentAlignment.MiddleLeft;
-            btnWhatsapp.Text = "";
-            btnWhatsapp.ImageAlign = ContentAlignment.MiddleLeft;
+            
+            //======================================== Whatsapp Config ========================================
+            if (baseOutlet == "4" || baseOutlet == "1")
+            {
+
+                btnWhatsapp.Text = "";
+                btnWhatsapp.ImageAlign = ContentAlignment.MiddleLeft;
+
+            }
+            //======================================== Whatsapp Config ========================================
         }
 
         private async void btnWhatsapp_Click(object sender, EventArgs e)

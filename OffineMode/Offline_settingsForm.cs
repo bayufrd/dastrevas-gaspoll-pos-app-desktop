@@ -694,7 +694,7 @@ namespace KASIR.Komponen
         {
             try
             {
-                string versinew = await _updaterHelper.CheckVersionNewAppAsync();
+                string versinew = await _updaterHelper.CheckVersionAppWindows();
                 string currentVersion = Settings.Default.Version;
 
                 string newVersion = versinew.Replace(".", "");
@@ -954,7 +954,30 @@ namespace KASIR.Komponen
             }
         }
 
+        public async Task CloseDualMonitor()
+        {
+            try
+            {
+                // Matikan melalui file konfigurasi
+                string data = "OFF";
+                await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
 
+                // Tunggu sebentar
+                Thread.Sleep(1000);
+
+                // Pastikan proses tertutup
+                Process[] processes = Process.GetProcessesByName("KASIR Dual Monitor");
+
+                foreach (Process process in processes)
+                {
+                    process.Kill();
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred while closing dual monitor: {ErrorMessage}", ex.Message);
+            }
+        }
         public async Task OpenDualMonitor()
         {
             try
@@ -994,9 +1017,9 @@ namespace KASIR.Komponen
 
                 if (radioDualMonitor.Checked == false && allSettingsData == "ON")
                 {
+                    await CloseDualMonitor();
                     string data = "OFF";
                     await File.WriteAllTextAsync("setting\\configDualMonitor.data", data);
-                    /*DeathTimeBegin();*/
                 }
             }
             catch (Exception ex)

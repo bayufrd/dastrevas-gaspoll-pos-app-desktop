@@ -223,13 +223,10 @@ namespace KASIR.OffineMode
                 {
                     lblStatus.Text = "Gagal memuat QR: " + jsonResponse["message"];
                     lblStatus.BackColor = Color.Transparent;
-
-                    NotifyHelper.Error("Gagal memuat QR: " + jsonResponse["message"]);
                 }
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex, "Gagal memuat QR Code");
                 //NotifyHelper.Error("Error: " + ex.Message);
             }
         }
@@ -369,8 +366,6 @@ namespace KASIR.OffineMode
             }
             catch (OperationCanceledException)
             {
-                LoggerUtil.LogWarning("Waktu tunggu habis saat mengambil status koneksi");
-
                 return new ConnectionStatus
                 {
                     Connected = false,
@@ -380,7 +375,7 @@ namespace KASIR.OffineMode
             }
             catch (HttpRequestException httpEx)
             {
-                LoggerUtil.LogError(httpEx, "Kesalahan HTTP saat mengambil status koneksi");
+                //LoggerUtil.LogError(httpEx, "Kesalahan HTTP saat mengambil status koneksi");
 
                 return new ConnectionStatus
                 {
@@ -392,7 +387,7 @@ namespace KASIR.OffineMode
             catch (Exception ex)
             {
                 // Tangani kesalahan umum
-                LoggerUtil.LogError(ex, "Kesalahan saat mengambil status koneksi");
+                //LoggerUtil.LogError(ex, "Kesalahan saat mengambil status koneksi");
 
                 return new ConnectionStatus
                 {

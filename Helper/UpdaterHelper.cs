@@ -22,6 +22,36 @@ namespace KASIR.Helper
         {
             _internetService = internetService;
         }
+
+        public async Task<string> CheckVersionAppWindows()
+        {
+            try
+            {
+                // Langkah 1: Validasi Koneksi Internet
+                if (!_internetService.IsInternetConnected())
+                {
+                    return "1.0.0.0";
+                }
+
+                using (HttpClient httpClient = new())
+                {
+                    string oldUrl = Properties.Settings.Default.BaseAddressProd.ToString();
+                    string urlVersion = RemoveApiPrefix(oldUrl);
+
+                    // Gunakan await untuk mendapatkan versi
+                    string newVersion = await httpClient.GetStringAsync($"{urlVersion}/server/version.txt");
+
+                    // Bersihkan dan kembalikan versi
+                    return newVersion.Trim();
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "Kesalahan umum dalam proses update");
+                return "1.0.0.0"; // Nilai default jika terjadi kesalahan
+            }
+        }
+
         public async Task<string> CheckVersionNewAppAsync()
         {
             try

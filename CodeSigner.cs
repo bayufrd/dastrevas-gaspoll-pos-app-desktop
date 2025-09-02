@@ -52,12 +52,12 @@ namespace KASIR
                     process.WaitForExit();
 
                     // Log detail proses
-                    LoggerUtil.LogWarning($"SignTool Output: {output}");
+                    //LoggerUtil.LogWarning($"SignTool Output: {output}");
 
                     if (!string.IsNullOrEmpty(error))
                     {
                         NotifyHelper.Error($"SignTool Error: {error}");
-                        LoggerUtil.LogError(new Exception(error), "Signing Error Details");
+                        //LoggerUtil.LogError(new Exception(error), "Signing Error Details");
                         return false;
                     }
 
@@ -66,7 +66,7 @@ namespace KASIR
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex, "Signing Process Exception", ex);
+                //LoggerUtil.LogError(ex, "Signing Process Exception", ex);
                 return false;
             }
         }

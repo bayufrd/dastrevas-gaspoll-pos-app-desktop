@@ -516,7 +516,10 @@ namespace KASIR.OfflineMode
                         transactionDataArray = existingTransactions["data"] as JArray ?? new JArray();
                     }
 
-                    transactionDataArray.Add(JToken.FromObject(transactionData));
+                    if (!transactionDataArray.Any(t => t["receipt_number"]?.ToString() == receipt_numberfix))
+                    {
+                        transactionDataArray.Add(JToken.FromObject(transactionData));
+                    }
 
                     JObject newTransactionData = new() { { "data", transactionDataArray } };
                     WriteJsonFile(transactionDataPath, newTransactionData);
@@ -591,7 +594,7 @@ namespace KASIR.OfflineMode
                 UpdateMemberPointsInOutletFile(getMember.member_id, point);
                 if (_internetServices.IsInternetConnected())
                 {
-                    shiftReport c = new();
+                    SyncHelper c = new();
                     _ = c.SyncmembershipData(membershipDataPath);
                 }
             }
@@ -953,7 +956,7 @@ namespace KASIR.OfflineMode
                     return;
                 }
                 // Cek apakah koneksi WhatsApp tersedia dan terhubung
-                var whatsappConfig = new Whatsapp_Config();
+                var whatsappConfig = new Whatsapp_Config(false);
                 var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
 
                 string phoneNumber = datas.data.member_phone_number;

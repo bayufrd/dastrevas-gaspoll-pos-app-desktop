@@ -1,7 +1,9 @@
 ﻿using System.Globalization;
 using System.Text.RegularExpressions;
+using KASIR.Komponen;
 using KASIR.Properties;
 using Newtonsoft.Json.Linq;
+using KASIR.Helper;
 
 namespace KASIR.OffineMode
 {
@@ -11,54 +13,57 @@ namespace KASIR.OffineMode
 
         public async Task refreshCacheTransaction()
         {
-            string sourceDirectory = "DT-Cache\\Transaction\\transaction.data"; // Path to source
-            string transactionHistoryDirectory =
-                "DT-Cache\\Transaction\\HistoryTransaction"; // Path to transaction history
+            string transactionSource = "DT-Cache\\Transaction\\transaction.data";
+            string shiftSource = "DT-Cache\\Transaction\\shiftData.data";
+            string expenditureSource = "DT-Cache\\Transaction\\expenditure.data";
+
+            string transactionHistoryDir = "DT-Cache\\Transaction\\HistoryTransaction";
+            string shiftHistoryDir = "DT-Cache\\Transaction\\ShiftDataTransaction";
+            string expenditureHistoryDir = "DT-Cache\\Transaction\\ExpendituresTransaction";
 
             try
             {
-                // 1. Check if the source file exists
-                if (!File.Exists(sourceDirectory))
+                SyncHelper c = new SyncHelper();
+                c.IsBackgroundOperation = true;
+
+                await c.SyncDataTransactions();
+
+                // ================= TRANSACTION =================
+                if (File.Exists(transactionSource))
                 {
-                    return; // Exit if the file does not exist
+                    string jsonData = await ReadJsonFileAsync(transactionSource);
+                    JObject data = JObject.Parse(jsonData);
+                    JArray transactions = (JArray)data["data"];
+
+                    if (transactions != null && transactions.Count > 0)
+                    {
+                        DateTime? firstTransactionDate = GetFirstTransactionDate(transactions);
+                        DateTime currentDateTime = DateTime.Now;
+
+                        if (firstTransactionDate.HasValue &&
+                            firstTransactionDate.Value.Date != currentDateTime.Date &&
+                            currentDateTime.Hour >= 6)
+                        {
+                            // Archive transaction
+                            await ArchiveTransactionData(transactions, transactionHistoryDir, jsonData);
+
+                            // Clear transaction file
+                            await ClearSourceFile(transactionSource);
+
+                            // Archive shift data & expenditure data
+                            await ArchiveShiftData(shiftSource, shiftHistoryDir); // max 3 shift otomatis
+                            await ArchiveData(expenditureSource, expenditureHistoryDir);
+
+                            // Clear expenditure file
+                            await ClearSourceFile(expenditureSource);
+                        }
+                    }
                 }
-
-                // 2. Read the source file content
-                string jsonData = await ReadJsonFileAsync(sourceDirectory);
-                JObject data = JObject.Parse(jsonData);
-
-                // 3. Get the "data" array of transactions
-                JArray transactions = (JArray)data["data"];
-                if (transactions == null || transactions.Count == 0)
+                else
                 {
-                    return; // Exit if no transactions exist
-                }
-
-                // 4. Check if the first transaction date is not today's date (and it's after 6 AM)
-                DateTime? firstTransactionDate = GetFirstTransactionDate(transactions);
-                DateTime currentDateTime = DateTime.Now;
-
-                if (firstTransactionDate.HasValue &&
-                    firstTransactionDate.Value.Date != currentDateTime.Date &&
-                    currentDateTime.Hour >= 6)
-                {
-                    // 5. Archive transaction data
-                    await ArchiveTransactionData(transactions, transactionHistoryDirectory, jsonData);
-
-                    // 6. Clear the source file by writing an empty array
-                    await ClearSourceFile(sourceDirectory);
-
-                    // 7. Archive shift data
-                    await ArchiveData("DT-Cache\\Transaction\\shiftData.data",
-                        "DT-Cache\\Transaction\\ShiftDataTransaction");
-
-                    // 8. Archive expenditure data
-                    await ArchiveData("DT-Cache\\Transaction\\expenditure.data",
-                        "DT-Cache\\Transaction\\ExpendituresTransaction");
-
-                    await ClearSourceFile("DT-Cache\\Transaction\\shiftData.data");
-
-                    await ClearSourceFile("DT-Cache\\Transaction\\expenditure.data");
+                    // Pastikan shiftData tetap diproses walau transaction file kosong
+                    if (File.Exists(shiftSource))
+                        await ArchiveShiftData(shiftSource, shiftHistoryDir);
                 }
             }
             catch (Exception ex)
@@ -66,6 +71,7 @@ namespace KASIR.OffineMode
                 LoggerUtil.LogError(ex, "Unexpected error in refreshCacheTransaction: {ErrorMessage}", ex.Message);
             }
         }
+
 
         public async Task<string> ReadJsonFileAsync(string filePath)
         {
@@ -105,7 +111,6 @@ namespace KASIR.OffineMode
                 $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{previousDay:yyyyMMdd}{fileExtension}";
             string destinationPath = Path.Combine(historyDirectory, newFileName);
 
-            // Ensure destination directory exists
             if (!Directory.Exists(historyDirectory))
             {
                 Directory.CreateDirectory(historyDirectory);
@@ -113,12 +118,10 @@ namespace KASIR.OffineMode
 
             if (File.Exists(destinationPath))
             {
-                // Merge transactions into the existing file
                 await MergeTransactionsToFile(destinationPath, transactions);
             }
             else
             {
-                // Create a new file with the transactions
                 await WriteJsonToFile(destinationPath, jsonData);
             }
         }
@@ -153,7 +156,6 @@ namespace KASIR.OffineMode
 
             try
             {
-                // Try to write the empty array to the source file
                 await WriteJsonToFile(sourcePath, emptyJson.ToString());
             }
             catch (IOException ex)
@@ -161,16 +163,11 @@ namespace KASIR.OffineMode
                 LoggerUtil.LogError(ex, $"Could not clear the source file: {ex.Message}");
             }
         }
-
-        public async Task ArchiveData(string sourceFilePath, string archiveDirectory)
+        public async Task ArchiveShiftData(string sourceFilePath, string archiveDirectory, int maxShifts = 3)
         {
-            // Ensure destination directory exists
             if (!Directory.Exists(archiveDirectory))
-            {
                 Directory.CreateDirectory(archiveDirectory);
-            }
 
-            // Get current date and subtract one day
             DateTime previousDay = DateTime.Now.AddDays(-1);
 
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourceFilePath);
@@ -179,30 +176,82 @@ namespace KASIR.OffineMode
                 $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{previousDay:yyyyMMdd}{fileExtension}";
             string destinationPath = Path.Combine(archiveDirectory, newFileName);
 
-            if (File.Exists(destinationPath))
+            // Baca source file
+            string sourceData = await ReadJsonFileAsync(sourceFilePath);
+            JObject sourceJson = JObject.Parse(sourceData);
+            JArray sourceArray = (JArray)sourceJson["data"];
+
+            if (sourceArray.Count > maxShifts)
             {
-                // Merge data into the existing file
-                string existingData = await ReadJsonFileAsync(destinationPath);
-                JObject destinationJson = JObject.Parse(existingData);
-                JArray destinationData = (JArray)destinationJson["data"];
+                // Ambil shift yang lebih lama untuk di-archive
+                var shiftsToArchive = sourceArray.Take(sourceArray.Count - maxShifts).ToList();
 
-                string sourceData = await ReadJsonFileAsync(sourceFilePath);
-                JObject sourceJson = JObject.Parse(sourceData);
-                JArray sourceDataArray = (JArray)sourceJson["data"];
+                // Hapus shift yang di-archive dari sourceArray
+                foreach (var shift in shiftsToArchive)
+                    sourceArray.Remove(shift);
 
-                foreach (JObject trans in sourceDataArray)
+                // Merge ke file archive jika ada
+                if (File.Exists(destinationPath))
                 {
-                    destinationData.Add(trans);
+                    string existingData = await ReadJsonFileAsync(destinationPath);
+                    JObject destinationJson = JObject.Parse(existingData);
+                    JArray destinationArray = (JArray)destinationJson["data"];
+
+                    foreach (var shift in shiftsToArchive)
+                        destinationArray.Add(shift);
+
+                    await WriteJsonToFile(destinationPath, destinationJson.ToString());
+                }
+                else
+                {
+                    JObject newArchive = new JObject();
+                    newArchive["data"] = new JArray(shiftsToArchive);
+                    await WriteJsonToFile(destinationPath, newArchive.ToString());
+                }
+            }
+
+            // Tulis kembali source file (hanya shift terakhir maxShifts)
+            await WriteJsonToFile(sourceFilePath, sourceJson.ToString());
+        }
+
+
+        public async Task ArchiveData(string sourceFilePath, string archiveDirectory)
+            {
+                if (!Directory.Exists(archiveDirectory))
+                {
+                    Directory.CreateDirectory(archiveDirectory);
                 }
 
-                await WriteJsonToFile(destinationPath, destinationJson.ToString());
+                DateTime previousDay = DateTime.Now.AddDays(-1);
+
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourceFilePath);
+                string fileExtension = Path.GetExtension(sourceFilePath);
+                string newFileName =
+                    $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{previousDay:yyyyMMdd}{fileExtension}";
+                string destinationPath = Path.Combine(archiveDirectory, newFileName);
+
+                if (File.Exists(destinationPath))
+                {
+                    string existingData = await ReadJsonFileAsync(destinationPath);
+                    JObject destinationJson = JObject.Parse(existingData);
+                    JArray destinationData = (JArray)destinationJson["data"];
+
+                    string sourceData = await ReadJsonFileAsync(sourceFilePath);
+                    JObject sourceJson = JObject.Parse(sourceData);
+                    JArray sourceDataArray = (JArray)sourceJson["data"];
+
+                    foreach (JObject trans in sourceDataArray)
+                    {
+                        destinationData.Add(trans);
+                    }
+
+                    await WriteJsonToFile(destinationPath, destinationJson.ToString());
+                }
+                else
+                {
+                    string sourceData = await ReadJsonFileAsync(sourceFilePath);
+                    await WriteJsonToFile(destinationPath, sourceData);
+                }
             }
-            else
-            {
-                // Write the data to a new file
-                string sourceData = await ReadJsonFileAsync(sourceFilePath);
-                await WriteJsonToFile(destinationPath, sourceData);
-            }
-        }
     }
 }

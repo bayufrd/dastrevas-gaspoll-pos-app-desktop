@@ -705,11 +705,11 @@ namespace KASIR.Komponen
 
                 if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
                 {
-                    UpdateUIForNewVersion(displayVersion, "Update");
+                    UpdateUIForNewVersion(versinew, "Update");
                 }
                 else
                 {
-                    UpdateUIForNewVersion(displayVersion, "Fix");
+                    UpdateUIForNewVersion(versinew, "Fix");
                 }
             }
             catch (Exception ex)

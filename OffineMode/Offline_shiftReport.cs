@@ -1,6 +1,9 @@
 ﻿using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
+using FontAwesome.Sharp;
+using Guna.UI2.WinForms;
 using KASIR.Helper;
 using KASIR.Model;
 using KASIR.OffineMode;
@@ -18,7 +21,6 @@ namespace KASIR.Komponen
         private Label loadingLabel;
 
         private Panel loadingPanel;
-        private ProgressBar progressBar;
         private int ending_cash = 0,
             totalTransaksiOulet = 0,
             totalDiscountAmount = 0,
@@ -33,7 +35,6 @@ namespace KASIR.Komponen
             InitializeComponent();
             btnCetakStruk.Enabled = true;
             lblNotifikasi.Visible = false;
-            InitializeLoadingUI();
             txtNamaKasir.Text = "Dastrevas (AutoFill)";
             txtActualCash.Text = "0";
             Disposed += (s, e) =>
@@ -44,106 +45,6 @@ namespace KASIR.Komponen
         }
 
         public bool IsBackgroundOperation { get; set; }
-
-        private bool ShouldShowProgress()
-        {
-            return Visible && IsHandleCreated && !IsDisposed && !IsBackgroundOperation;
-        }
-
-        private void InitializeLoadingUI()
-        {
-            try
-            {
-                loadingPanel = new Panel
-                {
-                    BackColor = Color.White,
-                    BorderStyle = BorderStyle.Fixed3D,
-                    Size = new Size(300, 120),
-                    Location = new Point((ClientSize.Width - 400) / 2, (ClientSize.Height - 200) / 2),
-                    Visible = false
-                };
-
-                loadingLabel = new Label
-                {
-                    Text = "Mengambil data dari server...",
-                    Font = new Font("Segoe UI", 10, FontStyle.Regular),
-                    ForeColor = Color.White,
-                    AutoSize = false,
-                    TextAlign = ContentAlignment.MiddleLeft,
-                    Size = new Size(280, 30),
-                    Location = new Point(10, 20)
-                };
-
-                progressBar = new ProgressBar
-                {
-                    Style = ProgressBarStyle.Continuous,
-                    Size = new Size(280, 25),
-                    Location = new Point(10, 60),
-                    Minimum = 0,
-                    Maximum = 100,
-                    Value = 0
-                };
-
-                loadingPanel.BackColor = Color.FromArgb(30, 31, 68);
-                loadingPanel.Controls.Add(loadingLabel);
-                loadingPanel.Controls.Add(progressBar);
-                Controls.Add(loadingPanel);
-                loadingPanel.BringToFront();
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "Error initializing loading UI: {ErrorMessage}", ex.Message);
-            }
-        }
-
-        private void ShowLoading()
-        {
-            if (!ShouldShowProgress())
-            {
-                return;
-            }
-
-            try
-            {
-                loadingPanel.Visible = true;
-                progressBar.Value = 0;
-                loadingLabel.Text = "Mengambil data dari server...";
-            }
-            catch (Exception) { }
-        }
-
-        private void HideLoading()
-        {
-            if (!ShouldShowProgress())
-            {
-                return;
-            }
-
-            try
-            {
-                loadingPanel.Visible = false;
-            }
-            catch (Exception) { }
-        }
-
-        private void UpdateProgress(int percentage, string message = null)
-        {
-            if (!ShouldShowProgress())
-            {
-                return;
-            }
-
-            try
-            {
-                progressBar.Value = Math.Min(100, Math.Max(0, percentage));
-                if (!string.IsNullOrEmpty(message))
-                {
-                    loadingLabel.Text = message;
-                }
-            }
-            catch (Exception) { }
-        }
-
         private string GetStartAt()
         {
             string shiftDataPath = @"DT-Cache\Transaction\shiftData.data";
@@ -278,6 +179,8 @@ namespace KASIR.Komponen
                     await GenerateShiftReport(generateIDshift);
 
                     File.WriteAllText(shiftPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
+                    LoadData();
+
                 }
             }
             catch (TaskCanceledException ex)
@@ -289,11 +192,11 @@ namespace KASIR.Komponen
             {
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
                 ResetButtonState();
+
             }
             finally
             {
                 ResetButtonState();
-                LoadData();
             }
         }
 
@@ -975,7 +878,165 @@ namespace KASIR.Komponen
             }
         }
 
-        //LOAD DATA Transaction
+        //LOAD DATA Transaction loaddata transaction
+        private void DisplayDataInCards(DataTable dataTable)
+        {
+            flowlayoutPanel.SuspendLayout();
+            flowlayoutPanel.Controls.Clear();
+            flowlayoutPanel.AutoScroll = true;
+            flowlayoutPanel.BackColor = Color.White;
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                string label = row["DATA"]?.ToString();
+                string detail = row["Detail"]?.ToString();
+
+                // Section header atau separator bold (tanpa detail)
+                if (!string.IsNullOrWhiteSpace(label) && string.IsNullOrWhiteSpace(detail))
+                {
+                    var headerCard = new Guna2Panel()
+                    {
+                        Height = 42,
+                        Width = flowlayoutPanel.Width - 28,
+                        BackColor = Color.FromArgb(228, 239, 244),
+                        Padding = new Padding(4, 3, 4, 3),
+                        Margin = new Padding(2, 14, 2, 3),
+                        Anchor = AnchorStyles.Left | AnchorStyles.Right,
+
+                        BorderRadius = 8,
+                        BorderThickness = 1,
+                        BorderColor = Color.Black,
+
+                        AutoSize = false
+                    };
+                    var icon = new IconPictureBox()
+                    {
+                        IconChar = GetSectionIcon(label),
+                        IconColor = Color.Teal,
+                        IconSize = 26,
+                        Size = new Size(34, 34),
+                        Dock = DockStyle.Left,
+                        Padding = new Padding(2, 4, 6, 0),
+                        BackColor = Color.Transparent
+                    };
+                    var lbl = new Label()
+                    {
+                        Text = label,
+                        Dock = DockStyle.Fill,
+                        Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                        ForeColor = Color.Teal,
+                        AutoSize = false,
+                        TextAlign = ContentAlignment.MiddleLeft,
+                        Padding = new Padding(5, 2, 5, 0)
+                    };
+                    headerCard.Controls.Add(lbl);
+                    headerCard.Controls.Add(icon);
+                    flowlayoutPanel.Controls.Add(headerCard);
+                    continue;
+                }
+
+                // Card Data
+                var card = new Guna2Panel()
+                {
+                    Height = 54,
+                    Width = flowlayoutPanel.Width - 28,
+                    BackColor = Color.White,
+                    Margin = new Padding(2, 3, 2, 4),
+                    Padding = new Padding(7, 3, 7, 3),
+                    Anchor = AnchorStyles.Left | AnchorStyles.Right,
+
+                    BorderRadius = 8,
+                    BorderThickness = 1,
+                    BorderColor = Color.Black,
+
+                    AutoSize = false
+                };
+                // Icon otomatis per konten
+                var iconCard = new IconPictureBox()
+                {
+                    IconChar = GetRowIcon(label, detail),
+                    IconColor =
+        (label.ToLower().Contains("shift") || label.ToLower().Contains("total")) ? Color.DarkGreen : Color.DimGray,
+                    IconSize = 21,
+                    Size = new Size(27, 27),
+                    Dock = DockStyle.Left,
+                    Padding = new Padding(2, 8, 6, 0),
+                    BackColor = Color.Transparent
+                };
+                var lblNama = new Label()
+                {
+                    Text = label,
+                    Dock = DockStyle.Left,
+                    AutoSize = false,
+                    Width = (card.Width / 2) - 48,
+                    Font = new Font("Segoe UI", 10,
+        (label.ToLower().Contains("shift") || label.ToLower().Contains("total"))
+        ? FontStyle.Bold
+        : FontStyle.Regular),
+                    ForeColor = (label.ToLower().Contains("shift") || label.ToLower().Contains("total"))
+        ? Color.DarkGreen
+        : Color.Black,
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    Padding = new Padding(5, 3, 2, 2)
+                };
+                var lblDetail = new Label()
+                {
+                    Text = detail,
+                    Dock = DockStyle.Right,
+                    AutoSize = false,
+                    Width = (card.Width / 2) - 45,
+                    Font = new Font("Segoe UI", 10.4f, label.ToLower().Contains("total") ? FontStyle.Bold : FontStyle.Regular),
+                    ForeColor = label.ToLower().Contains("total") ? Color.DarkGreen : Color.Black,
+                    TextAlign = ContentAlignment.MiddleRight,
+                    Padding = new Padding(5, 2, 2, 2)
+                };
+                card.Controls.Add(lblDetail);
+                card.Controls.Add(lblNama);
+                card.Controls.Add(iconCard);
+                flowlayoutPanel.Controls.Add(card);
+            }
+            flowlayoutPanel.ResumeLayout();
+        }
+
+        private IconChar GetSectionIcon(string title)
+        {
+            title = title.ToUpper();
+            if (title.Contains("SHIFT"))
+                return IconChar.Users;
+            if (title.Contains("PAYMENT DETAILS"))
+                return IconChar.CashRegister;
+            if (title.Contains("DISCOUNT"))
+                return IconChar.Percent;
+            if (title.Contains("REFUND"))
+                return IconChar.SyncAlt;
+            if (title.Contains("PENGELUARAN"))
+                return IconChar.MoneyBillWave;
+            if (title.Contains("GRAND TOTAL"))
+                return IconChar.Calculator;
+            if (title.Contains("POINT"))
+                return IconChar.Coins;
+            return IconChar.Receipt;
+        }
+
+        private IconChar GetRowIcon(string label, string detail)
+        {
+            if (string.IsNullOrEmpty(label)) return IconChar.ClipboardList;
+            string s = label.ToLowerInvariant();
+            if (s.Contains("tunai") || s.Contains("cash") || s.Contains("pos")) return IconChar.MoneyBillWave;
+            if (s.Contains("pending")) return IconChar.HourglassHalf;
+            if (s.Contains("refund")) return IconChar.Undo;
+            if (s.Contains("discount")) return IconChar.Percentage;
+            if (s.Contains("canceled")) return IconChar.Ban;
+            if (s.Contains("point") || s.Contains("member")) return IconChar.Coins;
+            if (s.Contains("qty")) return IconChar.SortNumericDown;
+            if (s.Contains("pengeluaran")) return IconChar.MoneyCheckAlt;
+            if (s.Contains("sold")) return IconChar.ShoppingCart;
+            if (s.Contains("total")) return IconChar.Calculator;
+            if (s.Contains("savebill")) return IconChar.FileInvoiceDollar;
+            return IconChar.ClipboardList;
+        }
+
+        //=========================================================================================================
         public async Task LoadData(bool isBackground = false)
         {
             try
@@ -984,19 +1045,6 @@ namespace KASIR.Komponen
                 IsBackgroundOperation = isBackground;
 
                 CancelPreviousOperation();
-
-                if (ShouldShowProgress())
-                {
-                    btnCetakStruk.Enabled = false;
-                    ShowLoading();
-                    UpdateProgress(10, "Memeriksa konfigurasi...");
-                }
-
-                if (ShouldShowProgress())
-                {
-                    UpdateProgress(80, "Data diterima, memproses...");
-                }
-
                 int shiftNumber = GetShiftNumber(); // Get the shift number dynamically
 
                 string filePath = @"DT-Cache/Transaction/transaction.data";
@@ -1032,11 +1080,6 @@ namespace KASIR.Komponen
 
                 DataTable dataTable = CreateDataTable();
 
-                if (ShouldShowProgress())
-                {
-                    UpdateProgress(90, "Memformat data untuk tampilan...");
-                }
-
                 string startAt = GetStartAt();
                 DateTime startAtDateTime = DateTime.Parse(startAt);
 
@@ -1068,16 +1111,19 @@ namespace KASIR.Komponen
 
 
                 ExpenditureData filteredexpenditureData = new() { data = filteredExpenditures };
+                
                 // Get the start and last shift based on transaction times
                 var (startShift, lastShift) = GetStartAndLastShiftOrder(filteredTransactions);
                 // Add the Start and Last Shift Order to the DataTable
+                decimal totalExpenditureItems = CalculateTotalProcessExpenditures(filteredexpenditureData);
+
                 AddSeparatorRowBold(dataTable, "SHIFT NUMBER " + shiftNumber, dataGridView1);
 
                 AddSeparatorRowBold(dataTable, "Start Shift : " + startAtDateTime, dataGridView1);
                 dataTable.Rows.Add("Start Shift Order", $"{startShift.ToString("yyyy-MM-dd HH:mm:ss")}");
                 dataTable.Rows.Add("Last Shift Order", $"{lastShift.ToString("yyyy-MM-dd HH:mm:ss")}");
 
-                dataTable.Rows.Add("", "");
+                //dataTable.Rows.Add("", "");
 
                 // Process the cart details
                 ProcessCartDetails(filteredTransactions, dataTable, "SOLD ITEMS");
@@ -1088,23 +1134,23 @@ namespace KASIR.Komponen
                 decimal totalProcessedCart = CalculateTotalProcessCartDetails(filteredTransactions);
                 dataTable.Rows.Add("Total Sold Items", $"{totalProcessedCart:n0}");
 
-                dataTable.Rows.Add("", "");
+                //dataTable.Rows.Add("", "");
 
                 // Process refunded items
                 ProcessRefundDetails(filteredTransactions, dataTable);
 
                 // Calculate total refund amount
                 decimal totalRefundAmount = CalculateTotalRefund(filteredTransactions);
-                dataTable.Rows.Add("Total Refund", $"{totalRefundAmount:n0}");
+                dataTable.Rows.Add("Total Refund Items", $"{totalRefundAmount:n0}");
 
-                dataTable.Rows.Add("", "");
+                //dataTable.Rows.Add("", "");
                 // Process the savebill details
                 ProcessCartDetails(transactionDataSaveBill, dataTable, "SAVEBILL/PENDING ITEMS");
 
                 decimal totalPendingCart = CalculateTotalProcessCartDetails(transactionDataSaveBill);
                 dataTable.Rows.Add("Total Savebill/Pending Items", $"{totalPendingCart:n0}");
 
-                dataTable.Rows.Add("", "");
+                //dataTable.Rows.Add("", "");
                 // Cancel the savebill details
                 ProcessCartDetails(transactionDataSaveBill, dataTable, "CANCELED ITEMS");
 
@@ -1117,29 +1163,29 @@ namespace KASIR.Komponen
                 decimal totalCancelCart = CalculateTotalCanceledItems(filteredTransactionsCanceledSavebillAfter);
                 dataTable.Rows.Add("Total Canceled Items Shift Sekarang", $"{totalCancelCart:n0}");
 
-                dataTable.Rows.Add("", "");
+                //dataTable.Rows.Add("", "");
 
                 // Process the Expenditure details
                 ProcessExpenditureDetails(filteredExpenditures, dataTable, "PENGELUARAN");
 
-                decimal totalExpenditureItems = CalculateTotalProcessExpenditures(filteredexpenditureData);
                 cashOutExpenditure = int.Parse(totalExpenditureItems.ToString());
                 dataTable.Rows.Add("Total Pengeluaran", $"{totalExpenditureItems:n0}");
 
-                dataTable.Rows.Add("", "");
+                //dataTable.Rows.Add("", "");
 
                 // Process the Discounts details
                 ProcessDiscountDetails(filteredTransactions, dataTable, "DISCOUNT ITEMS");
 
-                dataTable.Rows.Add("", "");
+                //dataTable.Rows.Add("", "");
 
                 // Process payment details
                 ProcessPaymentDetails(filteredTransactions, dataTable, totalExpenditureItems);
-                dataTable.Rows.Add("", "");
-                dataTable.Rows.Add("Expected Ending Cash", $"{ending_cash:n0}");
+                //dataTable.Rows.Add("", "");
+                AddSeparatorRowBold(dataTable, "POS DETAILS", dataGridView1);
+                dataTable.Rows.Add("Total Expected Ending Cash", $"{ending_cash:n0}");
                 txtActualCash.Text = ending_cash.ToString();
 
-                dataTable.Rows.Add("", "");
+                //dataTable.Rows.Add("", "");
 
                 // Add the grand total
                 decimal grandTotal = filteredTransactions.data
@@ -1155,20 +1201,21 @@ namespace KASIR.Komponen
 
                 // Display data in DataGridView
                 DisplayDataInDataGridView(dataTable);
-
-                // Update progress and final steps
-                if (ShouldShowProgress())
-                {
-                    UpdateProgress(100, "Selesai!");
-                    await Task.Delay(500); // Short delay to show completion
-                    HideLoading();
-                }
+                DisplayDataInCards(dataTable);
+                this.flowlayoutPanel.SizeChanged += flowlayoutPanel_SizeChanged;
                 btnCetakStruk.Enabled = true;
             }
             catch(Exception ex)
             {
                 NotifyHelper.Error(ex.Message);
                 LoggerUtil.LogError(ex,ex.ToString());
+            }
+        }
+        private void flowlayoutPanel_SizeChanged(object sender, EventArgs e)
+        {
+            foreach (Control ctrl in flowlayoutPanel.Controls)
+            {
+                ctrl.Width = flowlayoutPanel.Width - 36;
             }
         }
 
@@ -1398,13 +1445,9 @@ namespace KASIR.Komponen
                     ending_cash = int.Parse(actual.ToString());
                 }
                 dataTable.Rows.Add(paymentTypeString, $"{netAmount:n0}");
-
             }
-
-            dataTable.Rows.Add("", $"");
-
             AddSeparatorRowBold(dataTable, "POINT MEMBER DETAILS", dataGridView1);
-            dataTable.Rows.Add("POINT MEMBER USED", $"{totalMemberUsePoints:n0}");
+            dataTable.Rows.Add("Total Point Member Terpakai", $"{totalMemberUsePoints:n0}");
         }
         private decimal CalculateTotalMemberUsePoints(IEnumerable<Transaction> transactions)
         {

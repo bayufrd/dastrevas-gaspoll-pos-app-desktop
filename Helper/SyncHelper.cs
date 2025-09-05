@@ -1,4 +1,9 @@
-﻿using System.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Data;
 using System.Globalization;
 using System.Net;
 using System.Text;
@@ -12,272 +17,16 @@ using Newtonsoft.Json.Linq;
 using static System.Net.Mime.MediaTypeNames;
 using KASIR.Helper;
 
-namespace KASIR.Komponen
+namespace KASIR.Helper
 {
-    public partial class shiftReport : UserControl
+    public class SyncHelper
     {
-        private ApiService apiService;
-        private readonly string baseOutlet;
+        private ApiService apiService = new ApiService();
+        private readonly string baseOutlet = Properties.Settings.Default.BaseOutlet;
         int bedaCash = 0;
         int shiftnumber;
         DateTime mulaishift, akhirshift;
-        public shiftReport()
-        {
-            baseOutlet = Properties.Settings.Default.BaseOutlet;
-            InitializeComponent();
-            apiService = new ApiService();
-            btnCetakStruk.Enabled = true;
-            lblNotifikasi.Visible = false;
-
-            // Initialize progress UI
-            InitializeLoadingUI();
-
-            // Ensure resources are cleaned up when form is closed
-            this.Disposed += (s, e) =>
-            {
-                cts?.Cancel();
-                cts?.Dispose();
-            };
-
-            //LoadData();
-            lblShiftSekarang.Visible = false;
-        }
-        // Add these to the class fields
-        private Panel loadingPanel;
-        private Label loadingLabel;
-        private ProgressBar progressBar;
-        private CancellationTokenSource cts;
-
-        // Flag to track if this is a background operation
         public bool IsBackgroundOperation { get; set; } = false;
-
-        // Helper method to check if we should show progress UI
-        private bool ShouldShowProgress()
-        {
-            return this.Visible && this.IsHandleCreated && !this.IsDisposed && !IsBackgroundOperation;
-        }
-
-        private void InitializeLoadingUI()
-        {
-            try
-            {
-                // Create panel for loading
-                loadingPanel = new Panel
-                {
-                    BackColor = Color.White,
-                    BorderStyle = BorderStyle.Fixed3D,
-                    Size = new Size(300, 120),
-                    Location = new Point((this.ClientSize.Width - 400) / 2, (this.ClientSize.Height - 200) / 2),
-                    Visible = false
-                };
-
-                // Add label for loading text
-                loadingLabel = new Label
-                {
-                    Text = "Mengambil data dari server...",
-                    Font = new Font("Segoe UI", 10, FontStyle.Regular),
-                    ForeColor = Color.White,
-                    AutoSize = false,
-                    TextAlign = ContentAlignment.MiddleLeft,
-                    Size = new Size(280, 30),
-                    Location = new Point(10, 20)
-                };
-
-                // Add progress bar
-                progressBar = new ProgressBar
-                {
-                    Style = ProgressBarStyle.Continuous,
-                    Size = new Size(280, 25),
-                    Location = new Point(10, 60),
-                    Minimum = 0,
-                    Maximum = 100,
-                    Value = 0
-                };
-
-                // Modify panel background to match the image
-                loadingPanel.BackColor = Color.FromArgb(30, 31, 68); // Light blue background
-
-                // Add components to panel
-                loadingPanel.Controls.Add(loadingLabel);
-                loadingPanel.Controls.Add(progressBar);
-
-                // Add panel to form
-                this.Controls.Add(loadingPanel);
-                loadingPanel.BringToFront();
-            }
-            catch (Exception ex)
-            {
-                // Log error but don't crash if UI initialization fails
-                LoggerUtil.LogError(ex, "Error initializing loading UI: {ErrorMessage}", ex.Message);
-            }
-        }
-
-        private void ShowLoading()
-        {
-            // Skip showing loading if form is not visible or if running in background
-            if (!this.Visible || !this.IsHandleCreated || this.IsDisposed)
-            {
-                return;
-            }
-
-            if (this.InvokeRequired)
-            {
-                try
-                {
-                    // Try to invoke on UI thread, but don't block if it fails
-                    this.BeginInvoke(new Action(ShowLoading));
-                }
-                catch (ObjectDisposedException)
-                {
-                    // Form might be disposed or closing, just ignore
-                    return;
-                }
-                catch (InvalidOperationException)
-                {
-                    // Form might not be completely initialized
-                    return;
-                }
-                return;
-            }
-
-            try
-            {
-                // Check if controls exist and aren't disposed
-                if (loadingPanel != null && !loadingPanel.IsDisposed &&
-                    progressBar != null && !progressBar.IsDisposed &&
-                    loadingLabel != null && !loadingLabel.IsDisposed)
-                {
-                    loadingPanel.Visible = true;
-                    progressBar.Value = 0;
-                    loadingLabel.Text = "Mengambil data dari server...";
-                }
-            }
-            catch (Exception)
-            {
-                // Suppress any UI update errors
-                return;
-            }
-        }
-
-        private void HideLoading()
-        {
-            // Skip hiding loading if form is not visible or if running in background
-            if (!this.Visible || !this.IsHandleCreated || this.IsDisposed)
-            {
-                return;
-            }
-
-            if (this.InvokeRequired)
-            {
-                try
-                {
-                    // Try to invoke on UI thread, but don't block if it fails
-                    this.BeginInvoke(new Action(HideLoading));
-                }
-                catch (ObjectDisposedException)
-                {
-                    // Form might be disposed or closing, just ignore
-                    return;
-                }
-                catch (InvalidOperationException)
-                {
-                    // Form might not be completely initialized
-                    return;
-                }
-                return;
-            }
-
-            try
-            {
-                // Check if loadingPanel exists and isn't disposed
-                if (loadingPanel != null && !loadingPanel.IsDisposed)
-                {
-                    loadingPanel.Visible = false;
-                }
-            }
-            catch (Exception)
-            {
-                // Suppress any UI update errors
-                return;
-            }
-        }
-
-        private void UpdateProgress(int percentage, string message = null)
-        {
-            // Skip progress updates if form is not visible or if running in background
-            if (!this.Visible || !this.IsHandleCreated || this.IsDisposed)
-            {
-                return;
-            }
-
-            if (this.InvokeRequired)
-            {
-                try
-                {
-                    // Try to invoke on UI thread, but don't block if it fails
-                    this.BeginInvoke(new Action<int, string>(UpdateProgress), percentage, message);
-                }
-                catch (ObjectDisposedException)
-                {
-                    // Form might be disposed or closing, just ignore
-                    return;
-                }
-                catch (InvalidOperationException)
-                {
-                    // Form might not be completely initialized
-                    return;
-                }
-                return;
-            }
-
-            // Only update UI if progress panel is visible
-            if (!loadingPanel.Visible)
-            {
-                return;
-            }
-
-            // Update progress bar
-            try
-            {
-                if (percentage >= 0 && percentage <= 100 && progressBar != null && !progressBar.IsDisposed)
-                {
-                    progressBar.Value = percentage;
-                }
-
-                if (!string.IsNullOrEmpty(message) && loadingLabel != null && !loadingLabel.IsDisposed)
-                {
-                    loadingLabel.Text = message;
-                }
-            }
-            catch (Exception)
-            {
-                // Suppress any UI update errors
-                return;
-            }
-        }
-        private void ClearCacheData(string destinationPath)
-        {
-            try
-            {
-                if (File.Exists(destinationPath))
-                {
-                    string currentContent = File.ReadAllText(destinationPath);
-
-                    if (string.IsNullOrWhiteSpace(currentContent) || currentContent != "{\"data\":[]}")
-                    {
-                        File.WriteAllText(destinationPath, "{\"data\":[]}");
-                    }
-                }
-                else
-                {
-                    File.WriteAllText(destinationPath, "{\"data\":[]}");
-                }
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "An error occurred while clearing cache data: {ErrorMessage}", ex.Message);
-            }
-        }
         public async Task SyncDataTransactions(bool isBackground = false)
         {
             try
@@ -287,23 +36,11 @@ namespace KASIR.Komponen
                     return; // If sync is already running, exit
                 }
 
-                // Set background operation flag
                 IsBackgroundOperation = isBackground;
 
-                if (ShouldShowProgress())
-                {
-                    ShowLoading();
-                    UpdateProgress(10, "Menyiapkan sinkronisasi data...");
-                }
-
-                // Try to start synchronization
                 bool canSync = await TransactionSync.BeginSyncAsync();
                 if (!canSync)
                 {
-                    if (ShouldShowProgress())
-                    {
-                        HideLoading();
-                    }
                     return; // Exit if unable to get lock
                 }
 
@@ -312,8 +49,6 @@ namespace KASIR.Komponen
                     string filePath = "DT-Cache\\Transaction\\transaction.data";
                     string newSyncFileTransaction = "DT-Cache\\Transaction\\SyncSuccessTransaction";
                     string destinationPath = "DT-Cache\\Transaction\\transactionSyncing.data";
-
-                    UpdateProgress(15, "Memverifikasi file transaksi...");
 
                     if (File.Exists(destinationPath))
                         try { ClearCacheData(destinationPath); }
@@ -327,7 +62,6 @@ namespace KASIR.Komponen
                     string apiUrl = "/sync-transactions-outlet?outlet_id=" + baseOutlet;
                     newFileName = $"{baseOutlet}_SyncSuccess_{DateTime.Now:yyyyMMdd}.data";
 
-                    UpdateProgress(20, "Membuat direktori jika belum ada...");
                     EnsureDirectoryExists(directoryPath);
 
                     string saveBillDataPath = "DT-Cache\\Transaction\\saveBill.data";
@@ -335,9 +69,7 @@ namespace KASIR.Komponen
 
                     if (File.Exists(saveBillDataPath))
                     {
-                        UpdateProgress(25, "Sinkronisasi data SaveBill...");
                         SyncSaveBillData(saveBillDataPath, saveBillDataPathClone, apiUrl);
-                        UpdateProgress(35, "Selesai sinkronisasi SaveBill");
                     }
                     string expenditureDataPath = "DT-Cache\\Transaction\\expenditure.data";
                     if (File.Exists(expenditureDataPath))
@@ -370,25 +102,20 @@ namespace KASIR.Komponen
                     }
                     if (!File.Exists(filePath))
                     {
-                        UpdateProgress(40, "Tidak ada file transaksi, melewati sinkronisasi...");
                         return;
                     }
 
-                    UpdateProgress(45, "Memastikan direktori sinkronisasi tersedia...");
                     EnsureDirectoryExists(newSyncFileTransaction);
 
                     // Copy file to destination for processing
-                    UpdateProgress(50, "Menyalin file transaksi...");
                     CopyFileWithStreams(filePath, destinationPath);
 
-                    UpdateProgress(55, "Menyederhanakan data...");
                     SimplifyAndSaveData(destinationPath);
 
                     // When preparing data for sync, create a copy of transaction IDs being synced
                     List<string> transactionIdsBeingSynced = new List<string>();
 
                     // Process the transactions
-                    UpdateProgress(60, "Memproses data transaksi...");
                     JObject data = ParseAndRepairJsonFile(destinationPath);
                     JArray transactions = GetTransactionsFromData(data);
 
@@ -412,7 +139,6 @@ namespace KASIR.Komponen
                         transactionIdsBeingSynced.Add(transaction["transaction_ref"].ToString());
                     }
                     // Sync with API
-                    UpdateProgress(70, "Mengirim data ke server...");
                     HttpResponseMessage response = await apiService.SyncTransaction(data.ToString(), apiUrl);
 
                     if (response.IsSuccessStatusCode)
@@ -421,11 +147,6 @@ namespace KASIR.Komponen
                         $"Sync Transaction Payload Size: {data.ToString().Length} bytes, Timestamp: {DateTime.Now}");
                         string folderCombine = Path.Combine(newSyncFileTransaction, newFileName);
 
-                        // Handle successful sync
-                        if (ShouldShowProgress())
-                        {
-                            UpdateProgress(85, "Sinkronisasi berhasil, menyimpan data...");
-                        }
                         //SyncSuccess(destinationPath);
                         SyncSpecificTransactions(destinationPath, transactionIdsBeingSynced);
 
@@ -436,27 +157,10 @@ namespace KASIR.Komponen
                         // Update only the transactions we tracked for this sync operation
                         SyncSpecificTransactions(filePath, transactionIdsBeingSynced);
                         //SyncSuccess(filePath);
-                        if (ShouldShowProgress())
-                        {
-                            UpdateProgress(100, "Sinkronisasi selesai!");
-                            await Task.Delay(500); // Short delay to show completion
-                        }
                     }
                     else
                     {
-                        // Handle failed sync
-                        if (ShouldShowProgress())
-                        {
-                            UpdateProgress(85, "Sinkronisasi gagal, menyimpan log kegagalan...");
-                        }
-
                         ProcessFailedSync(destinationPath, response, baseOutlet);
-
-                        if (ShouldShowProgress())
-                        {
-                            UpdateProgress(100, "Pencatatan kegagalan selesai");
-                            await Task.Delay(500); // Short delay to show completion
-                        }
                     }
                 }
                 finally
@@ -470,6 +174,30 @@ namespace KASIR.Komponen
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
+        private void ClearCacheData(string destinationPath)
+        {
+            try
+            {
+                if (File.Exists(destinationPath))
+                {
+                    string currentContent = File.ReadAllText(destinationPath);
+
+                    if (string.IsNullOrWhiteSpace(currentContent) || currentContent != "{\"data\":[]}")
+                    {
+                        File.WriteAllText(destinationPath, "{\"data\":[]}");
+                    }
+                }
+                else
+                {
+                    File.WriteAllText(destinationPath, "{\"data\":[]}");
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "An error occurred while clearing cache data: {ErrorMessage}", ex.Message);
+            }
+        }
+
         public async Task SyncmembershipData(string membershipPathFile)
         {
             try
@@ -494,7 +222,7 @@ namespace KASIR.Komponen
                         };
 
                         // Step 3: Send the data to the API
-                        var isSuccess = await SendToApiMembers (payload, api, "membership-point");
+                        var isSuccess = await SendToApiMembers(payload, api, "membership-point");
 
                         if (isSuccess)
                         {
@@ -586,7 +314,7 @@ namespace KASIR.Komponen
                         };
 
                         // Step 3: Send the data to the API
-                        var isSuccess = await SendToApiPOST(payload,api,"expenditures");
+                        var isSuccess = await SendToApiPOST(payload, api, "expenditures");
 
                         if (isSuccess)
                         {
@@ -1593,671 +1321,6 @@ namespace KASIR.Komponen
         {
             IApiService apiService = new ApiService();
             return await apiService.CekShift("/shift?outlet_id=" + baseOutlet);
-        }
-        public async Task LoadData(bool isBackground = false)
-        {
-            // Set background operation flag
-            IsBackgroundOperation = isBackground;
-
-            if (TransactionSync.IsSyncing)
-            {
-                // If synchronizing, wait 5 seconds and call LoadData again
-                await Task.Delay(5000); // Wait 5 seconds
-                await LoadData(isBackground); // Call LoadData again with same background flag
-                return;
-            }
-
-            // Cancel previous token if it exists
-            if (cts != null)
-            {
-                cts.Cancel();
-                cts.Dispose();
-            }
-
-            cts = new CancellationTokenSource();
-            var token = cts.Token;
-
-            if (ShouldShowProgress())
-            {
-                btnCetakStruk.Enabled = false;
-            }
-
-            const int maxRetryAttempts = 3;
-            int retryAttempts = 0;
-            bool success = false;
-            string Config = "setting\\OfflineMode.data";
-
-            if (ShouldShowProgress())
-            {
-                ShowLoading();
-                UpdateProgress(10, "Memeriksa konfigurasi...");
-            }
-
-            while (retryAttempts < maxRetryAttempts && !success)
-            {
-                try
-                {
-                    // Mengecek apakah sButtonOffline dalam status checked
-                    string directoryPath = Path.GetDirectoryName(Config);
-                    if (!Directory.Exists(directoryPath))
-                    {
-                        Directory.CreateDirectory(directoryPath);
-                    }
-                    // Memeriksa apakah file ada
-                    if (!File.Exists(Config))
-                    {
-                        // Membuat file dan menulis "OFF" ke dalamnya jika file tidak ada
-                        File.WriteAllText(Config, "OFF");
-                    }
-                    string allSettingsData = File.ReadAllText(Config); // Ambil status offline
-
-                    // Jika status offline ON, tampilkan Offline_masterPos
-                    if (!string.IsNullOrEmpty(allSettingsData) && allSettingsData == "ON")
-                    {
-                        if (ShouldShowProgress())
-                        {
-                            UpdateProgress(20, "Mode offline terdeteksi, sinkronisasi data...");
-                        }
-
-                        // Pass the background flag to SyncDataTransactions
-                        await SyncDataTransactions(IsBackgroundOperation);
-
-                        if (ShouldShowProgress())
-                        {
-                            UpdateProgress(30, "Sinkronisasi selesai, melanjutkan...");
-                        }
-                    }
-
-                    // Only run progress simulation if not in background mode
-                    if (ShouldShowProgress())
-                    {
-                        // Run task to simulate progress while waiting for API response
-                        var progressTask = Task.Run(async () =>
-                        {
-                            int progress = 30;
-                            while (progress < 80 && !token.IsCancellationRequested)
-                            {
-                                await Task.Delay(300, token);
-                                progress += 2;
-                                UpdateProgress(progress, $"Mengambil data shift... ({progress}%)");
-                            }
-                        }, token);
-
-                        UpdateProgress(35, "Menghubungi server untuk data shift...");
-                    }
-                    string response = await GetShiftData(allSettingsData);
-
-                    if (token.IsCancellationRequested)
-                        return;
-
-                    if (ShouldShowProgress())
-                    {
-                        UpdateProgress(80, "Data diterima, memproses...");
-                    }
-
-                    if (response != null)
-                    {
-                        try
-                        {
-                            if (ShouldShowProgress())
-                            {
-                                UpdateProgress(85, "Mengurai data shift...");
-                            }
-
-                            GetShift cekShift = JsonConvert.DeserializeObject<GetShift>(response);
-                            DataShift datas = cekShift.data;
-                            List<ExpenditureStrukShift> expenditures = datas.expenditures;
-                            List<CartDetailsSuccessStrukShift> cartDetailsSuccess = datas.cart_details_success;
-                            List<CartDetailsPendingStrukShift> cartDetailsPending = datas.cart_details_pending;
-                            List<CartDetailsCanceledStrukShift> cartDetailsCanceled = datas.cart_details_canceled;
-                            List<RefundDetailStrukShift> refundDetails = datas.refund_details;
-                            List<PaymentDetailStrukShift> paymentDetails = datas.payment_details;
-                            DataTable dataTable = new DataTable();
-                            dataTable.Columns.Add("ID", typeof(string)); // Add a column to avoid header error
-                            dataTable.Columns.Add("DATA", typeof(string));
-                            dataTable.Columns.Add("Detail", typeof(string));
-
-                            if (ShouldShowProgress())
-                            {
-                                UpdateProgress(90, "Memformat data untuk tampilan...");
-                            }
-                            //dataTable.Rows.Add(null, "SHIFT REPORT : -", null); // Add a separator row
-                            // Panggil metode untuk menambahkan separator row
-                            AddSeparatorRow(dataTable, "SHIFT REPORT", dataGridView1);
-                            // Panggil metode untuk menambahkan separator row
-                            // Mengonversi string ke DateTime
-                            DateTime dateTime = DateTime.Parse(datas.start_date.ToString(), CultureInfo.InvariantCulture);
-
-                            // Format tanggal dan waktu sesuai dengan yang diinginkan
-                            string formattedDateTime = dateTime.ToString("dddd, dd MMMM yyyy 'Pukul' HH:mm:ss", new CultureInfo("id-ID"));
-
-                            AddSeparatorRow(dataTable, "Start Date : " + formattedDateTime, dataGridView1);
-                            // Panggil metode untuk menambahkan separator row
-                            string mulai = datas.start_date.ToString();
-                            string akhir = datas.end_date.ToString();
-                            convertDateTime(mulai, akhir);
-                            shiftnumber = datas.shift_number;
-                            shiftnumber += 1;
-                            lblShiftSekarang.Text += " | Shift: " + shiftnumber;
-                            AddSeparatorRow(dataTable, "SHIFT NUMBER : " + shiftnumber.ToString(), dataGridView1);
-
-                            AddSeparatorRow(dataTable, " ", dataGridView1);
-
-                            AddSeparatorRow(dataTable, "ORDER DETAILS", dataGridView1);
-                            AddSeparatorRow(dataTable, "SOLD ITEMS", dataGridView1);
-
-                            var sortedcartDetailSuccess = cartDetailsSuccess.OrderBy(x =>
-                            {
-                                if (x.menu_type.Contains("Minuman")) return 1;
-                                if (x.menu_type.Contains("Additional Minuman")) return 2;
-                                if (x.menu_type.Contains("Makanan")) return 3;
-                                if (x.menu_type.Contains("Additional Makanan")) return 4;
-                                return 5;
-                            })
-                            .ThenBy(x => x.menu_name);
-
-                            foreach (var cartDetail in sortedcartDetailSuccess)
-                            {
-                                // Add varian to the cart detail name if it's not null
-                                string displayMenuName = cartDetail.menu_name;
-                                if (!string.IsNullOrEmpty(cartDetail.varian) && cartDetail.varian != "null")
-                                {
-                                    displayMenuName += "\n - " + cartDetail.varian;
-                                }
-
-                                //dataTable.Rows.Add(null, displayMenuName, null);
-                                dataTable.Rows.Add(null, string.Format("{0}x ", cartDetail.qty) + displayMenuName, string.Format("{0:n0}", cartDetail.total_price));
-                            }
-
-                            dataTable.Rows.Add(null, "Item Sold Qty :", datas.totalSuccessQty);
-                            dataTable.Rows.Add(null, "Item Sold Amount :", string.Format("{0:n0}", datas.totalCartSuccessAmount));
-
-                            if (cartDetailsPending.Count != 0)
-                            {
-                                AddSeparatorRow(dataTable, "PENDING ITEMS", dataGridView1);
-
-                                var sortedcartDetailPendings = cartDetailsPending.OrderBy(x =>
-                                {
-                                    if (x.menu_type.Contains("Minuman")) return 1;
-                                    if (x.menu_type.Contains("Additional Minuman")) return 2;
-                                    if (x.menu_type.Contains("Makanan")) return 3;
-                                    if (x.menu_type.Contains("Additional Makanan")) return 4;
-                                    return 5;
-                                })
-                                .ThenBy(x => x.menu_name);
-
-                                foreach (var cartDetail in sortedcartDetailPendings)
-                                {
-                                    // Add varian to the cart detail name if it's not null
-                                    string displayMenuName = cartDetail.menu_name;
-                                    if (!string.IsNullOrEmpty(cartDetail.varian) && cartDetail.varian != "null")
-                                    {
-                                        displayMenuName += "\n - " + cartDetail.varian;
-                                    }
-
-                                    //dataTable.Rows.Add(null, displayMenuName, null);
-                                    dataTable.Rows.Add(null, string.Format("{0}x ", cartDetail.qty) + displayMenuName, string.Format("{0:n0}", cartDetail.total_price));
-                                }
-
-                                dataTable.Rows.Add(null, "Item Pending Qty :", datas.totalPendingQty);
-                                dataTable.Rows.Add(null, "Item Pending Amount :", string.Format("{0:n0}", datas.totalCartPendingAmount));
-                            }
-
-                            if (cartDetailsCanceled.Count != 0)
-                            {
-                                AddSeparatorRow(dataTable, "CANCELED ITEMS", dataGridView1);
-
-                                var sortedcartDetailCanceled = cartDetailsCanceled.OrderBy(x =>
-                                {
-                                    if (x.menu_type.Contains("Minuman")) return 1;
-                                    if (x.menu_type.Contains("Additional Minuman")) return 2;
-                                    if (x.menu_type.Contains("Makanan")) return 3;
-                                    if (x.menu_type.Contains("Additional Makanan")) return 4;
-                                    return 5;
-                                })
-                                .ThenBy(x => x.menu_name);
-
-                                foreach (var cartDetail in sortedcartDetailCanceled)
-                                {
-                                    // Add varian to the cart detail name if it's not null
-                                    string displayMenuName = cartDetail.menu_name;
-                                    if (!string.IsNullOrEmpty(cartDetail.varian) && cartDetail.varian != "null")
-                                    {
-                                        displayMenuName += "\n - " + cartDetail.varian;
-                                    }
-
-                                    //dataTable.Rows.Add(null, displayMenuName, null);
-                                    dataTable.Rows.Add(null, string.Format("{0}x ", cartDetail.qty) + displayMenuName, string.Format("{0:n0}", cartDetail.total_price));
-                                }
-
-                                dataTable.Rows.Add(null, "Item Cancel Qty :", datas.totalCanceledQty);
-                                dataTable.Rows.Add(null, "Item Canceled Amount : ", string.Format("{0:n0}", datas.totalCartCanceledAmount));
-                            }
-                            if (refundDetails.Count != 0)
-                            {
-                                AddSeparatorRow(dataTable, "REFUNDED ITEMS", dataGridView1);
-
-                                var sortedrefoundDetails = refundDetails.OrderBy(x =>
-                                {
-                                    if (x.menu_type.Contains("Minuman")) return 1;
-                                    if (x.menu_type.Contains("Additional Minuman")) return 2;
-                                    if (x.menu_type.Contains("Makanan")) return 3;
-                                    if (x.menu_type.Contains("Additional Makanan")) return 4;
-                                    return 5;
-                                })
-                                .ThenBy(x => x.menu_name);
-
-                                foreach (var cartDetail in sortedrefoundDetails)
-                                {
-                                    // Add varian to the cart detail name if it's not null
-                                    string displayMenuName = cartDetail.menu_name;
-                                    if (!string.IsNullOrEmpty(cartDetail.varian) && cartDetail.varian != "null")
-                                    {
-                                        displayMenuName += "\n - " + cartDetail.varian;
-                                    }
-
-                                    //dataTable.Rows.Add(null, displayMenuName, null);
-                                    dataTable.Rows.Add(null, string.Format("{0}x ", cartDetail.qty_refund_item) + displayMenuName, string.Format("{0:n0}", cartDetail.total_refund_price));
-                                }
-
-                                dataTable.Rows.Add(null, "Item Refund Qty :", datas.totalRefundQty);
-                                dataTable.Rows.Add(null, "Item Refund Amount : ", string.Format("{0:n0}", datas.totalCartRefundAmount));
-                            }
-                            AddSeparatorRow(dataTable, "CASH MANAGEMENT", dataGridView1);
-
-                            if (expenditures.Count != 0)
-                            {
-                                AddSeparatorRow(dataTable, "EXPENSE", dataGridView1);
-
-                                foreach (var expense in expenditures)
-                                {
-                                    dataTable.Rows.Add(null, expense.description, string.Format("{0:n0}", expense.nominal));
-                                }
-                            }
-                            dataTable.Rows.Add(null, "Expected Ending Cash", string.Format("{0:n0}", datas.ending_cash_expected));
-                            dataTable.Rows.Add(null, "Actual Ending Cash", string.Format("{0:n0}", datas.ending_cash_actual));
-                            dataTable.Rows.Add(null, "Cash Difference", string.Format("{0:n0}", datas.cash_difference));
-                            AddSeparatorRow(dataTable, " ", dataGridView1);
-
-                            dataTable.Rows.Add(null, "DISCOUNTS", "");
-                            dataTable.Rows.Add(null, "All Discount items", string.Format("{0:n0}", datas.discount_amount_per_items));
-                            dataTable.Rows.Add(null, "All Discount Cart", string.Format("{0:n0}", datas.discount_amount_transactions));
-                            dataTable.Rows.Add(null, "TOTAL AMOUNT", string.Format("{0:n0}", datas.discount_total_amount));
-                            AddSeparatorRow(dataTable, "PAYMENT DETAIL", dataGridView1);
-
-                            foreach (var paymentDetail in paymentDetails)
-                            {
-                                AddSeparatorRow(dataTable, paymentDetail.payment_category, dataGridView1);
-                                //dataTable.Rows.Add(null, paymentDetail.payment_category, "");
-                                foreach (var paymentType in paymentDetail.payment_type_detail)
-                                {
-                                    dataTable.Rows.Add(null, paymentType.payment_type, string.Format("{0:n0}", paymentType.total_payment));
-                                }
-                                dataTable.Rows.Add(null, "TOTAL AMOUNT", string.Format("{0:n0}", paymentDetail.total_amount));
-                                AddSeparatorRow(dataTable, " ", dataGridView1);
-
-                            }
-                            dataTable.Rows.Add(null, "TOTAL TRANSACTION", string.Format("{0:n0}", datas.total_transaction));
-
-                            if (ShouldShowProgress())
-                            {
-                                UpdateProgress(95, "Menampilkan data...");
-                            }
-                            if (dataGridView1 == null)
-                            {
-                                ReloadDataGridView(dataTable);
-                            }
-                            else if (dataGridView1.Font == null)
-                            {
-                                // Mengatur font default jika Font null
-                                dataGridView1.Font = new Font("Arial", 8.25f, FontStyle.Regular);
-                                ReloadDataGridView(dataTable);
-                            }
-                            else
-                            {
-                                dataGridView1.DataSource = dataTable;
-
-                                if (dataGridView1.Columns.Contains("DATA"))
-                                {
-                                    DataGridViewCellStyle boldStyle = new DataGridViewCellStyle
-                                    {
-                                        Font = new Font(dataGridView1.Font, FontStyle.Italic)
-                                    };
-                                    dataGridView1.Columns["DATA"].DefaultCellStyle = boldStyle;
-                                }
-                                else
-                                {
-                                    // Menangani situasi jika kolom "DATA" tidak ada
-                                    Console.WriteLine("Kolom 'DATA' tidak ditemukan.");
-                                }
-
-                                if (dataGridView1.Columns.Contains("ID"))
-                                {
-                                    dataGridView1.Columns["ID"].Visible = false;
-                                }
-                                else
-                                {
-                                    // Menangani situasi jika kolom "ID" tidak ada
-                                    Console.WriteLine("Kolom 'ID' tidak ditemukan.");
-                                }
-                            }
-
-                            if (ShouldShowProgress())
-                            {
-                                UpdateProgress(100, "Selesai!");
-                                await Task.Delay(500); // Short delay to show completion
-                                HideLoading();
-                            }
-                            btnCetakStruk.Enabled = true;
-                            bedaCash = datas.ending_cash_expected;
-                            txtActualCash.Text = datas.ending_cash_expected.ToString();
-                            txtNamaKasir.Text = "Dastrevas (AutoFill)";
-                            bool isMoreThanOneHourAgo = IsStartShiftMoreThanOneHourAgo();
-                            if (isMoreThanOneHourAgo)
-                            {
-                                btnCetakStruk.Enabled = true;
-                            }
-                            else
-                            {
-                                if(baseOutlet == "4") { return; }
-                                lblNotifikasi.Visible = true;
-                                lblNotifikasi.Text = $"Tidak dapat akhiri laporan karena belum ada jarak 1 jam dari mulai shift.\nUntuk Cetak Ulang Laporan Shift [{datas.shift_number}] Tersedia.";
-                                btnCetakStruk.Enabled = false;
-                            }
-                            success = true; // Successfully loaded data
-                        }
-                        catch (NullReferenceException ex)
-                        {
-                            retryAttempts++;
-                            if (retryAttempts >= maxRetryAttempts)
-                            {
-                                LoggerUtil.LogError(ex, "A null reference error occurred: {ErrorMessage}", ex.Message);
-
-                                if (ShouldShowProgress())
-                                {
-                                    HideLoading();
-                                    CleanFormAndAddRetryButton(ex.Message);
-                                }
-
-                                break; // Stop retrying after max attempts
-                            }
-
-                            if (ShouldShowProgress())
-                            {
-                                UpdateProgress(40, $"Percobaan ulang {retryAttempts}/{maxRetryAttempts}...");
-                                await Task.Delay(1000);
-                            }
-                            else
-                            {
-                                await Task.Delay(2000); // Still wait a bit in background mode before retry
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
-                            if (ShouldShowProgress())
-                            {
-                                HideLoading();
-                                CleanFormAndAddRetryButton(ex.Message);
-                            }
-
-                            break; // Stop retrying on other exceptions
-                        }
-                    }
-                }
-                catch (TaskCanceledException ex)
-                {
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
-                    if (ShouldShowProgress())
-                    {
-                        HideLoading();
-                        NotifyHelper.Error("Koneksi tidak stabil. Coba beberapa saat lagi.");
-                        CleanFormAndAddRetryButton(ex.Message);
-                    }
-
-                    break; // Do not retry on TaskCanceledException
-                }
-                catch (Exception ex)
-                {
-                    LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
-                    if (ShouldShowProgress())
-                    {
-                        HideLoading();
-                        CleanFormAndAddRetryButton(ex.Message);
-                    }
-
-                    break; // Stop retrying on other exceptions
-                }
-            }
-        }
-        private void AddSeparatorRow(DataTable dataTable, string groupKey, DataGridView dataGridView)
-        {
-            // Tambahkan separator row ke DataTable
-            dataTable.Rows.Add(null, groupKey, null); // Add a separator row
-
-            // Ambil indeks baris terakhir yang baru saja ditambahkan
-            int lastRowIndex = dataTable.Rows.Count - 1;
-
-            // Menambahkan row ke DataGridView
-            dataGridView.DataSource = dataTable;
-
-            // Mengatur gaya sel untuk kolom tertentu
-            int[] cellIndexesToStyle = { 1, 2 }; // Indeks kolom yang ingin diatur
-            SetCellStyle(dataGridView.Rows[lastRowIndex], cellIndexesToStyle, Color.WhiteSmoke, FontStyle.Bold);
-        }
-        private void SetCellStyle(DataGridViewRow row, int[] cellIndexes, Color backgroundColor, FontStyle fontStyle)
-        {
-            foreach (int index in cellIndexes)
-            {
-                row.Cells[index].Style.BackColor = backgroundColor;
-                row.Cells[index].Style.Font = new Font(dataGridView1.Font, fontStyle);
-            }
-        }
-        private void CleanFormAndAddRetryButton(string ex)
-        {
-            // Bersihkan form
-            if (dataGridView1 != null && dataGridView1.DataSource != null)
-            {
-                dataGridView1.DataSource = null;
-                dataGridView1.Rows.Clear();
-            }
-
-            lblShiftSekarang.Text = "Shift: ";
-            txtActualCash.Clear();
-            txtNamaKasir.Clear();
-            panel1.Visible = false;
-            panel2.Visible = false;
-
-            // Tambahkan PictureBox untuk gambar
-            PictureBox pictureBox = new PictureBox();
-            pictureBox.Name = "ErrorImg";
-            pictureBox.Size = new Size(100, 100); // Sesuaikan ukuran gambar
-            pictureBox.Location = new Point((this.ClientSize.Width - pictureBox.Width) / 2, (this.ClientSize.Height - pictureBox.Height) / 2 - 110); // Posisi di atas tombol
-            pictureBox.SizeMode = PictureBoxSizeMode.StretchImage; // Atur ukuran gambar agar sesuai dengan PictureBox
-            using (FileStream fs = new FileStream("icon\\OutletLogo.bmp", FileMode.Open, FileAccess.Read))
-            {
-                pictureBox.Image = System.Drawing.Image.FromStream(fs);
-            }
-            // Tambahkan tombol retry
-            Button btnRetry = new Button();
-            btnRetry.Name = "btnRetry";
-            btnRetry.Text = "Retry Load Data\nOut of Service";
-            btnRetry.Size = new Size(190, 60);
-            btnRetry.Location = new Point((this.ClientSize.Width - btnRetry.Width) / 2, (this.ClientSize.Height - btnRetry.Height) / 2);
-            btnRetry.BackColor = Color.FromArgb(30, 31, 68);
-            btnRetry.FlatStyle = FlatStyle.Flat;
-            btnRetry.Font = new Font("Arial", 10, FontStyle.Bold);
-            btnRetry.ForeColor = Color.White; // Mengatur warna teks tombol menjadi putih
-            btnRetry.Click += new EventHandler(BtnRetry_Click);
-
-            // Membuat sudut membulat
-            System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
-            path.AddArc(0, 0, 20, 20, 180, 90);
-            path.AddArc(btnRetry.Width - 20, 0, 20, 20, 270, 90);
-            path.AddArc(btnRetry.Width - 20, btnRetry.Height - 20, 20, 20, 0, 90);
-            path.AddArc(0, btnRetry.Height - 20, 20, 20, 90, 90);
-            path.CloseFigure();
-            btnRetry.Region = new Region(path);
-
-            Label lblIcon = new Label();
-            lblIcon.Text = "\uf021"; // Ganti dengan kode ikon FontAwesome yang sesuai
-            lblIcon.Font = new Font("FontAwesome", 14); // Pastikan font FontAwesome sudah ditambahkan
-            lblIcon.ForeColor = Color.White;
-            lblIcon.Location = new Point(10, 10); // Sesuaikan posisi ikon
-            lblIcon.AutoSize = true;
-            // Menambahkan label di bawah tombol
-            Label lblInfo = new Label();
-            lblInfo.Name = "ErrorMsg";
-            lblInfo.Text = ex.ToString(); // Teks yang ingin ditampilkan
-            lblInfo.Font = new Font("Arial", 9, FontStyle.Regular);
-            lblInfo.ForeColor = Color.Black; // Warna teks label
-            lblInfo.AutoSize = true; // Agar label menyesuaikan ukuran teks
-
-            // Mengatur posisi label agar berada di tengah
-            lblInfo.Location = new Point((this.ClientSize.Width - lblInfo.Width) / 4, btnRetry.Bottom + 10); // Posisi di bawah tombol
-
-            // Menambahkan kontrol ke form
-            this.Controls.Add(pictureBox); // Menambahkan PictureBox ke form
-            this.Controls.Add(btnRetry);
-            this.Controls.Add(lblInfo); // Menambahkan label ke form
-
-
-            this.Controls.Add(btnRetry);
-            btnRetry.BringToFront();
-        }
-
-        private void BtnRetry_Click(object sender, EventArgs e)
-        {
-            // Hapus tombol retry
-            if (sender is Button btnRetry)
-            {
-                this.Controls.Remove(btnRetry);
-            }
-
-            // Hapus label informasi jika ada
-            var lblInfo = this.Controls.OfType<Label>().FirstOrDefault(lbl => lbl.Name == "ErrorMsg");
-            if (lblInfo != null)
-            {
-                this.Controls.Remove(lblInfo);
-            }
-
-            var ErrImg = this.Controls.OfType<PictureBox>().FirstOrDefault(lbl => lbl.Name == "ErrorImg");
-            if (ErrImg != null)
-            {
-                this.Controls.Remove(ErrImg);
-            }
-            // Reinisialisasi form jika diperlukan
-            InitializeComponent();
-
-            // Muat data kembali
-            _ = LoadData();
-        }
-        private void convertDateTime(string mulai, string akhir)
-        {
-            // Attempt to convert the string to a DateTime object using the DateTime.ParseExact method
-            try
-            {
-                mulaishift = DateTime.ParseExact(mulai, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None);
-                akhirshift = DateTime.ParseExact(akhir, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None);
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
-
-            }
-        }
-
-        public bool IsStartShiftMoreThanOneHourAgo()
-        {
-            TimeSpan difference = akhirshift - mulaishift;
-            if (difference.TotalHours > 1)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        private void ReloadDataGridView(DataTable dataTable)
-        {
-            try
-            {
-                // Attempt to reinitialize dataGridView1 if it is null
-                if (dataGridView1 == null)
-                {
-                    dataGridView1 = new DataGridView();
-                }
-
-                // Attempt to set the Font property if it is null
-                if (dataGridView1.Font == null)
-                {
-                    dataGridView1.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-                }
-
-                // Reapply data source and styles
-                dataGridView1.DataSource = dataTable; // Assuming dataTable is a class-level variable or passed as a parameter
-                DataGridViewCellStyle boldStyle = new DataGridViewCellStyle
-                {
-                    Font = new Font(dataGridView1.Font, FontStyle.Italic)
-                };
-                dataGridView1.Columns["DATA"].DefaultCellStyle = boldStyle;
-                dataGridView1.Columns["ID"].Visible = false;
-
-                // Log success
-            }
-            catch (Exception ex)
-            {
-                // Log any errors that occur during the reinitialization process
-                LoggerUtil.LogError(ex, "An error occurred while reinitializing dataGridView1: {ErrorMessage}", ex.Message);
-            }
-        }
-
-        private void txtActualCash_TextChanged(object sender, EventArgs e)
-        {
-            if (txtActualCash.Text == "" || txtActualCash.Text == "0") return;
-            decimal number;
-            try
-            {
-                number = decimal.Parse(txtActualCash.Text, System.Globalization.NumberStyles.Currency);
-            }
-            catch (FormatException)
-            {
-                // The text could not be parsed as a decimal number.
-                // You can handle this exception in different ways, such as displaying a message to the user.
-                NotifyHelper.Error("inputan hanya bisa Numeric");
-                return;
-            }
-            txtActualCash.Text = number.ToString("#,#");
-            txtActualCash.SelectionStart = txtActualCash.Text.Length;
-        }
-
-        private void btnPengeluaran_Click(object sender, EventArgs e)
-        {
-        }
-
-        private void btnRiwayatShift_Click(object sender, EventArgs e)
-        {
-        }
-
-        private async void btnCetakStruk_Click(object sender, EventArgs e)
-        {
-           
-        }
-
-        private async Task HandleSuccessfulPrint(string response)
-        {
-           
-        }
-
-
-        private void ResetButtonState()
-        {
-           
         }
     }
 }

@@ -187,7 +187,7 @@ namespace KASIR
                 SignalPing.TextImageRelation = TextImageRelation.ImageBeforeText;
                 SignalPing.Text = "Ping Test";
 
-                Whatsapp_Config whatsappConfig = new();
+                Whatsapp_Config whatsappConfig = new(false);
                 var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
                 if (connectionStatus.Connected)
                 {
@@ -203,7 +203,7 @@ namespace KASIR
                 SignalPing.TextImageRelation = TextImageRelation.ImageAboveText;
                 SignalPing.Text = "\n\nPing\nTest";
 
-                Whatsapp_Config whatsappConfig = new();
+                Whatsapp_Config whatsappConfig = new(false);
                 var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
                 if (connectionStatus.Connected)
                 {
@@ -271,7 +271,8 @@ namespace KASIR
             await headerName();
             SignApplication();
             initPingTest();
-            ConfigOfflineMode();
+            //ConfigOfflineMode();
+            link_Click(null , null);
 
             await Task.Run(async () =>
             {
@@ -519,12 +520,27 @@ namespace KASIR
                             string okHelper = "Update";
                             string updateHelper = "update";
 
-                            using (var c = new QuestionHelper(titleHelper, msgHelper, cancelHelper, okHelper, updateHelper))
-                            {
-                                // Pakai this kalau dipanggil dari Form, agar jadi owner
-                                var result = c.ShowDialog(this); // atau c.ShowDialog();
+                            DialogResult result = DialogResult.Cancel;
 
-                                if (result != DialogResult.OK)
+                            if (this.InvokeRequired)
+                            {
+                                this.Invoke(new MethodInvoker(() =>
+                                {
+                                    using (var c = new QuestionHelper(titleHelper, msgHelper, cancelHelper, okHelper, updateHelper))
+                                    {
+                                        result = c.ShowDialog(this);
+                                    }
+                                }));
+                            }
+                            else
+                            {
+                                using (var c = new QuestionHelper(titleHelper, msgHelper, cancelHelper, okHelper, updateHelper))
+                                {
+                                    result = c.ShowDialog(this);
+                                }
+                            }
+
+                            if (result != DialogResult.OK)
                                     return;
 
                                 // --- lanjut proses update ---
@@ -556,7 +572,7 @@ namespace KASIR
                                     $"Url Version : {urlVersion}\n" +
                                     $"Choose : {result.ToString()}\n" +
                                     $"FocusOutlet : {focusOutletData.ToString()}");
-                            }
+                            
                         }
                         catch (Exception updateEx)
                         {
@@ -914,7 +930,16 @@ pause > nul
         {
             try
             {
-                NavBarBtn_Click(this, EventArgs.Empty); // Dengan parameter lengkap
+                //ActivateButton(sender, RGBColors.color4);
+
+                Dashboard c = new();
+
+                c.Dock = DockStyle.Fill;
+                panel1.Controls.Add(c);
+                c.BringToFront();
+                c.Show();
+
+                //NavBarBtn_Click(this, EventArgs.Empty); // Dengan parameter lengkap
                 // Specify the URL to open
                 //string url = "http://cms.gaspollmanagementcenter.com";
 
@@ -1101,7 +1126,7 @@ pause > nul
                     //======================================== Whatsapp Config ========================================
                     if (baseOutlet == "4" || baseOutlet == "1")
                     {
-                        Whatsapp_Config whatsappConfig = new();
+                        Whatsapp_Config whatsappConfig = new(false);
                         var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
                         if (connectionStatus.Connected)
                         {
@@ -1133,11 +1158,9 @@ pause > nul
                     }
                     //======================================== Whatsapp Config ========================================
 
-                    await Task.Run(async () =>
-                    {
-                        await checkVersionAppWindows();
-                        //await headerName();
-                    });
+                    // Jalankan langsung di UI thread
+                    await checkVersionAppWindows();
+
                 }
                 catch (Exception ex)
                 {
@@ -1171,15 +1194,10 @@ pause > nul
             // Check if OfflineMode is ON
             if (allSettingsData == "ON")
             {
-                using (shiftReport c = new())
-                {
-                    // Set background operation flag to true 
-                    // karena tidak menampilkan form
-                    c.IsBackgroundOperation = true;
+                SyncHelper c = new SyncHelper();
+                c.IsBackgroundOperation = true;
 
-                    // Sinkronisasi transaksi
-                    await c.SyncDataTransactions();
-                }
+                await c.SyncDataTransactions();
             }
         }
 
@@ -1342,7 +1360,7 @@ pause > nul
                 }
                 else
                 {
-                    await LoadOnlineSuccessTransaction();
+                    await LoadOfflineSuccessTransaction();
                 }
             }
             catch (Exception ex)
@@ -1365,17 +1383,6 @@ pause > nul
             offlineTransaction.BringToFront();
             await offlineTransaction.LoadData();
             lblTitleChildForm.Text = "Shift Report (Offline)";
-        }
-
-        private async Task LoadOnlineSuccessTransaction()
-        {
-            shiftReport onlineTransaction = new();
-            onlineTransaction.Dock = DockStyle.Fill;
-
-            panel1.Controls.Add(onlineTransaction);
-            onlineTransaction.BringToFront();
-            await onlineTransaction.LoadData();
-            lblTitleChildForm.Text = "Shift Report (Online)";
         }
 
         private void btnContact_Click(object sender, EventArgs e)
@@ -1500,7 +1507,7 @@ pause > nul
 
         private async void btnWhatsapp_Click(object sender, EventArgs e)
         {
-            using (Whatsapp_Config wa = new())
+            using (Whatsapp_Config wa = new(true))
             {
                 QuestionHelper bg = new(null, null, null, null);
                 Form background = bg.CreateOverlayForm();

@@ -1,28 +1,41 @@
-﻿using KASIR.Helper;
-using Newtonsoft.Json.Linq;
+﻿using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 using System.Text;
-using System.Drawing;
-using System.Drawing.Imaging;
+using KASIR.Helper;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace KASIR.OffineMode
 {
+
     public partial class Whatsapp_Config : Form
     {
+        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+        (
+         int nLeftRect,     // x-coordinate of upper-left corner
+         int nTopRect,      // y-coordinate of upper-left corner
+         int nRightRect,    // x-coordinate of lower-right corner
+         int nBottomRect,   // y-coordinate of lower-right corner
+         int nWidthEllipse, // height of ellipse
+         int nHeightEllipse // width of ellipse
+        );
+
         private readonly HttpClient httpClient;
-        private string QR_API_URL = "http://localhost:1234/get-qr";
-        private string RESET_API_URL = "http://localhost:1234/reset";
-        private string CONNECTION_STATUS_URL = "http://localhost:1234/wa-connection-status";
-        private string oldUrl = Properties.Settings.Default.BaseAddressProd.ToString();
-        private string BASEURL = "";
+        private readonly string QR_API_URL = "http://localhost:1234/get-qr";
+        private readonly string RESET_API_URL = "http://localhost:1234/reset";
+        private readonly string CONNECTION_STATUS_URL = "http://localhost:1234/wa-connection-status";
+        private readonly string oldUrl = Properties.Settings.Default.BaseAddressProd.ToString();
+        private readonly string BASEURL = "";
         private RichTextBox logRichTextBox;
 
-        public Whatsapp_Config()
+        public Whatsapp_Config(bool autoInit = true)
         {
             InitializeComponent();
-            InitializeLoggerMsg();
 
-            // Inisialisasi HttpClient
+            this.FormBorderStyle = FormBorderStyle.None;
+            Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 20, 20));
+            InitializeLoggerMsg();
             httpClient = new HttpClient();
 
             BASEURL = RemoveApiPrefix(oldUrl);
@@ -30,9 +43,10 @@ namespace KASIR.OffineMode
             RESET_API_URL = $"{BASEURL}/reset";
             CONNECTION_STATUS_URL = $"{BASEURL}/wa-connection-status";
 
-            // Panggil async method dengan ConfigureAwait
-            InitializeFormAsync();
+            if (autoInit)
+                InitializeFormAsync();
         }
+
 
         private void InitializeLoggerMsg()
         {
@@ -65,7 +79,7 @@ namespace KASIR.OffineMode
         {
             try
             {
-                FetchLogsFromApi();
+                _ = FetchLogsFromApi();
                 // Panggil method check status
                 var status = await CheckConnectionStatusAsync();
 
@@ -100,7 +114,8 @@ namespace KASIR.OffineMode
                     // Pastikan update UI di main thread
                     if (this.InvokeRequired)
                     {
-                        this.Invoke((MethodInvoker)delegate {
+                        _ = this.Invoke((MethodInvoker)delegate
+                        {
                             UpdateLogDisplay(formattedLogs);
                         });
                     }
@@ -110,7 +125,7 @@ namespace KASIR.OffineMode
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 //MessageBox.Show($"Gagal mengambil logs: {ex.Message}");
             }
@@ -225,7 +240,7 @@ namespace KASIR.OffineMode
                     lblStatus.BackColor = Color.Transparent;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 //NotifyHelper.Error("Error: " + ex.Message);
             }
@@ -373,7 +388,7 @@ namespace KASIR.OffineMode
                     QRAvailable = false
                 };
             }
-            catch (HttpRequestException httpEx)
+            catch (HttpRequestException)
             {
                 //LoggerUtil.LogError(httpEx, "Kesalahan HTTP saat mengambil status koneksi");
 
@@ -384,7 +399,7 @@ namespace KASIR.OffineMode
                     QRAvailable = false
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Tangani kesalahan umum
                 //LoggerUtil.LogError(ex, "Kesalahan saat mengambil status koneksi");
@@ -438,8 +453,8 @@ namespace KASIR.OffineMode
 
                 // Update UI berdasarkan status
                 UpdateUIBasedOnStatus(status);
-                LoadQRCodeAsync();
-                FetchLogsFromApi();
+                _ = LoadQRCodeAsync();
+                _ = FetchLogsFromApi();
             }
             catch (Exception ex)
             {
@@ -452,7 +467,7 @@ namespace KASIR.OffineMode
         {
             try
             {
-                FetchLogsFromApi();
+                _ = FetchLogsFromApi();
                 // Panggil method check status
                 var status = await CheckConnectionStatusAsync();
 
@@ -465,7 +480,7 @@ namespace KASIR.OffineMode
                 NotifyHelper.Error("Gagal memeriksa status: " + ex.Message);
             }
         }
-        private string strukMessage = "Test from POS";
+        private readonly string strukMessage = "Test from POS";
 
         private async Task SendWhatsAppReceiptIfEligible(string phoneNumber)
         {
@@ -485,7 +500,7 @@ namespace KASIR.OffineMode
             }
             catch (Exception ex)
             {
-                SendWhatsAppMessage(phoneNumber, strukMessage);
+                _ = SendWhatsAppMessage(phoneNumber, strukMessage);
                 // Log error tanpa menghentikan proses utama
                 LoggerUtil.LogError(ex, "Gagal mengirim struk via WhatsApp: {ErrorMessage}", ex.Message);
             }
@@ -498,7 +513,7 @@ namespace KASIR.OffineMode
                 return false;
 
             // Bersihkan nomor dari karakter non-digit
-            string cleanedNumber = new string(phoneNumber.Where(char.IsDigit).ToArray());
+            string cleanedNumber = new(phoneNumber.Where(char.IsDigit).ToArray());
 
             // Validasi panjang dan awalan
             return cleanedNumber.Length >= 10 &&
@@ -740,9 +755,9 @@ namespace KASIR.OffineMode
         {
             try
             {
-                SendWhatsAppReceiptIfEligible(numberTesting.Text);
+                _ = SendWhatsAppReceiptIfEligible(numberTesting.Text);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 NotifyHelper.Error(ex.Message);
             }

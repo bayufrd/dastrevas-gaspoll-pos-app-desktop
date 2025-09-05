@@ -5751,48 +5751,102 @@ cartDetail.discounts_is_percent.ToString() != "1"
                    (await File.ReadAllTextAsync(PathFile)).Trim() == "ON";
         }
         // Helper method untuk koneksi printer
-        private async Task<Stream> EstablishPrinterConnection(string printerName)
+        //private async Task<Stream> EstablishPrinterConnection(string printerName)
+        //{
+        //    Stream stream = Stream.Null;
+
+        //    if (IPAddress.TryParse(printerName, out _))
+        //    {
+        //        // Connect via LAN
+        //        var client = new TcpClient(printerName, 9100);
+        //        stream = client.GetStream();
+        //    }
+        //    else
+        //    {
+        //        // Connect via Bluetooth dengan retry policy
+        //        _ = await RetryPolicyAsync(async () =>
+        //        {
+        //            var printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
+        //            if (printerDevice == null)
+        //            {
+        //                throw new Exception("Invalid Bluetooth Device");
+        //            }
+
+        //            var client = new BluetoothClient();
+        //            var endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
+
+        //            if (!printerDevice.Authenticated) // cek sudah paired?
+        //            {
+        //                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
+        //                {
+        //                    NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
+        //                    throw new Exception("Bluetooth pairing failed");
+        //                }
+        //            }
+
+        //            client.Connect(endpoint);
+        //            stream = client.GetStream();
+
+        //            return true;
+        //        }, 2);
+        //    }
+
+        //    return stream;
+        //}
+        private async Task<Stream> EstablishPrinterConnection(string printerMac, int maxRetries = 3, int delayMs = 2000)
         {
-            Stream stream = Stream.Null;
+            if (string.IsNullOrWhiteSpace(printerMac))
+                throw new ArgumentException("Printer MAC Address kosong.");
 
-            if (IPAddress.TryParse(printerName, out _))
+            // Pastikan format MAC valid
+            if (!IsBluetoothPrinter(printerMac))
+                throw new FormatException($"Alamat Bluetooth tidak valid: {printerMac}");
+
+            BluetoothAddress address = BluetoothAddress.Parse(printerMac.Replace(":", "").Replace("-", ""));
+            BluetoothDeviceInfo printer = new(address);
+
+            if (printer == null)
+                throw new Exception($"Printer {printerMac} tidak ditemukan.");
+
+            // Pastikan sudah paired
+            if (!printer.Authenticated)
             {
-                // Connect via LAN
-                var client = new TcpClient(printerName, 9100);
-                stream = client.GetStream();
-            }
-            else
-            {
-                // Connect via Bluetooth dengan retry policy
-                _ = await RetryPolicyAsync(async () =>
+                if (!BluetoothSecurity.PairRequest(printer.DeviceAddress, "0000")) // PIN default 0000
                 {
-                    var printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-                    if (printerDevice == null)
-                    {
-                        throw new Exception("Invalid Bluetooth Device");
-                    }
-
-                    var client = new BluetoothClient();
-                    var endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-                    if (!printerDevice.Authenticated) // cek sudah paired?
-                    {
-                        if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-                        {
-                            NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
-                            throw new Exception("Bluetooth pairing failed");
-                        }
-                    }
-
-                    client.Connect(endpoint);
-                    stream = client.GetStream();
-
-                    return true;
-                }, 2);
+                    throw new Exception($"Pairing gagal untuk printer {printerMac}. Pair manual di Windows Settings.");
+                }
             }
 
-            return stream;
+            // Retry logic
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    BluetoothClient client = new();
+                    BluetoothEndPoint endpoint = new(printer.DeviceAddress, BluetoothService.SerialPort);
+
+                    await Task.Run(() => client.Connect(endpoint)); // Connect bisa blocking
+                    if (client.Connected)
+                    {
+                        LoggerUtil.LogWarning($"Bluetooth printer {printerMac} connected (attempt {attempt}).");
+                        return client.GetStream();
+                    }
+                }
+                catch (SocketException ex)
+                {
+                    LoggerUtil.LogWarning($"Attempt {attempt}/{maxRetries} gagal connect ke {printerMac}: {ex.Message}");
+                    if (attempt == maxRetries)
+                        throw; // kalau sudah mentok, lempar error
+                }
+
+                // Delay sebelum coba lagi
+                await Task.Delay(delayMs);
+            }
+
+            throw new Exception($"Gagal connect ke printer {printerMac} setelah {maxRetries} percobaan.");
         }
+
+
         private int GetOptimalCapacity(int itemCount)
         {
             return itemCount switch

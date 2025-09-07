@@ -21,19 +21,14 @@ namespace KASIR.Printer
         private readonly Dictionary<string, string> printerSettings = new();
 
         private string _kategori;
-        private readonly int logoCredit = 75; //default 75 PrintLogo(stream, "icon\\DT-Logo.bmp", logoCredit);
+        private readonly int logoCredit = 75; 
 
-        //init size logo struk
-        private readonly int logoSize = 250; //default 250 PrintLogo(stream, "icon\\OutletLogo.bmp", logoSize);
+        private readonly int logoSize = 250; 
         private const string SEPARATOR = "--------------------------------\n";
         private const string PRINT_POWERED_BY = "Powered By Dastrevas\n";
 
-        //Encoding encoding = Encoding.GetEncoding("IBM437");
-        //byte[] buffer = encoding.GetBytes(strukText);
-
 
         private readonly string kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1B\x4D\x00" + "\x1D\x21\x00";
-        // reset bold + font normal (A) + ukuran normal
 
 
         private readonly string kodeHeksadesimalBold = "\x1B\x45\x01";
@@ -46,17 +41,6 @@ namespace KASIR.Printer
             {
                 _ = Directory.CreateDirectory(baseDirectory);
             }
-
-            //if(!File.Exists(baseDirectory + "//configFontPrinter.data"))
-            //{
-
-            //}
-
-
-            //kodeHeksadesimalBold = "\x1B\x45\x01";
-            //kodeHeksadesimalSizeBesar = "\x1D\x21\x22";  
-            //kodeHeksadesimalNormal = "\x1B\x45\x00" + "\x1D\x21\x11";
-
         }
 
         private void EnsureDirectoryExists(string path)
@@ -89,7 +73,7 @@ namespace KASIR.Printer
 
         public async Task<string?> LoadPrinterSettingsAsync(string comboBoxName)
         {
-            await LoadAllPrinterSettings();
+            await LoadSettingsAsync();
             if (printerSettings.TryGetValue(comboBoxName, out string? printerId))
             {
                 return printerId;
@@ -106,19 +90,13 @@ namespace KASIR.Printer
 
         public async Task<bool> LoadCheckBoxSettingAsync(string checkBoxName)
         {
-            await LoadAllPrinterSettings();
+            await LoadSettingsAsync();
             if (checkBoxSettings.TryGetValue(checkBoxName, out bool isChecked))
             {
                 return isChecked;
             }
 
             return false;
-        }
-
-        public async Task LoadAllPrinterSettings()
-        {
-            await LoadPrinterSettings();
-            await LoadCheckBoxSettings();
         }
 
         public string SerializePrinterSettings()
@@ -130,20 +108,6 @@ namespace KASIR.Printer
             }
 
             return sb.ToString();
-        }
-
-        public void DeserializePrinterSettings(string data)
-        {
-            printerSettings.Clear();
-            string[] lines = data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (string line in lines)
-            {
-                string[] parts = line.Split(':');
-                if (parts.Length == 2)
-                {
-                    printerSettings[parts[0]] = parts[1];
-                }
-            }
         }
 
         public async Task<List<PrinterItem>> GetAvailablePrinters()
@@ -165,7 +129,6 @@ namespace KASIR.Printer
                                 int printerStatus = Convert.ToInt32(printer["PrinterStatus"] ?? 0);
                                 bool workOffline = Convert.ToBoolean(printer["WorkOffline"] ?? false);
 
-                                // Filter out printers with unavailable drivers or problematic status
                                 if (!string.IsNullOrEmpty(printerName) &&
                                     !string.IsNullOrEmpty(printerId) &&
                                     printerStatus != 7 && // Assuming 7 is an error status
@@ -190,16 +153,6 @@ namespace KASIR.Printer
             return availablePrinters;
         }
 
-        public async Task LoadPrinterSettings()
-        {
-            string filePath = Path.Combine(baseDirectory, "printerSettings.data");
-            if (File.Exists(filePath))
-            {
-                string allSettingsData = await File.ReadAllTextAsync(filePath);
-                DeserializePrinterSettings(allSettingsData);
-            }
-        }
-
         public async Task LoadCheckBoxSettings()
         {
             string filePath = Path.Combine(baseDirectory, "checkBoxSettings.data");
@@ -215,15 +168,12 @@ namespace KASIR.Printer
             {
                 string fullPath = Path.Combine(baseDirectory, fileName);
 
-                // Pastikan direktori ada
                 EnsureDirectoryExists(Path.GetDirectoryName(fullPath));
 
-                // Tulis data ke file
                 await File.WriteAllTextAsync(fullPath, data);
             }
             catch (Exception ex)
             {
-                // Log error
                 LoggerUtil.LogError(ex, $"Gagal menyimpan file: {fileName}");
                 throw;
             }
@@ -262,7 +212,7 @@ namespace KASIR.Printer
             }
         }
 
-        //Printing
+        //Printing Config Load
         public async Task LoadSettingsAsync()
         {
             await LoadPrinterSettingsAsyncatPrinting("setting\\printerSettings.data");
@@ -271,27 +221,90 @@ namespace KASIR.Printer
 
         private async Task LoadPrinterSettingsAsyncatPrinting(string filePath)
         {
-            string[] lines = await File.ReadAllLinesAsync(filePath);
-            foreach (string line in lines)
+            printerSettings.Clear();
+
+            try
             {
-                string[] parts = line.Split(':');
-                if (parts.Length == 2)
+                using (var fileStream = new FileStream(
+                    filePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite,
+                    bufferSize: 4096,
+                    useAsync: true))
                 {
-                    printerSettings[parts[0]] = parts[1];
+                    using (var streamReader = new StreamReader(fileStream, Encoding.UTF8))
+                    {
+                        string line;
+                        while ((line = await streamReader.ReadLineAsync()) != null)
+                        {
+                            if (string.IsNullOrWhiteSpace(line))
+                                continue;
+
+                            string[] parts = line.Split(new[] { ':' }, 2, StringSplitOptions.RemoveEmptyEntries);
+
+                            if (parts.Length == 2)
+                            {
+                                string key = parts[0].Trim();
+                                string value = parts[1].Trim();
+
+                                if (!string.IsNullOrEmpty(key))
+                                {
+                                    printerSettings[key] = value;
+                                }
+                            }
+                        }
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex,$"Unexpected error loading printer settings: {ex.Message}");
             }
         }
 
         private async Task LoadCheckBoxSettingsAsync(string filePath)
         {
-            string[] lines = await File.ReadAllLinesAsync(filePath);
-            foreach (string line in lines)
+            checkBoxSettings.Clear();
+
+            try
             {
-                string[] parts = line.Split(':');
-                if (parts.Length == 2 && bool.TryParse(parts[1], out bool value))
+                using (var fileStream = new FileStream(
+                    filePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite,
+                    bufferSize: 4096,
+                    useAsync: true))
                 {
-                    checkBoxSettings[parts[0]] = value;
+                    using (var streamReader = new StreamReader(fileStream, Encoding.UTF8))
+                    {
+                        string line;
+                        while ((line = await streamReader.ReadLineAsync()) != null)
+                        {
+                            if (string.IsNullOrWhiteSpace(line))
+                                continue;
+
+                            string[] parts = line.Split(new[] { ':' }, 2, StringSplitOptions.RemoveEmptyEntries);
+
+                            if (parts.Length == 2)
+                            {
+                                string key = parts[0].Trim();
+                                string valueStr = parts[1].Trim();
+
+                                if (!string.IsNullOrEmpty(key) &&
+                                    bool.TryParse(valueStr, out bool value))
+                                {
+                                    checkBoxSettings[key] = value;
+                                }
+                            }
+                        }
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex,$"Unexpected error loading checkbox settings: {ex.Message}");
             }
         }
 
@@ -301,10 +314,11 @@ namespace KASIR.Printer
         {
             try
             {
-                await LoadPrinterSettings(); // Load printer settings
+                 
                 await LoadSettingsAsync(); // Load additional settings
+                var printersSnapshot = printerSettings.ToList();
 
-                foreach (KeyValuePair<string, string> printer in printerSettings)
+                foreach (var printer in printersSnapshot)
                 {
                     string printerName = printer.Value;
                     if (IsBluetoothPrinter(printerName))
@@ -471,7 +485,6 @@ namespace KASIR.Printer
                    shouldPrint;
         }
 
-        // Bluetooth Struct Printing
         private string ConvertMacAddressFormat(string macAddress)
         {
             return macAddress.Replace("-", ":");
@@ -479,30 +492,23 @@ namespace KASIR.Printer
 
         public bool IsBluetoothPrinter(string macAddress)
         {
-            // Remove any spaces from the MAC address
             string cleanedAddress = macAddress?.Trim().Replace(" ", "");
 
-            // Safety check for null or empty string
             if (string.IsNullOrEmpty(cleanedAddress))
             {
                 return false;
             }
 
-            // Format yang diharapkan: "00:1A:2B:3C:4D:5E" or "00-1A-2B-3C-4D-5E"
-            // Pengecekan dengan ekspresi reguler (regex)
             string pattern = "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$";
 
-            // Buat objek Regex untuk memeriksa format
             Regex regex = new(pattern);
 
-            // Lakukan pencocokan regex untuk memeriksa validitas MAC Address
             return regex.IsMatch(cleanedAddress);
         }
 
 
         private void PrintViaBluetooth(string printerName, PrintDocument printDocument)
         {
-            // Get Bluetooth address from printer settings
             string bluetoothAddress = printerName;
 
             try
@@ -528,29 +534,24 @@ namespace KASIR.Printer
                         }
                     }
 
-                    // Connect to Bluetooth printer service (replace with appropriate UUID)
                     Guid serviceClass = BluetoothService.SerialPort;
                     client.Connect(endpoint);
 
-                    // If connected, print using existing print document
                     if (client.Connected)
                     {
                         printDocument.PrinterSettings.PrinterName = printerName;
                         printDocument.Print();
                     }
 
-                    // Close connection
                     client.Close();
                 }
                 else
                 {
-                    // Device not found
                     throw new Exception("Bluetooth device not found.");
                 }
             }
             catch (Exception ex)
             {
-                // Handle Bluetooth connection or printing errors
                 LoggerUtil.LogError(ex, "An error occurred while printing via Bluetooth: {ErrorMessage}", ex.Message);
             }
         }
@@ -559,7 +560,6 @@ namespace KASIR.Printer
         {
             try
             {
-                await LoadPrinterSettings();
                 await LoadSettingsAsync();
 
                 foreach (KeyValuePair<string, string> printer in printerSettings)
@@ -605,10 +605,6 @@ namespace KASIR.Printer
 
                                 clientSocket.Connect(endpoint);
                                 Stream stream = clientSocket.GetStream();
-
-
-
-
 
                                 string strukText = "\n" + kodeHeksadesimalBold + CenterText(kategori);
                                 strukText += kodeHeksadesimalNormal;
@@ -852,7 +848,6 @@ namespace KASIR.Printer
         {
             try
             {
-                await LoadPrinterSettings(); // Load printer settings
                 await LoadSettingsAsync(); // Load additional settings
                 var printTasks = new ConcurrentBag<Task>();
 
@@ -1766,7 +1761,7 @@ namespace KASIR.Printer
         {
             try
             {
-                await LoadPrinterSettings(); // Load printer settings
+                 
                 await LoadSettingsAsync(); // Load additional settings
 
                 foreach (KeyValuePair<string, string> printer in printerSettings)
@@ -2587,7 +2582,7 @@ namespace KASIR.Printer
         {
             try
             {
-                await LoadPrinterSettings(); // Load printer settings
+                 
                 await LoadSettingsAsync(); // Load additional settings
 
                 foreach (KeyValuePair<string, string> printer in printerSettings.ToList())
@@ -3135,7 +3130,7 @@ namespace KASIR.Printer
             try
             {
                 if (totalTransactions == null) { totalTransactions = 0; }
-                await LoadPrinterSettings(); // Load printer settings
+                 
                 await LoadSettingsAsync(); // Load additional settings
 
                 List<KeyValuePair<string, string>> printerSettingsCopy;
@@ -4123,7 +4118,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
             }
             try
             {
-                await LoadPrinterSettings(); // Load printer settings
+                 
                 await LoadSettingsAsync(); // Load additional settings
 
                 foreach (KeyValuePair<string, string> printer in
@@ -4707,7 +4702,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
             try
             {
                 if (totalTransactions == null) { totalTransactions = 0; }
-                await LoadPrinterSettings(); // Load printer settings
+                 
                 await LoadSettingsAsync(); // Load additional settings
                 var printTasks = new ConcurrentBag<Task>();
 
@@ -5634,7 +5629,7 @@ cartDetail.discounts_is_percent.ToString() != "1"
             {
                 if (totalTransactions == null) { totalTransactions = 0; }
                 if (string.IsNullOrEmpty(Kakimu)) { Kakimu = ""; }
-                await LoadPrinterSettings(); // Load printer settings
+                 
                 await LoadSettingsAsync(); // Load additional settings
                 var printTasks = new ConcurrentBag<Task>();
 
@@ -5750,59 +5745,17 @@ cartDetail.discounts_is_percent.ToString() != "1"
             return File.Exists(PathFile) &&
                    (await File.ReadAllTextAsync(PathFile)).Trim() == "ON";
         }
-        // Helper method untuk koneksi printer
-        //private async Task<Stream> EstablishPrinterConnection(string printerName)
-        //{
-        //    Stream stream = Stream.Null;
-
-        //    if (IPAddress.TryParse(printerName, out _))
-        //    {
-        //        // Connect via LAN
-        //        var client = new TcpClient(printerName, 9100);
-        //        stream = client.GetStream();
-        //    }
-        //    else
-        //    {
-        //        // Connect via Bluetooth dengan retry policy
-        //        _ = await RetryPolicyAsync(async () =>
-        //        {
-        //            var printerDevice = new BluetoothDeviceInfo(BluetoothAddress.Parse(printerName));
-        //            if (printerDevice == null)
-        //            {
-        //                throw new Exception("Invalid Bluetooth Device");
-        //            }
-
-        //            var client = new BluetoothClient();
-        //            var endpoint = new BluetoothEndPoint(printerDevice.DeviceAddress, BluetoothService.SerialPort);
-
-        //            if (!printerDevice.Authenticated) // cek sudah paired?
-        //            {
-        //                if (!BluetoothSecurity.PairRequest(printerDevice.DeviceAddress, "0000"))
-        //                {
-        //                    NotifyHelper.Error("Pairing gagal. Pastikan printer sudah dipair manual di Windows Settings.");
-        //                    throw new Exception("Bluetooth pairing failed");
-        //                }
-        //            }
-
-        //            client.Connect(endpoint);
-        //            stream = client.GetStream();
-
-        //            return true;
-        //        }, 2);
-        //    }
-
-        //    return stream;
-        //}
         private async Task<Stream> EstablishPrinterConnection(string printerMac, int maxRetries = 3, int delayMs = 2000)
         {
             if (string.IsNullOrWhiteSpace(printerMac))
                 throw new ArgumentException("Printer MAC Address kosong.");
 
-            // Pastikan format MAC valid
-            if (!IsBluetoothPrinter(printerMac))
+            // --- Normalisasi MAC Address ---
+            string cleanedMac = printerMac.Replace(":", "").Replace("-", "").ToUpper();
+            if (cleanedMac.Length != 12 || !System.Text.RegularExpressions.Regex.IsMatch(cleanedMac, "^[0-9A-F]+$"))
                 throw new FormatException($"Alamat Bluetooth tidak valid: {printerMac}");
 
-            BluetoothAddress address = BluetoothAddress.Parse(printerMac.Replace(":", "").Replace("-", ""));
+            BluetoothAddress address = BluetoothAddress.Parse(cleanedMac);
             BluetoothDeviceInfo printer = new(address);
 
             if (printer == null)
@@ -5844,6 +5797,33 @@ cartDetail.discounts_is_percent.ToString() != "1"
             }
 
             throw new Exception($"Gagal connect ke printer {printerMac} setelah {maxRetries} percobaan.");
+
+            /*
+            // --- Fallback ke SerialPort (opsional, aktifkan kalau perlu) ---
+            try
+            {
+                foreach (string portName in SerialPort.GetPortNames())
+                {
+                    try
+                    {
+                        using (var serial = new SerialPort(portName, 9600))
+                        {
+                            serial.Open();
+                            if (serial.IsOpen)
+                            {
+                                LoggerUtil.LogWarning($"Fallback: printer terhubung via {portName}");
+                                return serial.BaseStream;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogWarning($"Fallback SerialPort gagal: {ex.Message}");
+            }
+            */
         }
 
 

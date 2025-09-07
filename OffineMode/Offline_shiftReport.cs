@@ -879,124 +879,161 @@ namespace KASIR.Komponen
         }
 
         //LOAD DATA Transaction loaddata transaction
+        private DataTable cachedDataTable; 
+        private int itemsPerPage = 10;     
+        private int currentPage = 0;       
+
         private void DisplayDataInCards(DataTable dataTable)
         {
-            flowlayoutPanel.SuspendLayout();
+            cachedDataTable = dataTable;
+            currentPage = 0;
             flowlayoutPanel.Controls.Clear();
             flowlayoutPanel.AutoScroll = true;
-            flowlayoutPanel.BackColor = Color.White;
 
-            foreach (DataRow row in dataTable.Rows)
+            LoadNextPage();
+
+            flowlayoutPanel.Scroll -= flowlayoutPanel_Scroll;
+            flowlayoutPanel.Scroll += flowlayoutPanel_Scroll;
+        }
+
+        private void flowlayoutPanel_Scroll(object sender, ScrollEventArgs e)
+        {
+            if (flowlayoutPanel.VerticalScroll.Value + flowlayoutPanel.ClientSize.Height >= flowlayoutPanel.VerticalScroll.Maximum - 50)
             {
+                LoadNextPage();
+            }
+        }
+
+        private void LoadNextPage()
+        {
+            if (cachedDataTable == null) return;
+
+            int startRow = currentPage * itemsPerPage;
+            int endRow = Math.Min(startRow + itemsPerPage, cachedDataTable.Rows.Count);
+
+            for (int i = startRow; i < endRow; i++)
+            {
+                DataRow row = cachedDataTable.Rows[i];
                 string label = row["DATA"]?.ToString();
                 string detail = row["Detail"]?.ToString();
 
-                // Section header atau separator bold (tanpa detail)
+                Control card;
                 if (!string.IsNullOrWhiteSpace(label) && string.IsNullOrWhiteSpace(detail))
                 {
-                    var headerCard = new Guna2Panel()
-                    {
-                        Height = 42,
-                        Width = flowlayoutPanel.Width - 28,
-                        BackColor = Color.FromArgb(228, 239, 244),
-                        Padding = new Padding(4, 3, 4, 3),
-                        Margin = new Padding(2, 14, 2, 3),
-                        Anchor = AnchorStyles.Left | AnchorStyles.Right,
-
-                        BorderRadius = 8,
-                        BorderThickness = 1,
-                        BorderColor = Color.Black,
-
-                        AutoSize = false
-                    };
-                    var icon = new IconPictureBox()
-                    {
-                        IconChar = GetSectionIcon(label),
-                        IconColor = Color.Teal,
-                        IconSize = 26,
-                        Size = new Size(34, 34),
-                        Dock = DockStyle.Left,
-                        Padding = new Padding(2, 4, 6, 0),
-                        BackColor = Color.Transparent
-                    };
-                    var lbl = new Label()
-                    {
-                        Text = label,
-                        Dock = DockStyle.Fill,
-                        Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                        ForeColor = Color.Teal,
-                        AutoSize = false,
-                        TextAlign = ContentAlignment.MiddleLeft,
-                        Padding = new Padding(5, 2, 5, 0)
-                    };
-                    headerCard.Controls.Add(lbl);
-                    headerCard.Controls.Add(icon);
-                    flowlayoutPanel.Controls.Add(headerCard);
-                    continue;
+                    card = CreateHeaderCard(label);
                 }
-
-                // Card Data
-                var card = new Guna2Panel()
+                else
                 {
-                    Height = 54,
-                    Width = flowlayoutPanel.Width - 28,
-                    BackColor = Color.White,
-                    Margin = new Padding(2, 3, 2, 4),
-                    Padding = new Padding(7, 3, 7, 3),
-                    Anchor = AnchorStyles.Left | AnchorStyles.Right,
-
-                    BorderRadius = 8,
-                    BorderThickness = 1,
-                    BorderColor = Color.Black,
-
-                    AutoSize = false
-                };
-                // Icon otomatis per konten
-                var iconCard = new IconPictureBox()
-                {
-                    IconChar = GetRowIcon(label, detail),
-                    IconColor =
-        (label.ToLower().Contains("shift") || label.ToLower().Contains("total")) ? Color.DarkGreen : Color.DimGray,
-                    IconSize = 21,
-                    Size = new Size(27, 27),
-                    Dock = DockStyle.Left,
-                    Padding = new Padding(2, 8, 6, 0),
-                    BackColor = Color.Transparent
-                };
-                var lblNama = new Label()
-                {
-                    Text = label,
-                    Dock = DockStyle.Left,
-                    AutoSize = false,
-                    Width = (card.Width / 2) - 48,
-                    Font = new Font("Segoe UI", 10,
-        (label.ToLower().Contains("shift") || label.ToLower().Contains("total"))
-        ? FontStyle.Bold
-        : FontStyle.Regular),
-                    ForeColor = (label.ToLower().Contains("shift") || label.ToLower().Contains("total"))
-        ? Color.DarkGreen
-        : Color.Black,
-                    TextAlign = ContentAlignment.MiddleLeft,
-                    Padding = new Padding(5, 3, 2, 2)
-                };
-                var lblDetail = new Label()
-                {
-                    Text = detail,
-                    Dock = DockStyle.Right,
-                    AutoSize = false,
-                    Width = (card.Width / 2) - 45,
-                    Font = new Font("Segoe UI", 10.4f, label.ToLower().Contains("total") ? FontStyle.Bold : FontStyle.Regular),
-                    ForeColor = label.ToLower().Contains("total") ? Color.DarkGreen : Color.Black,
-                    TextAlign = ContentAlignment.MiddleRight,
-                    Padding = new Padding(5, 2, 2, 2)
-                };
-                card.Controls.Add(lblDetail);
-                card.Controls.Add(lblNama);
-                card.Controls.Add(iconCard);
+                    card = CreateDataCard(label, detail);
+                }
                 flowlayoutPanel.Controls.Add(card);
             }
-            flowlayoutPanel.ResumeLayout();
+
+            currentPage++;
         }
+
+        private Control CreateHeaderCard(string label)
+        {
+            var headerCard = new Guna.UI2.WinForms.Guna2Panel()
+            {
+                Height = 42,
+                Width = flowlayoutPanel.Width - 28,
+                BackColor = Color.FromArgb(228, 239, 244),
+                Padding = new Padding(4, 3, 4, 3),
+                Margin = new Padding(2, 14, 2, 3),
+                Anchor = AnchorStyles.Left | AnchorStyles.Right,
+                BorderRadius = 8,
+                BorderThickness = 1,
+                BorderColor = Color.Black,
+                AutoSize = false
+            };
+            var icon = new FontAwesome.Sharp.IconPictureBox()
+            {
+                IconChar = GetSectionIcon(label),
+                IconColor = Color.Teal,
+                IconSize = 26,
+                Size = new Size(34, 34),
+                Dock = DockStyle.Left,
+                Padding = new Padding(2, 4, 6, 0),
+                BackColor = Color.Transparent
+            };
+            var lbl = new Label()
+            {
+                Text = label,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                ForeColor = Color.Teal,
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(5, 2, 5, 0)
+            };
+            headerCard.Controls.Add(lbl);
+            headerCard.Controls.Add(icon);
+            return headerCard;
+        }
+
+        private Control CreateDataCard(string label, string detail)
+        {
+            var card = new Guna.UI2.WinForms.Guna2Panel()
+            {
+                Height = 54,
+                Width = flowlayoutPanel.Width - 28,
+                BackColor = Color.White,
+                Margin = new Padding(2, 3, 2, 4),
+                Padding = new Padding(7, 3, 7, 3),
+                Anchor = AnchorStyles.Left | AnchorStyles.Right,
+                BorderRadius = 8,
+                BorderThickness = 1,
+                BorderColor = Color.Black,
+                AutoSize = false
+            };
+
+            var iconCard = new FontAwesome.Sharp.IconPictureBox()
+            {
+                IconChar = GetRowIcon(label, detail),
+                IconColor = (label.ToLower().Contains("shift") || label.ToLower().Contains("total")) ? Color.DarkGreen : Color.DimGray,
+                IconSize = 21,
+                Size = new Size(27, 27),
+                Dock = DockStyle.Left,
+                Padding = new Padding(2, 8, 6, 0),
+                BackColor = Color.Transparent
+            };
+
+            var lblNama = new Label()
+            {
+                Text = label,
+                Dock = DockStyle.Left,
+                AutoSize = false,
+                Width = (card.Width / 2) - 48,
+                Font = new Font("Segoe UI", 10,
+                    (label.ToLower().Contains("shift") || label.ToLower().Contains("total"))
+                    ? FontStyle.Bold
+                    : FontStyle.Regular),
+                ForeColor = (label.ToLower().Contains("shift") || label.ToLower().Contains("total"))
+                    ? Color.DarkGreen
+                    : Color.Black,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(5, 3, 2, 2)
+            };
+
+            var lblDetail = new Label()
+            {
+                Text = detail,
+                Dock = DockStyle.Right,
+                AutoSize = false,
+                Width = (card.Width / 2) - 45,
+                Font = new Font("Segoe UI", 10.4f, label.ToLower().Contains("total") ? FontStyle.Bold : FontStyle.Regular),
+                ForeColor = label.ToLower().Contains("total") ? Color.DarkGreen : Color.Black,
+                TextAlign = ContentAlignment.MiddleRight,
+                Padding = new Padding(5, 2, 2, 2)
+            };
+
+            card.Controls.Add(lblDetail);
+            card.Controls.Add(lblNama);
+            card.Controls.Add(iconCard);
+            return card;
+        }
+
 
         private IconChar GetSectionIcon(string title)
         {
@@ -1200,7 +1237,7 @@ namespace KASIR.Komponen
                 dataTable.Rows.Add("Total Transactions", $"{totalProcessedCart:n0}");
 
                 // Display data in DataGridView
-                DisplayDataInDataGridView(dataTable);
+                //DisplayDataInDataGridView(dataTable);
                 DisplayDataInCards(dataTable);
                 this.flowlayoutPanel.SizeChanged += flowlayoutPanel_SizeChanged;
                 btnCetakStruk.Enabled = true;

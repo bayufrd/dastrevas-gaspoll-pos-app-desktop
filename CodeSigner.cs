@@ -14,7 +14,6 @@ namespace KASIR
     {
         public static bool SignExecutable(string executablePath, string certificatePath, string password)
         {
-            // Tambahkan validasi awal
             if (string.IsNullOrEmpty(executablePath))
             {
                 NotifyHelper.Error("Path executable tidak valid");
@@ -33,11 +32,18 @@ namespace KASIR
                 return false;
             }
 
+            var signtool = GetSignToolPath();
+            if (string.IsNullOrEmpty(signtool) || !File.Exists(signtool))
+            {
+                NotifyHelper.Error("SignTool tidak ditemukan. Pastikan Windows SDK terinstal.");
+                return false;
+            }
+
             try
             {
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
-                    FileName = GetSignToolPath(), // Fungsi dinamis mencari SignTool
+                    FileName = GetSignToolPath() ?? "signtool.exe",
                     Arguments = $"sign /f \"{certificatePath}\" /p \"{password}\" /tr http://timestamp.digicert.com /fd SHA256 \"{executablePath}\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
@@ -87,7 +93,8 @@ namespace KASIR
                     return path;
             }
 
-            throw new FileNotFoundException("SignTool tidak ditemukan. Pastikan Windows SDK terinstal.");
+            return null;
         }
+
     }
 }

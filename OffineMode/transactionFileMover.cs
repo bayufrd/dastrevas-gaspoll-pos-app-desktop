@@ -61,7 +61,6 @@ namespace KASIR.OffineMode
                 }
                 else
                 {
-                    // Pastikan shiftData tetap diproses walau transaction file kosong
                     if (File.Exists(shiftSource))
                         await ArchiveShiftData(shiftSource, shiftHistoryDir);
                 }

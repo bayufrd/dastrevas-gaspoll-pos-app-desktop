@@ -161,8 +161,6 @@ namespace KASIR
                 await LoadOfflineMasterPos();
                 UpdateOutletLabel(outletName + " (Online)");
             }
-            LoadingAllSetting(allSettingsData);
-
         }
 
         private async Task LoadOfflineMasterPos()
@@ -273,6 +271,9 @@ namespace KASIR
             initPingTest();
             //ConfigOfflineMode();
             link_Click(null , null);
+            await sendDataSyncPerHours("ON");
+                transactionFileMover fileMover = new();
+                await fileMover.refreshCacheTransaction();
 
             await Task.Run(async () =>
             {
@@ -319,15 +320,6 @@ namespace KASIR
                 ((Timer)sender).Stop();
             };
             timer.Start();
-        }
-        private async void LoadingAllSetting(string allSettingsData)
-        {
-            await sendDataSyncPerHours(allSettingsData);
-            if (allSettingsData == "ON")
-            {
-                transactionFileMover fileMover = new();
-                await fileMover.refreshCacheTransaction();
-            }
         }
         private bool isOpenOpenDualMonitor = false; // Tambahkan variabel status navbar
 

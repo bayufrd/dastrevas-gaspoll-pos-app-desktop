@@ -281,31 +281,31 @@ namespace KASIR.Komponen
                     {
                         g.Key.menu_id,
                         g.Key.menu_detail_id,
-                        g.First().menu_name, // Mengambil satu nilai menu_name dari salah satu item
-                        g.First().menu_type, // Mengambil satu nilai menu_type dari salah satu item
+                        g.First().menu_name,
+                        g.First().menu_type,
                         varian =
-                            g.First().menu_detail_name, // Mengambil satu nilai menu_detail_name dari salah satu item
-                        qty = g.Sum(cd => cd.qty), // Menjumlahkan qty
-                        total_price = g.Sum(cd => cd.total_price) // Menjumlahkan total_price, jika diperlukan
+                            g.First().menu_detail_name,
+                        qty = g.Sum(cd => cd.qty), 
+                        total_price = g.Sum(cd => cd.total_price) 
                     })
                     .ToList();
 
                 int totalPendingAmount = pendingCartDetails.Sum(cd => cd.total_price);
 
                 var canceledCartDetails = transactionDataSavebill.data.SelectMany(t => t.canceled_items)
-                    .Where(cd => cd.qty > 0) // Hanya ambil item dengan qty lebih dari 0
+                    .Where(cd => cd.qty > 0) 
                     .GroupBy(cd =>
-                        new { cd.menu_id, cd.menu_detail_id }) // Mengelompokkan berdasarkan menu_id dan menu_detail_id
+                        new { cd.menu_id, cd.menu_detail_id })
                     .Select(g => new
                     {
                         g.Key.menu_id,
                         g.Key.menu_detail_id,
-                        g.First().menu_name, // Mengambil satu nilai menu_name dari salah satu item
-                        g.First().menu_type, // Mengambil satu nilai menu_type dari salah satu item
+                        g.First().menu_name, 
+                        g.First().menu_type, 
                         varian =
-                            g.First().menu_detail_name, // Mengambil satu nilai menu_detail_name dari salah satu item
-                        qty = g.Sum(cd => cd.qty), // Menjumlahkan qty
-                        total_price = g.Sum(cd => cd.total_price) // Menjumlahkan total_price, jika diperlukan
+                            g.First().menu_detail_name,
+                        qty = g.Sum(cd => cd.qty), 
+                        total_price = g.Sum(cd => cd.total_price)
                     })
                     .ToList();
 
@@ -318,15 +318,15 @@ namespace KASIR.Komponen
                         {
                             rd.menu_id,
                             rd.menu_detail_name
-                        }) // Mengelompokkan berdasarkan menu_id dan menu_detail_name
+                        }) 
                     .Select(g => new
                     {
                         g.Key.menu_id,
-                        g.First().menu_name, // Mengambil satu nilai menu_name dari salah satu item
-                        g.First().menu_type, // Mengambil satu nilai menu_name dari salah satu item
-                        varian = g.Key.menu_detail_name, // Mengambil nilai menu_detail_name dari kunci grup
-                        qty_refund_item = g.Sum(rd => rd.refund_qty), // Menjumlahkan qty_refund_item
-                        total_refund_price = g.Sum(rd => rd.refund_total) // Menjumlahkan total_refund_price
+                        g.First().menu_name, 
+                        g.First().menu_type, 
+                        varian = g.Key.menu_detail_name, 
+                        qty_refund_item = g.Sum(rd => rd.refund_qty),
+                        total_refund_price = g.Sum(rd => rd.refund_total)
                     })
                     .ToList();
 
@@ -344,7 +344,6 @@ namespace KASIR.Komponen
         MemberUsePoints = g.Sum(x => x.member_use_point ?? 0)
     }).ToList();
 
-                // Refund full (semua item dikembalikan)
                 var groupedRefunds = transactionData.data
                     .Where(t => t.is_refund_all == 1)
                     .Select(t => new
@@ -353,7 +352,6 @@ namespace KASIR.Komponen
                         TotalRefund = t.total_refund
                     }).ToList();
 
-                // Refund per item (ambil dari refund_details, abaikan total_refund di transaksi)
                 var groupedItemRefunds = transactionData.data
                     .Where(t => t.is_refund_all != 1)
                     .SelectMany(t => t.refund_details.Select(r => new
@@ -375,18 +373,14 @@ namespace KASIR.Komponen
 
                 foreach (var payment in groupedPayments)
                 {
-                    // ambil refund all
                     var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
                     int totalRefundAll = refund?.TotalRefund ?? 0;
 
-                    // ambil refund per item
                     var itemRefund = groupedItemRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
                     int totalItemRefund = itemRefund?.TotalItemRefund ?? 0;
 
-                    // gabungkan
                     int totalRefund = totalRefundAll + totalItemRefund;
 
-                    // net total = pembayaran - refund
                     int netAmount = payment.TotalAmount - totalRefund;
 
                     string paymentTypeString = payment.PaymentTypeName;
@@ -833,6 +827,8 @@ namespace KASIR.Komponen
         private int GetShiftNumber()
         {
             string shiftPath = "DT-Cache\\Transaction\\shiftData.data";
+            string shiftHistoryDir = "DT-Cache\\Transaction\\ShiftDataTransaction";
+
             if (File.Exists(shiftPath))
             {
                 try
@@ -847,20 +843,92 @@ namespace KASIR.Komponen
                         return 1; // Default shift number when no shifts exist
                     }
 
+                    // Jika jumlah shift sudah melebihi 3, kembalikan ke 1
+                    if (shiftDataArray.Count >= 3)
+                    {
+                        ArchiveShiftData(shiftPath, shiftHistoryDir);
+                        return 1;
+                    }
+
                     return shiftDataArray.Count + 1;
                 }
                 catch (Exception ex)
                 {
                     LoggerUtil.LogError(ex, "Error occurred while reading or processing the shift data: {ErrorMessage}",
                         ex.Message);
-                    return 1; // Return default shift number in case of error
+                    return 1; 
                 }
             }
 
             LoggerUtil.LogError(null, "Shift data file not found, using default shift number 1.");
             return 1;
         }
+        public async Task ArchiveShiftData(string sourceFilePath, string archiveDirectory, int maxShifts = 3)
+        {
+            if (!Directory.Exists(archiveDirectory))
+                Directory.CreateDirectory(archiveDirectory);
 
+            DateTime previousDay = DateTime.Now.AddDays(-1);
+
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourceFilePath);
+            string fileExtension = Path.GetExtension(sourceFilePath);
+            string newFileName =
+                $"History_{fileNameWithoutExtension}_DT-{baseOutlet}_{previousDay:yyyyMMdd}{fileExtension}";
+            string destinationPath = Path.Combine(archiveDirectory, newFileName);
+
+            // Baca source file
+            string sourceData = await ReadJsonFileAsync(sourceFilePath);
+            JObject sourceJson = JObject.Parse(sourceData);
+            JArray sourceArray = (JArray)sourceJson["data"];
+
+            if (sourceArray.Count > maxShifts)
+            {
+                // Ambil shift yang lebih lama untuk di-archive
+                var shiftsToArchive = sourceArray.Take(sourceArray.Count - maxShifts).ToList();
+
+                // Hapus shift yang di-archive dari sourceArray
+                foreach (var shift in shiftsToArchive)
+                    sourceArray.Remove(shift);
+
+                // Merge ke file archive jika ada
+                if (File.Exists(destinationPath))
+                {
+                    string existingData = await ReadJsonFileAsync(destinationPath);
+                    JObject destinationJson = JObject.Parse(existingData);
+                    JArray destinationArray = (JArray)destinationJson["data"];
+
+                    foreach (var shift in shiftsToArchive)
+                        destinationArray.Add(shift);
+
+                    await WriteJsonToFile(destinationPath, destinationJson.ToString());
+                }
+                else
+                {
+                    JObject newArchive = new JObject();
+                    newArchive["data"] = new JArray(shiftsToArchive);
+                    await WriteJsonToFile(destinationPath, newArchive.ToString());
+                }
+            }
+
+            // Tulis kembali source file (hanya shift terakhir maxShifts)
+            await WriteJsonToFile(sourceFilePath, sourceJson.ToString());
+        }
+        public async Task<string> ReadJsonFileAsync(string filePath)
+        {
+            using (FileStream sourceStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (StreamReader reader = new(sourceStream))
+            {
+                return await reader.ReadToEndAsync();
+            }
+        }
+        public async Task WriteJsonToFile(string filePath, string jsonData)
+        {
+            using (FileStream writeStream = new(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (StreamWriter writer = new(writeStream))
+            {
+                await writer.WriteAsync(jsonData);
+            }
+        }
         private void EnsureFileExists(string filePath)
         {
             if (!File.Exists(filePath))
@@ -880,7 +948,7 @@ namespace KASIR.Komponen
 
         //LOAD DATA Transaction loaddata transaction
         private DataTable cachedDataTable; 
-        private int itemsPerPage = 10;     
+        private int itemsPerPage = 30;     
         private int currentPage = 0;       
 
         private void DisplayDataInCards(DataTable dataTable)
@@ -1285,7 +1353,6 @@ namespace KASIR.Komponen
 
         private decimal CalculateTotalProcessExpenditures(ExpenditureData transactionData)
         {
-            // Calculate the total price for all cart details where quantity is greater than 0
             decimal totalProcessedCart = transactionData.data
                 .Sum(cd => cd.nominal); // Sum the total_price of each cart detail
 
@@ -1432,8 +1499,8 @@ namespace KASIR.Komponen
                 {
                     PaymentTypeId = g.Key,
                     PaymentTypeName = paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ?? "Unknown",
-                    TotalAmount = g.Sum(x => x.total),
-                    MemberUsePoints = g.Sum(x => x.member_use_point ?? 0) // Sum member_use_points for the payment type
+                    TotalAmount = g.Sum(x => x.total + x.total_refund),
+                    MemberUsePoints = g.Sum(x => x.member_use_point ?? 0) 
                 }).ToList();
 
             var groupedRefunds = transactionData.data
@@ -1462,10 +1529,10 @@ namespace KASIR.Komponen
             foreach (var payment in groupedPayments)
             {
                 var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
-                decimal totalRefund = refund?.TotalRefund ?? 0; // Default to 0 if not found
+                decimal totalRefund = refund?.TotalRefund ?? 0;
 
                 var itemRefund = groupedItemRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
-                decimal totalItemRefund = itemRefund?.TotalItemRefund ?? 0; // Default to 0 if not found
+                decimal totalItemRefund = itemRefund?.TotalItemRefund ?? 0;
 
                 decimal netAmount = payment.TotalAmount - (totalRefund + totalItemRefund);
 
@@ -1475,8 +1542,6 @@ namespace KASIR.Komponen
                 {
                     paymentTypeString = "TUNAI ON POS";
                     cashOutRefund = int.Parse(totalRefund.ToString()) + int.Parse(totalItemRefund.ToString());
-                    //CashOnPOS = netAmount;
-                    //netAmount -= expenditures;
                     decimal actual = netAmount - expenditures;
                     txtActualCash.Text = $"{actual:n0}";
                     ending_cash = int.Parse(actual.ToString());

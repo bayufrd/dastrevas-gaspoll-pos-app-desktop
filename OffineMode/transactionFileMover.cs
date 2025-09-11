@@ -1,9 +1,8 @@
 ﻿using System.Globalization;
 using System.Text.RegularExpressions;
-using KASIR.Komponen;
+using KASIR.Helper;
 using KASIR.Properties;
 using Newtonsoft.Json.Linq;
-using KASIR.Helper;
 
 namespace KASIR.OffineMode
 {
@@ -23,7 +22,7 @@ namespace KASIR.OffineMode
 
             try
             {
-                SyncHelper c = new SyncHelper();
+                SyncHelper c = new();
                 c.IsBackgroundOperation = true;
 
                 await c.SyncDataTransactions();
@@ -51,8 +50,10 @@ namespace KASIR.OffineMode
                             await ClearSourceFile(transactionSource);
 
                             // Archive shift data & expenditure data
-                            await ArchiveShiftData(shiftSource, shiftHistoryDir); // max 3 shift otomatis
+                            //await ArchiveShiftData(shiftSource, shiftHistoryDir); // max 3 shift otomatis
+                            await ArchiveData(shiftSource, shiftHistoryDir);
                             await ArchiveData(expenditureSource, expenditureHistoryDir);
+                            await ClearSourceFile(shiftSource);
 
                             // Clear expenditure file
                             await ClearSourceFile(expenditureSource);
@@ -112,7 +113,7 @@ namespace KASIR.OffineMode
 
             if (!Directory.Exists(historyDirectory))
             {
-                Directory.CreateDirectory(historyDirectory);
+                _ = Directory.CreateDirectory(historyDirectory);
             }
 
             if (File.Exists(destinationPath))
@@ -165,7 +166,7 @@ namespace KASIR.OffineMode
         public async Task ArchiveShiftData(string sourceFilePath, string archiveDirectory, int maxShifts = 3)
         {
             if (!Directory.Exists(archiveDirectory))
-                Directory.CreateDirectory(archiveDirectory);
+                _ = Directory.CreateDirectory(archiveDirectory);
 
             DateTime previousDay = DateTime.Now.AddDays(-1);
 
@@ -187,7 +188,7 @@ namespace KASIR.OffineMode
 
                 // Hapus shift yang di-archive dari sourceArray
                 foreach (var shift in shiftsToArchive)
-                    sourceArray.Remove(shift);
+                    _ = sourceArray.Remove(shift);
 
                 // Merge ke file archive jika ada
                 if (File.Exists(destinationPath))
@@ -203,7 +204,7 @@ namespace KASIR.OffineMode
                 }
                 else
                 {
-                    JObject newArchive = new JObject();
+                    JObject newArchive = new();
                     newArchive["data"] = new JArray(shiftsToArchive);
                     await WriteJsonToFile(destinationPath, newArchive.ToString());
                 }
@@ -215,10 +216,12 @@ namespace KASIR.OffineMode
 
 
         public async Task ArchiveData(string sourceFilePath, string archiveDirectory)
+        {
+            try
             {
                 if (!Directory.Exists(archiveDirectory))
                 {
-                    Directory.CreateDirectory(archiveDirectory);
+                    _ = Directory.CreateDirectory(archiveDirectory);
                 }
 
                 DateTime previousDay = DateTime.Now.AddDays(-1);
@@ -252,5 +255,10 @@ namespace KASIR.OffineMode
                     await WriteJsonToFile(destinationPath, sourceData);
                 }
             }
+            catch(Exception ex)
+            {
+                LoggerUtil.LogError(ex, $"Error Shift : ", ex.Message);
+            }
+        }
     }
 }

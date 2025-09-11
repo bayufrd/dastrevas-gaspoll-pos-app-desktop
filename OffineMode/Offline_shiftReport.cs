@@ -22,7 +22,7 @@ namespace KASIR.Komponen
 
         private Panel loadingPanel;
         private int ending_cash = 0,
-            totalTransaksiOulet = 0,
+            totalTransaksiOutlet = 0,
             totalDiscountAmount = 0,
             cashIncomeReal = 0,
             cashOutRefund = 0, 
@@ -141,6 +141,8 @@ namespace KASIR.Komponen
                     string? casherName = string.IsNullOrEmpty(txtNamaKasir.Text) ? "" : txtNamaKasir.Text;
                     string actualCash = string.IsNullOrEmpty(fulus) ? "0" : fulus;
 
+                    await GenerateShiftReport(generateIDshift);
+
                     var json = new
                     {
                         outlet_id = baseOutlet,
@@ -151,7 +153,7 @@ namespace KASIR.Komponen
                         created_at = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         updated_at = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         expected_ending_cash = ending_cash,
-                        total_amount = totalTransaksiOulet,
+                        total_amount = totalTransaksiOutlet,
                         total_discount = totalDiscountAmount,
                         shift_number = shiftNumber.ToString(),
                         casher_name = casherName,
@@ -162,6 +164,15 @@ namespace KASIR.Komponen
                         end_at = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         is_sync = 0
                     };
+
+
+                    //======================Sync After Shift End========================\\
+                    SyncHelper d = new SyncHelper();
+                    d.IsBackgroundOperation = true;
+
+                    await d.SyncDataTransactions();
+                    //======================Sync After Shift End========================\\
+
 
                     string shiftPath = "DT-Cache\\Transaction\\shiftData.data";
 
@@ -176,11 +187,11 @@ namespace KASIR.Komponen
                     shiftDataArray.Add(JToken.FromObject(json));
 
                     JObject newTransactionData = new() { { "data", shiftDataArray } };
-                    await GenerateShiftReport(generateIDshift);
 
                     File.WriteAllText(shiftPath, JsonConvert.SerializeObject(newTransactionData, Formatting.Indented));
+                    await Task.Delay(1000);
+                    txtActualCash.Text = "0";
                     LoadData();
-
                 }
             }
             catch (TaskCanceledException ex)
@@ -436,7 +447,7 @@ namespace KASIR.Komponen
                 grandTotal -= totalRefundAmount;
                 grandTotal -= totalMemberUsePoints;
                 int totalTransaction = grandTotal - totalExpenditure;
-                totalTransaksiOulet = totalTransaction;
+                totalTransaksiOutlet = totalTransaction;
                 totalDiscountAmount = totalDiscounts;
 
                 int cash_difference = int.Parse(actual_cash) - int.Parse(ending_cash.ToString());
@@ -598,17 +609,6 @@ namespace KASIR.Komponen
                         // Option Pilih
                         NotifyHelper.Warning("Fiture Belum Tersedia");
                         return;
-                        ShiftData selectedShift = payForm.SelectedShift;
-
-                        DirectSwipeShiftData();
-                        ClearSourceFileAsync("DT-Cache\\Transaction\\shiftData.data");
-
-                        DateTime startAtDateTime = DateTime.Parse(selectedShift.StartAt);
-                        string destinationFilePath =
-                            $"DT-Cache\\Transaction\\HistoryTransaction\\History_transaction_DT-{baseOutlet}_{startAtDateTime:yyyyMMdd}.data";
-                        CopyShiftDataAsync("DT-Cache\\Transaction\\shiftData.data", destinationFilePath);
-                        SelectedShiftID(selectedShift.id);
-                        LoadData();
                     }
 
                     if (dialogResult == DialogResult.Continue)
@@ -663,122 +663,6 @@ namespace KASIR.Komponen
             }
         }
 
-
-
-        public async Task CopyShiftDataAsync(string sourceFilePath, string destinationFilePath)
-        {
-            transactionFileMover c = new();
-
-            string directory = Path.GetDirectoryName(destinationFilePath);
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            string sourceData = await c.ReadJsonFileAsync(sourceFilePath);
-            JObject sourceJson = JObject.Parse(sourceData);
-            JArray sourceDataArray = (JArray)sourceJson["data"];
-
-            if (File.Exists(destinationFilePath))
-            {
-                string existingData = await c.ReadJsonFileAsync(destinationFilePath);
-                JObject destinationJson = JObject.Parse(existingData);
-                JArray destinationData = (JArray)destinationJson["data"];
-
-                foreach (JObject trans in sourceDataArray)
-                {
-                    destinationData.Add(trans);
-                }
-
-                await c.WriteJsonToFile(destinationFilePath, destinationJson.ToString());
-            }
-            else
-            {
-                await c.WriteJsonToFile(destinationFilePath, sourceJson.ToString());
-            }
-        }
-
-        public async Task ClearSourceFileAsync(string sourcePath)
-        {
-            JObject emptyJson = new() { ["data"] = new JArray() };
-            transactionFileMover c = new();
-
-            try
-            {
-                await c.WriteJsonToFile(sourcePath, emptyJson.ToString());
-            }
-            catch (IOException ex)
-            {
-                LoggerUtil.LogError(ex, $"Could not clear the source file: {ex.Message}");
-            }
-        }
-
-        public async void DirectSwipeShiftData()
-        {
-            await ArchiveDataShiftAsync("DT-Cache\\Transaction\\shiftData.data", "DT-Cache\\Transaction");
-        }
-
-        public async Task ArchiveDataShiftAsync(string sourceFilePath, string archiveDirectory)
-        {
-            if (!Directory.Exists(archiveDirectory))
-            {
-                Directory.CreateDirectory(archiveDirectory);
-            }
-
-            transactionFileMover c = new();
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourceFilePath);
-            string fileExtension = Path.GetExtension(sourceFilePath);
-            string newFileName = $"ShiftSwiperDateTimeNow{fileExtension}";
-            string destinationPath = Path.Combine(archiveDirectory, newFileName);
-
-            string sourceData = await c.ReadJsonFileAsync(sourceFilePath);
-            JObject sourceJson = JObject.Parse(sourceData);
-            JArray sourceDataArray = (JArray)sourceJson["data"];
-
-            if (File.Exists(destinationPath))
-            {
-                string existingData = await c.ReadJsonFileAsync(destinationPath);
-                JObject destinationJson = JObject.Parse(existingData);
-                JArray destinationData = (JArray)destinationJson["data"];
-
-                foreach (JObject trans in sourceDataArray)
-                {
-                    destinationData.Add(trans);
-                }
-
-                await c.WriteJsonToFile(destinationPath, destinationJson.ToString());
-            }
-            else
-            {
-                await c.WriteJsonToFile(destinationPath, sourceJson.ToString());
-            }
-        }
-
-        private (DateTime startShift, DateTime lastShift) ExGetStartAndLastShiftOrder(TransactionData transactionData)
-        {
-            // Extract all created_at dates from the transactions and parse them safely
-            List<DateTime?> transactionTimes = transactionData.data
-                .Select(t =>
-                {
-                    DateTime parsedDate;
-                    bool isValidDate = DateTime.TryParse(t.created_at, out parsedDate);
-                    return isValidDate ? parsedDate : (DateTime?)null;
-                })
-                .Where(t => t.HasValue) // Filter out null values
-                .OrderBy(t => t.Value) // Order by date in ascending order
-                .ToList();
-
-            if (transactionTimes.Count > 0)
-            {
-                DateTime startShift = transactionTimes.First().Value; // First transaction is the start of the shift
-                DateTime lastShift = transactionTimes.Last().Value; // Last transaction is the end of the shift
-
-                return (startShift, lastShift);
-            }
-
-            // If no valid transactions, return default values (in case of an error)
-            return (DateTime.MinValue, DateTime.MinValue);
-        }
         private (DateTime startShift, DateTime lastShift) GetStartAndLastShiftOrder(TransactionData transactionData)
         {
             try
@@ -827,7 +711,6 @@ namespace KASIR.Komponen
         private int GetShiftNumber()
         {
             string shiftPath = "DT-Cache\\Transaction\\shiftData.data";
-            string shiftHistoryDir = "DT-Cache\\Transaction\\ShiftDataTransaction";
 
             if (File.Exists(shiftPath))
             {
@@ -840,14 +723,7 @@ namespace KASIR.Komponen
 
                     if (shiftDataArray == null || shiftDataArray.Count == 0)
                     {
-                        return 1; // Default shift number when no shifts exist
-                    }
-
-                    // Jika jumlah shift sudah melebihi 3, kembalikan ke 1
-                    if (shiftDataArray.Count >= 3)
-                    {
-                        ArchiveShiftData(shiftPath, shiftHistoryDir);
-                        return 1;
+                        return 1; 
                     }
 
                     return shiftDataArray.Count + 1;
@@ -883,14 +759,11 @@ namespace KASIR.Komponen
 
             if (sourceArray.Count > maxShifts)
             {
-                // Ambil shift yang lebih lama untuk di-archive
                 var shiftsToArchive = sourceArray.Take(sourceArray.Count - maxShifts).ToList();
 
-                // Hapus shift yang di-archive dari sourceArray
                 foreach (var shift in shiftsToArchive)
                     sourceArray.Remove(shift);
 
-                // Merge ke file archive jika ada
                 if (File.Exists(destinationPath))
                 {
                     string existingData = await ReadJsonFileAsync(destinationPath);
@@ -1228,7 +1101,6 @@ namespace KASIR.Komponen
                 dataTable.Rows.Add("Start Shift Order", $"{startShift.ToString("yyyy-MM-dd HH:mm:ss")}");
                 dataTable.Rows.Add("Last Shift Order", $"{lastShift.ToString("yyyy-MM-dd HH:mm:ss")}");
 
-                //dataTable.Rows.Add("", "");
 
                 // Process the cart details
                 ProcessCartDetails(filteredTransactions, dataTable, "SOLD ITEMS");
@@ -1248,7 +1120,6 @@ namespace KASIR.Komponen
                 decimal totalRefundAmount = CalculateTotalRefund(filteredTransactions);
                 dataTable.Rows.Add("Total Refund Items", $"{totalRefundAmount:n0}");
 
-                //dataTable.Rows.Add("", "");
                 // Process the savebill details
                 ProcessCartDetails(transactionDataSaveBill, dataTable, "SAVEBILL/PENDING ITEMS");
 
@@ -1413,11 +1284,11 @@ namespace KASIR.Komponen
         {
             AddSeparatorRowBold(dataTable, text, dataGridView1);
             decimal groupedCartCarts = transactionData.data
-                .Where(t => t.discounted_price > 0) // Filter transactions with discounted_price > 0
-                .Sum(t => t.discounted_price); // Sum the discounted_price of each transaction
+                .Where(t => t.discounted_price > 0) 
+                .Sum(t => t.discounted_price); 
             dataTable.Rows.Add("Discount Per Carts", $"{groupedCartCarts:n0}");
             decimal groupedCartDetails = transactionData.data
-                .SelectMany(t => t.cart_details) // Flatten the cart details
+                .SelectMany(t => t.cart_details) 
                 .Where(cd => cd.discounted_price > 0) // Filter only items with discounted_price > 0
                 .Sum(cd => cd.discounted_price); // Sum the discounted_price of each cart detail
             dataTable.Rows.Add("Discount Per Items", $"{groupedCartDetails:n0}");

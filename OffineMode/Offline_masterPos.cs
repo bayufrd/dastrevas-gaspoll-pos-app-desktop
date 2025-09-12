@@ -2080,7 +2080,7 @@ namespace KASIR.OfflineMode
                         subTotalPrice = 0;
                         diskonID = 0;
 
-                        //Pajak Checker
+                        //==================Pajak Checker=================================
                         if (PajakHelper.TryGetPajak(out string pajakText))
                         {
                             Pajak.Visible = true;
@@ -2191,8 +2191,14 @@ namespace KASIR.OfflineMode
                             Pajak.Visible = true;
                             lblPajak.Text = string.Format("Rp. {0:n0},-", total * pajak / 100);
                             lblPajak.Visible = true;
-                            lblTotal1.Text = string.Format("Rp. {0:n0},-", total * (pajak+100) / 100);
-                            buttonPayment.Text = string.Format("Bayar Rp. {0:n0},-", total * (pajak + 100) / 100);
+
+                            int totalPajak = total*(pajak + 100) / 100;
+                            // Pembulatan ke atas ke kelipatan 500
+                            totalPajak = (int)(Math.Ceiling(totalPajak / 500.0) * 500);
+
+
+                            lblTotal1.Text = string.Format("Rp. {0:n0},-", totalPajak);
+                            buttonPayment.Text = string.Format("Bayar Rp. {0:n0},-", totalPajak);
                         }
                         else
                         {

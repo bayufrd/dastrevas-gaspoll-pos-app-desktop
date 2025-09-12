@@ -2694,24 +2694,37 @@ namespace KASIR.Printer
             //=========================Pajak Checker=============================\\
             if (PajakHelper.TryGetPajak(out string pajakText))
             {
-                int pajak = int.Parse(pajakText);
-                int totalPajak = datas.total;
-                totalPajak = totalPajak * (pajak + 100) / 100;
+                // Hitung Pajak
+                int pajakPersen = int.Parse(pajakText);
+                int totalSebelumPajak = datas.total;
 
-                //rubah Total
-                datas.total = totalPajak;
+                // Tambah pajak
+                int totalDenganPajak = totalSebelumPajak * (pajakPersen + 100) / 100;
+
+                // Simpan nilai sebelum pembulatan (untuk hitung PPN asli)
+                int totalSebelumPembulatan = totalDenganPajak;
 
                 //rubah total refund
                 int refundPajak = datas.total_refund;
-                refundPajak = refundPajak * (pajak + 100) / 100;
+                refundPajak = refundPajak * (pajakPersen + 100) / 100;
                 datas.total_refund = refundPajak;
 
-                // Rubah Kembalian
-                datas.customer_change = totalPajak - datas.customer_cash;
+                // Pembulatan ke atas kelipatan 500
+                int totalSetelahPembulatan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
+
+                // Update total & kembalian
+                datas.total = totalSetelahPembulatan;
+                datas.customer_change = totalSetelahPembulatan - datas.customer_cash;
+
+                // Hitung selisih pajak real
+                int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
+                int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) - nilaiPajak;
 
                 // Tambah Line PPN
-                strukText += FormatSimpleLine("PPN", string.Format("{0:n0}", pajak + "%")) + "\n";
+                strukText += FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0") + "\n");
 
+                // Tambah Line PB1 (setelah pembulatan)
+                strukText += FormatSimpleLine($"PB1:", nilaiPembulatanPB.ToString("N0") + "\n");
             }
             //=======================End Pajak Checker============================\\
 
@@ -3419,18 +3432,37 @@ cartDetail.discounts_is_percent.ToString() != "1"
             //=========================Pajak Checker=============================\\
             if (PajakHelper.TryGetPajak(out string pajakText))
             {
-                int pajak = int.Parse(pajakText);
-                int totalPajak = datas.total;
-                totalPajak = totalPajak * (pajak + 100) / 100;
-                datas.total = totalPajak;
+                // Hitung Pajak
+                int pajakPersen = int.Parse(pajakText);
+                int totalSebelumPajak = datas.total;
 
-                // Rubah Total
-                datas.customer_change = totalPajak - datas.customer_cash;
+                // Tambah pajak
+                int totalDenganPajak = totalSebelumPajak * (pajakPersen + 100) / 100;
+
+                // Simpan nilai sebelum pembulatan (untuk hitung PPN asli)
+                int totalSebelumPembulatan = totalDenganPajak;
+
+                // Pembulatan ke atas kelipatan 500
+                int totalSetelahPembulatan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
+
+                // Update total & kembalian
+                datas.total = totalSetelahPembulatan;
+                datas.customer_change = totalSetelahPembulatan - datas.customer_cash;
+
+                // Hitung selisih pajak real
+                int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
+                int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) -nilaiPajak;
 
                 // Tambah Line PPN
-                int pajakNominal = datas.total * datas.subtotal;
-                _ = strukBuilder.AppendFormat("{0}\n",
-                FormatSimpleLine("PPN:", $"{pajakNominal:n0}"));
+                _ = strukBuilder.AppendLine(
+                    FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0"))
+                );
+
+                // Tambah Line PB1 (setelah pembulatan)
+                _ = strukBuilder.AppendLine(
+                    FormatSimpleLine("PB1:", nilaiPembulatanPB.ToString("N0"))
+                );
+
             }
             //=======================End Pajak Checker============================\\
 
@@ -4321,14 +4353,36 @@ cartDetail.discounts_is_percent.ToString() != "1"
             //=========================Pajak Checker=============================\\
             if (PajakHelper.TryGetPajak(out string pajakText))
             {
-                int pajak = int.Parse(pajakText);
-                int totalPajak = datas.total;
-                totalPajak = totalPajak * (pajak + 100) / 100;
-                datas.total = totalPajak;
+
+                // Hitung Pajak
+                int pajakPersen = int.Parse(pajakText);
+                int totalSebelumPajak = datas.total;
+
+                // Tambah pajak
+                int totalDenganPajak = totalSebelumPajak * (pajakPersen + 100) / 100;
+
+                // Simpan nilai sebelum pembulatan (untuk hitung PPN asli)
+                int totalSebelumPembulatan = totalDenganPajak;
+
+                // Pembulatan ke atas kelipatan 500
+                int totalSetelahPembulatan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
+
+                // Update total & kembalian
+                datas.total = totalSetelahPembulatan;
+
+                // Hitung selisih pajak real
+                int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
+                int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) - nilaiPajak;
 
                 // Tambah Line PPN
-                _ = strukBuilder.AppendFormat("{0}\n",
-                FormatSimpleLine("PPN:", $"{pajak}%"));
+                _ = strukBuilder.AppendLine(
+                    FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0"))
+                );
+
+                // Tambah Line PB1 (setelah pembulatan)
+                _ = strukBuilder.AppendLine(
+                    FormatSimpleLine("PB1:", nilaiPembulatanPB.ToString("N0"))
+                );
             }
             //=======================End Pajak Checker============================\\
 
@@ -5951,17 +6005,37 @@ cartDetail.discounts_is_percent.ToString() != "1"
             //=========================Pajak Checker=============================\\
             if (PajakHelper.TryGetPajak(out string pajakText))
             {
-                int pajak = int.Parse(pajakText);
-                int totalPajak = datas.data.total;
-                totalPajak = totalPajak * (pajak + 100) / 100;
-                datas.data.total = totalPajak;
+                // Hitung Pajak
+                int pajakPersen = int.Parse(pajakText);
+                int totalSebelumPajak = datas.data.total;
 
-                // Rubah Total
-                datas.data.customer_change = totalPajak - datas.data.customer_cash;
+                // Tambah pajak
+                int totalDenganPajak = totalSebelumPajak * (pajakPersen + 100) / 100;
+
+                // Simpan nilai sebelum pembulatan (untuk hitung PPN asli)
+                int totalSebelumPembulatan = totalDenganPajak;
+
+                // Pembulatan ke atas kelipatan 500
+                int totalSetelahPembulatan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
+
+                // Update total & kembalian
+                datas.data.total = totalSetelahPembulatan;
+                datas.data.customer_change = totalSetelahPembulatan - datas.data.customer_cash;
+
+                // Hitung selisih pajak real
+                int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
+                int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) - nilaiPajak;
 
                 // Tambah Line PPN
-                _ = strukBuilder.AppendFormat("{0}\n",
-                FormatSimpleLine("PPN:", $"{pajak}%"));
+                _ = strukBuilder.AppendLine(
+                    FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0"))
+                );
+
+                // Tambah Line PB1 (setelah pembulatan)
+                _ = strukBuilder.AppendLine(
+                    FormatSimpleLine("PB1:", nilaiPembulatanPB.ToString("N0"))
+                );
+
             }
             //=======================End Pajak Checker============================\\
 
@@ -6034,7 +6108,6 @@ cartDetail.discounts_is_percent.ToString() != "1"
             //// Footer
             //byte[] bufferFooter = Encoding.UTF8.GetBytes("\n\n\n\n\n");
             //stream.Write(bufferFooter, 0, bufferFooter.Length);
-
         }
 
         private async Task PrintCheckerReceipt(

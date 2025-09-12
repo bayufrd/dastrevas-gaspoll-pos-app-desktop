@@ -17,6 +17,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="OffineMode\Whatsapp-Config.cs~RF231264.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="Image\0fa224138685e.png.ico" />
   </ItemGroup>
 

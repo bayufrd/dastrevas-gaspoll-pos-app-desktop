@@ -125,9 +125,9 @@ namespace KASIR.OffineMode
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                //MessageBox.Show($"Gagal mengambil logs: {ex.Message}");
+                NotifyHelper.Error($"Gagal mengambil logs: {ex.ToString()}");
             }
         }
 
@@ -171,8 +171,8 @@ namespace KASIR.OffineMode
                 }
                 else
                 {
-                    // Parsing timestamp
-                    if (DateTime.TryParse(log.Substring(0, 24), out DateTime timestamp))
+                    // Pastikan string cukup panjang
+                    if (log.Length >= 24 && DateTime.TryParse(log.Substring(0, 24), out DateTime timestamp))
                     {
                         string message = log.Substring(24).Trim();
                         if (!string.IsNullOrWhiteSpace(message))
@@ -186,6 +186,7 @@ namespace KASIR.OffineMode
                         formattedLogs.Add(log);
                     }
                 }
+
             }
 
             return formattedLogs;
@@ -455,6 +456,7 @@ namespace KASIR.OffineMode
                 UpdateUIBasedOnStatus(status);
                 _ = LoadQRCodeAsync();
                 _ = FetchLogsFromApi();
+                NotifyHelper.Success("Refresh whatsapp status");
             }
             catch (Exception ex)
             {

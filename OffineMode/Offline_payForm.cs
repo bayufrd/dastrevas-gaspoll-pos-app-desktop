@@ -88,6 +88,10 @@ namespace KASIR.OfflineMode
                 string totalTempPajakString = CleanInput(totalCart);
                 int totalPajak = int.Parse(totalTempPajakString);
                 totalPajak = totalPajak * (pajak + 100) / 100;
+
+                // Pembulatan ke atas ke kelipatan 500
+                totalPajak = (int)(Math.Ceiling(totalPajak / 500.0) * 500);
+
                 txtCash.Text = CleanInput(totalPajak.ToString());
             }
             //=======================End Pajak Checker============================\\

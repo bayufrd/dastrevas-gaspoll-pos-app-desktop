@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Channels;
 using KASIR.Helper;
 using KASIR.Komponen;
 using KASIR.Model;
@@ -13,6 +14,7 @@ using KASIR.Properties;
 using KASIR.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Polly.Caching;
 
 namespace KASIR.OfflineMode
 {
@@ -62,16 +64,13 @@ namespace KASIR.OfflineMode
             txtSeat.Text = seat;
             txtNama.Text = name;
             generateRandomFill();
-            string cleanedTtl1 = CleanInput(ttl1);
             loadFooterStruct();
             loadCountingStruct();
+            
+            isInitializing = true;
 
-            customePrice = int.Parse(cleanedTtl1);
-
-            txtJumlahPembayaran.Text = ttl1;
 
             btnSetPrice1.Text = ttl1;
-            SetButtonPrices(customePrice);
 
             cmbPayform.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbPayform.DrawMode = DrawMode.OwnerDrawVariable;
@@ -80,30 +79,140 @@ namespace KASIR.OfflineMode
             cmbPayform.ItemHeight = 25;
             LoadDataPaymentType();
 
-            txtCash.Text = CleanInput(totalCart);
-            //=========================Pajak Checker=============================\\
-            if (PajakHelper.TryGetPajak(out string pajakText))
-            {
-                int pajak = int.Parse(pajakText);
-                string totalTempPajakString = CleanInput(totalCart);
-                int totalPajak = int.Parse(totalTempPajakString);
-                totalPajak = totalPajak * (pajak + 100) / 100;
+            //txtJumlahPembayaran.Text = txtCash.Text;
 
-                // Pembulatan ke atas ke kelipatan 500
-                totalPajak = (int)(Math.Ceiling(totalPajak / 500.0) * 500);
+            string cleanedTtl1 = CleanInput(ttl1);
 
-                txtCash.Text = CleanInput(totalPajak.ToString());
-            }
-            //=======================End Pajak Checker============================\\
+            customePrice = int.Parse(cleanedTtl1);
+            SetButtonPrices(customePrice);
+
+            int val = int.Parse(CleanInput(totalCart));
+            txtCash.Text = val.ToString("#,0");
+            txtJumlahPembayaran.Text = val.ToString("#,0");
+
+            // Set awal nilai (pajak dihitung tetapi pembulatan hanya diterapkan setelah tipe pembayaran terpilih)
 
             panel8.Visible = false;
             panel13.Visible = false;
             panel14.Visible = false;
             btnDataMember.Visible = false;
             lblPoint.Visible = false;
+            
 
             txtSeat.KeyPress += txtNumberOnly_KeyPress;
+            cmbPayform.SelectedIndex = 0;
+            cmbPayform_SelectedIndexChanged(cmbPayform, EventArgs.Empty);
+            lblKembalian.Text = "CHANGE\n\n0,00"; // paksa awal nol
+
+            isInitializing = false;
+
         }
+
+        /// <summary>
+        /// Hitung pajak + optional pembulatan ke kelipatan 500 jika kondisi terpenuhi,
+        /// lalu set txtCash, txtJumlahPembayaran, dan tombol preset harga.
+        /// </summary>
+        /// 
+        private bool isInitializing = true;
+
+        private void ApplyPajakAndSetAmounts(bool roundIfCash)
+        {
+            try
+            {
+                // Ambil pajak jika ada
+                if (!PajakHelper.TryGetPajak(out string pajakText))
+                {
+                    // tidak ada pajak: set langsung totalCart
+                    txtJumlahPembayaran.Text = CleanInput(totalCart);
+                    txtCash.Text = CleanInput(totalCart);
+                    SetButtonPrices(int.Parse(CleanInput(totalCart)));
+                    btnSetPrice1.Text = totalCart;
+                    return;
+                }
+
+                int pajak = 0;
+                if (!int.TryParse(pajakText, out pajak)) pajak = 0;
+
+                string totalTempPajakString = CleanInput(totalCart);
+                if (!int.TryParse(totalTempPajakString, out int totalPajak))
+                {
+                    totalPajak = 0;
+                }
+
+                // hitung pajak
+                totalPajak = totalPajak * (pajak + 100) / 100;
+
+                // cek apakah current payment type adalah cash (hanya berlaku jika roundIfCash==true)
+                bool isCurrentlyCash = false;
+                try
+                {
+                    // if cmbPayform not yet bound SelectedValue may be null; guard
+                    if (cmbPayform.InvokeRequired)
+                    {
+                        cmbPayform.Invoke(new Action(() =>
+                        {
+                            isCurrentlyCash = CheckIfPayformIsCash();
+                        }));
+                    }
+                    else
+                    {
+                        isCurrentlyCash = CheckIfPayformIsCash();
+                    }
+                }
+                catch
+                {
+                    isCurrentlyCash = false;
+                }
+
+                if (roundIfCash && isCurrentlyCash)
+                {
+                    // Pembulatan ke atas ke kelipatan 500
+                    totalPajak = (int)(Math.Ceiling(totalPajak / 500.0) * 500);
+                }
+
+                txtCash.Text = totalPajak.ToString("#,0");
+                txtJumlahPembayaran.Text = totalPajak.ToString("#,0");
+                btnSetPrice1.Text = totalPajak.ToString("#,0");
+                SetButtonPrices(totalPajak);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtil.LogError(ex, "ApplyPajakAndSetAmounts error: {ErrorMessage}", ex.Message);
+                // fallback: jangan crash, gunakan totalCart
+                txtCash.Text = CleanInput(totalCart);
+                txtJumlahPembayaran.Text = txtCash.Text;
+                SetButtonPrices(int.Parse(CleanInput(totalCart)));
+            }
+        }
+
+        private bool CheckIfPayformIsCash()
+        {
+            try
+            {
+                // jika value numeric 0 dipakai sebagai id tunai
+                if (cmbPayform.SelectedValue != null)
+                {
+                    var val = cmbPayform.SelectedValue.ToString();
+                    if (int.TryParse(val, out int idVal) && idVal == 0) return true;
+                }
+
+                // fallback: cek text contains 'tunai' (case-insensitive)
+                if (!string.IsNullOrEmpty(cmbPayform.Text) &&
+                    cmbPayform.Text.ToLower().Contains("tunai")) return true;
+
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Hitung pajak + optional pembulatan ke kelipatan 500 jika kondisi terpenuhi,
+        /// lalu set txtCash, txtJumlahPembayaran, dan tombol preset harga.
+        /// </summary>
+        /// 
         private string CleanInput(string input)
         {
             return Regex.Replace(input, "[^0-9]", "");
@@ -1213,6 +1322,8 @@ namespace KASIR.OfflineMode
 
         private async Task SendWhatsAppMessageWithAttachment(string phoneNumber, string message, string attachmentPath)
         {
+            string msg = "waLog";
+
             try
             {
                 string oldUrl = Properties.Settings.Default.BaseAddressProd.ToString();
@@ -1222,7 +1333,7 @@ namespace KASIR.OfflineMode
                 // Validasi file lampiran
                 if (!File.Exists(attachmentPath))
                 {
-                    LoggerUtil.LogWarning($"File lampiran tidak ditemukan: {attachmentPath}");
+                    msg += $"\nFile lampiran tidak ditemukan: {attachmentPath}";
                     return;
                 }
 
@@ -1263,8 +1374,8 @@ namespace KASIR.OfflineMode
                 );
 
                 // Logging sebelum mengirim
-                LoggerUtil.LogWarning($"Mencoba mengirim pesan ke {phoneNumber}");
-                LoggerUtil.LogWarning($"Panjang lampiran: {base64Image.Length} karakter");
+                msg += $"\nMencoba mengirim pesan ke {phoneNumber}";
+                msg += $"\nPanjang lampiran: {base64Image.Length} karakter";
 
                 var response = await _httpClient.PostAsync(
                     $"{BASEURL}/kirim-lampiran",
@@ -1279,34 +1390,34 @@ namespace KASIR.OfflineMode
                 {
                     var responseObject = JsonConvert.DeserializeObject<dynamic>(responseContent);
 
-                    LoggerUtil.LogWarning($"Struk berhasil dikirim ke {phoneNumber}");
-                    LoggerUtil.LogWarning($"Detail Pengiriman: {responseObject}");
+                    msg += $"\nStruk berhasil dikirim ke {phoneNumber}";
+                    msg += $"\nDetail Pengiriman: {responseObject}";
                 }
                 else
                 {
-                    LoggerUtil.LogWarning($"Gagal mengirim struk ke {phoneNumber}");
-                    LoggerUtil.LogWarning($"Error Response: {responseContent}");
+                    msg += $"\nGagal mengirim struk ke {phoneNumber}";
+                    msg += $"\nError Response: {responseContent}";
                 }
             }
             catch (OperationCanceledException)
             {
-                LoggerUtil.LogWarning("Waktu tunggu habis saat mengirim pesan");
+                msg += $"\nWaktu tunggu habis saat mengirim pesan";
             }
             catch (ArgumentException ex)
             {
-                LoggerUtil.LogError(ex, $"Kesalahan parameter: {ex.Message}");
+                LoggerUtil.LogError(ex, $"Kesalahan parameter: {ex.Message}\n\nLOG TILL END : {msg}");
             }
             catch (HttpRequestException ex)
             {
-                LoggerUtil.LogError(ex, $"Kesalahan jaringan saat mengirim pesan ke {phoneNumber}");
+                LoggerUtil.LogError(ex, $"Kesalahan jaringan saat mengirim pesan ke {phoneNumber}\n\nLOG TILL END : {msg}");
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex, $"Kesalahan saat mengirim pesan ke {phoneNumber}");
-
-                // Tambahkan detail error untuk debugging
-                LoggerUtil.LogError(ex, $"Detail Error: {ex.GetType().Name} - {ex.Message}");
-                LoggerUtil.LogError(ex, $"Stack Trace: {ex.StackTrace}");
+                LoggerUtil.LogError(ex, $"Kesalahan saat mengirim pesan ke {phoneNumber}\nDetail Error: {ex.GetType().Name} - {ex.Message}\nStack Trace: {ex.StackTrace}\n\nLOG TILL END : {msg}");
+            }
+            finally
+            {
+                LoggerUtil.LogError(new Exception($"WA_LOG : {msg}"), $"WA_LOG : -");
             }
         }
 
@@ -1358,7 +1469,6 @@ namespace KASIR.OfflineMode
                     }
                 }
 
-                LoggerUtil.LogWarning($"Gambar dikompres: {outputPath}");
                 return outputPath;
             }
             catch (Exception ex)
@@ -1400,7 +1510,6 @@ namespace KASIR.OfflineMode
                     }
                 }
 
-                LoggerUtil.LogWarning($"Lampiran tidak ditemukan di path: {defaultPath}");
                 return null;
             }
             catch (Exception ex)
@@ -1547,36 +1656,33 @@ namespace KASIR.OfflineMode
 
         private void txtCash_TextChanged(object sender, EventArgs e)
         {
-            if (txtCash.Text == "" || txtCash.Text == "0")
+            if (isInitializing) return;
+
+            if (string.IsNullOrWhiteSpace(txtCash.Text))
             {
+                lblKembalian.Text = "0";
                 return;
             }
 
-            decimal number;
             try
             {
-                number = decimal.Parse(txtCash.Text, NumberStyles.Currency);
-                int KembalianSekarang = int.Parse(CleanInput(txtCash.Text)) -
-                                        int.Parse(CleanInput(ttl2));
-                CultureInfo culture = new("id-ID");
+                int cash = int.Parse(CleanInput(txtCash.Text));
+                int mustPay = int.Parse(CleanInput(txtJumlahPembayaran.Text));
 
-                lblKembalian.Text = "CHANGES \n\n" + KembalianSekarang.ToString("C", culture);
+                int kembalian = cash - mustPay;
+
+                lblKembalian.Text = $"CHANGES\n\n{kembalian.ToString("#,0")}";
+
+                // format ulang input
+                txtCash.Text = cash.ToString("#,0");
+                txtCash.SelectionStart = txtCash.Text.Length;
             }
-            catch (FormatException)
+            catch
             {
-                NotifyHelper.Error("inputan hanya bisa Numeric");
-                if (txtCash.Text.Length > 0)
-                {
-                    txtCash.Text = txtCash.Text.Substring(0, txtCash.Text.Length - 1);
-                    txtCash.SelectionStart = txtCash.Text.Length;
-                }
-
-                return;
+                lblKembalian.Text = "0";
             }
-
-            txtCash.Text = number.ToString("#,#");
-            txtCash.SelectionStart = txtCash.Text.Length;
         }
+
         // Simpan settings ke file lokal
         public static void SaveMemberBonusSettings(int pointPercentage, string settingsFilePath)
         {
@@ -1853,6 +1959,11 @@ namespace KASIR.OfflineMode
                 lblPoint.Text = $"Total Point : {getMember.member_points:n0}";
                 membershipUsingPoint = 0;
             }
+        }
+
+        private void cmbPayform_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ApplyPajakAndSetAmounts(true);
         }
     }
 }

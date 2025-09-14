@@ -30,16 +30,22 @@ namespace KASIR.OffineMode
         /// </summary>
         private void InitializeComponent()
         {
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges1 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges2 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges3 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges4 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges5 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges6 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             panel1 = new Panel();
+            txtNotes = new Guna.UI2.WinForms.Guna2TextBox();
+            lblOutletData = new Guna.UI2.WinForms.Guna2TextBox();
+            label1 = new Label();
+            lblNama = new Guna.UI2.WinForms.Guna2TextBox();
             LogPanel = new Panel();
             label6 = new Label();
             LoggerMsg = new Panel();
-            panel5 = new Panel();
-            lblNama = new TextBox();
             label2 = new Label();
             label5 = new Label();
-            panel4 = new Panel();
-            txtNotes = new TextBox();
             panel2 = new Panel();
             lblNameCart = new IconButton();
             button1 = new IconButton();
@@ -48,18 +54,18 @@ namespace KASIR.OffineMode
             btnKeluar = new Button();
             panel1.SuspendLayout();
             LogPanel.SuspendLayout();
-            panel5.SuspendLayout();
-            panel4.SuspendLayout();
             panel2.SuspendLayout();
             SuspendLayout();
             // 
             // panel1
             // 
+            panel1.Controls.Add(txtNotes);
+            panel1.Controls.Add(lblOutletData);
+            panel1.Controls.Add(label1);
+            panel1.Controls.Add(lblNama);
             panel1.Controls.Add(LogPanel);
-            panel1.Controls.Add(panel5);
             panel1.Controls.Add(label2);
             panel1.Controls.Add(label5);
-            panel1.Controls.Add(panel4);
             panel1.Controls.Add(panel2);
             panel1.Controls.Add(btnSimpan);
             panel1.Controls.Add(btnKeluar);
@@ -68,6 +74,88 @@ namespace KASIR.OffineMode
             panel1.Name = "panel1";
             panel1.Size = new Size(600, 530);
             panel1.TabIndex = 0;
+            // 
+            // txtNotes
+            // 
+            txtNotes.AutoScroll = true;
+            txtNotes.BorderRadius = 8;
+            txtNotes.CustomizableEdges = customizableEdges1;
+            txtNotes.DefaultText = "";
+            txtNotes.DisabledState.BorderColor = Color.FromArgb(208, 208, 208);
+            txtNotes.DisabledState.FillColor = Color.FromArgb(226, 226, 226);
+            txtNotes.DisabledState.ForeColor = Color.FromArgb(138, 138, 138);
+            txtNotes.DisabledState.PlaceholderForeColor = Color.FromArgb(138, 138, 138);
+            txtNotes.FocusedState.BorderColor = Color.FromArgb(94, 148, 255);
+            txtNotes.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            txtNotes.ForeColor = Color.Black;
+            txtNotes.HoverState.BorderColor = Color.FromArgb(94, 148, 255);
+            txtNotes.Location = new Point(12, 220);
+            txtNotes.Name = "txtNotes";
+            txtNotes.PlaceholderForeColor = Color.Gray;
+            txtNotes.PlaceholderText = "Outlet data";
+            txtNotes.ScrollBars = ScrollBars.Vertical;
+            txtNotes.SelectedText = "";
+            txtNotes.ShadowDecoration.CustomizableEdges = customizableEdges2;
+            txtNotes.Size = new Size(576, 168);
+            txtNotes.TabIndex = 121;
+            txtNotes.TextAlign = HorizontalAlignment.Center;
+            // 
+            // lblOutletData
+            // 
+            lblOutletData.BorderRadius = 8;
+            lblOutletData.CustomizableEdges = customizableEdges3;
+            lblOutletData.DefaultText = "";
+            lblOutletData.DisabledState.BorderColor = Color.FromArgb(208, 208, 208);
+            lblOutletData.DisabledState.FillColor = Color.FromArgb(226, 226, 226);
+            lblOutletData.DisabledState.ForeColor = Color.FromArgb(138, 138, 138);
+            lblOutletData.DisabledState.PlaceholderForeColor = Color.FromArgb(138, 138, 138);
+            lblOutletData.FocusedState.BorderColor = Color.FromArgb(94, 148, 255);
+            lblOutletData.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            lblOutletData.ForeColor = Color.Black;
+            lblOutletData.HoverState.BorderColor = Color.FromArgb(94, 148, 255);
+            lblOutletData.Location = new Point(12, 157);
+            lblOutletData.Name = "lblOutletData";
+            lblOutletData.PlaceholderForeColor = Color.Gray;
+            lblOutletData.PlaceholderText = "Outlet data";
+            lblOutletData.ReadOnly = true;
+            lblOutletData.SelectedText = "";
+            lblOutletData.ShadowDecoration.CustomizableEdges = customizableEdges4;
+            lblOutletData.Size = new Size(576, 32);
+            lblOutletData.TabIndex = 120;
+            lblOutletData.TextAlign = HorizontalAlignment.Center;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            label1.Location = new Point(12, 139);
+            label1.Name = "label1";
+            label1.Size = new Size(46, 15);
+            label1.TabIndex = 119;
+            label1.Text = "Outlet :";
+            // 
+            // lblNama
+            // 
+            lblNama.BorderRadius = 8;
+            lblNama.CustomizableEdges = customizableEdges5;
+            lblNama.DefaultText = "";
+            lblNama.DisabledState.BorderColor = Color.FromArgb(208, 208, 208);
+            lblNama.DisabledState.FillColor = Color.FromArgb(226, 226, 226);
+            lblNama.DisabledState.ForeColor = Color.FromArgb(138, 138, 138);
+            lblNama.DisabledState.PlaceholderForeColor = Color.FromArgb(138, 138, 138);
+            lblNama.FocusedState.BorderColor = Color.FromArgb(94, 148, 255);
+            lblNama.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            lblNama.ForeColor = Color.Black;
+            lblNama.HoverState.BorderColor = Color.FromArgb(94, 148, 255);
+            lblNama.Location = new Point(12, 104);
+            lblNama.Name = "lblNama";
+            lblNama.PlaceholderForeColor = Color.Gray;
+            lblNama.PlaceholderText = "Nama Kasir";
+            lblNama.SelectedText = "";
+            lblNama.ShadowDecoration.CustomizableEdges = customizableEdges6;
+            lblNama.Size = new Size(576, 32);
+            lblNama.TabIndex = 118;
+            lblNama.TextAlign = HorizontalAlignment.Center;
             // 
             // LogPanel
             // 
@@ -101,30 +189,11 @@ namespace KASIR.OffineMode
             LoggerMsg.Size = new Size(560, 106);
             LoggerMsg.TabIndex = 0;
             // 
-            // panel5
-            // 
-            panel5.BorderStyle = BorderStyle.FixedSingle;
-            panel5.Controls.Add(lblNama);
-            panel5.Location = new Point(12, 105);
-            panel5.Name = "panel5";
-            panel5.Size = new Size(576, 36);
-            panel5.TabIndex = 17;
-            // 
-            // lblNama
-            // 
-            lblNama.BorderStyle = BorderStyle.None;
-            lblNama.Location = new Point(8, 3);
-            lblNama.Multiline = true;
-            lblNama.Name = "lblNama";
-            lblNama.PlaceholderText = "Dastrevas (AutoFill)";
-            lblNama.Size = new Size(559, 28);
-            lblNama.TabIndex = 1;
-            // 
             // label2
             // 
             label2.AutoSize = true;
             label2.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            label2.Location = new Point(9, 156);
+            label2.Location = new Point(8, 202);
             label2.Name = "label2";
             label2.Size = new Size(108, 15);
             label2.TabIndex = 16;
@@ -139,26 +208,6 @@ namespace KASIR.OffineMode
             label5.Size = new Size(73, 15);
             label5.TabIndex = 15;
             label5.Text = "Nama Kasir :";
-            // 
-            // panel4
-            // 
-            panel4.BorderStyle = BorderStyle.FixedSingle;
-            panel4.Controls.Add(txtNotes);
-            panel4.Location = new Point(12, 183);
-            panel4.Name = "panel4";
-            panel4.Size = new Size(576, 205);
-            panel4.TabIndex = 14;
-            // 
-            // txtNotes
-            // 
-            txtNotes.BorderStyle = BorderStyle.None;
-            txtNotes.Location = new Point(8, 7);
-            txtNotes.Multiline = true;
-            txtNotes.Name = "txtNotes";
-            txtNotes.PlaceholderText = "Deskripsi masalah";
-            txtNotes.Size = new Size(559, 182);
-            txtNotes.TabIndex = 2;
-            txtNotes.TextChanged += txtNotes_TextChanged;
             // 
             // panel2
             // 
@@ -280,10 +329,6 @@ namespace KASIR.OffineMode
             panel1.PerformLayout();
             LogPanel.ResumeLayout(false);
             LogPanel.PerformLayout();
-            panel5.ResumeLayout(false);
-            panel5.PerformLayout();
-            panel4.ResumeLayout(false);
-            panel4.PerformLayout();
             panel2.ResumeLayout(false);
             ResumeLayout(false);
         }
@@ -337,17 +382,17 @@ namespace KASIR.OffineMode
         private Button btnKeluar;
         private Button btnSimpan;
         private Panel panel2;
-        private Panel panel4;
         private Label label2;
         private Label label5;
-        private Panel panel5;
-        private TextBox txtNotes;
         private FontAwesome.Sharp.IconButton button1;
         private FontAwesome.Sharp.IconButton button2;
-        private TextBox lblNama;
         private IconButton lblNameCart;
         private Panel LogPanel;
         private Label label6;
         private Panel LoggerMsg;
+        private Guna.UI2.WinForms.Guna2TextBox lblNama;
+        private Guna.UI2.WinForms.Guna2TextBox txtNotes;
+        private Guna.UI2.WinForms.Guna2TextBox lblOutletData;
+        private Label label1;
     }
 }

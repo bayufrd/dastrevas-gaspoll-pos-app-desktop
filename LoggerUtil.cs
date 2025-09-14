@@ -46,6 +46,24 @@ namespace KASIR
             _ = SendLogAsync(payload);
 
         }
+        public static void LogInfo(string message)
+        {
+            if (_log == null) return;
+
+            var payload = CreatePayload(
+                new LogEvent(DateTimeOffset.Now, LogEventLevel.Information, null,
+                    new MessageTemplate(message, new List<MessageTemplateToken>()),
+                    new List<LogEventProperty>()),
+                "WA_LOG"
+            );
+
+            // override level jadi "INFO" karena backend tidak support "INFORMATION"
+            payload.LogLevel = "WARN";
+
+            _log.Information(message);
+
+            _ = SendLogAsync(payload);
+        }
 
         public static void LogPrivateMethod(string methodName)
         {

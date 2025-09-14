@@ -27,8 +27,12 @@ namespace KASIR.Helper
         int shiftnumber;
         DateTime mulaishift, akhirshift;
         public bool IsBackgroundOperation { get; set; } = false;
+        private static readonly SemaphoreSlim _fileLock = new SemaphoreSlim(1, 1);
+
         public async Task SyncDataTransactions(bool isBackground = false)
         {
+            await _fileLock.WaitAsync();
+
             try
             {
                 if (TransactionSync.IsSyncing) // Check if sync is already in progress using the shared manager
@@ -69,12 +73,12 @@ namespace KASIR.Helper
 
                     if (File.Exists(saveBillDataPath))
                     {
-                        SyncSaveBillData(saveBillDataPath, saveBillDataPathClone, apiUrl);
+                        await SyncSaveBillData(saveBillDataPath, saveBillDataPathClone, apiUrl);
                     }
                     string expenditureDataPath = "DT-Cache\\Transaction\\expenditure.data";
                     if (File.Exists(expenditureDataPath))
                     {
-                        SyncExpenditureData(expenditureDataPath);
+                        await SyncExpenditureData(expenditureDataPath);
                     }
                     else
                     {
@@ -84,7 +88,7 @@ namespace KASIR.Helper
                     string shiftDataPath = "DT-Cache\\Transaction\\shiftData.data";
                     if (File.Exists(shiftDataPath))
                     {
-                        SyncShiftData(shiftDataPath);
+                        await SyncShiftData(shiftDataPath);
                     }
                     else
                     {
@@ -94,7 +98,7 @@ namespace KASIR.Helper
                     string membershipDataPath = "DT-Cache\\Transaction\\membershipSyncPoint.data";
                     if (File.Exists(membershipDataPath))
                     {
-                        SyncmembershipData(membershipDataPath);
+                        await SyncmembershipData(membershipDataPath);
                     }
                     else
                     {
@@ -125,7 +129,11 @@ namespace KASIR.Helper
                         try { ClearCacheData(destinationPath); }
                         catch (Exception ex) { LoggerUtil.LogError(ex, "Failed to delete empty file: {ErrorMessage}", ex.Message); }
 
-                        File.WriteAllText(destinationPath, "{\"data\":[]}");
+                        using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                        using (var writer = new StreamWriter(fs))
+                        {
+                            writer.Write("{\"data\":[]}");
+                        }
                         transactions = new JArray();
                         data["data"] = transactions;
                         return;
@@ -152,11 +160,8 @@ namespace KASIR.Helper
 
                         ProcessSuccessfulSync(destinationPath, folderCombine);
 
-                        // Notify main form that sync was successful
                         SyncCompleted?.Invoke();
-                        // Update only the transactions we tracked for this sync operation
                         SyncSpecificTransactions(filePath, transactionIdsBeingSynced);
-                        //SyncSuccess(filePath);
                     }
                     else
                     {
@@ -167,6 +172,7 @@ namespace KASIR.Helper
                 {
 
                     TransactionSync.EndSync();
+                    _fileLock.Release();
                 }
             }
             catch (Exception ex)
@@ -176,27 +182,42 @@ namespace KASIR.Helper
         }
         private void ClearCacheData(string destinationPath)
         {
-            try
-            {
-                if (File.Exists(destinationPath))
-                {
-                    string currentContent = File.ReadAllText(destinationPath);
+            const int maxRetries = 3;
+            const int retryDelay = 200;
 
-                    if (string.IsNullOrWhiteSpace(currentContent) || currentContent != "{\"data\":[]}")
-                    {
-                        File.WriteAllText(destinationPath, "{\"data\":[]}");
-                    }
-                }
-                else
-                {
-                    File.WriteAllText(destinationPath, "{\"data\":[]}");
-                }
-            }
-            catch (Exception ex)
+            for (int attempt = 0; attempt < maxRetries; attempt++)
             {
-                LoggerUtil.LogError(ex, "An error occurred while clearing cache data: {ErrorMessage}", ex.Message);
+                try
+                {
+                    if (File.Exists(destinationPath))
+                    {
+                        using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                        using (var writer = new StreamWriter(fs))
+                        {
+                            writer.Write("{\"data\":[]}");
+                        }
+                    }
+                    else
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+
+                        using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                        using (var writer = new StreamWriter(fs))
+                        {
+                            writer.Write("{\"data\":[]}");
+                        }
+                    }
+                    return;
+                }
+                catch (IOException ex)
+                {
+                    LoggerUtil.LogWarning($"[Retry {attempt + 1}/{maxRetries}] ClearCacheData gagal: {ex.Message}");
+                    if (attempt == maxRetries - 1) throw;
+                    Thread.Sleep(retryDelay);
+                }
             }
         }
+
 
         public async Task SyncmembershipData(string membershipPathFile)
         {
@@ -498,7 +519,6 @@ namespace KASIR.Helper
         {
             try
             {
-                // Hanya simpan data yang belum tersinkronisasi
                 var unsyncedMemberships = memberships
                     .Where(m => m.is_sync != 1)
                     .ToList();
@@ -509,7 +529,11 @@ namespace KASIR.Helper
                 };
 
                 string json = JsonConvert.SerializeObject(membershipData, Formatting.Indented);
-                File.WriteAllText(membershipPathFile, json);
+                using (var fs = new FileStream(membershipPathFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(json);
+                }
             }
             catch (Exception ex)
             {
@@ -527,7 +551,11 @@ namespace KASIR.Helper
                 };
 
                 string json = JsonConvert.SerializeObject(ShiftData, Formatting.Indented);
-                File.WriteAllText(ShiftPathFile, json);
+                using (var fs = new FileStream(ShiftPathFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(json);
+                }
             }
             catch (Exception ex)
             {
@@ -538,19 +566,21 @@ namespace KASIR.Helper
         {
             try
             {
-                var expenditureData = new ExpenditureData
-                {
-                    data = expenditures
-                };
-
+                var expenditureData = new ExpenditureData { data = expenditures };
                 string json = JsonConvert.SerializeObject(expenditureData, Formatting.Indented);
-                File.WriteAllText(expenditurePathFile, json);
+
+                using (var fs = new FileStream(expenditurePathFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(json);
+                }
             }
             catch (Exception ex)
             {
                 LoggerUtil.LogError(ex, "Error saving expenditures to file: {ErrorMessage}", ex.Message);
             }
         }
+
 
         private void SyncSpecificTransactions(string filePath, List<string> transactionIds)
         {
@@ -585,7 +615,11 @@ namespace KASIR.Helper
                             }
                         }
                         // Save changes
-                        File.WriteAllText(filePath, data.ToString());
+                        using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                        using (var writer = new StreamWriter(fs))
+                        {
+                            writer.Write(data.ToString());
+                        }
                     }
 
                     // If we got here without exception, operation was successful
@@ -949,7 +983,11 @@ namespace KASIR.Helper
                     }
 
                     // Save updated file
-                    File.WriteAllText(destinationPath, existingDataJson.ToString());
+                    using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                    using (var writer = new StreamWriter(fs))
+                    {
+                        writer.Write(existingDataJson.ToString());
+                    }
                 }
                 else
                 {
@@ -1021,7 +1059,11 @@ namespace KASIR.Helper
                 }
 
                 // Save updated file
-                File.WriteAllText(destinationPath, existingDataJson.ToString());
+                using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(existingDataJson);
+                }
             }
             catch (Exception ex)
             {
@@ -1040,19 +1082,38 @@ namespace KASIR.Helper
 
         private void CopyFileWithStreams(string sourcePath, string destinationPath)
         {
-            using (FileStream sourceStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (FileStream destStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
+            const int maxRetries = 3;
+            const int retryDelay = 300;
+
+            for (int attempt = 0; attempt < maxRetries; attempt++)
             {
-                sourceStream.CopyTo(destStream);
+                try
+                {
+                    using (FileStream sourceStream = new FileStream(
+                        sourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (FileStream destStream = new FileStream(
+                        destinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                    {
+                        sourceStream.CopyTo(destStream);
+                    }
+                    return;
+                }
+                catch (IOException ex)
+                {
+                    LoggerUtil.LogWarning($"[Retry {attempt + 1}/{maxRetries}] Copy file gagal: {ex.Message}");
+                    if (attempt == maxRetries - 1) throw;
+                    Thread.Sleep(retryDelay);
+                }
             }
         }
-        public async void SyncSaveBillData(string saveBillDataPath, string saveBillDataPathClone, string apiUrl)
+
+        public async Task SyncSaveBillData(string saveBillDataPath, string saveBillDataPathClone, string apiUrl)
         {
             try
             {
                 // Copy saveBill data using streams
                 using (FileStream sourceStream = new FileStream(saveBillDataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (FileStream destStream = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write))
+                using (FileStream destStream = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
                 {
                     await sourceStream.CopyToAsync(destStream);
                 }
@@ -1076,7 +1137,11 @@ namespace KASIR.Helper
                     }
 
                     // Tulis file kosong
-                    File.WriteAllText(saveBillDataPathClone, "{\"data\":[]}");
+                    using (var fs = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                    using (var writer = new StreamWriter(fs))
+                    {
+                        writer.Write("{\"data\":[]}");
+                    }
                     transactions = new JArray();
                     data["data"] = transactions;
                     return;
@@ -1167,7 +1232,11 @@ namespace KASIR.Helper
                             // Simpan perubahan hanya untuk transaksi yang berhasil disinkronkan
                         }
                     }
-                    File.WriteAllText(filePath, data.ToString());
+                    using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                    using (var writer = new StreamWriter(fs))
+                    {
+                        writer.Write(data.ToString());
+                    }
 
                 }
             }

@@ -2194,7 +2194,7 @@ namespace KASIR.OfflineMode
 
                             int totalPajak = total*(pajak + 100) / 100;
                             // Pembulatan ke atas ke kelipatan 500
-                            totalPajak = (int)(Math.Ceiling(totalPajak / 500.0) * 500);
+                            //totalPajak = (int)(Math.Ceiling(totalPajak / 500.0) * 500);
 
 
                             lblTotal1.Text = string.Format("Rp. {0:n0},-", totalPajak);

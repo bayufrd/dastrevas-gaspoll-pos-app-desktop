@@ -2712,19 +2712,50 @@ namespace KASIR.Printer
                 // Pembulatan ke atas kelipatan 500
                 int totalSetelahPembulatan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
 
-                // Update total & kembalian
-                datas.total = totalSetelahPembulatan;
-                datas.customer_change = totalSetelahPembulatan - datas.customer_cash;
+                //// Update total & kembalian
+                //datas.total = totalSetelahPembulatan;
+                //datas.customer_change = totalSetelahPembulatan - datas.customer_cash;
+
+                //// Hitung selisih pajak real
+                //int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
+                //int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) - nilaiPajak;
+
+                //// Tambah Line PPN
+                //strukText += FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0") + "\n");
+
+                //// Tambah Line PB1 (setelah pembulatan)
+                //strukText += FormatSimpleLine($"PB1:", nilaiPembulatanPB.ToString("N0") + "\n");
+
+
+
 
                 // Hitung selisih pajak real
                 int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
                 int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) - nilaiPajak;
 
+
                 // Tambah Line PPN
                 strukText += FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0") + "\n");
 
-                // Tambah Line PB1 (setelah pembulatan)
-                strukText += FormatSimpleLine($"PB1:", nilaiPembulatanPB.ToString("N0") + "\n");
+
+                // Tambah Line Subtotal+PPN
+                strukText += FormatSimpleLine($"Subotal+PPN:", totalDenganPajak.ToString("N0") + "\n");
+
+
+                // Update total & kembalian
+                if (datas.payment_type.ToString() == "Tunai")
+                {
+                    datas.total = totalSetelahPembulatan;
+                    datas.customer_change = totalSetelahPembulatan - datas.customer_cash;
+
+                    // Tambah Line PB1 (setelah pembulatan)
+                    strukText += FormatSimpleLine("Donasi:", nilaiPembulatanPB.ToString("N0") + "\n");
+                }
+                else
+                {
+                    datas.total = totalSebelumPembulatan;
+                    datas.customer_change = totalSebelumPembulatan - datas.customer_cash;
+                }
             }
             //=======================End Pajak Checker============================\\
 
@@ -3445,23 +3476,40 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 // Pembulatan ke atas kelipatan 500
                 int totalSetelahPembulatan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
 
-                // Update total & kembalian
-                datas.total = totalSetelahPembulatan;
-                datas.customer_change = totalSetelahPembulatan - datas.customer_cash;
+
 
                 // Hitung selisih pajak real
                 int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
-                int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) -nilaiPajak;
+                int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) - nilaiPajak;
+
 
                 // Tambah Line PPN
                 _ = strukBuilder.AppendLine(
                     FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0"))
                 );
 
-                // Tambah Line PB1 (setelah pembulatan)
+                // Tambah Line Subtotal+PPN
                 _ = strukBuilder.AppendLine(
-                    FormatSimpleLine("PB1:", nilaiPembulatanPB.ToString("N0"))
+                    FormatSimpleLine($"Subotal+PPN:", totalDenganPajak.ToString("N0"))
                 );
+
+                // Update total & kembalian
+                if (datas.payment_type.ToString() == "Tunai")
+                {
+                    datas.total = totalSetelahPembulatan;
+                    datas.customer_change = totalSetelahPembulatan - datas.customer_cash;
+
+                    // Tambah Line PB1 (setelah pembulatan)
+                    _ = strukBuilder.AppendLine(
+                        FormatSimpleLine("Donasi:", nilaiPembulatanPB.ToString("N0"))
+                    );
+
+                }
+                else
+                {
+                    datas.total = totalSebelumPembulatan;
+                    datas.customer_change = totalSebelumPembulatan - datas.customer_cash;
+                }
 
             }
             //=======================End Pajak Checker============================\\
@@ -4367,22 +4415,40 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 // Pembulatan ke atas kelipatan 500
                 int totalSetelahPembulatan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
 
-                // Update total & kembalian
-                datas.total = totalSetelahPembulatan;
+
 
                 // Hitung selisih pajak real
                 int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
                 int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) - nilaiPajak;
+
 
                 // Tambah Line PPN
                 _ = strukBuilder.AppendLine(
                     FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0"))
                 );
 
-                // Tambah Line PB1 (setelah pembulatan)
+                // Tambah Line Subtotal+PPN
                 _ = strukBuilder.AppendLine(
-                    FormatSimpleLine("PB1:", nilaiPembulatanPB.ToString("N0"))
+                    FormatSimpleLine($"Subotal+PPN:", totalDenganPajak.ToString("N0"))
                 );
+
+                // Update total & kembalian
+                if (datas.payment_type.ToString() == "Tunai")
+                {
+                    datas.total = totalSetelahPembulatan;
+                    datas.customer_change = totalSetelahPembulatan - datas.customer_cash;
+
+                    // Tambah Line PB1 (setelah pembulatan)
+                    _ = strukBuilder.AppendLine(
+                        FormatSimpleLine("Donasi:", nilaiPembulatanPB.ToString("N0"))
+                    );
+
+                }
+                else
+                {
+                    datas.total = totalSebelumPembulatan;
+                    datas.customer_change = totalSebelumPembulatan - datas.customer_cash;
+                }
             }
             //=======================End Pajak Checker============================\\
 
@@ -5802,12 +5868,16 @@ cartDetail.discounts_is_percent.ToString() != "1"
         private async Task<Stream> EstablishPrinterConnection(string printerMac, int maxRetries = 3, int delayMs = 2000)
         {
             if (string.IsNullOrWhiteSpace(printerMac))
+            {
                 throw new ArgumentException("Printer MAC Address kosong.");
+            }
 
             // --- Normalisasi MAC Address ---
             string cleanedMac = printerMac.Replace(":", "").Replace("-", "").ToUpper();
             if (cleanedMac.Length != 12 || !System.Text.RegularExpressions.Regex.IsMatch(cleanedMac, "^[0-9A-F]+$"))
+            {
                 throw new FormatException($"Alamat Bluetooth tidak valid: {printerMac}");
+            }
 
             BluetoothAddress address = BluetoothAddress.Parse(cleanedMac);
             BluetoothDeviceInfo printer = new(address);
@@ -5824,29 +5894,34 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 }
             }
 
-            // Retry logic
+            // --- Retry logic ---
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
+                BluetoothClient? client = null;
                 try
                 {
-                    BluetoothClient client = new();
-                    BluetoothEndPoint endpoint = new(printer.DeviceAddress, BluetoothService.SerialPort);
+                    client = new BluetoothClient();
+                    var endpoint = new BluetoothEndPoint(printer.DeviceAddress, BluetoothService.SerialPort);
 
-                    await Task.Run(() => client.Connect(endpoint)); // Connect bisa blocking
+                    var connectTask = Task.Run(() => client.Connect(endpoint));
+                    if (await Task.WhenAny(connectTask, Task.Delay(8000)) != connectTask)
+                        throw new TimeoutException("Timeout saat connect ke printer.");
+
                     if (client.Connected)
                     {
                         LoggerUtil.LogWarning($"Bluetooth printer {printerMac} connected (attempt {attempt}).");
                         return client.GetStream();
                     }
                 }
-                catch (SocketException ex)
+                catch (Exception ex)
                 {
+                    client?.Dispose(); // kalau gagal, dispose langsung
+
                     LoggerUtil.LogWarning($"Attempt {attempt}/{maxRetries} gagal connect ke {printerMac}: {ex.Message}");
                     if (attempt == maxRetries)
-                        throw; // kalau sudah mentok, lempar error
+                        throw;
                 }
 
-                // Delay sebelum coba lagi
                 await Task.Delay(delayMs);
             }
 
@@ -6018,23 +6093,40 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 // Pembulatan ke atas kelipatan 500
                 int totalSetelahPembulatan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
 
-                // Update total & kembalian
-                datas.data.total = totalSetelahPembulatan;
-                datas.data.customer_change = totalSetelahPembulatan - datas.data.customer_cash;
+
 
                 // Hitung selisih pajak real
                 int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
                 int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) - nilaiPajak;
+
 
                 // Tambah Line PPN
                 _ = strukBuilder.AppendLine(
                     FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0"))
                 );
 
-                // Tambah Line PB1 (setelah pembulatan)
+                // Tambah Line Subtotal+PPN
                 _ = strukBuilder.AppendLine(
-                    FormatSimpleLine("PB1:", nilaiPembulatanPB.ToString("N0"))
+                    FormatSimpleLine($"Subotal+PPN:", totalDenganPajak.ToString("N0"))
                 );
+
+                // Update total & kembalian
+                if (datas.data.payment_type.ToString() == "Tunai")
+                {
+                    datas.data.total = totalSetelahPembulatan;
+                    datas.data.customer_change = totalSetelahPembulatan - datas.data.customer_cash;
+
+                    // Tambah Line PB1 (setelah pembulatan)
+                    _ = strukBuilder.AppendLine(
+                        FormatSimpleLine("Donasi:", nilaiPembulatanPB.ToString("N0"))
+                    );
+
+                }
+                else
+                {
+                    datas.data.total = totalSebelumPembulatan;
+                    datas.data.customer_change = totalSebelumPembulatan - datas.data.customer_cash;
+                }
 
             }
             //=======================End Pajak Checker============================\\

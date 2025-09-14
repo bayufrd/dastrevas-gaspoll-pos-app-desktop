@@ -15,15 +15,14 @@ namespace KASIR.OffineMode
         [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
         private static extern IntPtr CreateRoundRectRgn
        (
-           int nLeftRect,     // x-coordinate of upper-left corner
-           int nTopRect,      // y-coordinate of upper-left corner
-           int nRightRect,    // x-coordinate of lower-right corner
-           int nBottomRect,   // y-coordinate of lower-right corner
-           int nWidthEllipse, // height of ellipse
-           int nHeightEllipse // width of ellipse
+           int nLeftRect,     
+           int nTopRect,      
+           int nRightRect,    
+           int nBottomRect,   
+           int nWidthEllipse, 
+           int nHeightEllipse 
        );
 
-        //public bool KeluarButtonPrintReportShiftClicked { get; private set; }
         private readonly string baseOutlet;
         private readonly string BaseOutletName;
         private readonly string Version;
@@ -40,6 +39,7 @@ namespace KASIR.OffineMode
 
 
             DisplayLogInPanel(LoggerMsg);
+            loadDataOutlet();
             txtNotes.PlaceholderText = "Deskripsi Masalah?";
             txtNotes.PlaceholderText += "\nKronologi : ";
             txtNotes.PlaceholderText += "\nSaat Melakukan/Mengakses tombol : ";
@@ -47,6 +47,25 @@ namespace KASIR.OffineMode
             txtNotes.PlaceholderText += "\nSeharusnya yang terjadi : ";
             txtNotes.PlaceholderText +=
                 "\n\nMohon maaf atas ketidak nyamanannya dan \nTerimakasih, dengan support ini akan membantu agar lebih maju \ndan berkembang kedepannya. \n\nGaspoll Management. x Dastrevas";
+        }
+
+        private async void loadDataOutlet()
+        {
+            string outletName = "unknown";
+            string outletID = Settings.Default.BaseOutlet;
+            string cacheOutlet = $"DT-Cache\\DataOutlet{outletID}.data";
+            if (File.Exists(cacheOutlet))
+            {
+                string cacheData = await File.ReadAllTextAsync(cacheOutlet);
+                CartDataOutlet? dataOutlet = JsonConvert.DeserializeObject<CartDataOutlet>(cacheData);
+
+                if (dataOutlet?.data != null)
+                {
+                    outletName = dataOutlet.data.name;
+                }
+            }
+
+            lblOutletData.Text = $"ID : {outletID} , Outlet : {outletName}";
         }
         public async void DisplayLogInPanel(Panel logggerMsg)
         {
@@ -146,7 +165,6 @@ namespace KASIR.OffineMode
 
         private void button1_Click(object sender, EventArgs e)
         {
-            // KeluarButtonPrintReportShiftClicked = true;
             Close();
         }
 
@@ -196,6 +214,7 @@ namespace KASIR.OffineMode
             finally
             {
                 btnSimpan.Enabled = true;
+                Close();
             }
         }
 
@@ -273,7 +292,6 @@ namespace KASIR.OffineMode
                     if (response.IsSuccessStatusCode)
                     {
                         NotifyHelper.Success("Berhasil dikirim");
-                            Close(); // Close the payForm
                     }
                     else
                     {

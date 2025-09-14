@@ -326,6 +326,7 @@ namespace KASIR.OfflineMode
             cmbPayform.Name = "cmbPayform";
             cmbPayform.Size = new Size(568, 23);
             cmbPayform.TabIndex = 0;
+            cmbPayform.SelectedIndexChanged += cmbPayform_SelectedIndexChanged;
             // 
             // label6
             // 

@@ -1064,13 +1064,17 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                if (datas?.data == null || string.IsNullOrEmpty(datas?.data.member_phone_number))
+                if (datas?.data == null ||
+                    string.IsNullOrEmpty(datas?.data.member_phone_number.ToString()) ||
+                    string.IsNullOrEmpty(datas?.data.member_email.ToString()) ||
+                    string.IsNullOrEmpty(datas?.data.member_id.ToString()) ||
+                    string.IsNullOrEmpty(datas?.data.member_name.ToString()))
                 {
                     return;
                 }
                 // Cek apakah koneksi WhatsApp tersedia dan terhubung
-                var whatsappConfig = new Whatsapp_Config(false);
-                var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
+                //var whatsappConfig = new Whatsapp_Config(false);
+                //var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();
 
                 string phoneNumber = datas.data.member_phone_number;
                 string strukMessage = BuildStrukMessage(datas, cartDetails);
@@ -1079,61 +1083,14 @@ namespace KASIR.OfflineMode
                 //await SendWhatsAppMessage(phoneNumber, strukMessage);
                 await SendWhatsAppMessageWithAttachment(phoneNumber, strukMessage, qrCodePath);
 
-                // Cek kondisi untuk pengiriman pesan dengan logika yang lebih fleksibel
-                bool canSendWhatsApp = connectionStatus.Connected &&
-                                        datas?.data != null &&
-                                            // Prioritaskan nomor member
-                                            !string.IsNullOrEmpty(datas.data.member_phone_number)
-                                        &&
-                                        cartDetails != null &&
-                                        cartDetails.Any();
-                return;
-                if (canSendWhatsApp)
-                {
-                    // Pilih nomor telepon (prioritaskan nomor member, jika tidak ada gunakan nomor customer)
-
-                    // Tambahan validasi nomor telepon
-                    if (IsValidPhoneNumber(phoneNumber))
-                    {
-                        // Buat pesan struk
-
-
-                        await SendWhatsAppMessage(phoneNumber, strukMessage);
-                        //// Path QR Code dengan pencarian di beberapa lokasi
-                        //string qrCodePath = FindQRCodePath();
-
-                        //if (!string.IsNullOrEmpty(qrCodePath))
-                        //{
-                        //    // Kirim pesan WhatsApp dengan lampiran
-                        //    await SendWhatsAppMessageWithAttachment(phoneNumber, strukMessage, qrCodePath);
-                        //}
-                        //else
-                        //{
-                        //    LoggerUtil.LogWarning("Tidak dapat menemukan file QR Code");
-                        //}
-                    }
-                    else
-                    {
-                        LoggerUtil.LogWarning($"Nomor telepon tidak valid: {phoneNumber}");
-                    }
-                }
-                else
-                {
-                    LoggerUtil.LogWarning("Kondisi pengiriman WhatsApp tidak terpenuhi");
-
-                    // Log detail kondisi yang tidak terpenuhi
-                    if (!connectionStatus.Connected)
-                        LoggerUtil.LogWarning("Alasan: Koneksi WhatsApp tidak tersambung");
-
-                    if (datas?.data == null)
-                        LoggerUtil.LogWarning("Alasan: Data transaksi kosong");
-
-                    if (string.IsNullOrEmpty(datas?.data?.member_phone_number))
-                        LoggerUtil.LogWarning("Alasan: Nomor telepon kosong");
-
-                    if (cartDetails == null || !cartDetails.Any())
-                        LoggerUtil.LogWarning("Alasan: Keranjang kosong");
-                }
+                //// Cek kondisi untuk pengiriman pesan dengan logika yang lebih fleksibel
+                //bool canSendWhatsApp = connectionStatus.Connected &&
+                //                        datas?.data != null &&
+                //                            // Prioritaskan nomor member
+                //                            !string.IsNullOrEmpty(datas.data.member_phone_number)
+                //                        &&
+                //                        cartDetails != null &&
+                //                        cartDetails.Any();
             }
             catch (Exception ex)
             {
@@ -1330,6 +1287,7 @@ namespace KASIR.OfflineMode
 
                 string BASEURL = RemoveApiPrefix(oldUrl);
 
+
                 // Validasi file lampiran
                 if (!File.Exists(attachmentPath))
                 {
@@ -1340,7 +1298,7 @@ namespace KASIR.OfflineMode
                 // Bersihkan nomor telepon dari karakter non-digit
                 phoneNumber = new string(phoneNumber.Where(char.IsDigit).ToArray());
 
-                // Tambahkan kode negara jika tidak ada
+                // Tambahkan kode negara jika tidak ada 
                 if (!phoneNumber.StartsWith("62"))
                 {
                     phoneNumber = phoneNumber.StartsWith("0")
@@ -1376,22 +1334,22 @@ namespace KASIR.OfflineMode
                 // Logging sebelum mengirim
                 msg += $"\nMencoba mengirim pesan ke {phoneNumber}";
                 msg += $"\nPanjang lampiran: {base64Image.Length} karakter";
+                msg += $"\nBASE URL : {BASEURL}/kirim-lampiran";
 
                 var response = await _httpClient.PostAsync(
-                    $"{BASEURL}/kirim-lampiran",
+                    $"https://whatsapp.gaspollmanagementcenter.com/kirim-lampiran",
                     content,
                     cancellationTokenSource.Token
                 );
 
                 // Periksa response
-                var responseContent = await response.Content.ReadAsStringAsync();
+                string responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var responseObject = JsonConvert.DeserializeObject<dynamic>(responseContent);
 
                     msg += $"\nStruk berhasil dikirim ke {phoneNumber}";
-                    msg += $"\nDetail Pengiriman: {responseObject}";
+                    msg += $"\nDetail Pengiriman: {responseContent}";
                 }
                 else
                 {

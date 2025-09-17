@@ -5865,94 +5865,153 @@ cartDetail.discounts_is_percent.ToString() != "1"
             return File.Exists(PathFile) &&
                    (await File.ReadAllTextAsync(PathFile)).Trim() == "ON";
         }
-        private async Task<Stream> EstablishPrinterConnection(string printerMac, int maxRetries = 3, int delayMs = 2000)
+        //private async Task<Stream> EstablishPrinterConnection(string printerMac, int maxRetries = 3, int delayMs = 2000)
+        //{
+        //    if (string.IsNullOrWhiteSpace(printerMac))
+        //    {
+        //        throw new ArgumentException("Printer MAC Address kosong.");
+        //    }
+
+        //    // --- Normalisasi MAC Address ---
+        //    string cleanedMac = printerMac.Replace(":", "").Replace("-", "").ToUpper();
+        //    if (cleanedMac.Length != 12 || !System.Text.RegularExpressions.Regex.IsMatch(cleanedMac, "^[0-9A-F]+$"))
+        //    {
+        //        throw new FormatException($"Alamat Bluetooth tidak valid: {printerMac}");
+        //    }
+
+        //    BluetoothAddress address = BluetoothAddress.Parse(cleanedMac);
+        //    BluetoothDeviceInfo printer = new(address);
+
+        //    if (printer == null)
+        //        throw new Exception($"Printer {printerMac} tidak ditemukan.");
+
+        //    // Pastikan sudah paired
+        //    if (!printer.Authenticated)
+        //    {
+        //        if (!BluetoothSecurity.PairRequest(printer.DeviceAddress, "0000")) // PIN default 0000
+        //        {
+        //            throw new Exception($"Pairing gagal untuk printer {printerMac}. Pair manual di Windows Settings.");
+        //        }
+        //    }
+
+        //    // --- Retry logic ---
+        //    for (int attempt = 1; attempt <= maxRetries; attempt++)
+        //    {
+        //        BluetoothClient? client = null;
+        //        try
+        //        {
+        //            client = new BluetoothClient();
+        //            var endpoint = new BluetoothEndPoint(printer.DeviceAddress, BluetoothService.SerialPort);
+
+        //            var connectTask = Task.Run(() => client.Connect(endpoint));
+        //            if (await Task.WhenAny(connectTask, Task.Delay(8000)) != connectTask)
+        //                throw new TimeoutException("Timeout saat connect ke printer.");
+
+        //            if (client.Connected)
+        //            {
+        //                LoggerUtil.LogWarning($"Bluetooth printer {printerMac} connected (attempt {attempt}).");
+        //                return client.GetStream();
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            client?.Dispose(); // kalau gagal, dispose langsung
+
+        //            LoggerUtil.LogWarning($"Attempt {attempt}/{maxRetries} gagal connect ke {printerMac}: {ex.Message}");
+        //            if (attempt == maxRetries)
+        //                throw;
+        //        }
+
+        //        await Task.Delay(delayMs);
+        //    }
+
+        //    throw new Exception($"Gagal connect ke printer {printerMac} setelah {maxRetries} percobaan.");
+
+        //    /*
+        //    // --- Fallback ke SerialPort (opsional, aktifkan kalau perlu) ---
+        //    try
+        //    {
+        //        foreach (string portName in SerialPort.GetPortNames())
+        //        {
+        //            try
+        //            {
+        //                using (var serial = new SerialPort(portName, 9600))
+        //                {
+        //                    serial.Open();
+        //                    if (serial.IsOpen)
+        //                    {
+        //                        LoggerUtil.LogWarning($"Fallback: printer terhubung via {portName}");
+        //                        return serial.BaseStream;
+        //                    }
+        //                }
+        //            }
+        //            catch { }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        LoggerUtil.LogWarning($"Fallback SerialPort gagal: {ex.Message}");
+        //    }
+        //    */
+        //}
+
+        private async Task<Stream> EstablishPrinterConnection(
+    string printerMac, int maxRetries = 3, int delayMs = 2000)
         {
             if (string.IsNullOrWhiteSpace(printerMac))
-            {
                 throw new ArgumentException("Printer MAC Address kosong.");
-            }
 
-            // --- Normalisasi MAC Address ---
-            string cleanedMac = printerMac.Replace(":", "").Replace("-", "").ToUpper();
-            if (cleanedMac.Length != 12 || !System.Text.RegularExpressions.Regex.IsMatch(cleanedMac, "^[0-9A-F]+$"))
-            {
+            if (!IsBluetoothPrinter(printerMac))
                 throw new FormatException($"Alamat Bluetooth tidak valid: {printerMac}");
-            }
 
-            BluetoothAddress address = BluetoothAddress.Parse(cleanedMac);
+            BluetoothAddress address = BluetoothAddress.Parse(printerMac.Replace(":", "").Replace("-", ""));
             BluetoothDeviceInfo printer = new(address);
 
             if (printer == null)
                 throw new Exception($"Printer {printerMac} tidak ditemukan.");
 
-            // Pastikan sudah paired
             if (!printer.Authenticated)
             {
-                if (!BluetoothSecurity.PairRequest(printer.DeviceAddress, "0000")) // PIN default 0000
+                if (!BluetoothSecurity.PairRequest(printer.DeviceAddress, "0000"))
                 {
                     throw new Exception($"Pairing gagal untuk printer {printerMac}. Pair manual di Windows Settings.");
                 }
             }
 
-            // --- Retry logic ---
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                BluetoothClient? client = null;
+                BluetoothClient client = new();
                 try
                 {
-                    client = new BluetoothClient();
-                    var endpoint = new BluetoothEndPoint(printer.DeviceAddress, BluetoothService.SerialPort);
+                    BluetoothEndPoint endpoint = new(printer.DeviceAddress, BluetoothService.SerialPort);
 
-                    var connectTask = Task.Run(() => client.Connect(endpoint));
-                    if (await Task.WhenAny(connectTask, Task.Delay(8000)) != connectTask)
-                        throw new TimeoutException("Timeout saat connect ke printer.");
-
+                    await Task.Run(() => client.Connect(endpoint));
                     if (client.Connected)
                     {
-                        LoggerUtil.LogWarning($"Bluetooth printer {printerMac} connected (attempt {attempt}).");
-                        return client.GetStream();
+                        //LoggerUtil.LogWarning($"Bluetooth printer {printerMac} connected (attempt {attempt}).");
+                        return new BluetoothPrinterStream(client);
                     }
                 }
-                catch (Exception ex)
+                catch (SocketException ex)
                 {
-                    client?.Dispose(); // kalau gagal, dispose langsung
+                    LoggerUtil.LogWarning(
+                        $"Attempt {attempt}/{maxRetries} gagal connect ke {printerMac}: {ex.Message}");
+                    client.Dispose();
 
-                    LoggerUtil.LogWarning($"Attempt {attempt}/{maxRetries} gagal connect ke {printerMac}: {ex.Message}");
                     if (attempt == maxRetries)
                         throw;
                 }
+                catch
+                {
+                    client.Dispose();
+                    throw;
+                }
 
+                client.Dispose();
                 await Task.Delay(delayMs);
             }
 
             throw new Exception($"Gagal connect ke printer {printerMac} setelah {maxRetries} percobaan.");
-
-            /*
-            // --- Fallback ke SerialPort (opsional, aktifkan kalau perlu) ---
-            try
-            {
-                foreach (string portName in SerialPort.GetPortNames())
-                {
-                    try
-                    {
-                        using (var serial = new SerialPort(portName, 9600))
-                        {
-                            serial.Open();
-                            if (serial.IsOpen)
-                            {
-                                LoggerUtil.LogWarning($"Fallback: printer terhubung via {portName}");
-                                return serial.BaseStream;
-                            }
-                        }
-                    }
-                    catch { }
-                }
-            }
-            catch (Exception ex)
-            {
-                LoggerUtil.LogWarning($"Fallback SerialPort gagal: {ex.Message}");
-            }
-            */
         }
 
 

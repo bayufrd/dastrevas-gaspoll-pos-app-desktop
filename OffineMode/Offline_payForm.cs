@@ -1064,14 +1064,21 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                if (datas?.data == null ||
-                    string.IsNullOrEmpty(datas?.data.member_phone_number.ToString()) ||
-                    string.IsNullOrEmpty(datas?.data.member_email.ToString()) ||
-                    string.IsNullOrEmpty(datas?.data.member_id.ToString()) ||
-                    string.IsNullOrEmpty(datas?.data.member_name.ToString()))
+                if (datas?.data == null )
                 {
                     return;
                 }
+
+                var memberData = datas?.data;
+                if (memberData == null ||
+                    string.IsNullOrWhiteSpace(memberData.member_phone_number) ||
+                    string.IsNullOrWhiteSpace(memberData.member_email) ||
+                    memberData.member_id <= 0 ||
+                    string.IsNullOrWhiteSpace(memberData.member_name))
+                {
+                    return;
+                }
+
                 // Cek apakah koneksi WhatsApp tersedia dan terhubung
                 //var whatsappConfig = new Whatsapp_Config(false);
                 //var connectionStatus = await whatsappConfig.CheckConnectionStatusAsync();

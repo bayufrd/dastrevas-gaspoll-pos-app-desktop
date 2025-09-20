@@ -1109,54 +1109,39 @@ namespace KASIR.Helper
 
         public async Task SyncSaveBillData(string saveBillDataPath, string saveBillDataPathClone, string apiUrl)
         {
-            const int maxRetries = 3;
-            const int retryDelay = 300; // ms
-
-            await _fileLock.WaitAsync();
             try
             {
-                for (int attempt = 0; attempt < maxRetries; attempt++)
+                using (FileStream sourceStream = new FileStream(saveBillDataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (FileStream destStream = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
                 {
-                    try
-                    {
-                        // Copy saveBill data using streams (aman untuk concurrent read/write)
-                        using (FileStream sourceStream = new FileStream(
-                            saveBillDataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                        using (FileStream destStream = new FileStream(
-                            saveBillDataPathClone, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
-                        {
-                            await sourceStream.CopyToAsync(destStream);
-                        }
-
-                        break; // sukses keluar dari retry loop
-                    }
-                    catch (IOException ex) when (attempt < maxRetries - 1)
-                    {
-                        LoggerUtil.LogWarning(
-                            $"[Retry {attempt + 1}/{maxRetries}] Gagal mengakses file SaveBill: {ex.Message}");
-                        await Task.Delay(retryDelay);
-                    }
+                    await sourceStream.CopyToAsync(destStream);
                 }
-
                 SimplifyAndSaveData(saveBillDataPathClone);
 
-                // Parse dan perbaiki file JSON
                 JObject data = ParseAndRepairJsonFile(saveBillDataPathClone);
                 JArray transactions = GetTransactionsFromData(data);
 
                 if (transactions == null || !transactions.Any())
                 {
-                    ClearCacheData(saveBillDataPathClone);
+                    try
+                    {
+                        ClearCacheData(saveBillDataPathClone);
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggerUtil.LogError(ex, "Failed to delete empty SaveBill file: {ErrorMessage}", ex.Message);
+                    }
 
                     using (var fs = new FileStream(saveBillDataPathClone, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
                     using (var writer = new StreamWriter(fs))
                     {
                         writer.Write("{\"data\":[]}");
                     }
+                    transactions = new JArray();
+                    data["data"] = transactions;
                     return;
                 }
 
-                // Ambil daftar transaction_ref
                 List<string> transactionIdsBeingSynced = transactions
                     .Select(t => t["transaction_ref"]?.ToString())
                     .Where(tr => !string.IsNullOrEmpty(tr))
@@ -1167,27 +1152,48 @@ namespace KASIR.Helper
                 if (savebillSync.IsSuccessStatusCode)
                 {
                     LoggerUtil.LogWarning(
-                        $"Sync SaveBillSync Payload Size: {data.ToString().Length} bytes, Timestamp: {DateTime.Now}");
-
+                    $"Sync SaveBillSync Payload Size: {data.ToString().Length} bytes, Timestamp: {DateTime.Now}");
                     SyncSpecificTransactions(saveBillDataPath, transactionIdsBeingSynced);
 
-                    ClearCacheData(saveBillDataPathClone); // hapus file clone setelah berhasil
+                    try
+                    {
+                        ClearCacheData(saveBillDataPathClone);
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggerUtil.LogError(ex, "Failed to delete SaveBill files after sync: {ErrorMessage}", ex.Message);
+                    }
                 }
                 else
                 {
                     var responseBody = await savebillSync.Content.ReadAsStringAsync();
+                    LoggerUtil.LogWarning($"SaveBill Sync Failed. " +
+                        $"Status: {savebillSync.StatusCode}, " +
+                        $"Reason: {savebillSync.ReasonPhrase}, " +
+                        $"Response Body: {responseBody}");
                 }
+            }
+            catch (HttpRequestException ex)
+            {
+                LoggerUtil.LogError(ex,
+                    $"Network error during SaveBill sync: {ex.Message}",
+                    new
+                    {
+                        SaveBillDataPath = saveBillDataPath,
+                        ApiUrl = apiUrl
+                    });
             }
             catch (Exception ex)
             {
-                LoggerUtil.LogError(ex, "Unexpected error during SaveBill sync: {ErrorMessage}", ex.Message);
-            }
-            finally
-            {
-                _fileLock.Release();
+                LoggerUtil.LogError(ex,
+                    $"Unexpected error during SaveBill sync: {ex.Message}",
+                    new
+                    {
+                        SaveBillDataPath = saveBillDataPath,
+                        ApiUrl = apiUrl
+                    });
             }
         }
-
 
         public static readonly object FileLock = new object();
         public event Action SyncCompleted;  // Event untuk memberi tahu form utama bahwa sinkronisasi berhasil

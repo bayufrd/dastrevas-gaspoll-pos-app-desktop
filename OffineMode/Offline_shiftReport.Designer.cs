@@ -59,7 +59,6 @@ namespace KASIR.Komponen
             btnRiwayatShift = new Guna.UI2.WinForms.Guna2Button();
             btnCetakStruk = new Guna.UI2.WinForms.Guna2Button();
             btnPengeluaran = new Guna.UI2.WinForms.Guna2Button();
-            btnAddMenu = new Button();
             panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             panel1.SuspendLayout();
@@ -271,7 +270,6 @@ namespace KASIR.Komponen
             panel1.Controls.Add(btnRiwayatShift);
             panel1.Controls.Add(btnCetakStruk);
             panel1.Controls.Add(btnPengeluaran);
-            panel1.Controls.Add(btnAddMenu);
             panel1.Dock = DockStyle.Top;
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
@@ -364,21 +362,6 @@ namespace KASIR.Komponen
             btnPengeluaran.Text = "Tambah Pengeluaran";
             btnPengeluaran.Click += btnPengeluaran_Click;
             // 
-            // btnAddMenu
-            // 
-            btnAddMenu.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
-            btnAddMenu.AutoSize = true;
-            btnAddMenu.BackColor = Color.FromArgb(15, 90, 94);
-            btnAddMenu.FlatAppearance.BorderSize = 0;
-            btnAddMenu.FlatStyle = FlatStyle.Flat;
-            btnAddMenu.ForeColor = Color.White;
-            btnAddMenu.Location = new Point(1447, 23);
-            btnAddMenu.Name = "btnAddMenu";
-            btnAddMenu.Size = new Size(148, 29);
-            btnAddMenu.TabIndex = 11;
-            btnAddMenu.Text = "Tambah Menu";
-            btnAddMenu.UseVisualStyleBackColor = false;
-            // 
             // Offline_shiftReport
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -400,7 +383,6 @@ namespace KASIR.Komponen
         private Panel panel2;
         private Label label1;
         private Panel panel1;
-        private Button btnAddMenu;
         private DataGridView dataGridView1;
         private Label lblNotifikasi;
         private Label lblShiftSekarang;

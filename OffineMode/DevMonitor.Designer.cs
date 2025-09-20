@@ -39,7 +39,6 @@ namespace KASIR.OfflineMode
             textBox1 = new TextBox();
             label1 = new Label();
             panel1 = new Panel();
-            btnAddMenu = new Button();
             timer1 = new System.Windows.Forms.Timer(components);
             panel2.SuspendLayout();
             panel3.SuspendLayout();
@@ -120,27 +119,11 @@ namespace KASIR.OfflineMode
             // panel1
             // 
             panel1.BackColor = Color.WhiteSmoke;
-            panel1.Controls.Add(btnAddMenu);
             panel1.Dock = DockStyle.Top;
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
             panel1.Size = new Size(912, 70);
             panel1.TabIndex = 6;
-            // 
-            // btnAddMenu
-            // 
-            btnAddMenu.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
-            btnAddMenu.AutoSize = true;
-            btnAddMenu.BackColor = Color.FromArgb(15, 90, 94);
-            btnAddMenu.FlatAppearance.BorderSize = 0;
-            btnAddMenu.FlatStyle = FlatStyle.Flat;
-            btnAddMenu.ForeColor = Color.White;
-            btnAddMenu.Location = new Point(1447, 23);
-            btnAddMenu.Name = "btnAddMenu";
-            btnAddMenu.Size = new Size(148, 29);
-            btnAddMenu.TabIndex = 11;
-            btnAddMenu.Text = "Tambah Menu";
-            btnAddMenu.UseVisualStyleBackColor = false;
             // 
             // timer1
             // 
@@ -172,7 +155,6 @@ namespace KASIR.OfflineMode
         private Panel panel3;
         private PictureBox pictureBox1;
         private TextBox textBox1;
-        private Button btnAddMenu;
         private System.Windows.Forms.Timer timer1;
         private Panel panelComplaint;
         private Panel panelConfirm;

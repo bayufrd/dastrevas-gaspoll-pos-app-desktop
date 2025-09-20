@@ -127,7 +127,7 @@ namespace KASIR.OffineMode
             }
             catch (Exception ex)
             {
-                NotifyHelper.Error($"Gagal mengambil logs: {ex.ToString()}");
+                //NotifyHelper.Error($"Gagal mengambil logs: {ex.ToString()}");
             }
         }
 

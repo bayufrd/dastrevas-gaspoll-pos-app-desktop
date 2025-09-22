@@ -75,7 +75,6 @@ namespace KASIR.Komponen
             // Return the new "start_at" value
             return newStartAt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         }
-
         private async void btnCetakStruk_Click(object sender, EventArgs e)
         {
             try
@@ -419,14 +418,14 @@ namespace KASIR.Komponen
 
 
                 int discountsCarts = transactionData.data
-                    .Where(t => t.discounted_price > 0) // Filter transactions with discounted_price > 0
-                    .Sum(t => t.discounted_price); // Sum the discounted_price of each transaction
+                    .Where(t => t.discounted_price > 0)
+                    .Sum(t => t.discounted_price); 
 
 
                 int discountsDetails = transactionData.data
-                    .SelectMany(t => t.cart_details) // Flatten the cart details
-                    .Where(cd => cd.discounted_price > 0) // Filter only items with discounted_price > 0
-                    .Sum(cd => cd.discounted_price); // Sum the discounted_price of each cart detail
+                    .SelectMany(t => t.cart_details) 
+                    .Where(cd => cd.discounted_price > 0) 
+                    .Sum(cd => cd.discounted_price); 
 
                 int totalDiscounts = discountsCarts + discountsDetails;
 
@@ -712,33 +711,46 @@ namespace KASIR.Komponen
         {
             string shiftPath = "DT-Cache\\Transaction\\shiftData.data";
 
-            if (File.Exists(shiftPath))
+            // Pastikan file selalu ada dengan struktur default
+            EnsureFileExists(shiftPath);
+
+            try
             {
-                try
+                string existingData = File.ReadAllText(shiftPath);
+
+                // Tambahkan pengecekan null sebelum parsing
+                if (string.IsNullOrWhiteSpace(existingData))
                 {
-                    string existingData = File.ReadAllText(shiftPath);
-                    JObject? existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
-
-                    JArray? shiftDataArray = existingTransactions["data"] as JArray;
-
-                    if (shiftDataArray == null || shiftDataArray.Count == 0)
-                    {
-                        return 1; 
-                    }
-
-                    return shiftDataArray.Count + 1;
+                    LoggerUtil.LogWarning("Shift data file is empty. Returning default shift number.");
+                    return 1;
                 }
-                catch (Exception ex)
+
+                JObject? existingTransactions = JsonConvert.DeserializeObject<JObject>(existingData);
+
+                // Tambahkan pengecekan null untuk objek JSON
+                if (existingTransactions == null)
                 {
-                    LoggerUtil.LogError(ex, "Error occurred while reading or processing the shift data: {ErrorMessage}",
-                        ex.Message);
-                    return 1; 
+                    LoggerUtil.LogWarning("Unable to parse shift data JSON. Returning default shift number.");
+                    return 1;
                 }
+
+                JArray? shiftDataArray = existingTransactions["data"] as JArray;
+
+                if (shiftDataArray == null || shiftDataArray.Count == 0)
+                {
+                    return 1;
+                }
+
+                return shiftDataArray.Count + 1;
             }
-
-            LoggerUtil.LogError(null, "Shift data file not found, using default shift number 1.");
-            return 1;
+            catch (Exception ex)
+            {
+                // Log detail kesalahan
+                LoggerUtil.LogError(ex, "Error occurred while reading or processing the shift data: {ErrorMessage}", ex.Message);
+                return 1;
+            }
         }
+
         public async Task ArchiveShiftData(string sourceFilePath, string archiveDirectory, int maxShifts = 3)
         {
             if (!Directory.Exists(archiveDirectory))
@@ -1170,7 +1182,8 @@ namespace KASIR.Komponen
                 decimal totalMemberUsePoints = CalculateTotalMemberUsePoints(filteredTransactions.data);
 
                 AddSeparatorRowBold(dataTable, "GRAND TOTAL", dataGridView1);
-                grandTotal -= totalRefundAmount;
+                //grandTotal -= totalRefundAmount;
+                totalProcessedCart -= totalRefundAmount;
                 totalProcessedCart -= totalExpenditureItems;
                 totalProcessedCart -= totalMemberUsePoints;
                 dataTable.Rows.Add("Total Transactions", $"{totalProcessedCart:n0}");

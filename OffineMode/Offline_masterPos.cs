@@ -476,7 +476,7 @@ namespace KASIR.OfflineMode
             using (Offline_addCartForm Offline_addCartForm =
                    new(menu.id.ToString(), menu.name, selectedServingTypeallItems))
             {
-                QuestionHelper c = new(null,null,null,null);
+                QuestionHelper c = new(null, null, null, null);
                 Form background = c.CreateOverlayForm();
 
                 Offline_addCartForm.Owner = background;
@@ -1166,7 +1166,7 @@ namespace KASIR.OfflineMode
 
                         pictureBox.Click += async (sender, e) =>
                         {
-                            
+
                             // Create the addCartForm on the UI thread
                             using (Offline_addCartForm Offline_addCartForm = new(menu.id.ToString(),
                                        menu.name, selectedServingTypeallItems))
@@ -2192,7 +2192,7 @@ namespace KASIR.OfflineMode
                             lblPajak.Text = string.Format("Rp. {0:n0},-", total * pajak / 100);
                             lblPajak.Visible = true;
 
-                            int totalPajak = total*(pajak + 100) / 100;
+                            int totalPajak = total * (pajak + 100) / 100;
                             // Pembulatan ke atas ke kelipatan 500
                             //totalPajak = (int)(Math.Ceiling(totalPajak / 500.0) * 500);
 
@@ -3508,5 +3508,9 @@ namespace KASIR.OfflineMode
             }
         }
 
+        private void Offline_masterPos_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }

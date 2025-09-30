@@ -309,75 +309,95 @@ namespace KASIR.Network
             try
             {
                 HttpResponseMessage? response = await combinedPolicy.ExecuteAsync(requestFunc);
-                //response.EnsureSuccessStatusCode();
+                //response.EnsureSuccessStatusCode();  // Uncomment jika ingin auto-throw untuk non-2xx
                 return response;
             }
             catch (HttpRequestException ex)
             {
-                LoggerUtil.LogError(ex, "Terjadi kesalahan jaringan: {ErrorMessage}", ex.Message);
-                throw; // rethrow the exception to maintain the original behavior
+                // MODIFIED: Bedakan client-side vs server-side
+                if (ex.StatusCode.HasValue && ex.StatusCode.Value >= HttpStatusCode.InternalServerError)  // 5xx: Critical, log ke server
+                {
+                    LoggerUtil.LogError(ex, $"Kesalahan server (5xx): {ex.Message}", ex.Message);
+                    NotifyHelper.Error($"Kesalahan pada server: {ex.Message}. Hubungi admin jika berlanjut.");
+                }
+                else  // 4xx atau network error (client-side): Hanya notify, tidak log ke server
+                {
+                    // Contoh 404, 400, DNS error, dll.
+                    NotifyHelper.Error("Masalah koneksi atau data tidak ditemukan. Periksa internet dan coba lagi.");
+                }
+                throw; // Rethrow agar caller bisa handle (misalnya fallback offline)
             }
             catch (TaskCanceledException ex)
             {
-                // Handle TaskCanceledException, e.g., notify the user
-
+                // MODIFIED: Hanya notify user, tidak log ke server (clean log)
                 if (ex.CancellationToken.IsCancellationRequested)
                 {
-                    LoggerUtil.LogError(ex,
-                        "Operasi dibatalkan, ada yang salah saat penginputan: {ErrorMessage} - Canceled", ex.Message);
+                    // Pembatalan manual (misalnya user cancel button)
+                    NotifyHelper.Error("Operasi dibatalkan. Silakan coba lagi jika diperlukan.");
                 }
                 else
                 {
-                    //NotifyHelper.Error("Waktu koneksi berakhir, telah dicoba sebanyak 3x. Silakan periksa koneksi internet Anda dan coba lagi.", "Timeout Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    LoggerUtil.LogError(ex,
-                        "Waktu koneksi berakhir, telah dicoba sebanyak 3x: {ErrorMessage} - Timeout", ex.Message);
+                    // Timeout (waktu habis setelah retry Polly)
+                    NotifyHelper.Error("Koneksi timeout setelah 5 menit. Periksa internet Anda dan coba lagi.");
                 }
-
-                throw; // rethrow the exception to maintain the original behavior
+                throw; // Rethrow untuk propagate ke caller
             }
             catch (Exception ex)
             {
-                if (ex is HttpRequestException &&
-                    ((HttpRequestException)ex).StatusCode == HttpStatusCode.InternalServerError)
+                // MODIFIED: Handle unexpected/critical (termasuk 500 jika bukan HttpRequestException)
+                bool isServerError = ex is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.InternalServerError;
+
+                if (isServerError)
                 {
+                    // Critical: Log ke server DAN notify user
+                    LoggerUtil.LogError(ex, $"Kesalahan server internal (500): {ex.Message}", ex.Message);
+                    NotifyHelper.Error("Terjadi kesalahan pada server. Silakan coba lagi.");
 
+                    // MODIFIED: Uncomment dan perbaiki dialog retry untuk UX lebih baik (opsional, tapi recommended)
                     //---------------- Question Begin -----------------\\
-                    string titleQuest = "Kesalahan Jaringan";
-                    string msgQuest = "Terjadi kesalahan pada server. Apakah anda ingin mencoba lagi? ";
-                    string cancelQuest = "Batal";
-                    string okQuest = "Coba Lagi";
+                    //string titleQuest = "Kesalahan Server";
+                    //string msgQuest = "Terjadi kesalahan pada server (500). Apakah Anda ingin mencoba lagi?";
+                    //string cancelQuest = "Batal";
+                    //string okQuest = "Coba Lagi";
 
-                    QuestionHelper c = new(titleQuest, msgQuest, cancelQuest, okQuest);
-                    Form background = c.CreateOverlayForm();
+                    //QuestionHelper c = new(titleQuest, msgQuest, cancelQuest, okQuest);
+                    //Form background = c.CreateOverlayForm();
+                    //c.Owner = background;
+                    //background.Show();
+                    //DialogResult dialogResult = c.ShowDialog();
 
-                    c.Owner = background;
+                    //if (dialogResult == DialogResult.OK)
+                    //{
+                    //    try
+                    //    {
+                    //        // Retry otomatis via Polly
+                    //        HttpResponseMessage? response = await combinedPolicy.ExecuteAsync(requestFunc);
+                    //        background.Dispose();
+                    //        return response;  // Sukses retry, return response
+                    //    }
+                    //    catch (Exception retryEx)
+                    //    {
+                    //        // Retry gagal: Log dan throw
+                    //        LoggerUtil.LogError(retryEx, "Retry attempt setelah dialog gagal: {Message}", retryEx.Message);
+                    //        background.Dispose();
+                    //        throw;
+                    //    }
+                    //}
 
-                    background.Show();
+                    //background.Dispose();
+                    //--------------- Question End -------------------\\
 
-                    DialogResult dialogResult = c.ShowDialog();
-                    if (dialogResult == DialogResult.OK)
-                    {
-                        try
-                        {
-                            HttpResponseMessage? response = await combinedPolicy.ExecuteAsync(requestFunc);
-                            return response;
-                        }
-                        catch (Exception retryEx)
-                        {
-                            LoggerUtil.LogError(retryEx, "Retry attempt failed: {Message}", retryEx.Message);
-                            throw;
-                        }
-                    }
-
-                    background.Dispose();
-
-                    //--------------- Question Result -------------------\\
-                    
-                    throw; // rethrow the exception to maintain the original behavior
+                    throw; // User batal, throw ulang
                 }
-
-                throw; // rethrow the exception to maintain the original behavior
+                else
+                {
+                    // Unexpected exception (bukan network): Critical, log ke server
+                    LoggerUtil.LogError(ex, $"Error tak terduga di API: {ex.Message}", ex.Message);
+                    NotifyHelper.Error("Terjadi kesalahan tak terduga. Hubungi admin.");
+                    throw;
+                }
             }
         }
+
     }
 }

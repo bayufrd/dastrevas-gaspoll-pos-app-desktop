@@ -46,6 +46,7 @@ namespace KASIR
             lblTitleChildForm = new Label();
             SyncTimer = new System.Windows.Forms.Timer(components);
             gradientPanel2 = new GradientPanel();
+            btnWhatsapp = new IconButton();
             BtnSettingForm = new IconButton();
             btnDev = new IconButton();
             btnContact = new IconButton();
@@ -55,7 +56,6 @@ namespace KASIR
             TransBtn = new IconButton();
             LogoKasir = new PictureBox();
             panel2 = new Panel();
-            btnWhatsapp = new IconButton();
             panel1.SuspendLayout();
             panelTitleBar.SuspendLayout();
             gradientPanel1.SuspendLayout();
@@ -192,7 +192,7 @@ namespace KASIR
             // SyncTimer
             // 
             SyncTimer.Enabled = true;
-            SyncTimer.Interval = 300000;
+            SyncTimer.Interval = 900000;
             SyncTimer.Tick += timer1_Tick;
             // 
             // gradientPanel2
@@ -212,6 +212,21 @@ namespace KASIR
             gradientPanel2.Controls.Add(LogoKasir);
             gradientPanel2.Name = "gradientPanel2";
             gradientPanel2.TopColor = Color.Black;
+            // 
+            // btnWhatsapp
+            // 
+            btnWhatsapp.BackColor = Color.Transparent;
+            btnWhatsapp.Cursor = Cursors.Hand;
+            btnWhatsapp.FlatAppearance.BorderSize = 0;
+            resources.ApplyResources(btnWhatsapp, "btnWhatsapp");
+            btnWhatsapp.ForeColor = Color.Gainsboro;
+            btnWhatsapp.IconChar = IconChar.Whatsapp;
+            btnWhatsapp.IconColor = Color.Gainsboro;
+            btnWhatsapp.IconFont = IconFont.Auto;
+            btnWhatsapp.IconSize = 25;
+            btnWhatsapp.Name = "btnWhatsapp";
+            btnWhatsapp.UseVisualStyleBackColor = false;
+            btnWhatsapp.Click += btnWhatsapp_Click;
             // 
             // BtnSettingForm
             // 
@@ -333,21 +348,6 @@ namespace KASIR
             panel2.Controls.Add(gradientPanel2);
             resources.ApplyResources(panel2, "panel2");
             panel2.Name = "panel2";
-            // 
-            // btnWhatsapp
-            // 
-            btnWhatsapp.BackColor = Color.Transparent;
-            btnWhatsapp.Cursor = Cursors.Hand;
-            btnWhatsapp.FlatAppearance.BorderSize = 0;
-            resources.ApplyResources(btnWhatsapp, "btnWhatsapp");
-            btnWhatsapp.ForeColor = Color.Gainsboro;
-            btnWhatsapp.IconChar = IconChar.Whatsapp;
-            btnWhatsapp.IconColor = Color.Gainsboro;
-            btnWhatsapp.IconFont = IconFont.Auto;
-            btnWhatsapp.IconSize = 25;
-            btnWhatsapp.Name = "btnWhatsapp";
-            btnWhatsapp.UseVisualStyleBackColor = false;
-            btnWhatsapp.Click += btnWhatsapp_Click;
             // 
             // Form1
             // 

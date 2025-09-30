@@ -30,22 +30,31 @@ namespace KASIR.Komponen
         /// </summary>
         private void InitializeComponent()
         {
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges1 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges2 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges3 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges4 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges5 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges6 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges7 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges8 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges9 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges10 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges15 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges16 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges17 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges18 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges19 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges20 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges21 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges22 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            DataGridViewCellStyle dataGridViewCellStyle6 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle7 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle8 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle9 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle10 = new DataGridViewCellStyle();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges23 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges24 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges25 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges26 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges27 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges28 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             panel2 = new Panel();
+            label3 = new Label();
+            label6 = new Label();
+            label5 = new Label();
+            end_shift = new Guna.UI2.WinForms.Guna2TextBox();
+            start_shift = new Guna.UI2.WinForms.Guna2TextBox();
             label4 = new Label();
             label2 = new Label();
             txtNamaKasir = new Guna.UI2.WinForms.Guna2TextBox();
@@ -68,6 +77,11 @@ namespace KASIR.Komponen
             // 
             panel2.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             panel2.BackColor = Color.WhiteSmoke;
+            panel2.Controls.Add(label3);
+            panel2.Controls.Add(label6);
+            panel2.Controls.Add(label5);
+            panel2.Controls.Add(end_shift);
+            panel2.Controls.Add(start_shift);
             panel2.Controls.Add(label4);
             panel2.Controls.Add(label2);
             panel2.Controls.Add(txtNamaKasir);
@@ -82,6 +96,92 @@ namespace KASIR.Komponen
             panel2.Name = "panel2";
             panel2.Size = new Size(912, 510);
             panel2.TabIndex = 7;
+            // 
+            // label3
+            // 
+            label3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            label3.AutoSize = true;
+            label3.Font = new Font("Segoe UI", 8.25F, FontStyle.Italic, GraphicsUnit.Point);
+            label3.ForeColor = Color.Black;
+            label3.Location = new Point(572, 101);
+            label3.Name = "label3";
+            label3.Size = new Size(327, 13);
+            label3.TabIndex = 128;
+            label3.Text = "Gunakan format: YYYY-MM-DD HH:mm:ss untuk mengubah manual";
+            // 
+            // label6
+            // 
+            label6.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            label6.AutoSize = true;
+            label6.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            label6.ForeColor = Color.Black;
+            label6.Location = new Point(643, 31);
+            label6.Name = "label6";
+            label6.Size = new Size(37, 15);
+            label6.TabIndex = 127;
+            label6.Text = "Mulai";
+            // 
+            // label5
+            // 
+            label5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            label5.AutoSize = true;
+            label5.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            label5.ForeColor = Color.Black;
+            label5.Location = new Point(643, 66);
+            label5.Name = "label5";
+            label5.Size = new Size(37, 15);
+            label5.TabIndex = 126;
+            label5.Text = "Akhir";
+            // 
+            // end_shift
+            // 
+            end_shift.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            end_shift.BorderRadius = 8;
+            end_shift.CustomizableEdges = customizableEdges15;
+            end_shift.DefaultText = "";
+            end_shift.DisabledState.BorderColor = Color.FromArgb(208, 208, 208);
+            end_shift.DisabledState.FillColor = Color.FromArgb(226, 226, 226);
+            end_shift.DisabledState.ForeColor = Color.FromArgb(138, 138, 138);
+            end_shift.DisabledState.PlaceholderForeColor = Color.FromArgb(138, 138, 138);
+            end_shift.FocusedState.BorderColor = Color.FromArgb(15, 90, 94);
+            end_shift.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            end_shift.ForeColor = Color.Black;
+            end_shift.HoverState.BorderColor = Color.FromArgb(94, 148, 255);
+            end_shift.Location = new Point(686, 66);
+            end_shift.Name = "end_shift";
+            end_shift.PlaceholderForeColor = Color.Gray;
+            end_shift.PlaceholderText = "Masukkan Jam Selesai";
+            end_shift.SelectedText = "";
+            end_shift.ShadowDecoration.CustomizableEdges = customizableEdges16;
+            end_shift.Size = new Size(213, 32);
+            end_shift.TabIndex = 125;
+            end_shift.TextAlign = HorizontalAlignment.Center;
+            end_shift.TextChanged += end_shift_TextChanged;
+            // 
+            // start_shift
+            // 
+            start_shift.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            start_shift.BorderRadius = 8;
+            start_shift.CustomizableEdges = customizableEdges17;
+            start_shift.DefaultText = "";
+            start_shift.DisabledState.BorderColor = Color.FromArgb(208, 208, 208);
+            start_shift.DisabledState.FillColor = Color.FromArgb(226, 226, 226);
+            start_shift.DisabledState.ForeColor = Color.FromArgb(138, 138, 138);
+            start_shift.DisabledState.PlaceholderForeColor = Color.FromArgb(138, 138, 138);
+            start_shift.FocusedState.BorderColor = Color.FromArgb(15, 90, 94);
+            start_shift.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            start_shift.ForeColor = Color.Black;
+            start_shift.HoverState.BorderColor = Color.FromArgb(94, 148, 255);
+            start_shift.Location = new Point(686, 31);
+            start_shift.Name = "start_shift";
+            start_shift.PlaceholderForeColor = Color.Gray;
+            start_shift.PlaceholderText = "Masukkan jam mulai";
+            start_shift.SelectedText = "";
+            start_shift.ShadowDecoration.CustomizableEdges = customizableEdges18;
+            start_shift.Size = new Size(213, 32);
+            start_shift.TabIndex = 124;
+            start_shift.TextAlign = HorizontalAlignment.Center;
+            start_shift.TextChanged += start_shift_TextChanged;
             // 
             // label4
             // 
@@ -108,7 +208,7 @@ namespace KASIR.Komponen
             // txtNamaKasir
             // 
             txtNamaKasir.BorderRadius = 8;
-            txtNamaKasir.CustomizableEdges = customizableEdges1;
+            txtNamaKasir.CustomizableEdges = customizableEdges19;
             txtNamaKasir.DefaultText = "";
             txtNamaKasir.DisabledState.BorderColor = Color.FromArgb(208, 208, 208);
             txtNamaKasir.DisabledState.FillColor = Color.FromArgb(226, 226, 226);
@@ -123,7 +223,7 @@ namespace KASIR.Komponen
             txtNamaKasir.PlaceholderForeColor = Color.Gray;
             txtNamaKasir.PlaceholderText = "Masukkan Nama Kasir Disini";
             txtNamaKasir.SelectedText = "";
-            txtNamaKasir.ShadowDecoration.CustomizableEdges = customizableEdges2;
+            txtNamaKasir.ShadowDecoration.CustomizableEdges = customizableEdges20;
             txtNamaKasir.Size = new Size(346, 32);
             txtNamaKasir.TabIndex = 119;
             txtNamaKasir.TextAlign = HorizontalAlignment.Center;
@@ -131,7 +231,7 @@ namespace KASIR.Komponen
             // txtActualCash
             // 
             txtActualCash.BorderRadius = 8;
-            txtActualCash.CustomizableEdges = customizableEdges3;
+            txtActualCash.CustomizableEdges = customizableEdges21;
             txtActualCash.DefaultText = "";
             txtActualCash.DisabledState.BorderColor = Color.FromArgb(208, 208, 208);
             txtActualCash.DisabledState.FillColor = Color.FromArgb(226, 226, 226);
@@ -146,7 +246,7 @@ namespace KASIR.Komponen
             txtActualCash.PlaceholderForeColor = Color.Gray;
             txtActualCash.PlaceholderText = "Rp. Masukkan Jumlah Tunai";
             txtActualCash.SelectedText = "";
-            txtActualCash.ShadowDecoration.CustomizableEdges = customizableEdges4;
+            txtActualCash.ShadowDecoration.CustomizableEdges = customizableEdges22;
             txtActualCash.Size = new Size(346, 32);
             txtActualCash.TabIndex = 118;
             txtActualCash.TextAlign = HorizontalAlignment.Center;
@@ -179,36 +279,36 @@ namespace KASIR.Komponen
             dataGridView1.AllowUserToDeleteRows = false;
             dataGridView1.AllowUserToResizeColumns = false;
             dataGridView1.AllowUserToResizeRows = false;
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = Color.White;
-            dataGridViewCellStyle1.ForeColor = Color.Silver;
-            dataGridViewCellStyle1.SelectionBackColor = Color.Transparent;
-            dataGridViewCellStyle1.SelectionForeColor = Color.Black;
-            dataGridView1.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle6.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle6.BackColor = Color.White;
+            dataGridViewCellStyle6.ForeColor = Color.Silver;
+            dataGridViewCellStyle6.SelectionBackColor = Color.Transparent;
+            dataGridViewCellStyle6.SelectionForeColor = Color.Black;
+            dataGridView1.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle6;
             dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridView1.BackgroundColor = Color.White;
             dataGridView1.CellBorderStyle = DataGridViewCellBorderStyle.None;
             dataGridView1.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = Color.Black;
-            dataGridViewCellStyle2.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            dataGridViewCellStyle2.ForeColor = Color.White;
-            dataGridViewCellStyle2.SelectionBackColor = Color.Transparent;
-            dataGridViewCellStyle2.SelectionForeColor = Color.Transparent;
-            dataGridViewCellStyle2.WrapMode = DataGridViewTriState.True;
-            dataGridView1.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle7.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle7.BackColor = Color.Black;
+            dataGridViewCellStyle7.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            dataGridViewCellStyle7.ForeColor = Color.White;
+            dataGridViewCellStyle7.SelectionBackColor = Color.Transparent;
+            dataGridViewCellStyle7.SelectionForeColor = Color.Transparent;
+            dataGridViewCellStyle7.WrapMode = DataGridViewTriState.True;
+            dataGridView1.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle7;
             dataGridView1.ColumnHeadersHeight = 30;
             dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             dataGridView1.ColumnHeadersVisible = false;
-            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle3.BackColor = Color.White;
-            dataGridViewCellStyle3.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            dataGridViewCellStyle3.ForeColor = Color.White;
-            dataGridViewCellStyle3.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle3.SelectionForeColor = Color.Gainsboro;
-            dataGridViewCellStyle3.WrapMode = DataGridViewTriState.False;
-            dataGridView1.DefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle8.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle8.BackColor = Color.White;
+            dataGridViewCellStyle8.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            dataGridViewCellStyle8.ForeColor = Color.White;
+            dataGridViewCellStyle8.SelectionBackColor = Color.Gainsboro;
+            dataGridViewCellStyle8.SelectionForeColor = Color.Gainsboro;
+            dataGridViewCellStyle8.WrapMode = DataGridViewTriState.False;
+            dataGridView1.DefaultCellStyle = dataGridViewCellStyle8;
             dataGridView1.EnableHeadersVisualStyles = false;
             dataGridView1.GridColor = Color.Black;
             dataGridView1.ImeMode = ImeMode.NoControl;
@@ -216,22 +316,22 @@ namespace KASIR.Komponen
             dataGridView1.Name = "dataGridView1";
             dataGridView1.ReadOnly = true;
             dataGridView1.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
-            dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle4.BackColor = Color.White;
-            dataGridViewCellStyle4.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            dataGridViewCellStyle4.ForeColor = Color.Black;
-            dataGridViewCellStyle4.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle4.SelectionForeColor = Color.Black;
-            dataGridViewCellStyle4.WrapMode = DataGridViewTriState.True;
-            dataGridView1.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle9.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle9.BackColor = Color.White;
+            dataGridViewCellStyle9.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            dataGridViewCellStyle9.ForeColor = Color.Black;
+            dataGridViewCellStyle9.SelectionBackColor = Color.Gainsboro;
+            dataGridViewCellStyle9.SelectionForeColor = Color.Black;
+            dataGridViewCellStyle9.WrapMode = DataGridViewTriState.True;
+            dataGridView1.RowHeadersDefaultCellStyle = dataGridViewCellStyle9;
             dataGridView1.RowHeadersVisible = false;
             dataGridView1.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
-            dataGridViewCellStyle5.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle5.BackColor = Color.White;
-            dataGridViewCellStyle5.ForeColor = Color.Black;
-            dataGridViewCellStyle5.SelectionBackColor = Color.Gainsboro;
-            dataGridViewCellStyle5.SelectionForeColor = Color.Black;
-            dataGridView1.RowsDefaultCellStyle = dataGridViewCellStyle5;
+            dataGridViewCellStyle10.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle10.BackColor = Color.White;
+            dataGridViewCellStyle10.ForeColor = Color.Black;
+            dataGridViewCellStyle10.SelectionBackColor = Color.Gainsboro;
+            dataGridViewCellStyle10.SelectionForeColor = Color.Black;
+            dataGridView1.RowsDefaultCellStyle = dataGridViewCellStyle10;
             dataGridView1.RowTemplate.DefaultCellStyle.BackColor = Color.White;
             dataGridView1.RowTemplate.DefaultCellStyle.ForeColor = Color.Black;
             dataGridView1.RowTemplate.DefaultCellStyle.SelectionBackColor = Color.Gainsboro;
@@ -282,7 +382,7 @@ namespace KASIR.Komponen
             btnRiwayatShift.BorderRadius = 8;
             btnRiwayatShift.BorderThickness = 2;
             btnRiwayatShift.Cursor = Cursors.Hand;
-            btnRiwayatShift.CustomizableEdges = customizableEdges5;
+            btnRiwayatShift.CustomizableEdges = customizableEdges23;
             btnRiwayatShift.DisabledState.BorderColor = Color.DarkGray;
             btnRiwayatShift.DisabledState.CustomBorderColor = Color.DarkGray;
             btnRiwayatShift.DisabledState.FillColor = Color.FromArgb(169, 169, 169);
@@ -294,7 +394,7 @@ namespace KASIR.Komponen
             btnRiwayatShift.Margin = new Padding(3, 3, 3, 20);
             btnRiwayatShift.Name = "btnRiwayatShift";
             btnRiwayatShift.PressedColor = Color.Gray;
-            btnRiwayatShift.ShadowDecoration.CustomizableEdges = customizableEdges6;
+            btnRiwayatShift.ShadowDecoration.CustomizableEdges = customizableEdges24;
             btnRiwayatShift.ShadowDecoration.Depth = 8;
             btnRiwayatShift.ShadowDecoration.Enabled = true;
             btnRiwayatShift.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
@@ -311,7 +411,7 @@ namespace KASIR.Komponen
             btnCetakStruk.BorderRadius = 8;
             btnCetakStruk.BorderThickness = 2;
             btnCetakStruk.Cursor = Cursors.Hand;
-            btnCetakStruk.CustomizableEdges = customizableEdges7;
+            btnCetakStruk.CustomizableEdges = customizableEdges25;
             btnCetakStruk.DisabledState.BorderColor = Color.DarkGray;
             btnCetakStruk.DisabledState.CustomBorderColor = Color.DarkGray;
             btnCetakStruk.DisabledState.FillColor = Color.FromArgb(169, 169, 169);
@@ -323,9 +423,9 @@ namespace KASIR.Komponen
             btnCetakStruk.Margin = new Padding(3, 3, 3, 20);
             btnCetakStruk.Name = "btnCetakStruk";
             btnCetakStruk.ShadowDecoration.BorderRadius = 8;
-            customizableEdges8.TopLeft = false;
-            customizableEdges8.TopRight = false;
-            btnCetakStruk.ShadowDecoration.CustomizableEdges = customizableEdges8;
+            customizableEdges26.TopLeft = false;
+            customizableEdges26.TopRight = false;
+            btnCetakStruk.ShadowDecoration.CustomizableEdges = customizableEdges26;
             btnCetakStruk.ShadowDecoration.Depth = 20;
             btnCetakStruk.ShadowDecoration.Enabled = true;
             btnCetakStruk.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
@@ -341,7 +441,7 @@ namespace KASIR.Komponen
             btnPengeluaran.BorderRadius = 8;
             btnPengeluaran.BorderThickness = 2;
             btnPengeluaran.Cursor = Cursors.Hand;
-            btnPengeluaran.CustomizableEdges = customizableEdges9;
+            btnPengeluaran.CustomizableEdges = customizableEdges27;
             btnPengeluaran.DisabledState.BorderColor = Color.DarkGray;
             btnPengeluaran.DisabledState.CustomBorderColor = Color.DarkGray;
             btnPengeluaran.DisabledState.FillColor = Color.FromArgb(169, 169, 169);
@@ -353,7 +453,7 @@ namespace KASIR.Komponen
             btnPengeluaran.Margin = new Padding(3, 3, 3, 20);
             btnPengeluaran.Name = "btnPengeluaran";
             btnPengeluaran.PressedColor = Color.Gray;
-            btnPengeluaran.ShadowDecoration.CustomizableEdges = customizableEdges10;
+            btnPengeluaran.ShadowDecoration.CustomizableEdges = customizableEdges28;
             btnPengeluaran.ShadowDecoration.Depth = 8;
             btnPengeluaran.ShadowDecoration.Enabled = true;
             btnPengeluaran.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
@@ -375,7 +475,6 @@ namespace KASIR.Komponen
             panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
             panel1.ResumeLayout(false);
-            panel1.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -397,5 +496,9 @@ namespace KASIR.Komponen
         public Guna.UI2.WinForms.Guna2Button btnPengeluaran;
         public Guna.UI2.WinForms.Guna2Button btnCetakStruk;
         public Guna.UI2.WinForms.Guna2Button btnRiwayatShift;
+        private Guna.UI2.WinForms.Guna2TextBox end_shift;
+        private Guna.UI2.WinForms.Guna2TextBox start_shift;
+        private Label label6;
+        private Label label5;
     }
 }

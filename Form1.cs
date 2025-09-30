@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
+using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -180,6 +181,45 @@ namespace KASIR
 
         public async void initPingTest()
         {
+            const int defaultInterval = 300000;
+            SyncTimer.Interval = defaultInterval;
+
+            if (await _internetServices.IsInternetConnectedAsync())
+            {
+                try
+                {
+
+                    using (HttpClient httpClient = new())
+                    {
+                        string oldUrl = Properties.Settings.Default.BaseAddressProd.ToString();
+                        string urlVersion = RemoveApiPrefix(oldUrl);
+
+                        string timer = await httpClient.GetStringAsync(urlVersion + "/server/syncInterval.txt");
+
+                        if (int.TryParse(timer.Trim(), out int timerValue))
+                        {
+                            // Optional: Clamp value (hindari terlalu kecil/besar)
+                            if (timerValue <= 0)
+                            {
+                                SyncTimer.Interval = defaultInterval;
+                            }
+                            if (timerValue > 3600000)  // Maks 1 jam, adjust jika perlu
+                            {
+                                SyncTimer.Interval = defaultInterval;
+                            }
+                            SyncTimer.Interval = timerValue;  // Sukses: Return number yang di-parse
+                        }
+                        else
+                        {
+                            SyncTimer.Interval = defaultInterval;
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+                    SyncTimer.Interval = defaultInterval;
+                }
+            }
             if (isOpenNavbar)
             {
                 SignalPing.TextImageRelation = TextImageRelation.ImageBeforeText;

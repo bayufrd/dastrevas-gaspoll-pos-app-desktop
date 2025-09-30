@@ -1060,6 +1060,44 @@ namespace KASIR.OfflineMode
         }
 
         //======================= Whatsapp Struk Customize =======================
+        public class WaConnectionStatus
+        {
+            public bool Connected { get; set; } = false;
+            public string Status { get; set; } = "";
+            public bool QrAvailable { get; set; } = true;
+        }
+        private async Task<bool> CheckQrAvailableAsync()
+        {
+            string _apiUrl = "https://whatsapp.gaspollmanagementcenter.com/wa-connection-status";
+
+            WaConnectionStatus status = null;
+            try
+            {
+                HttpResponseMessage response = await _httpClient.GetAsync(_apiUrl);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return false; 
+                }
+                string jsonContent = await response.Content.ReadAsStringAsync();
+                status = JsonConvert.DeserializeObject<WaConnectionStatus>(jsonContent);  // Ganti JsonSerializer dengan JsonConvert
+                
+                if (status == null)
+                {
+                    return false;
+                }
+                
+                if (status.QrAvailable)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
         private async Task SendWhatsAppReceiptIfEligible(GetStrukCustomerTransaction datas, List<CartDetailStrukCustomerTransaction> cartDetails)
         {
             try
@@ -1078,6 +1116,8 @@ namespace KASIR.OfflineMode
                 {
                     return;
                 }
+
+                if (!await CheckQrAvailableAsync()) { return; }
 
                 // Cek apakah koneksi WhatsApp tersedia dan terhubung
                 //var whatsappConfig = new Whatsapp_Config(false);
@@ -1330,7 +1370,6 @@ namespace KASIR.OfflineMode
                 };
 
                 // Kirim pesan via API
-                using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
                 var content = new StringContent(
                     JsonConvert.SerializeObject(requestData),
@@ -1345,8 +1384,7 @@ namespace KASIR.OfflineMode
 
                 var response = await _httpClient.PostAsync(
                     $"https://whatsapp.gaspollmanagementcenter.com/kirim-lampiran",
-                    content,
-                    cancellationTokenSource.Token
+                    content
                 );
 
                 // Periksa response
@@ -1363,18 +1401,6 @@ namespace KASIR.OfflineMode
                     msg += $"\nGagal mengirim struk ke {phoneNumber}";
                     msg += $"\nError Response: {responseContent}";
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                msg += $"\nWaktu tunggu habis saat mengirim pesan";
-            }
-            catch (ArgumentException ex)
-            {
-                LoggerUtil.LogError(ex, $"Kesalahan parameter: {ex.Message}\n\nLOG TILL END : {msg}");
-            }
-            catch (HttpRequestException ex)
-            {
-                LoggerUtil.LogError(ex, $"Kesalahan jaringan saat mengirim pesan ke {phoneNumber}\n\nLOG TILL END : {msg}");
             }
             catch (Exception ex)
             {

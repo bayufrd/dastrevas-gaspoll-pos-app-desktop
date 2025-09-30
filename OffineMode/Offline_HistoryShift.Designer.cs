@@ -34,12 +34,14 @@ namespace KASIR.OffineMode
             btnKeluar = new IconButton();
             panel7 = new Panel();
             panelHistory = new Panel();
+            label2 = new Label();
             panel2.SuspendLayout();
             SuspendLayout();
             // 
             // panel2
             // 
             panel2.BackColor = SystemColors.Window;
+            panel2.Controls.Add(label2);
             panel2.Controls.Add(btnKeluar);
             panel2.Controls.Add(panel7);
             panel2.Dock = DockStyle.Top;
@@ -85,6 +87,17 @@ namespace KASIR.OffineMode
             panelHistory.Size = new Size(573, 521);
             panelHistory.TabIndex = 16;
             // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Font = new Font("Segoe UI", 12F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point);
+            label2.ForeColor = Color.Black;
+            label2.Location = new Point(238, 24);
+            label2.Name = "label2";
+            label2.Size = new Size(111, 21);
+            label2.TabIndex = 121;
+            label2.Text = "Riwayat Shift";
+            // 
             // Offline_HistoryShift
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -100,6 +113,7 @@ namespace KASIR.OffineMode
             Text = "dataBill";
             TopMost = true;
             panel2.ResumeLayout(false);
+            panel2.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -114,5 +128,6 @@ namespace KASIR.OffineMode
         private Panel panel7;
         private FontAwesome.Sharp.IconButton btnKeluar;
         private Panel panelHistory;
+        private Label label2;
     }
 }

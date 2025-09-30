@@ -1,10 +1,14 @@
 ﻿using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using Guna.UI2.WinForms.Enums;
+using Guna.UI2.WinForms;
 using KASIR.Helper;
 using KASIR.Model;
 using KASIR.Properties;
 using Newtonsoft.Json.Linq;
+using FontAwesome.Sharp;
+using System.Drawing.Drawing2D;
 
 namespace KASIR.OffineMode
 {
@@ -47,8 +51,173 @@ namespace KASIR.OffineMode
             DialogResult = DialogResult.Cancel;
             Close();
         }
-
         private async Task LoadShiftDataButtons()
+        {
+            try
+            {
+                string directoryPath = @"DT-Cache\Transaction\ShiftDataTransaction";
+                string shiftDataPath = @"DT-Cache\Transaction\ShiftData.data";
+
+                // Bersihkan panel
+                panelHistory.Controls.Clear();
+
+                // 🔹 FlowLayoutPanel untuk card
+                FlowLayoutPanel flowPanel = new()
+                {
+                    Dock = DockStyle.Fill,
+                    AutoScroll = true,
+                    FlowDirection = FlowDirection.TopDown,
+                    WrapContents = false,
+                    Padding = new Padding(15),   // jarak dalam
+                };
+                // 🔎 TextBox Search (dibungkus biar sejajar dengan card)
+                Panel searchWrapper = new()
+                {
+                    Width = panelHistory.ClientSize.Width - 40, // sama dengan cardWidth
+                    Height = 50,
+                    //Margin = new Padding(0, 0, 0, 12),
+                    Location = new Point(0, 0),  // Tetap di kiri atas flowPanel
+                    BackColor = panelHistory.BackColor // transparan/ikut panel
+                };
+                TextBox txtSearch = new()
+                {
+                    PlaceholderText = "🔍 Cari berdasarkan tanggal/hari...",
+                    Font = new Font("Segoe UI", 11F),
+                    Width = searchWrapper.Width,
+                    Height = 35,
+                    Location = new Point(20, 7), 
+                    BackColor = Color.White,
+                    BorderStyle = BorderStyle.FixedSingle
+                };
+
+                // masukkan txtSearch ke dalam wrapper
+                searchWrapper.Controls.Add(txtSearch);
+
+                // tambahkan ke flowPanel, bukan ke panelHistory langsung
+                flowPanel.Controls.Add(searchWrapper);
+
+
+                // Tambahkan search + flowPanel ke panelHistory
+                panelHistory.Controls.Add(flowPanel);
+                panelHistory.Controls.Add(txtSearch);
+                panelHistory.Controls.SetChildIndex(txtSearch, 0);
+
+                int totalWidth = panelHistory.ClientSize.Width - 40;
+
+                // 🔹 Fungsi bantu bikin card
+                Panel CreateCard(string title, string filePath)
+                {
+                    Panel card = new()
+                    {
+                        Width = totalWidth,
+                        Height = 70,
+                        Margin = new Padding(5),
+                        BackColor = Color.White,
+                        BorderStyle = BorderStyle.FixedSingle,
+                        Tag = title // penting untuk filter
+                    };
+
+                    Label lbl = new()
+                    {
+                        Text = title,
+                        Dock = DockStyle.Left,
+                        AutoSize = false,
+                        TextAlign = ContentAlignment.MiddleLeft,
+                        Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                        Width = card.Width - 120,
+                        Padding = new Padding(10, 20, 0, 0),
+                        ForeColor = Color.Black
+                    };
+
+                    IconButton btnOpen = new()
+                    {
+                        Text = " Open",
+                        IconChar = IconChar.FolderOpen,
+                        IconColor = Color.DodgerBlue,
+                        IconSize = 20,
+                        TextImageRelation = TextImageRelation.ImageBeforeText,
+                        FlatStyle = FlatStyle.Flat,
+                        Width = 90,
+                        Height = 30,
+                        Location = new Point(card.Width - 100, 20),
+                        BackColor = Color.Gainsboro,
+                        ForeColor = Color.Black
+                    };
+                    btnOpen.FlatAppearance.BorderSize = 0;
+
+                    btnOpen.Click += async (s, e) =>
+                    {
+                        List<ShiftData> shiftDataList = await ReadShiftDataFromFile(filePath);
+                        BindShiftDataToDataGridView(shiftDataList);
+                    };
+
+                    card.Controls.Add(lbl);
+                    card.Controls.Add(btnOpen);
+
+                    return card;
+                }
+
+                // 🔹 Card untuk ShiftData.data (terakhir)
+                if (File.Exists(shiftDataPath))
+                {
+                    string shiftNow = DateTime.Now.ToString("yyyy-MM-dd");
+                    string[] hariIndonesia = { "Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu" };
+                    string namaHari = hariIndonesia[(int)DateTime.Now.DayOfWeek];
+
+                    var card = CreateCard($"{shiftNow} {namaHari} | ShiftData (Terakhir)", shiftDataPath);
+                    flowPanel.Controls.Add(card);
+                }
+
+                // 🔹 Card untuk history lain
+                if (Directory.Exists(directoryPath))
+                {
+                    string[] files = Directory.GetFiles(directoryPath, "*.data");
+
+                    foreach (string file in files)
+                    {
+                        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file);
+                        Regex regex = new(@"History_.*_DT-\d+_(\d{8})");
+                        Match match = regex.Match(fileNameWithoutExtension);
+
+                        if (match.Success)
+                        {
+                            string datePart = match.Groups[1].Value;
+
+                            if (DateTime.TryParseExact(datePart, "yyyyMMdd", CultureInfo.InvariantCulture,
+                                    DateTimeStyles.None, out DateTime fileDate))
+                            {
+                                string[] hariIndonesia = { "Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu" };
+                                string namaHari = hariIndonesia[(int)fileDate.DayOfWeek];
+
+                                var card = CreateCard(fileDate.ToString("yyyy-MM-dd") + " " + namaHari, file);
+                                flowPanel.Controls.Add(card);
+                            }
+                        }
+                    }
+                }
+
+                // 🔎 Event untuk filter pencarian
+                txtSearch.TextChanged += (s, e) =>
+                {
+                    string keyword = txtSearch.Text.Trim().ToLower();
+
+                    foreach (Control ctrl in flowPanel.Controls)
+                    {
+                        if (ctrl is Panel card && card.Tag is string title)
+                        {
+                            card.Visible = string.IsNullOrEmpty(keyword) ||
+                                           title.ToLower().Contains(keyword);
+                        }
+                    }
+                };
+            }
+            catch(Exception ex)
+            {
+                LoggerUtil.LogError(ex, $"Error: {ex.Message}",ex);
+            }
+        }
+
+        private async Task exLoadShiftDataButtons()
         {
             string directoryPath = @"DT-Cache\Transaction\ShiftDataTransaction";
             string shiftDataPath = @"DT-Cache\Transaction\ShiftData.data"; // Path for ShiftData.data file
@@ -75,10 +244,11 @@ namespace KASIR.OffineMode
             // Check if the ShiftData.data file exists first
             if (File.Exists(shiftDataPath))
             {
+                string shiftNow = DateTime.Now.ToString("yyyy-MM-dd");
                 // Create a button for the ShiftData.data file
                 Button shiftDataButton = new()
                 {
-                    Text = "ShiftData (Terakhir)", // A generic name for the button
+                    Text = $"{shiftNow} | ShiftData (Terakhir)", // A generic name for the button
                     Width = totalWidth * 98 / 100,
                     ForeColor = Color.Black,
                     Height = 40,
@@ -185,94 +355,103 @@ namespace KASIR.OffineMode
 
         private void BindShiftDataToDataGridView(List<ShiftData> shiftDataList)
         {
-            // Clear the existing controls in the panel
+            // Bersihkan panel terlebih dahulu
             panelHistory.Controls.Clear();
 
-            // Create the DataGridView for displaying shift data
-            DataGridView dataGridView = new()
+            // Buat FlowLayoutPanel
+            FlowLayoutPanel flowPanel = new()
             {
                 Dock = DockStyle.Fill,
-                AutoGenerateColumns = false,
-                AllowUserToAddRows = false, // Don't allow the user to add new rows directly
-                ReadOnly = true,
-                Size = new Size(886, 500) // Set the size to be larger (you can adjust as needed)
+                AutoScroll = true,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false
             };
 
-            // Add DataGridView columns (excluding the first column which is to be removed)
-            dataGridView.Columns.Add(new DataGridViewTextBoxColumn
+            panelHistory.Controls.Add(flowPanel);
+
+            foreach (var shift in shiftDataList)
             {
-                Name = "Data",
-                HeaderText = "Data",
-                DataPropertyName = "StartAt", // Bind the StartAt property of ShiftData
-                Width = 150
-            });
-
-            dataGridView.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "ShiftNumber", HeaderText = "Shift Number", DataPropertyName = "ShiftNumber", Width = 100
-            });
-
-            dataGridView.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "CasherName", HeaderText = "Name", DataPropertyName = "CasherName", Width = 150
-            });
-
-            // Add a button column for "Pilih"
-            DataGridViewButtonColumn pilihColumn = new()
-            {
-                Name = "Pilih", HeaderText = "Pilih", Text = "Pilih", UseColumnTextForButtonValue = true
-            };
-            dataGridView.Columns.Add(pilihColumn);
-
-            // Add a button column for "Print"
-            DataGridViewButtonColumn printColumn = new()
-            {
-                Name = "Print", HeaderText = "Print", Text = "Print", UseColumnTextForButtonValue = true
-            };
-            dataGridView.Columns.Add(printColumn);
-
-            // Bind the data to the DataGridView
-            dataGridView.DataSource = shiftDataList;
-
-            // Add the DataGridView to the panel
-            panelHistory.Controls.Add(dataGridView);
-
-            // Apply custom DataGridView styles
-            ApplyDataGridViewStyles(dataGridView);
-
-            // Handle button click for "Pilih" and "Print"
-            dataGridView.CellContentClick += (sender, e) =>
-            {
-                if (e.RowIndex >= 0)
+                // Panel container untuk setiap shift
+                Panel card = new()
                 {
-                    DataGridViewRow selectedRow = dataGridView.Rows[e.RowIndex];
+                    Width = panelHistory.ClientSize.Width - 25,
+                    Height = 80,
+                    Margin = new Padding(5),
+                    BackColor = Color.White,
+                    BorderStyle = BorderStyle.FixedSingle
+                };
 
-                    if (e.ColumnIndex == dataGridView.Columns["Pilih"].Index)
-                    {
-                        // Get the shift data directly from the shiftDataList (corresponding to the selected row)
-                        ShiftData selectedShift = shiftDataList[e.RowIndex];
+                // Label tanggal / shift info
+                Label lblInfo = new()
+                {
+                    Text = $"Shift {shift.ShiftNumber} | {shift.CasherName}\n" +
+                           $"Start: {shift.StartAt} | End: {shift.EndAt}\n" +
+                           $"Actual Ending Cash : {shift.ActualEndingCash}\n" +
+                           $"id : #{shift.id}",
+                    AutoSize = false,
+                    Dock = DockStyle.Left,
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Regular),
+                    ForeColor = Color.Black,
+                    Width = card.Width - 180
+                };
 
-                        // Set the SelectedShift property to the selected ShiftData
-                        SelectedShift = selectedShift;
+                // Tombol pilih dengan icon FontAwesome
+                IconButton btnPilih = new()
+                {
+                    Text = " Pilih",
+                    IconChar = IconChar.CheckCircle,
+                    IconColor = Color.Green,
+                    IconSize = 20,
+                    TextImageRelation = TextImageRelation.ImageBeforeText,
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = Color.LightGray,
+                    ForeColor = Color.Black,
+                    Width = 80,
+                    Height = 30,
+                    Location = new Point(card.Width - 170, 25)
+                };
+                btnPilih.FlatAppearance.BorderSize = 0;
 
-                        // Close the form and pass back the data
-                        DialogResult = DialogResult.OK;
-                        Close();
-                    }
-                    else if (e.ColumnIndex == dataGridView.Columns["Print"].Index)
-                    {
-                        // Get the shift data directly from the shiftDataList (corresponding to the selected row)
-                        ShiftData selectedShift = shiftDataList[e.RowIndex];
+                btnPilih.Click += (s, e) =>
+                {
+                    SelectedShift = shift;
+                    DialogResult = DialogResult.OK;
+                    Close();
+                };
 
-                        // Set the SelectedShift property to the selected ShiftData
-                        SelectedShift = selectedShift;
+                // Tombol print dengan icon FontAwesome
+                IconButton btnPrint = new()
+                {
+                    Text = " Print",
+                    IconChar = IconChar.Print,
+                    IconColor = Color.DodgerBlue,
+                    IconSize = 20,
+                    TextImageRelation = TextImageRelation.ImageBeforeText,
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = Color.LightGray,
+                    ForeColor = Color.Black,
+                    Width = 80,
+                    Height = 30,
+                    Location = new Point(card.Width - 85, 25)
+                };
+                btnPrint.FlatAppearance.BorderSize = 0;
 
-                        // Close the form and pass back the data
-                        DialogResult = DialogResult.Continue;
-                        Close();
-                    }
-                }
-            };
+                btnPrint.Click += (s, e) =>
+                {
+                    SelectedShift = shift;
+                    DialogResult = DialogResult.Continue; // sesuai logic Anda
+                    Close();
+                };
+
+                // Tambahkan ke panel card
+                card.Controls.Add(lblInfo);
+                card.Controls.Add(btnPilih);
+                card.Controls.Add(btnPrint);
+
+                // Tambahkan card ke flow panel
+                flowPanel.Controls.Add(card);
+            }
         }
 
 

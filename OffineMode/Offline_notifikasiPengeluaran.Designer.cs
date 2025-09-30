@@ -52,6 +52,7 @@ namespace KASIR.Komponen
             button2 = new IconButton();
             btnSimpan = new Button();
             btnKeluar = new Button();
+            label6 = new Label();
             panel1.SuspendLayout();
             panel13.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
@@ -250,6 +251,7 @@ namespace KASIR.Komponen
             // panel2
             // 
             panel2.BackColor = SystemColors.Window;
+            panel2.Controls.Add(label6);
             panel2.Controls.Add(button1);
             panel2.Controls.Add(button2);
             panel2.Dock = DockStyle.Top;
@@ -328,6 +330,17 @@ namespace KASIR.Komponen
             btnKeluar.UseVisualStyleBackColor = false;
             btnKeluar.Click += btnKeluar_Click;
             // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Font = new Font("Segoe UI", 12F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point);
+            label6.ForeColor = Color.Black;
+            label6.Location = new Point(211, 21);
+            label6.Name = "label6";
+            label6.Size = new Size(169, 21);
+            label6.TabIndex = 122;
+            label6.Text = "Tambah Pengeluaran";
+            // 
             // Offline_notifikasiPengeluaran
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -351,6 +364,7 @@ namespace KASIR.Komponen
             panel4.ResumeLayout(false);
             panel4.PerformLayout();
             panel2.ResumeLayout(false);
+            panel2.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -416,5 +430,6 @@ namespace KASIR.Komponen
         private Model.GradientPanel panel13;
         private DataGridView dataGridView1;
         private Label label4;
+        private Label label6;
     }
 }

@@ -2712,22 +2712,6 @@ namespace KASIR.Printer
                 // Pembulatan ke atas kelipatan 500
                 int totalSetelahPembulatan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
 
-                //// Update total & kembalian
-                //datas.total = totalSetelahPembulatan;
-                //datas.customer_change = totalSetelahPembulatan - datas.customer_cash;
-
-                //// Hitung selisih pajak real
-                //int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
-                //int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) - nilaiPajak;
-
-                //// Tambah Line PPN
-                //strukText += FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0") + "\n");
-
-                //// Tambah Line PB1 (setelah pembulatan)
-                //strukText += FormatSimpleLine($"PB1:", nilaiPembulatanPB.ToString("N0") + "\n");
-
-
-
 
                 // Hitung selisih pajak real
                 int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
@@ -2735,11 +2719,11 @@ namespace KASIR.Printer
 
 
                 // Tambah Line PPN
-                strukText += FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0") + "\n");
+                strukText += FormatSimpleLine($"PB1: {pajakPersen}%", nilaiPajak.ToString("N0") + "\n");
 
 
                 // Tambah Line Subtotal+PPN
-                strukText += FormatSimpleLine($"Subotal+PPN:", totalDenganPajak.ToString("N0") + "\n");
+                strukText += FormatSimpleLine($"Subotal+PB1:", totalDenganPajak.ToString("N0") + "\n");
 
 
                 // Update total & kembalian
@@ -3485,12 +3469,12 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
                 // Tambah Line PPN
                 _ = strukBuilder.AppendLine(
-                    FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0"))
+                    FormatSimpleLine($"PB1: {pajakPersen}%", nilaiPajak.ToString("N0"))
                 );
 
                 // Tambah Line Subtotal+PPN
                 _ = strukBuilder.AppendLine(
-                    FormatSimpleLine($"Subotal+PPN:", totalDenganPajak.ToString("N0"))
+                    FormatSimpleLine($"Subotal+PB1:", totalDenganPajak.ToString("N0"))
                 );
 
                 // Update total & kembalian
@@ -4424,12 +4408,12 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
                 // Tambah Line PPN
                 _ = strukBuilder.AppendLine(
-                    FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0"))
+                    FormatSimpleLine($"PB1: {pajakPersen}%", nilaiPajak.ToString("N0"))
                 );
 
                 // Tambah Line Subtotal+PPN
                 _ = strukBuilder.AppendLine(
-                    FormatSimpleLine($"Subotal+PPN:", totalDenganPajak.ToString("N0"))
+                    FormatSimpleLine($"Subotal+PB1:", totalDenganPajak.ToString("N0"))
                 );
 
                 // Update total & kembalian
@@ -6161,12 +6145,12 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
                 // Tambah Line PPN
                 _ = strukBuilder.AppendLine(
-                    FormatSimpleLine($"PPN: {pajakPersen}%", nilaiPajak.ToString("N0"))
+                    FormatSimpleLine($"PB1: {pajakPersen}%", nilaiPajak.ToString("N0"))
                 );
 
                 // Tambah Line Subtotal+PPN
                 _ = strukBuilder.AppendLine(
-                    FormatSimpleLine($"Subotal+PPN:", totalDenganPajak.ToString("N0"))
+                    FormatSimpleLine($"Subotal+PB1:", totalDenganPajak.ToString("N0"))
                 );
 
                 // Update total & kembalian

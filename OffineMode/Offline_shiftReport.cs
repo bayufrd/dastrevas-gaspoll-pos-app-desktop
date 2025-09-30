@@ -25,10 +25,12 @@ namespace KASIR.Komponen
             totalTransaksiOutlet = 0,
             totalDiscountAmount = 0,
             cashIncomeReal = 0,
-            cashOutRefund = 0, 
+            cashOutRefund = 0,
             cashOutExpenditure = 0;
 
 
+        string startBaru, loadCartStartShift;
+        string endBaru, loadCartEndShift, shiftNumberBaru;
         public Offline_shiftReport()
         {
             baseOutlet = Settings.Default.BaseOutlet;
@@ -47,33 +49,41 @@ namespace KASIR.Komponen
         public bool IsBackgroundOperation { get; set; }
         private string GetStartAt()
         {
-            string shiftDataPath = @"DT-Cache\Transaction\shiftData.data";
+            try
+            {
+                string shiftDataPath = @"DT-Cache\Transaction\shiftData.data";
 
-            if (!File.Exists(shiftDataPath) || new FileInfo(shiftDataPath).Length == 0)
+                if (!File.Exists(shiftDataPath) || new FileInfo(shiftDataPath).Length == 0)
+                {
+                    return DateTime.Now.Date.AddHours(6).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                }
+
+                string shiftDataJson = File.ReadAllText(shiftDataPath);
+                JObject shiftData = JObject.Parse(shiftDataJson);
+                JArray shiftDataArray = (JArray)shiftData["data"];
+
+                // If no shift data is available, return today's date at 6 AM
+                if (shiftDataArray.Count == 0)
+                {
+                    return DateTime.Now.Date.AddHours(6).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                }
+
+                JObject lastShift = (JObject)shiftDataArray.Last;
+                string lastEndAt = lastShift["end_at"].ToString();
+
+                // Parse the "End_at" date and add 1 second to it
+                DateTime lastEndAtDate =
+                    DateTime.ParseExact(lastEndAt, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                DateTime newStartAt = lastEndAtDate.AddSeconds(1);
+
+                // Return the new "start_at" value
+                return newStartAt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+            }
+            catch
             {
                 return DateTime.Now.Date.AddHours(6).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
             }
 
-            string shiftDataJson = File.ReadAllText(shiftDataPath);
-            JObject shiftData = JObject.Parse(shiftDataJson);
-            JArray shiftDataArray = (JArray)shiftData["data"];
-
-            // If no shift data is available, return today's date at 6 AM
-            if (shiftDataArray.Count == 0)
-            {
-                return DateTime.Now.Date.AddHours(6).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-            }
-
-            JObject lastShift = (JObject)shiftDataArray.Last;
-            string lastEndAt = lastShift["end_at"].ToString();
-
-            // Parse the "End_at" date and add 1 second to it
-            DateTime lastEndAtDate =
-                DateTime.ParseExact(lastEndAt, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-            DateTime newStartAt = lastEndAtDate.AddSeconds(1);
-
-            // Return the new "start_at" value
-            return newStartAt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         }
         private async void btnCetakStruk_Click(object sender, EventArgs e)
         {
@@ -108,17 +118,16 @@ namespace KASIR.Komponen
 
                 string generateIDshift = $"{baseOutlet}{startAtDateTime.ToString("yyyyMMddHHmmss")}";
                 //---------------- Question Begin -----------------\\
-                string titleHelper = $"End Shift {shiftNumber.ToString()}";
-                string msgHelper = $"Waktu: {startAt} - {akhirshift.ToString("yyyy-MM-dd HH:mm:ss")}\nNama Kasir: {txtNamaKasir.Text}\nCash Sekarang: Rp. {txtActualCash.Text},-\nCash Different : {string.Format("{0:n0}", Convert.ToInt32(fulus) - ending_cash)}";
+                string titleHelper = $"End Shift";
+                string msgHelper = $"Nama Kasir: {txtNamaKasir.Text}\nCash Sekarang: Rp. {txtActualCash.Text},-\nCash Different : {string.Format("{0:n0}", Convert.ToInt32(fulus) - ending_cash)}";
                 string cancelHelper = "Batal";
                 string okHelper = "End Shift";
-                QuestionHelper c = new QuestionHelper(titleHelper, msgHelper, cancelHelper, okHelper);
+                QuestionEndShift c = new QuestionEndShift(titleHelper, msgHelper, cancelHelper, okHelper, startAt.ToString(), akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), shiftNumber.ToString());
                 Form background = c.CreateOverlayForm();
 
                 c.Owner = background;
 
                 background.Show();
-
                 DialogResult dialogResult = c.ShowDialog();
                 if (dialogResult != DialogResult.OK)
                 {
@@ -128,10 +137,15 @@ namespace KASIR.Komponen
 
 
                 //--------------- Question Result -------------------\\
-                
+
                 else
                 {
                     background.Dispose();
+
+                    startBaru = c.EditedStartShift;
+                    endBaru = c.EditedEndShift;
+                    shiftNumberBaru = c.EditedNumberShift;
+
 
                     btnCetakStruk.Enabled = false;
                     btnCetakStruk.Text = "Waiting...";
@@ -147,20 +161,20 @@ namespace KASIR.Komponen
                         outlet_id = baseOutlet,
                         actual_ending_cash = actualCash,
                         cash_difference = cashDiff,
-                        start_date = startAt,
-                        end_date = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
-                        created_at = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
-                        updated_at = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                        start_date = startBaru,
+                        end_date = endBaru,
+                        created_at = endBaru,
+                        updated_at = endBaru,
                         expected_ending_cash = ending_cash,
                         total_amount = totalTransaksiOutlet,
                         total_discount = totalDiscountAmount,
-                        shift_number = shiftNumber.ToString(),
+                        shift_number = shiftNumberBaru,
                         casher_name = casherName,
 
                         // cache
                         id = generateIDshift,
-                        start_at = startAt,
-                        end_at = akhirshift.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                        start_at = startBaru,
+                        end_at = endBaru,
                         is_sync = 0
                     };
 
@@ -239,20 +253,29 @@ namespace KASIR.Komponen
 
                 int shiftNumber = GetShiftNumber();
                 string startDate = startAt;
+                if (!string.IsNullOrEmpty(startBaru))
+                {
+                    startDate = startBaru;
+                    startAt = startBaru;
+                }
                 DateTime akhirshift = DateTime.Now;
                 string endDate = akhirshift.ToString("yyyy-MM-dd HH:mm:ss");
-
+                if (!string.IsNullOrEmpty(endBaru))
+                {
+                    endDate = endBaru;
+                }
                 DateTime startAtDateTime = DateTime.Parse(startAt);
+                DateTime EndAtDateTime = DateTime.Parse(endDate);
 
                 //filtering
                 List<Transaction> transactionDataRawFiltered = transactionDataRaw.data
-                    .Where(t => DateTime.TryParse(t.updated_at, out DateTime createdAt) && createdAt > startAtDateTime)
+                    .Where(t => DateTime.TryParse(t.updated_at, out DateTime createdAt) && createdAt > startAtDateTime && createdAt < EndAtDateTime)
                     .ToList();
 
                 // Memfilter pengeluaran berdasarkan updated_at
                 List<ExpenditureStrukShift> expendituresDataRawFiltered = expendituresDataRaw.data
                     .Where(e => DateTime.TryParse(e.created_at, out DateTime expenditureCreatedAt) &&
-                                expenditureCreatedAt > startAtDateTime)
+                                expenditureCreatedAt > startAtDateTime && expenditureCreatedAt < EndAtDateTime)
                     .ToList();
 
                 // Membungkus filteredTransactions menjadi TransactionData
@@ -295,26 +318,26 @@ namespace KASIR.Komponen
                         g.First().menu_type,
                         varian =
                             g.First().menu_detail_name,
-                        qty = g.Sum(cd => cd.qty), 
-                        total_price = g.Sum(cd => cd.total_price) 
+                        qty = g.Sum(cd => cd.qty),
+                        total_price = g.Sum(cd => cd.total_price)
                     })
                     .ToList();
 
                 int totalPendingAmount = pendingCartDetails.Sum(cd => cd.total_price);
 
                 var canceledCartDetails = transactionDataSavebill.data.SelectMany(t => t.canceled_items)
-                    .Where(cd => cd.qty > 0) 
+                    .Where(cd => cd.qty > 0)
                     .GroupBy(cd =>
                         new { cd.menu_id, cd.menu_detail_id })
                     .Select(g => new
                     {
                         g.Key.menu_id,
                         g.Key.menu_detail_id,
-                        g.First().menu_name, 
-                        g.First().menu_type, 
+                        g.First().menu_name,
+                        g.First().menu_type,
                         varian =
                             g.First().menu_detail_name,
-                        qty = g.Sum(cd => cd.qty), 
+                        qty = g.Sum(cd => cd.qty),
                         total_price = g.Sum(cd => cd.total_price)
                     })
                     .ToList();
@@ -328,13 +351,13 @@ namespace KASIR.Komponen
                         {
                             rd.menu_id,
                             rd.menu_detail_name
-                        }) 
+                        })
                     .Select(g => new
                     {
                         g.Key.menu_id,
-                        g.First().menu_name, 
-                        g.First().menu_type, 
-                        varian = g.Key.menu_detail_name, 
+                        g.First().menu_name,
+                        g.First().menu_type,
+                        varian = g.Key.menu_detail_name,
                         qty_refund_item = g.Sum(rd => rd.refund_qty),
                         total_refund_price = g.Sum(rd => rd.refund_total)
                     })
@@ -419,13 +442,13 @@ namespace KASIR.Komponen
 
                 int discountsCarts = transactionData.data
                     .Where(t => t.discounted_price > 0)
-                    .Sum(t => t.discounted_price); 
+                    .Sum(t => t.discounted_price);
 
 
                 int discountsDetails = transactionData.data
-                    .SelectMany(t => t.cart_details) 
-                    .Where(cd => cd.discounted_price > 0) 
-                    .Sum(cd => cd.discounted_price); 
+                    .SelectMany(t => t.cart_details)
+                    .Where(cd => cd.discounted_price > 0)
+                    .Sum(cd => cd.discounted_price);
 
                 int totalDiscounts = discountsCarts + discountsDetails;
 
@@ -832,9 +855,9 @@ namespace KASIR.Komponen
         }
 
         //LOAD DATA Transaction loaddata transaction
-        private DataTable cachedDataTable; 
-        private int itemsPerPage = 30;     
-        private int currentPage = 0;       
+        private DataTable cachedDataTable;
+        private int itemsPerPage = 30;
+        private int currentPage = 0;
 
         private void DisplayDataInCards(DataTable dataTable)
         {
@@ -1071,27 +1094,44 @@ namespace KASIR.Komponen
                 DataTable dataTable = CreateDataTable();
 
                 string startAt = GetStartAt();
+                string endAt = DateTime.Now.ToString();
+                if (string.IsNullOrEmpty(loadCartEndShift) && string.IsNullOrEmpty(loadCartStartShift))
+                {
+                    initLoadData = true;
+                    start_shift.Text = startAt;
+                    end_shift.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    loadCartEndShift = end_shift.Text;
+                    loadCartStartShift = start_shift.Text;
+                    initLoadData = false;
+                }
+                else
+                {
+                    startAt = loadCartStartShift;
+                    endAt = loadCartEndShift;
+                }
                 DateTime startAtDateTime = DateTime.Parse(startAt);
+                DateTime endAtDateTime = DateTime.Parse(endAt);
 
+                NotifyHelper.Info($"Start: {startAtDateTime.ToString()}\nEnd: {endAtDateTime.ToString()}");
                 //filtering
 
                 // Memfilter transaksi berdasarkan created_at
                 List<Transaction> transactionDataFiltered = transactionData.data
-                    .Where(t => DateTime.TryParse(t.updated_at, out DateTime createdAt) && createdAt > startAtDateTime)
+                    .Where(t => DateTime.TryParse(t.updated_at, out DateTime createdAt) && createdAt > startAtDateTime && createdAt < endAtDateTime)
                     .ToList();
 
                 // Memfilter pengeluaran berdasarkan created_at
                 List<ExpenditureStrukShift> filteredExpenditures = expenditureData.data
                     .Where(e => DateTime.TryParse(e.created_at, out DateTime expenditureCreatedAt) &&
-                                expenditureCreatedAt > startAtDateTime)
+                                expenditureCreatedAt > startAtDateTime && expenditureCreatedAt < endAtDateTime)
                     .ToList();
 
                 List<Transaction> filteredSavebillCancelBefore = transactionDataSaveBill.data
-                    .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt < startAtDateTime)
+                    .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt < startAtDateTime && createdAt > endAtDateTime)
                     .ToList();
 
                 List<Transaction> filteredSavebillCancelAfter = transactionDataSaveBill.data
-                    .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt > startAtDateTime)
+                    .Where(t => DateTime.TryParse(t.created_at, out DateTime createdAt) && createdAt > startAtDateTime && createdAt < endAtDateTime)
                     .ToList();
 
                 // Membungkus filteredTransactions menjadi TransactionData
@@ -1101,7 +1141,7 @@ namespace KASIR.Komponen
 
 
                 ExpenditureData filteredexpenditureData = new() { data = filteredExpenditures };
-                
+
                 // Get the start and last shift based on transaction times
                 var (startShift, lastShift) = GetStartAndLastShiftOrder(filteredTransactions);
                 // Add the Start and Last Shift Order to the DataTable
@@ -1110,6 +1150,8 @@ namespace KASIR.Komponen
                 AddSeparatorRowBold(dataTable, "SHIFT NUMBER " + shiftNumber, dataGridView1);
 
                 AddSeparatorRowBold(dataTable, "Start Shift : " + startAtDateTime, dataGridView1);
+
+
                 dataTable.Rows.Add("Start Shift Order", $"{startShift.ToString("yyyy-MM-dd HH:mm:ss")}");
                 dataTable.Rows.Add("Last Shift Order", $"{lastShift.ToString("yyyy-MM-dd HH:mm:ss")}");
 
@@ -1194,10 +1236,10 @@ namespace KASIR.Komponen
                 this.flowlayoutPanel.SizeChanged += flowlayoutPanel_SizeChanged;
                 btnCetakStruk.Enabled = true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 NotifyHelper.Error(ex.Message);
-                LoggerUtil.LogError(ex,ex.ToString());
+                LoggerUtil.LogError(ex, ex.ToString());
             }
         }
         private void flowlayoutPanel_SizeChanged(object sender, EventArgs e)
@@ -1297,11 +1339,11 @@ namespace KASIR.Komponen
         {
             AddSeparatorRowBold(dataTable, text, dataGridView1);
             decimal groupedCartCarts = transactionData.data
-                .Where(t => t.discounted_price > 0) 
-                .Sum(t => t.discounted_price); 
+                .Where(t => t.discounted_price > 0)
+                .Sum(t => t.discounted_price);
             dataTable.Rows.Add("Discount Per Carts", $"{groupedCartCarts:n0}");
             decimal groupedCartDetails = transactionData.data
-                .SelectMany(t => t.cart_details) 
+                .SelectMany(t => t.cart_details)
                 .Where(cd => cd.discounted_price > 0) // Filter only items with discounted_price > 0
                 .Sum(cd => cd.discounted_price); // Sum the discounted_price of each cart detail
             dataTable.Rows.Add("Discount Per Items", $"{groupedCartDetails:n0}");
@@ -1384,7 +1426,7 @@ namespace KASIR.Komponen
                     PaymentTypeId = g.Key,
                     PaymentTypeName = paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ?? "Unknown",
                     TotalAmount = g.Sum(x => x.total + x.total_refund),
-                    MemberUsePoints = g.Sum(x => x.member_use_point ?? 0) 
+                    MemberUsePoints = g.Sum(x => x.member_use_point ?? 0)
                 }).ToList();
 
             var groupedRefunds = transactionData.data
@@ -1553,6 +1595,74 @@ namespace KASIR.Komponen
             else
             {
                 LoggerUtil.LogError(null, "No rows found in the DataGridView to apply bold style.");
+            }
+        }
+
+        bool initLoadData = false;
+        private void start_shift_TextChanged(object sender, EventArgs e)
+        {
+            if (!progresReloadData && !initLoadData)
+            {
+                try
+                {
+                    DateTime parsedDateTime = DateTime.ParseExact(start_shift.Text, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                }
+                catch (FormatException)
+                {
+                    int currentCursorPosition = start_shift.SelectionStart; // Simpan posisi kursor saat ini  
+                    this.Invoke((MethodInvoker)delegate {
+                        start_shift.Focus();
+                        start_shift.SelectionStart = currentCursorPosition;
+                    });
+                    return;
+                }
+                loadCartStartShift = start_shift.Text;
+                reloadData();
+            }
+        }
+
+        bool progresReloadData = false;
+        private async void reloadData()
+        {
+            progresReloadData = true;
+            if (!string.IsNullOrEmpty(start_shift.Text) && !string.IsNullOrEmpty(end_shift.Text))
+            {
+                try
+                {
+                    LoadData();
+                }
+                catch(Exception ex)
+                {
+                    progresReloadData = false;
+                }
+                finally
+                {
+                    progresReloadData = false;
+                }
+            }
+        }
+
+        private void end_shift_TextChanged(object sender, EventArgs e)
+        {
+            if (!progresReloadData && !initLoadData)
+            {
+                try
+                {
+                    DateTime parsedDateTime = DateTime.ParseExact(end_shift.Text, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                }
+                catch (FormatException)
+                {
+                    int currentCursorPosition = end_shift.SelectionStart; // Simpan posisi kursor saat ini  
+                    this.Invoke((MethodInvoker)delegate {
+                        end_shift.Focus();
+                        end_shift.SelectionStart = currentCursorPosition;
+                    });
+                    return;
+
+                }
+                loadCartEndShift = end_shift.Text;
+
+                reloadData();
             }
         }
     }

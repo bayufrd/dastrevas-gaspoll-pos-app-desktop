@@ -25,6 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Helper\QuestionEndShift.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="OffineMode\Dashboard.cs" />
     <Compile Update="OffineMode\Offline_MemberCustom.cs">
       <SubType>Form</SubType>

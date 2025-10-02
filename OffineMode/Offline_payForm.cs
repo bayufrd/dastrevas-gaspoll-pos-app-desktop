@@ -119,8 +119,8 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                // Ambil pajak jika ada
-                if (!PajakHelper.TryGetPajak(out string pajakText))
+                    // Ambil pajak jika ada
+                    if (!PajakHelper.TryGetPajak(out string pajakText))
                 {
                     // tidak ada pajak: set langsung totalCart
                     txtJumlahPembayaran.Text = CleanInput(totalCart);
@@ -568,57 +568,97 @@ namespace KASIR.OfflineMode
                     }
 
                     // Prepare transaction data
-                    var transactionData = new
+                    var transactionData = new JObject
                     {
-                        transaction_id = int.Parse(transactionId),
-                        receipt_number = receipt_numberfix,
-                        transaction_ref = transaction_ref_sent,
-                        transaction_ref_split = transaction_ref_splitted,
-                        invoice_number =
-                            $"INV-{invoiceMaker}{paymentTypedId}",
-                        invoice_due_date = invoiceDue,
-                        payment_type_id = paymentTypedId,
-                        payment_type_name =
-                            paymentTypeName,
-                        customer_name = txtNama.Text,
-                        customer_seat = int.Parse(txtSeat.Text),
-                        customer_cash = fulusAmount,
-                        customer_change = change,
-                        total = totalCartAmount,
-                        subtotal = subtotalCart,
-                        created_at =
-                            receiptMaker ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
-                        updated_at = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
-                        deleted_at = (string)null,
-                        is_refund = 0,
-                        refund_reason = (string)null,
-                        delivery_type = (string)null,
-                        delivery_note = (string)null,
-                        discount_id = discount_idConv,
-                        discount_code = discount_codeConv,
-                        discounts_value = discounts_valueConv,
-                        discounts_is_percent = discounts_is_percentConv,
-                        discounted_price = discounted_price1,
-                        discounted_peritem_price = discounted_priceperitem,
-                        member_id = getMember?.member_id > 0 ? getMember.member_id : (int?)null,
-                        member_name = !string.IsNullOrEmpty(getMember?.member_name) ? getMember.member_name : (string)null,
-                        member_phone_number = !string.IsNullOrEmpty(getMember?.member_phone_number) ? getMember.member_phone_number : (string)null,
-                        member_email = !string.IsNullOrEmpty(getMember?.member_email) ? getMember.member_email : (string)null,
-                        member_point = getMember?.member_points > 0 ? getMember.member_points : (int?)null,
-                        member_use_point = membershipUsingPoint > 0 ? membershipUsingPoint : (int?)null,
-                        is_refund_all = 0,
-                        refund_reason_all = (string)null,
-                        refund_payment_id_all = 0,
-                        refund_created_at_all = (string)null,
-                        total_refund = 0,
-                        refund_payment_name_all = (string)null,
-                        is_edited_sync = edited_sync,
-                        is_sent_sync = sent_sync,
-                        is_savebill = savebill,
-                        cart_details = cartDetails,
-                        refund_details = new JArray(),
-                        canceled_items = cancelDetails
+                        ["transaction_id"] = int.Parse(transactionId),
+                        ["receipt_number"] = receipt_numberfix,
+                        ["transaction_ref"] = transaction_ref_sent,
+                        ["transaction_ref_split"] = transaction_ref_splitted,
+                        ["invoice_number"] = $"INV-{invoiceMaker}{paymentTypedId}",
+                        ["invoice_due_date"] = invoiceDue,
+                        ["payment_type_id"] = paymentTypedId,
+                        ["payment_type_name"] = paymentTypeName,
+                        ["customer_name"] = txtNama.Text,
+                        ["customer_seat"] = int.Parse(txtSeat.Text),
+                        ["customer_cash"] = fulusAmount,
+                        ["customer_change"] = change,
+                        ["total"] = totalCartAmount,
+                        ["subtotal"] = subtotalCart,
+                        ["created_at"] = receiptMaker ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                        ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                        ["deleted_at"] = null,
+                        ["is_refund"] = 0,
+                        ["refund_reason"] = null,
+                        ["delivery_type"] = null,
+                        ["delivery_note"] = null,
+                        ["discount_id"] = discount_idConv,
+                        ["discount_code"] = discount_codeConv,
+                        ["discounts_value"] = discounts_valueConv,
+                        ["discounts_is_percent"] = discounts_is_percentConv,
+                        ["discounted_price"] = discounted_price1,
+                        ["discounted_peritem_price"] = discounted_priceperitem,
+                        ["member_id"] = getMember?.member_id > 0 ? getMember.member_id : null,
+                        ["member_name"] = !string.IsNullOrEmpty(getMember?.member_name) ? getMember.member_name : null,
+                        ["member_phone_number"] = !string.IsNullOrEmpty(getMember?.member_phone_number) ? getMember.member_phone_number : null,
+                        ["member_email"] = !string.IsNullOrEmpty(getMember?.member_email) ? getMember.member_email : null,
+                        ["member_point"] = getMember?.member_points > 0 ? getMember.member_points : null,
+                        ["member_use_point"] = membershipUsingPoint > 0 ? membershipUsingPoint : null,
+                        ["is_refund_all"] = 0,
+                        ["refund_reason_all"] = null,
+                        ["refund_payment_id_all"] = 0,
+                        ["refund_created_at_all"] = null,
+                        ["total_refund"] = 0,
+                        ["refund_payment_name_all"] = null,
+                        ["is_edited_sync"] = edited_sync,
+                        ["is_sent_sync"] = sent_sync,
+                        ["is_savebill"] = savebill,
+                        ["cart_details"] = JToken.FromObject(cartDetails),
+                        ["refund_details"] = new JArray(),
+                        ["canceled_items"] = JToken.FromObject(cancelDetails),
+                        ["is_pajak"] = 0
                     };
+
+                    // Tambahkan pajak hanya jika outlet pakai pajak
+                    if (PajakHelper.TryGetPajak(out string pajakText))
+                    {
+                        int pajakPersen = int.Parse(pajakText);
+                        int totalSebelumPajak = totalCartAmount;
+
+                        // Tambah pajak
+                        int totalDenganPajak = totalSebelumPajak * (pajakPersen + 100) / 100;
+
+                        // Simpan nilai sebelum pembulatan (untuk hitung PPN asli)
+                        int totalSebelumPembulatan = totalDenganPajak;
+
+                        // Pembulatan ke atas kelipatan 500
+                        int totalSetelahPembulatan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
+
+
+                        // Hitung selisih pajak real
+                        int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
+                        int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) - nilaiPajak;
+
+
+                        // Tambah Line PPN
+                        transactionData["is_pajak"] = 1;
+                        transactionData["pajak_value"] = pajakPersen;
+                        transactionData["pajak_nominal"] = nilaiPajak;
+                        transactionData["subtotal_PB1"] = totalDenganPajak;
+
+                        // Update total & kembalian
+                        if (paymentTypeName.ToString() == "Tunai")
+                        {
+                            transactionData["pajak_total"] = totalSetelahPembulatan;
+                            transactionData["pajak_customer_change"] = totalSetelahPembulatan - fulusAmount;
+                            transactionData["pajak_donasi"] = nilaiPembulatanPB;
+                        }
+                        else
+                        {
+                            transactionData["pajak_total"] = totalSetelahPembulatan;
+                            transactionData["pajak_customer_change"] = totalSetelahPembulatan - fulusAmount;
+                        }
+                    }
+
 
                     string transactionDataPath = "DT-Cache\\Transaction\\transaction.data";
                     JArray transactionDataArray = new();
@@ -1662,11 +1702,12 @@ namespace KASIR.OfflineMode
 
                 int kembalian = cash - mustPay;
 
-                lblKembalian.Text = $"CHANGES\n\n{kembalian.ToString("#,0")}";
-
                 // format ulang input
                 txtCash.Text = cash.ToString("#,0");
                 txtCash.SelectionStart = txtCash.Text.Length;
+                if (isChangeCmbPayment) return;
+
+                lblKembalian.Text = $"CHANGES\n\n{kembalian.ToString("#,0")}";
             }
             catch
             {
@@ -1951,10 +1992,19 @@ namespace KASIR.OfflineMode
                 membershipUsingPoint = 0;
             }
         }
-
+        private bool isChangeCmbPayment = false;
         private void cmbPayform_SelectedIndexChanged(object sender, EventArgs e)
         {
-            ApplyPajakAndSetAmounts(true);
+            try
+            {
+                isChangeCmbPayment = true;
+                ApplyPajakAndSetAmounts(true);
+            }
+            finally
+            {
+                isChangeCmbPayment = false;
+            }
+           
         }
     }
 }

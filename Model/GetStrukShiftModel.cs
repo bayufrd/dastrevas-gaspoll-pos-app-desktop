@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
 namespace KASIR.Model
 {
@@ -82,53 +78,53 @@ namespace KASIR.Model
         public int discount_total_amount { get; set; }
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
-            sb.AppendLine($"Outlet: {outlet_name}");
-            sb.AppendLine($"Shift: {shift_number}");
-            sb.AppendLine($"Start: {start_date}");
-            sb.AppendLine($"End: {end_date}");
+            _ = sb.AppendLine($"Outlet: {outlet_name}");
+            _ = sb.AppendLine($"Shift: {shift_number}");
+            _ = sb.AppendLine($"Start: {start_date}");
+            _ = sb.AppendLine($"End: {end_date}");
 
             // Expenditures
-            sb.AppendLine("Expenditures:");
+            _ = sb.AppendLine("Expenditures:");
             foreach (var expenditure in expenditures)
             {
-                sb.AppendLine($"- {expenditure.description}: {expenditure.nominal}");
+                _ = sb.AppendLine($"- {expenditure.description}: {expenditure.nominal}");
             }
 
             // Cart Details Success
-            sb.AppendLine("Cart Details Success:");
+            _ = sb.AppendLine("Cart Details Success:");
             foreach (var cartSuccess in cart_details_success)
             {
-                sb.AppendLine($"- {cartSuccess.menu_name} ({cartSuccess.qty}): {cartSuccess.total_price}");
+                _ = sb.AppendLine($"- {cartSuccess.menu_name} ({cartSuccess.qty}): {cartSuccess.total_price}");
             }
 
             // Cart Details Pending
-            sb.AppendLine("Cart Details Pending:");
+            _ = sb.AppendLine("Cart Details Pending:");
             foreach (var cartPending in cart_details_pending)
             {
-                sb.AppendLine($"- {cartPending.menu_name} ({cartPending.qty}): {cartPending.total_price}");
+                _ = sb.AppendLine($"- {cartPending.menu_name} ({cartPending.qty}): {cartPending.total_price}");
             }
 
             // Cart Details Canceled
-            sb.AppendLine("Cart Details Canceled:");
+            _ = sb.AppendLine("Cart Details Canceled:");
             foreach (var cartCanceled in cart_details_canceled)
             {
-                sb.AppendLine($"- {cartCanceled.menu_name} ({cartCanceled.qty}): {cartCanceled.total_price}");
+                _ = sb.AppendLine($"- {cartCanceled.menu_name} ({cartCanceled.qty}): {cartCanceled.total_price}");
             }
 
             // Refund Details
-            sb.AppendLine("Refund Details:");
+            _ = sb.AppendLine("Refund Details:");
             foreach (var refundDetail in refund_details)
             {
-                sb.AppendLine($"- {refundDetail.menu_name} ({refundDetail.qty_refund_item}): {refundDetail.total_refund_price}");
+                _ = sb.AppendLine($"- {refundDetail.menu_name} ({refundDetail.qty_refund_item}): {refundDetail.total_refund_price}");
             }
 
             // Payment Details
-            sb.AppendLine("Payment Details:");
+            _ = sb.AppendLine("Payment Details:");
             foreach (var paymentDetail in payment_details)
             {
-                sb.AppendLine($"- {paymentDetail.payment_category}: {paymentDetail.total_amount}");
+                _ = sb.AppendLine($"- {paymentDetail.payment_category}: {paymentDetail.total_amount}");
             }
 
             return sb.ToString();
@@ -284,7 +280,13 @@ namespace KASIR.Model
         public List<RefundDetails> refund_details { get; set; }
         public List<CanceledDetails> canceled_items { get; set; }
         public int is_refund_all { get; set; }  // Indicating if the transaction is fully refunded
-        
+        public int? pajak_nominal { get; set; } = 0;
+        public int? pajak_value { get; set; } = 0;
+        public int? subtotal_PB1 { get; set; } = 0;
+        public int? pajak_total { get; set; } = 0;
+        public int? pajak_customer_change { get; set; } = 0;
+        public int? pajak_donasi { get; set; } = 0;
+
         //MEMBERS AREA
         public int? member_id { get; set; } = 0;
         public string? member_name { get; set; }

@@ -91,6 +91,11 @@ namespace KASIR.OfflineMode
                         decimal total = transaction["total"] != null
                             ? decimal.Parse(transaction["total"].ToString())
                             : 0;
+                        if(PajakHelper.TryGetPajak(out string pajakText))
+                        {
+                            total += decimal.TryParse(transaction["pajak_nominal"]?.ToString(), out var pajakNominal) ? pajakNominal : 0;
+                            total += decimal.TryParse(transaction["pajak_donasi"]?.ToString(), out var pajakDonasi) ? pajakDonasi : 0;
+                        }
                         string customerName = transaction["customer_name"]?.ToString() ?? "-";
                         string customerSeat = transaction["customer_seat"]?.ToString() ?? "0";
                         string paymentType = transaction["payment_type_name"]?.ToString() ?? "-";

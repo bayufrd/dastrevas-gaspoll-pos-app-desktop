@@ -31,6 +31,7 @@ namespace KASIR.Komponen
 
         string startBaru, loadCartStartShift;
         string endBaru, loadCartEndShift, shiftNumberBaru;
+        int pajak_Donasi = 0, pajak_nominal = 0;
         public Offline_shiftReport()
         {
             baseOutlet = Settings.Default.BaseOutlet;
@@ -185,7 +186,6 @@ namespace KASIR.Komponen
 
                     await d.SyncDataTransactions();
                     //======================Sync After Shift End========================\\
-
 
                     string shiftPath = "DT-Cache\\Transaction\\shiftData.data";
 
@@ -368,14 +368,16 @@ namespace KASIR.Komponen
                 List<PaymentType> paymentTypes = LoadPaymentTypes();
 
                 var groupedPayments = transactionData.data
-    .GroupBy(t => t.payment_type_id)
-    .Select(g => new
-    {
-        PaymentTypeId = g.Key,
-        PaymentTypeName = paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ?? "Unknown",
-        TotalAmount = g.Sum(x => x.total),
-        MemberUsePoints = g.Sum(x => x.member_use_point ?? 0)
-    }).ToList();
+                    .GroupBy(t => t.payment_type_id)
+                    .Select(g => new
+                    {
+                       PaymentTypeId = g.Key,
+                       PaymentTypeName = paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ?? "Unknown",
+                       TotalAmount = g.Sum(x => x.total),
+                       MemberUsePoints = g.Sum(x => x.member_use_point ?? 0),
+                       PaymentPajakNominal = g.Sum(x => x.pajak_nominal ?? 0),
+                       PaymentPajakDonasi = g.Sum(x => x.pajak_donasi ?? 0),
+                    }).ToList();
 
                 var groupedRefunds = transactionData.data
                     .Where(t => t.is_refund_all == 1)
@@ -415,6 +417,7 @@ namespace KASIR.Komponen
                     int totalRefund = totalRefundAll + totalItemRefund;
 
                     int netAmount = payment.TotalAmount - totalRefund;
+                    netAmount += payment.PaymentPajakNominal + payment.PaymentPajakDonasi;
 
                     string paymentTypeString = payment.PaymentTypeName;
                     if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
@@ -466,12 +469,31 @@ namespace KASIR.Komponen
                     payment_category_id = categoryId++ // Increment category ID for each entry
                 });
 
+                int totalPajakNominal = int.Parse(CalculateTotalNominalPajak(transactionData.data).ToString());
+                paymentDetails.Add(new
+                {
+                    payment_category = "PAJAK: PB1", // Use the formatted payment category
+                    payment_type_detail = new List<dynamic>(), // Initialize as an empty array
+                    total_amount = totalPajakNominal,
+                    payment_category_id = categoryId++ // Increment category ID for each entry
+                });
+
+                int totalPajakDonasi = int.Parse(CalculateTotalDonasiPajak(transactionData.data).ToString());
+                paymentDetails.Add(new
+                {
+                    payment_category = "PAJAK: Donasi", // Use the formatted payment category
+                    payment_type_detail = new List<dynamic>(), // Initialize as an empty array
+                    total_amount = totalPajakDonasi,
+                    payment_category_id = categoryId++ // Increment category ID for each entry
+                });
                 grandTotal -= totalRefundAmount;
                 grandTotal -= totalMemberUsePoints;
+                grandTotal += totalPajakDonasi;
+                grandTotal += totalPajakNominal;
                 int totalTransaction = grandTotal - totalExpenditure;
                 totalTransaksiOutlet = totalTransaction;
                 totalDiscountAmount = totalDiscounts;
-
+                ending_cash += totalPajakDonasi + totalPajakNominal;
                 int cash_difference = int.Parse(actual_cash) - int.Parse(ending_cash.ToString());
 
                 var finalReport = new
@@ -1165,8 +1187,6 @@ namespace KASIR.Komponen
                 decimal totalProcessedCart = CalculateTotalProcessCartDetails(filteredTransactions);
                 dataTable.Rows.Add("Total Sold Items", $"{totalProcessedCart:n0}");
 
-                //dataTable.Rows.Add("", "");
-
                 // Process refunded items
                 ProcessRefundDetails(filteredTransactions, dataTable);
 
@@ -1180,7 +1200,6 @@ namespace KASIR.Komponen
                 decimal totalPendingCart = CalculateTotalProcessCartDetails(transactionDataSaveBill);
                 dataTable.Rows.Add("Total Savebill/Pending Items", $"{totalPendingCart:n0}");
 
-                //dataTable.Rows.Add("", "");
                 // Cancel the savebill details
                 ProcessCartDetails(transactionDataSaveBill, dataTable, "CANCELED ITEMS");
 
@@ -1193,20 +1212,14 @@ namespace KASIR.Komponen
                 decimal totalCancelCart = CalculateTotalCanceledItems(filteredTransactionsCanceledSavebillAfter);
                 dataTable.Rows.Add("Total Canceled Items Shift Sekarang", $"{totalCancelCart:n0}");
 
-                //dataTable.Rows.Add("", "");
-
                 // Process the Expenditure details
                 ProcessExpenditureDetails(filteredExpenditures, dataTable, "PENGELUARAN");
 
                 cashOutExpenditure = int.Parse(totalExpenditureItems.ToString());
                 dataTable.Rows.Add("Total Pengeluaran", $"{totalExpenditureItems:n0}");
 
-                //dataTable.Rows.Add("", "");
-
                 // Process the Discounts details
                 ProcessDiscountDetails(filteredTransactions, dataTable, "DISCOUNT ITEMS");
-
-                //dataTable.Rows.Add("", "");
 
                 // Process payment details
                 ProcessPaymentDetails(filteredTransactions, dataTable, totalExpenditureItems);
@@ -1214,8 +1227,6 @@ namespace KASIR.Komponen
                 AddSeparatorRowBold(dataTable, "POS DETAILS", dataGridView1);
                 dataTable.Rows.Add("Total Expected Ending Cash", $"{ending_cash:n0}");
                 txtActualCash.Text = ending_cash.ToString();
-
-                //dataTable.Rows.Add("", "");
 
                 // Add the grand total
                 decimal grandTotal = filteredTransactions.data
@@ -1228,9 +1239,15 @@ namespace KASIR.Komponen
                 totalProcessedCart -= totalRefundAmount;
                 totalProcessedCart -= totalExpenditureItems;
                 totalProcessedCart -= totalMemberUsePoints;
+
+                if (PajakHelper.TryGetPajak(out string pajakText))
+                {
+                    totalProcessedCart += pajak_nominal;
+                    totalProcessedCart += pajak_Donasi;
+                }
+
                 dataTable.Rows.Add("Total Transactions", $"{totalProcessedCart:n0}");
 
-                // Display data in DataGridView
                 //DisplayDataInDataGridView(dataTable);
                 DisplayDataInCards(dataTable);
                 this.flowlayoutPanel.SizeChanged += flowlayoutPanel_SizeChanged;
@@ -1416,7 +1433,6 @@ namespace KASIR.Komponen
 
         private void ProcessPaymentDetails(TransactionData transactionData, DataTable dataTable, decimal expenditures)
         {
-            AddSeparatorRowBold(dataTable, "PAYMENT DETAILS", dataGridView1);
             List<PaymentType> paymentTypes = LoadPaymentTypes();
 
             var groupedPayments = transactionData.data
@@ -1426,7 +1442,9 @@ namespace KASIR.Komponen
                     PaymentTypeId = g.Key,
                     PaymentTypeName = paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ?? "Unknown",
                     TotalAmount = g.Sum(x => x.total + x.total_refund),
-                    MemberUsePoints = g.Sum(x => x.member_use_point ?? 0)
+                    MemberUsePoints = g.Sum(x => x.member_use_point ?? 0),
+                    PaymentPajakNominal = g.Sum(x => x.pajak_nominal ?? 0),
+                    PaymentPajakDonasi = g.Sum(x => x.pajak_donasi ?? 0),
                 }).ToList();
 
             var groupedRefunds = transactionData.data
@@ -1452,6 +1470,23 @@ namespace KASIR.Komponen
                 }).ToList();
 
             decimal totalMemberUsePoints = CalculateTotalMemberUsePoints(transactionData.data);
+
+            int totalPajakDonasi = 0;
+            if (PajakHelper.TryGetPajak(out string pajakText))
+            {
+                int totalPajakNominal = CalculateTotalNominalPajak(transactionData.data);
+                totalPajakDonasi = CalculateTotalDonasiPajak(transactionData.data);
+
+                pajak_Donasi = totalPajakDonasi;
+                pajak_nominal = totalPajakNominal;
+
+                AddSeparatorRowBold(dataTable, "PAJAK :", dataGridView1);
+                dataTable.Rows.Add("Total PB1", $"{totalPajakNominal:n0}");
+                dataTable.Rows.Add("Total Donasi", $"{totalPajakDonasi:n0}");
+            }
+            
+            AddSeparatorRowBold(dataTable, "PAYMENT DETAILS", dataGridView1);
+
             foreach (var payment in groupedPayments)
             {
                 var refund = groupedRefunds.FirstOrDefault(r => r.PaymentTypeId == payment.PaymentTypeId);
@@ -1461,6 +1496,7 @@ namespace KASIR.Komponen
                 decimal totalItemRefund = itemRefund?.TotalItemRefund ?? 0;
 
                 decimal netAmount = payment.TotalAmount - (totalRefund + totalItemRefund);
+                netAmount += payment.PaymentPajakNominal;
 
 
                 string paymentTypeString = payment.PaymentTypeName;
@@ -1468,14 +1504,46 @@ namespace KASIR.Komponen
                 {
                     paymentTypeString = "TUNAI ON POS";
                     cashOutRefund = int.Parse(totalRefund.ToString()) + int.Parse(totalItemRefund.ToString());
-                    decimal actual = netAmount - expenditures;
+                    decimal actual = netAmount - expenditures + payment.PaymentPajakDonasi;
                     txtActualCash.Text = $"{actual:n0}";
                     ending_cash = int.Parse(actual.ToString());
+                    dataTable.Rows.Add(paymentTypeString, $"{actual:n0}");
+
+                    continue;
                 }
                 dataTable.Rows.Add(paymentTypeString, $"{netAmount:n0}");
             }
             AddSeparatorRowBold(dataTable, "POINT MEMBER DETAILS", dataGridView1);
             dataTable.Rows.Add("Total Point Member Terpakai", $"{totalMemberUsePoints:n0}");
+
+        }
+        private int CalculateTotalDonasiPajak(IEnumerable<Transaction> transactions)
+        {
+            int totalPajakDonasi = 0;
+
+            foreach (var transaction in transactions)
+            {
+                if (transaction.pajak_donasi.HasValue)
+                {
+                    totalPajakDonasi += transaction.pajak_donasi.Value;
+                }
+            }
+
+            return totalPajakDonasi;
+        }
+        private int CalculateTotalNominalPajak(IEnumerable<Transaction> transactions)
+        {
+            int totalPajakNominal = 0;
+
+            foreach (var transaction in transactions)
+            {
+                if (transaction.pajak_nominal.HasValue)
+                {
+                    totalPajakNominal += transaction.pajak_nominal.Value;
+                }
+            }
+
+            return totalPajakNominal;
         }
         private decimal CalculateTotalMemberUsePoints(IEnumerable<Transaction> transactions)
         {

@@ -1,12 +1,10 @@
-﻿using System.Data;
+﻿using System.Runtime.InteropServices;
+using KASIR.Helper;
 using KASIR.Model;
 using KASIR.Printer;
 using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using KASIR.Helper;
-using System.Windows.Markup;
-using System.Runtime.InteropServices;
 
 
 namespace KASIR.OfflineMode
@@ -120,7 +118,7 @@ namespace KASIR.OfflineMode
             }
             catch (Exception ex)
             {
-                NotifyHelper.Error("Autentikasi gagal: "+ex.Message);
+                NotifyHelper.Error("Autentikasi gagal: " + ex.Message);
                 LoggerUtil.LogError(ex, "An error occurred: {ErrorMessage}", ex.Message);
             }
         }
@@ -230,7 +228,7 @@ namespace KASIR.OfflineMode
 
         private Panel CreateTransactionInfoCard(JToken transactionData)
         {
-            Panel cardPanel = new Panel
+            Panel cardPanel = new()
             {
                 Width = flowLayoutPanel1.Width - 40,
                 BackColor = Color.White,
@@ -242,7 +240,7 @@ namespace KASIR.OfflineMode
             // Tambahkan efek bayangan
             cardPanel.Paint += (sender, e) =>
             {
-                using (Pen shadowPen = new Pen(Color.FromArgb(200, 200, 200), 1))
+                using (Pen shadowPen = new(Color.FromArgb(200, 200, 200), 1))
                 {
                     e.Graphics.DrawRectangle(shadowPen, 0, 0, cardPanel.Width - 1, cardPanel.Height - 1);
                 }
@@ -267,12 +265,10 @@ namespace KASIR.OfflineMode
             cardPanel.Controls.Add(lblTransactionTime);
             currentY += 30;
 
-            // Helper method untuk parsing decimal dengan penanganan error
             string FormatDecimal(JToken token)
             {
                 try
                 {
-                    // Coba parsing sebagai string, hilangkan koma atau spasi yang tidak diperlukan
                     if (token != null)
                     {
                         string valueStr = token.ToString().Trim().Replace(",", "").Replace(" ", "");
@@ -289,7 +285,6 @@ namespace KASIR.OfflineMode
                 }
             }
 
-            // Helper method untuk parsing integer dengan penanganan error
             string FormatInteger(JToken token)
             {
                 try
@@ -341,15 +336,65 @@ namespace KASIR.OfflineMode
             cardPanel.Controls.Add(lblTotal);
             currentY += 30;
 
+            JToken pajakToken = transactionData["is_pajak"];
+            if (pajakToken != null && pajakToken.Type != JTokenType.Null && pajakToken.ToString() == "1")
+            {
+                Label lblPajak = CreateLabel("PB1: Rp " +
+                    FormatDecimal(transactionData["pajak_nominal"]),
+                    new Font("Segoe UI", 10, FontStyle.Regular));
+                lblPajak.Location = new Point(15, currentY);
+                cardPanel.Controls.Add(lblPajak);
+                currentY += 30;
+
+                JToken paymentType = transactionData["payment_type_name"];
+                if (paymentType != null && paymentType.Type != JTokenType.Null && paymentType.ToString() == "Tunai")
+                {
+                    Label lblPajakDonasi = CreateLabel("Donasi Tunai: Rp " +
+                        FormatDecimal(transactionData["pajak_donasi"]),
+                        new Font("Segoe UI", 10, FontStyle.Regular));
+                    lblPajakDonasi.Location = new Point(15, currentY);
+                    cardPanel.Controls.Add(lblPajakDonasi);
+                    currentY += 30;
+                }
+
+                Label lblTotal_afterPajak = CreateLabel("Total + PB1: Rp " +
+               FormatDecimal(transactionData["pajak_total"]),
+               new Font("Segoe UI", 12, FontStyle.Bold));
+                lblTotal_afterPajak.Location = new Point(15, currentY);
+                cardPanel.Controls.Add(lblTotal_afterPajak);
+                currentY += 30;
+            }
+
             // Atur tinggi panel berdasarkan kontrol
             cardPanel.Height = currentY + 20;
 
             return cardPanel;
         }
 
+        private string FormatDecimal(JToken token)
+        {
+            try
+            {
+                // Coba parsing sebagai string, hilangkan koma atau spasi yang tidak diperlukan
+                if (token != null)
+                {
+                    string valueStr = token.ToString().Trim().Replace(",", "").Replace(" ", "");
+                    if (decimal.TryParse(valueStr, out decimal value))
+                    {
+                        return value.ToString("N0");
+                    }
+                }
+                return "-";
+            }
+            catch
+            {
+                return "-";
+            }
+        }
+
         private Panel CreateDetailInfoCard(JToken transactionData)
         {
-            Panel cardPanel = new Panel
+            Panel cardPanel = new()
             {
                 Width = flowLayoutPanel1.Width - 40,
                 BackColor = Color.White,
@@ -361,35 +406,13 @@ namespace KASIR.OfflineMode
             // Tambahkan efek bayangan
             cardPanel.Paint += (sender, e) =>
             {
-                using (Pen shadowPen = new Pen(Color.FromArgb(200, 200, 200), 1))
+                using (Pen shadowPen = new(Color.FromArgb(200, 200, 200), 1))
                 {
                     e.Graphics.DrawRectangle(shadowPen, 0, 0, cardPanel.Width - 1, cardPanel.Height - 1);
                 }
             };
 
             int currentY = 15;
-
-            // Helper method untuk parsing decimal dengan penanganan error
-            string FormatDecimal(JToken token)
-            {
-                try
-                {
-                    // Coba parsing sebagai string, hilangkan koma atau spasi yang tidak diperlukan
-                    if (token != null)
-                    {
-                        string valueStr = token.ToString().Trim().Replace(",", "").Replace(" ", "");
-                        if (decimal.TryParse(valueStr, out decimal value))
-                        {
-                            return value.ToString("N0");
-                        }
-                    }
-                    return "-";
-                }
-                catch
-                {
-                    return "-";
-                }
-            }
 
             // Helper method untuk parsing integer dengan penanganan error
             string FormatInteger(JToken token)
@@ -482,7 +505,7 @@ namespace KASIR.OfflineMode
 
         private Panel CreateItemCard(JToken item)
         {
-            Panel cardPanel = new Panel
+            Panel cardPanel = new()
             {
                 Width = flowLayoutPanel1.Width - 40,
                 BackColor = Color.White,
@@ -494,7 +517,7 @@ namespace KASIR.OfflineMode
             // Tambahkan efek bayangan ringan
             cardPanel.Paint += (sender, e) =>
             {
-                using (Pen shadowPen = new Pen(Color.FromArgb(220, 220, 220), 1))
+                using (Pen shadowPen = new(Color.FromArgb(220, 220, 220), 1))
                 {
                     e.Graphics.DrawRectangle(shadowPen, 0, 0, cardPanel.Width - 1, cardPanel.Height - 1);
                 }
@@ -533,7 +556,7 @@ namespace KASIR.OfflineMode
 
         private Panel CreateRefundItemCard(JToken refundItem)
         {
-            Panel cardPanel = new Panel
+            Panel cardPanel = new()
             {
                 Width = flowLayoutPanel1.Width - 40,
                 BackColor = Color.FromArgb(255, 240, 240),  // Warna merah muda ringan
@@ -571,7 +594,7 @@ namespace KASIR.OfflineMode
 
         private Panel CreateSectionHeaderPanel(string title)
         {
-            Panel headerPanel = new Panel
+            Panel headerPanel = new()
             {
                 Width = flowLayoutPanel1.Width - 40,
                 Height = 40,
@@ -663,7 +686,7 @@ namespace KASIR.OfflineMode
                     refund_reason =
                         targetTransaksi.refund_reason ?? string.Empty // Handling null value for refund_reason
                 };
-                
+
                 await HandlePrint(dataRestruk, MapCartDetails(targetTransaksi.cart_details), dataRestruk.refund_details,
                     dataRestruk.canceled_items); // Menyertakan refund dan canceled items jika ada
             }
@@ -811,7 +834,7 @@ namespace KASIR.OfflineMode
                         LoggerUtil.LogWarning("Input pin print operation timed out, will retry in background");
 
                         // Continue printing in background
-                        ThreadPool.QueueUserWorkItem(async _ =>
+                        _ = ThreadPool.QueueUserWorkItem(async _ =>
                         {
                             try
                             {
@@ -851,7 +874,7 @@ namespace KASIR.OfflineMode
             try
             {
                 string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs", "InputPin");
-                Directory.CreateDirectory(printJobsDir);
+                _ = Directory.CreateDirectory(printJobsDir);
 
                 InputPinPrintJob inputPinPrintJob = new()
                 {

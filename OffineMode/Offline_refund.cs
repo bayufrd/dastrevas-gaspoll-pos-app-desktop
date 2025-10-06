@@ -1,12 +1,12 @@
 ﻿using System.Globalization;
+using System.Runtime.InteropServices;
+using KASIR.Helper;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Printer;
 using KASIR.Properties;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using KASIR.Helper;
-using System.Runtime.InteropServices;
 
 namespace KASIR.OfflineMode
 {
@@ -31,8 +31,45 @@ namespace KASIR.OfflineMode
         private readonly List<RefundDetailStruk> refundDetailStruks = new();
         private readonly List<RefundModel> refundItems = new();
         private int TotalRefunded;
-        private string Nomortransaks;
+        private readonly string Nomortransaks;
         private int isrefundall;
+
+        //==================== Pajak Helpers ====================\
+        private static bool IsExcludedPayment(string? paymentName)
+        {
+            if (string.IsNullOrWhiteSpace(paymentName)) return false;
+            string[] excluded = new[] { "ShopeeFood", "GrabFood", "GoFood" };
+            return excluded.Any(s => string.Equals(s, paymentName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool TryGetPajakPercent(out int pajakPercent)
+        {
+            pajakPercent = 0;
+            if (!PajakHelper.TryGetPajak(out string pajakText)) return false;
+            return int.TryParse(pajakText, out pajakPercent) && pajakPercent > 0;
+        }
+
+        private static void ComputePajakAndDonation(int baseTotal, int pajakPercent, bool isCash,
+            out int totalDenganPajak, out int pajakNominal, out int totalFinal, out int donasi)
+        {
+            // baseTotal sudah setelah diskon; hitung pajak
+            totalDenganPajak = baseTotal * (pajakPercent + 100) / 100;
+            pajakNominal = totalDenganPajak - baseTotal;
+
+            if (isCash)
+            {
+                // Pembulatan ke atas kelipatan 500
+                int dibulatkan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
+                totalFinal = dibulatkan;
+                donasi = dibulatkan - totalDenganPajak;
+            }
+            else
+            {
+                totalFinal = totalDenganPajak;
+                donasi = 0;
+            }
+        }
+        //=======================================================//
 
         public Offline_refund(string transaksiId)
         {
@@ -57,8 +94,8 @@ namespace KASIR.OfflineMode
             cmbRefundType.DrawMode = DrawMode.OwnerDrawVariable;
             cmbRefundType.DrawItem += CmbRefundType_DrawItem;
             cmbRefundType.ItemHeight = 25;
-            cmbRefundType.Items.Add("Semua");
-            cmbRefundType.Items.Add("Per Item");
+            _ = cmbRefundType.Items.Add("Semua");
+            _ = cmbRefundType.Items.Add("Per Item");
             cmbRefundType.SelectedIndex = 1;
         }
 
@@ -213,7 +250,10 @@ namespace KASIR.OfflineMode
 
                         TableLayoutPanel quantityPanel = new()
                         {
-                            Width = (int)(totalWidth * 0.3), Height = 30, Dock = DockStyle.Right, ColumnCount = 3
+                            Width = (int)(totalWidth * 0.3),
+                            Height = 30,
+                            Dock = DockStyle.Right,
+                            ColumnCount = 3
                         };
 
                         Label quantityLabel = new()
@@ -349,14 +389,23 @@ namespace KASIR.OfflineMode
                 JToken? filteredTransaction =
                     transactionDetails.FirstOrDefault(t => t["transaction_id"]?.ToString() == cartId);
                 int discounted_peritemPrice = 0;
+
+                // Variabel akumulasi pajak/donasi untuk scope luas (perlu setelah per-item loop)
+                bool pajakApplies = false;
+                int pajakPercentItem = 0;
+                int accumulatedDonation = 0;
+                int accumulatedTax = 0;
+
                 if (filteredTransaction != null)
                 {
                     int refundpaymenttype = 0;
-                    int.TryParse(cmbPayform.SelectedValue?.ToString(), out refundpaymenttype);
+                    _ = int.TryParse(cmbPayform.SelectedValue?.ToString(), out refundpaymenttype);
 
                     JArray? cartDetails = filteredTransaction["cart_details"] as JArray;
                     JArray? refundDetails = filteredTransaction["refund_details"] as JArray;
-                    
+
+                    int totalPajak = 0;
+                    int totalDonasi = 0;
                     if (selectedRefundType == "Semua")
                     {
                         if (filteredTransaction["is_refund"].ToString() == "1" && filteredTransaction["is_refund_all"].ToString() == "0")
@@ -401,6 +450,20 @@ namespace KASIR.OfflineMode
                         filteredTransaction["refund_payment_id_all"] = refund_payment_id_all;
                         filteredTransaction["refund_created_at_all"] =
                             DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
+                        //===================================PAJAK (Refund Semua) ===================\
+                        // Untuk refund semua, total diset 0. Simpan flag pajak dan persentase jika berlaku
+                        if (TryGetPajakPercent(out int pajakPercent))
+                        {
+                            filteredTransaction["is_pajak"] = 1;
+                            filteredTransaction["pajak_nominal"] = 0;
+                            filteredTransaction["subtotal_PB1"] = 0;
+                            filteredTransaction["pajak_total"] = 0;
+                            filteredTransaction["pajak_customer_change"] = 0;
+                            filteredTransaction["pajak_donasi"] = 0;
+                        }
+                        
+                        //============================================================================//
                     }
                     else
                     {
@@ -408,6 +471,10 @@ namespace KASIR.OfflineMode
                         filteredTransaction["is_refund"] = 1;
 
                         // Process refundItems and add them to refundDetails
+                        // Pajak & Donasi akan dihitung per-item sesuai payment refund yang dipilih
+                        pajakApplies = TryGetPajakPercent(out pajakPercentItem) && !IsExcludedPayment(cmbPayform.Text);
+                        bool isCashRefund = string.Equals(cmbPayform.Text, "Tunai", StringComparison.OrdinalIgnoreCase);
+
                         foreach (RefundModel refundItem in refundItems)
                         {
                             JToken? cartItem = cartDetails.FirstOrDefault(item =>
@@ -500,9 +567,11 @@ namespace KASIR.OfflineMode
 
                             if (cartItem != null && refundItem.Qty > 0)
                             {
-                                int refundtot = int.Parse(refundItem.Qty.ToString()) *
-                                                int.Parse(cartItem["price"].ToString());
-                                refundDetails.Add(new JObject
+                                int basePerItemPrice = int.Parse(cartItem["price"].ToString());
+                                int qtyRefund = int.Parse(refundItem.Qty.ToString());
+                                int baseRefundTotal = qtyRefund * basePerItemPrice;
+
+                                JObject refundObj = new JObject
                                 {
                                     ["cart_detail_id"] = int.Parse(refundItem.CartDetailId.ToString()),
                                     ["menu_id"] = int.Parse(refundItem.menu_id.ToString()),
@@ -511,8 +580,8 @@ namespace KASIR.OfflineMode
                                     ["menu_detail_id"] = int.Parse(refundItem.menu_detail_id.ToString()),
                                     ["menu_detail_name"] = refundItem.menu_detail_name ?? "",
                                     ["price"] = int.Parse(refundItem.price.ToString()),
-                                    ["refund_qty"] = int.Parse(refundItem.Qty.ToString()),
-                                    ["refund_total"] = int.Parse(refundtot.ToString()),
+                                    ["refund_qty"] = qtyRefund,
+                                    ["refund_total"] = baseRefundTotal,
                                     ["discounted_item_price"] = discounted_peritemPrice,
                                     ["refund_reason_item"] = txtNotes.Text,
                                     ["refund_payment_type_id_item"] = refundpaymenttype,
@@ -521,7 +590,8 @@ namespace KASIR.OfflineMode
                                         DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                                     ["updated_at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss",
                                         CultureInfo.InvariantCulture)
-                                });
+                                };
+                                refundDetails.Add(refundObj);
                                 string priceString = cartItem["price"]?.ToString();
                                 if (string.IsNullOrEmpty(priceString))
                                 {
@@ -531,6 +601,31 @@ namespace KASIR.OfflineMode
 
                                 int price = int.Parse(priceString); // Parsing harga
                                 string refund_payment_name_all = cmbPayform.Text;
+                                // Hitung nilai refund final untuk struk (termasuk pajak & donasi bila berlaku)
+                                int perItemNetPrice = discounted_peritemPrice != 0 ? (price - discounted_peritemPrice) : price;
+                                int baseRefundForStruk = refundItem.Qty * perItemNetPrice;
+
+                                int finalRefundForItem = baseRefundForStruk;
+                                if (pajakApplies)
+                                {
+                                    // subtotal+PB1 untuk item ini
+                                    int totalDenganPajak = baseRefundForStruk * (pajakPercentItem + 100) / 100;
+                                    int pajakNominalItem = totalDenganPajak - baseRefundForStruk;
+                                    accumulatedTax += pajakNominalItem;
+
+                                    if (isCashRefund)
+                                    {
+                                        int rounded = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
+                                        int donationItem = rounded - totalDenganPajak;
+                                        accumulatedDonation += donationItem;
+                                        finalRefundForItem = rounded;
+                                    }
+                                    else
+                                    {
+                                        finalRefundForItem = totalDenganPajak;
+                                    }
+                                }
+
                                 refundDetailStruks.Add(new RefundDetailStruk
                                 {
                                     cart_detail_id = refundItem.CartDetailId,
@@ -538,10 +633,7 @@ namespace KASIR.OfflineMode
                                     payment_type_name = refund_payment_name_all,
                                     qty_refund_item = refundItem.Qty,
                                     discounted_item_price = discounted_peritemPrice,
-                                    total_refund_price =
-                                        discounted_peritemPrice != 0
-                                            ? (price - discounted_peritemPrice) * refundItem.Qty
-                                            : refundItem.Qty * price, // Hitung total refund
+                                    total_refund_price = finalRefundForItem,
                                     menu_name = refundItem.menu_name, // Set default jika null
                                     varian = refundItem.menu_detail_name,
                                     serving_type_name = refundItem.serving_type_name, // Set default jika null
@@ -553,6 +645,8 @@ namespace KASIR.OfflineMode
                                     menu_price = refundItem.price,
                                     note_item = ""
                                 });
+                                // Sinkronkan nilai refund_total di array JSON agar sesuai dengan struk
+                                refundObj["refund_total"] = finalRefundForItem;
                                 // If refunded quantity is the entire item quantity, remove the item from cartDetails
                                 if (refundItem.QtyRemaining == 0) //Qty == int.Parse(cartItem["qty"].ToString()))
                                 {
@@ -581,7 +675,10 @@ namespace KASIR.OfflineMode
                                     cartItem["total_price"] = newtotal;
                                 }
                             }
+
+                            // Pajak dan Donasi per item telah diakumulasi di atas; penyimpanan ke transaksi di bawah
                         }
+
                     }
 
                     if (int.Parse(filteredTransaction["is_sent_sync"].ToString()) != null &&
@@ -600,34 +697,60 @@ namespace KASIR.OfflineMode
                     // Update totals (total, subtotal, refund_total) berdasarkan cartDetails dan refundDetails
                     UpdateTransactionTotals(cartDetails, refundDetails, transactionObject, discounted_peritemPrice);
 
+                    //====================== Hitung & simpan Pajak & Donasi (Per Item) ============\
+                    // Gunakan akumulasi per-item agar donasi hanya dihitung untuk refund tunai
+                    int finalRefundSum = refundDetailStruks.Sum(r => r.total_refund_price);
+                    filteredTransaction["total_refund"] = Math.Max(finalRefundSum, 0);
+
+                    if (pajakApplies)
+                    {
+                        filteredTransaction["is_pajak"] = 1;
+                        filteredTransaction["pajak_value"] = pajakPercentItem;
+                        filteredTransaction["pajak_nominal"] = accumulatedTax;
+                        // subtotal_PB1: total refund sebelum donasi (yakni sudah termasuk pajak)
+                        filteredTransaction["subtotal_PB1"] = finalRefundSum - accumulatedDonation;
+                        filteredTransaction["pajak_total"] = finalRefundSum; // total refund akhir
+                        filteredTransaction["pajak_donasi"] = accumulatedDonation;
+                    }
+                    else
+                    {
+                        filteredTransaction["is_pajak"] = 0;
+                        filteredTransaction["pajak_value"] = 0;
+                        filteredTransaction["pajak_nominal"] = 0;
+                        filteredTransaction["subtotal_PB1"] = finalRefundSum; // sama saja tanpa donasi
+                        filteredTransaction["pajak_total"] = finalRefundSum;
+                        filteredTransaction["pajak_donasi"] = 0;
+                    }
+                    //===============================================================================//
+
                     // Save the updated transaction data back to the file
                     File.WriteAllText(transactionDataPath, transactionData.ToString());
                     //NotifyHelper.Error(transactionData.ToString());
                     // Ambil data outlet dari file DataOutlet.data
                     OutletData outletData = GetOutletData();
                     int transaction_id = 0;
-                    int.TryParse(filteredTransaction["transaction_id"]?.ToString(), out transaction_id);
+                    _ = int.TryParse(filteredTransaction["transaction_id"]?.ToString(), out transaction_id);
 
                     int customer_seat = 0;
-                    int.TryParse(filteredTransaction["customer_seat"]?.ToString(), out customer_seat);
+                    _ = int.TryParse(filteredTransaction["customer_seat"]?.ToString(), out customer_seat);
 
                     int subtotal = 0;
-                    int.TryParse(filteredTransaction["subtotal"]?.ToString(), out subtotal);
+                    _ = int.TryParse(filteredTransaction["subtotal"]?.ToString(), out subtotal);
 
                     int total = 0;
-                    int.TryParse(filteredTransaction["total"]?.ToString(), out total);
+                    _ = int.TryParse(filteredTransaction["total"]?.ToString(), out total);
 
                     int discount_id = 0;
-                    int.TryParse(filteredTransaction["discount_id"]?.ToString(), out discount_id);
+                    _ = int.TryParse(filteredTransaction["discount_id"]?.ToString(), out discount_id);
 
                     int discounts_value = 0;
-                    int.TryParse(filteredTransaction["discounts_value"]?.ToString(), out discounts_value);
+                    _ = int.TryParse(filteredTransaction["discounts_value"]?.ToString(), out discounts_value);
 
                     int customer_cash = 0;
-                    int.TryParse(filteredTransaction["customer_cash"]?.ToString(), out customer_cash);
+                    _ = int.TryParse(filteredTransaction["customer_cash"]?.ToString(), out customer_cash);
 
                     int customer_change = 0;
-                    int.TryParse(filteredTransaction["customer_change"]?.ToString(), out customer_change);
+                    _ = int.TryParse(filteredTransaction["customer_change"]?.ToString(), out customer_change);
 
                     // Membuat DataRefundStruk untuk pencetakan
                     refundData = new DataRefundStruk
@@ -674,7 +797,6 @@ namespace KASIR.OfflineMode
             int totalRefund = 0;
             int cartTotal = 0;
             int cartsubTotal = 0;
-            int discountedPriced = 0;
             int qtytot = 0;
 
             // Calculate total refund based on refundDetails
@@ -687,11 +809,11 @@ namespace KASIR.OfflineMode
                     int discountedItemPrice = 0;
 
                     // Safe parsing with null checks
-                    int.TryParse(refundItem["price"]?.ToString() ?? "0", out price);
-                    int.TryParse(refundItem["discounted_item_price"]?.ToString() ?? "0", out discountedItemPrice);
+                    _ = int.TryParse(refundItem["price"]?.ToString() ?? "0", out price);
+                    _ = int.TryParse(refundItem["discounted_item_price"]?.ToString() ?? "0", out discountedItemPrice);
 
                     int refundQty = 0;
-                    int.TryParse(refundItem["refund_qty"]?.ToString() ?? "0", out refundQty);
+                    _ = int.TryParse(refundItem["refund_qty"]?.ToString() ?? "0", out refundQty);
 
                     int pricefix = price - discountedItemPrice;
                     int refundTotal = pricefix * refundQty;
@@ -709,27 +831,26 @@ namespace KASIR.OfflineMode
                 {
                     // Safely get total_price or default to 0
                     int totalPrice = 0;
-                    int.TryParse(cartItem["total_price"]?.ToString() ?? "0", out totalPrice);
+                    _ = int.TryParse(cartItem["total_price"]?.ToString() ?? "0", out totalPrice);
                     cartTotal += totalPrice;
 
                     // If you need to calculate qty for other purposes
-                    int.TryParse(cartItem["qty"]?.ToString() ?? "0", out int cartQty);
+                    _ = int.TryParse(cartItem["qty"]?.ToString() ?? "0", out int cartQty);
                     qtytot += cartQty;
                 }
             }
 
             // Update the refund_total in filteredTransaction
-            int existingRefundTotal = 0;
-            int.TryParse(filteredTransaction["refund_total"]?.ToString() ?? "0", out existingRefundTotal);
+            _ = int.TryParse(filteredTransaction["refund_total"]?.ToString() ?? "0", out _);
 
             // Calculate new total refund
             filteredTransaction["total_refund"] = Math.Max(totalRefund, 0); // Ensure refund_total is not less than 0
             TotalRefunded = Math.Max(totalRefund, 0); // Ensure TotalRefunded is not less than 0
 
             // Safely calculate discountedPriced
-            int discountPerItemPrice = 0;
-            int.TryParse(filteredTransaction["discounted_peritem_price"]?.ToString() ?? "0", out discountPerItemPrice);
-            discountedPriced = qtytot * discountPerItemPrice;
+            int discountPerItemPrice;
+            _ = int.TryParse(filteredTransaction["discounted_peritem_price"]?.ToString() ?? "0", out discountPerItemPrice);
+            _ = qtytot * discountPerItemPrice;
             filteredTransaction["is_refund"] = 1; // Ensure subtotal is not less than 0
 
             // Update subtotal and total
@@ -834,7 +955,7 @@ namespace KASIR.OfflineMode
                         Close();
 
                         // Continue printing in background without blocking UI
-                        ThreadPool.QueueUserWorkItem(async _ =>
+                        _ = ThreadPool.QueueUserWorkItem(async _ =>
                         {
                             try
                             {
@@ -884,7 +1005,7 @@ namespace KASIR.OfflineMode
             try
             {
                 string printJobsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PrintJobs", "Refunds");
-                Directory.CreateDirectory(printJobsDir);
+                _ = Directory.CreateDirectory(printJobsDir);
 
                 RefundPrintJob refundPrintJob = new()
                 {

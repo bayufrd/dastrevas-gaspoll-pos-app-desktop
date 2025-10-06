@@ -2641,7 +2641,7 @@ namespace KASIR.Printer
             strukText += "Name: " + datas?.customer_name + "\n";
 
             IEnumerable<string> servingTypes = refundDetailStruks.Select(cd => cd.serving_type_name).Distinct();
-
+            datas.total_refund = 0;
             foreach (string servingType in servingTypes)
             {
                 List<RefundDetailStruk> itemsForServingType =
@@ -2681,10 +2681,66 @@ namespace KASIR.Printer
                             : refundDetail.discounts_value + " %") + "\n";
                     }
 
+                    //=========================Pajak Checker=============================\\
+                    bool excludedPayformRefunds = new[] { "ShopeeFood", "GrabFood", "GoFood" }
+                        .Any(s => string.Equals(s, refundDetail.payment_type_name?.ToString(), StringComparison.OrdinalIgnoreCase));
+
+                    if (PajakHelper.TryGetPajak(out string pajakNom) && excludedPayformRefunds)
+                    {
+                        // Hitung Pajak
+                        int pajakPersen = int.Parse(pajakNom);
+                        int totalSebelumPajak = datas.total;
+
+                        // Tambah pajak
+                        int totalDenganPajak = totalSebelumPajak * (pajakPersen + 100) / 100;
+
+                        // Simpan nilai sebelum pembulatan (untuk hitung PPN asli)
+                        int totalSebelumPembulatan = totalDenganPajak;
+
+                        //rubah total refund
+                        int refundPajak = datas.total_refund;
+                        refundPajak = refundPajak * (pajakPersen + 100) / 100;
+                        refundDetail.total_refund_price = refundPajak;
+
+                        // Pembulatan ke atas kelipatan 500
+                        int totalSetelahPembulatan = (int)(Math.Ceiling(totalDenganPajak / 500.0) * 500);
+
+
+                        // Hitung selisih pajak real
+                        int nilaiPajak = totalSebelumPembulatan - totalSebelumPajak;
+                        int nilaiPembulatanPB = (totalSetelahPembulatan - totalSebelumPajak) - nilaiPajak;
+
+
+                        // Tambah Line PPN
+                        strukText += FormatSimpleLine($"PB1: {pajakPersen}%", nilaiPajak.ToString("N0") + "\n");
+
+
+                        // Tambah Line Subtotal+PPN
+                        strukText += FormatSimpleLine($"Subotal+PB1:", totalDenganPajak.ToString("N0") + "\n");
+
+
+                        // Update total & kembalian
+                        if (refundDetail.payment_type_name.ToString() == "Tunai")
+                        {
+                            refundDetail.total_refund_price = totalSetelahPembulatan;
+
+                            // Tambah Line PB1 (setelah pembulatan)
+                            strukText += FormatSimpleLine("Donasi:", nilaiPembulatanPB.ToString("N0") + "\n");
+                        }
+                        else
+                        {
+                            refundDetail.total_refund_price = totalSebelumPembulatan;
+                            datas.customer_change = totalSebelumPembulatan - datas.customer_cash;
+                        }
+                    }
+                    //=======================End Pajak Checker============================\\
+
                     strukText += "   Payment Type Refund: " + refundDetail.payment_type_name + "\n";
                     strukText += "   Total Refund: " + string.Format("{0:n0}", refundDetail.total_refund_price) + "\n";
                     strukText += "   Refund Reason: " + refundDetail.refund_reason_item + "\n";
                     strukText += "\n";
+                    
+                    datas.total_refund += refundDetail.total_refund_price;
                 }
             }
 
@@ -2692,7 +2748,10 @@ namespace KASIR.Printer
             strukText += FormatSimpleLine("Subtotal", string.Format("{0:n0}", datas.subtotal)) + "\n";
 
             //=========================Pajak Checker=============================\\
-            if (PajakHelper.TryGetPajak(out string pajakText))
+            bool excludedPayform = new[] { "ShopeeFood", "GrabFood", "GoFood" }
+                .Any(s => string.Equals(s, datas.payment_type?.ToString(), StringComparison.OrdinalIgnoreCase));
+
+            if (PajakHelper.TryGetPajak(out string pajakText) && excludedPayform)
             {
                 // Hitung Pajak
                 int pajakPersen = int.Parse(pajakText);
@@ -3445,7 +3504,10 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 FormatSimpleLine("Subtotal", $"{datas.subtotal:n0}"));
 
             //=========================Pajak Checker=============================\\
-            if (PajakHelper.TryGetPajak(out string pajakText))
+            bool excludedPayform = new[] { "ShopeeFood", "GrabFood", "GoFood" }
+                .Any(s => string.Equals(s, datas.payment_type?.ToString(), StringComparison.OrdinalIgnoreCase));
+
+            if (PajakHelper.TryGetPajak(out string pajakText) && excludedPayform)
             {
                 // Hitung Pajak
                 int pajakPersen = int.Parse(pajakText);
@@ -4383,7 +4445,10 @@ cartDetail.discounts_is_percent.ToString() != "1"
                 FormatSimpleLine("Subtotal", $"{datas.subtotal:n0}"));
 
             //=========================Pajak Checker=============================\\
-            if (PajakHelper.TryGetPajak(out string pajakText))
+            bool excludedPayform = new[] { "ShopeeFood", "GrabFood", "GoFood" }
+                .Any(s => string.Equals(s, datas.payment_type?.ToString(), StringComparison.OrdinalIgnoreCase));
+
+            if (PajakHelper.TryGetPajak(out string pajakText) && excludedPayform)
             {
 
                 // Hitung Pajak
@@ -6121,7 +6186,10 @@ cartDetail.discounts_is_percent.ToString() != "1"
 
 
             //=========================Pajak Checker=============================\\
-            if (PajakHelper.TryGetPajak(out string pajakText))
+            bool excludedPayform = new[] { "ShopeeFood", "GrabFood", "GoFood" }
+                .Any(s => string.Equals(s, datas.data.payment_type?.ToString(), StringComparison.OrdinalIgnoreCase));
+
+            if (PajakHelper.TryGetPajak(out string pajakText) && excludedPayform)
             {
                 // Hitung Pajak
                 int pajakPersen = int.Parse(pajakText);

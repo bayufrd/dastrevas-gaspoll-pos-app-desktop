@@ -363,7 +363,7 @@ namespace KASIR.Komponen
                     })
                     .ToList();
 
-                int totalRefundAmount = refundDetails.Sum(rd => rd.total_refund_price);
+                int totalRefundAmount = CalculateTotalRefundStruk(transactionData);
 
                 List<PaymentType> paymentTypes = LoadPaymentTypes();
 
@@ -417,7 +417,7 @@ namespace KASIR.Komponen
                     int totalRefund = totalRefundAll + totalItemRefund;
 
                     int netAmount = payment.TotalAmount - totalRefund;
-                    netAmount += payment.PaymentPajakNominal + payment.PaymentPajakDonasi;
+                    //netAmount += payment.PaymentPajakNominal + payment.PaymentPajakDonasi;
 
                     string paymentTypeString = payment.PaymentTypeName;
                     if (payment.PaymentTypeName.Equals("Tunai", StringComparison.OrdinalIgnoreCase))
@@ -493,7 +493,7 @@ namespace KASIR.Komponen
                 int totalTransaction = grandTotal - totalExpenditure;
                 totalTransaksiOutlet = totalTransaction;
                 totalDiscountAmount = totalDiscounts;
-                ending_cash += totalPajakDonasi + totalPajakNominal;
+                //ending_cash += totalPajakDonasi + totalPajakNominal;
                 int cash_difference = int.Parse(actual_cash) - int.Parse(ending_cash.ToString());
 
                 var finalReport = new
@@ -545,6 +545,14 @@ namespace KASIR.Komponen
                 string finalJson = JsonConvert.SerializeObject(finalReport, Formatting.Indented);
                 string filePath = $"DT-Cache\\Transaction\\ShiftReport\\shiftReport-{IDshiftData}.data";
                 await File.WriteAllTextAsync(filePath, finalJson);
+
+                //string[] lines = finalJson.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+                //// ambil 100 baris terakhir
+                //string last100 = string.Join(Environment.NewLine, lines.Skip(Math.Max(0, lines.Length - 80)));
+
+                //MessageBox.Show(last100);
+
                 HandleSuccessfulPrint(finalJson);
             }
             catch (Exception ex)
@@ -1191,6 +1199,8 @@ namespace KASIR.Komponen
                 ProcessRefundDetails(filteredTransactions, dataTable);
 
                 // Calculate total refund amount
+                decimal totalProcessedRefundQty = CalculateTotalRefundQty(filteredTransactions);
+                dataTable.Rows.Add("Total Qty Refund Items", $"{totalProcessedRefundQty}");
                 decimal totalRefundAmount = CalculateTotalRefund(filteredTransactions);
                 dataTable.Rows.Add("Total Refund Items", $"{totalRefundAmount:n0}");
 
@@ -1424,11 +1434,47 @@ namespace KASIR.Komponen
                 dataTable.Rows.Add($"{group.RefundQty}x {displayMenuName}", $"{group.RefundTotal:n0}");
             }
         }
+        private int CalculateTotalRefundStruk(TransactionData transactionData)
+        {
+            int totalRefund = 0;
 
+            foreach (var t in transactionData.data)
+            {
+                if (t.is_refund_all == 1)
+                {
+                    totalRefund += t.total_refund;
+                }
+                else
+                {
+                    totalRefund += t.refund_details.Sum(rd => rd.refund_total);
+                }
+            }
+
+            return totalRefund;
+        }
         private decimal CalculateTotalRefund(TransactionData transactionData)
         {
-            return transactionData.data
-                .Sum(t => t.refund_details.Sum(rd => rd.refund_total));
+            decimal totalRefund = 0;
+
+            foreach (var t in transactionData.data)
+            {
+                if (t.is_refund_all == 1)
+                {
+                    totalRefund += t.total_refund;
+                }
+                else
+                {
+                    totalRefund += t.refund_details.Sum(rd => rd.refund_total);
+                }
+            }
+
+            return totalRefund;
+        }
+
+
+        private decimal CalculateTotalRefundQty(TransactionData transactionData)
+        {
+            return transactionData.data.Sum(t => t.refund_details.Sum(rd => rd.refund_qty));
         }
 
         private void ProcessPaymentDetails(TransactionData transactionData, DataTable dataTable, decimal expenditures)
@@ -1441,7 +1487,7 @@ namespace KASIR.Komponen
                 {
                     PaymentTypeId = g.Key,
                     PaymentTypeName = paymentTypes.FirstOrDefault(p => p.id == g.Key)?.name ?? "Unknown",
-                    TotalAmount = g.Sum(x => x.total + x.total_refund),
+                    TotalAmount = g.Sum(x => x.total),
                     MemberUsePoints = g.Sum(x => x.member_use_point ?? 0),
                     PaymentPajakNominal = g.Sum(x => x.pajak_nominal ?? 0),
                     PaymentPajakDonasi = g.Sum(x => x.pajak_donasi ?? 0),
@@ -1504,12 +1550,13 @@ namespace KASIR.Komponen
                 {
                     paymentTypeString = "TUNAI ON POS";
                     cashOutRefund = int.Parse(totalRefund.ToString()) + int.Parse(totalItemRefund.ToString());
-                    decimal actual = netAmount - expenditures + payment.PaymentPajakDonasi;
+                    decimal actual = netAmount - expenditures;// + payment.PaymentPajakDonasi;
                     txtActualCash.Text = $"{actual:n0}";
                     ending_cash = int.Parse(actual.ToString());
-                    dataTable.Rows.Add(paymentTypeString, $"{actual:n0}");
+                    //MessageBox.Show($"{netAmount} {actual} {payment.PaymentTypeName} {totalRefund} {payment.TotalAmount}");
+                    //dataTable.Rows.Add(paymentTypeString, $"{actual:n0}");
 
-                    continue;
+                    //continue;
                 }
                 dataTable.Rows.Add(paymentTypeString, $"{netAmount:n0}");
             }

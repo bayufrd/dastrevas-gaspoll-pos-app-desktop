@@ -1255,7 +1255,77 @@ namespace KASIR.Helper
                         // 1. Baca file JSON
                         using (StreamReader reader = new StreamReader(fileStream))
                         {
-                            string jsonData = reader.ReadToEnd();
+                            string jsonData = reader.ReadToEnd()?.Trim();
+
+                            // 🚧 1. Kalau kosong total
+                            if (string.IsNullOrWhiteSpace(jsonData))
+                            {
+                                LoggerUtil.LogWarning($"[SimplifyAndSaveData] File kosong: {filePath}");
+                                jsonData = "{\"data\":[]}";
+                            }
+
+                            // 🚧 2. Kalau bukan objek tapi masih mungkin berisi JSON penting
+                            else if (!jsonData.StartsWith("{"))
+                            {
+                                LoggerUtil.LogWarning($"[SimplifyAndSaveData] Format tidak valid, mencoba recovery: {filePath}");
+
+                                // Buat backup sebelum modifikasi
+                                try
+                                {
+                                    if (!Directory.Exists(filePath + "\\Corrupt-data"))
+                                    {
+                                        Directory.CreateDirectory(filePath + "\\Corrupt-data");
+                                    }
+                                    string backupPath = $"{filePath}.bak_{DateTime.Now:yyyyMMddHHmmss}";
+                                    File.Copy(filePath, backupPath, true);
+                                    LoggerUtil.LogWarning($"Backup file corrupt dibuat: {backupPath}");
+                                }
+                                catch (Exception backupEx)
+                                {
+                                    LoggerUtil.LogError(backupEx, $"Gagal membuat backup corrupt file: {filePath}");
+                                }
+
+                                // Coba recovery: cari blok JSON valid di dalam file
+                                var matches = Regex.Matches(jsonData, @"\{(?:[^{}]|(?<open>\{)|(?<-open>\}))+(?(open)(?!))\}");
+                                if (matches.Count > 0)
+                                {
+                                    try
+                                    {
+                                        var arr = new JArray();
+                                        foreach (Match m in matches)
+                                        {
+                                            try
+                                            {
+                                                var obj = JObject.Parse(m.Value);
+                                                arr.Add(obj);
+                                            }
+                                            catch { /* skip invalid segment */ }
+                                        }
+
+                                        if (arr.Count > 0)
+                                        {
+                                            jsonData = new JObject { ["data"] = arr }.ToString();
+                                            LoggerUtil.LogWarning($"[SimplifyAndSaveData] Recovery berhasil, {arr.Count} objek dipertahankan.");
+                                        }
+                                        else
+                                        {
+                                            jsonData = "{\"data\":[]}";
+                                            LoggerUtil.LogWarning($"[SimplifyAndSaveData] Recovery gagal, buat JSON kosong.");
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        LoggerUtil.LogError(ex, $"[SimplifyAndSaveData] Gagal recovery file, gunakan JSON kosong.");
+                                        jsonData = "{\"data\":[]}";
+                                    }
+                                }
+                                else
+                                {
+                                    jsonData = "{\"data\":[]}";
+                                    LoggerUtil.LogWarning($"[SimplifyAndSaveData] Tidak ada JSON valid ditemukan, buat JSON kosong.");
+                                }
+                            }
+
                             JObject data = JObject.Parse(jsonData);
 
                             // 2. Dapatkan array "data"

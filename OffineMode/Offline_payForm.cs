@@ -3,18 +3,15 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Channels;
 using KASIR.Helper;
 using KASIR.Komponen;
 using KASIR.Model;
 using KASIR.Network;
-using KASIR.OffineMode;
 using KASIR.Printer;
 using KASIR.Properties;
 using KASIR.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Polly.Caching;
 
 namespace KASIR.OfflineMode
 {
@@ -66,7 +63,7 @@ namespace KASIR.OfflineMode
             generateRandomFill();
             loadFooterStruct();
             loadCountingStruct();
-            
+
             isInitializing = true;
 
 
@@ -97,7 +94,7 @@ namespace KASIR.OfflineMode
             panel14.Visible = false;
             btnDataMember.Visible = false;
             lblPoint.Visible = false;
-            
+
 
             txtSeat.KeyPress += txtNumberOnly_KeyPress;
             cmbPayform.SelectedIndex = 0;
@@ -113,19 +110,24 @@ namespace KASIR.OfflineMode
         /// lalu set txtCash, txtJumlahPembayaran, dan tombol preset harga.
         /// </summary>
         /// 
-        private bool isInitializing = true;
+        private readonly bool isInitializing = true;
 
         private void ApplyPajakAndSetAmounts(bool roundIfCash)
         {
             try
             {
-                    // Ambil pajak jika ada
-                    if (!PajakHelper.TryGetPajak(out string pajakText))
+                // Ambil pajak jika ada
+                bool noTax = !PajakHelper.TryGetPajak(out string pajakText);
+                bool excludedPayform = new[] { "ShopeeFood", "GrabFood", "GoFood" }
+                    .Any(s => string.Equals(s, cmbPayform.SelectedValue?.ToString(), StringComparison.OrdinalIgnoreCase));
+
+                if (noTax || excludedPayform)
                 {
-                    // tidak ada pajak: set langsung totalCart
-                    txtJumlahPembayaran.Text = CleanInput(totalCart);
-                    txtCash.Text = CleanInput(totalCart);
-                    SetButtonPrices(int.Parse(CleanInput(totalCart)));
+                    string cleanedTotal = CleanInput(totalCart);
+
+                    txtJumlahPembayaran.Text = cleanedTotal;
+                    txtCash.Text = cleanedTotal;
+                    SetButtonPrices(int.Parse(cleanedTotal));
                     btnSetPrice1.Text = totalCart;
                     return;
                 }
@@ -619,7 +621,9 @@ namespace KASIR.OfflineMode
                     };
 
                     // Tambahkan pajak hanya jika outlet pakai pajak
-                    if (PajakHelper.TryGetPajak(out string pajakText))
+                    if (PajakHelper.TryGetPajak(out string pajakText) &&
+                        !new[] { "ShopeeFood", "GrabFood", "GoFood" }
+                        .Any(s => string.Equals(s, cmbPayform.SelectedValue?.ToString(), StringComparison.OrdinalIgnoreCase)))
                     {
                         int pajakPersen = int.Parse(pajakText);
                         int totalSebelumPajak = totalCartAmount;
@@ -1109,23 +1113,21 @@ namespace KASIR.OfflineMode
         private async Task<bool> CheckQrAvailableAsync()
         {
             string _apiUrl = "https://whatsapp.gaspollmanagementcenter.com/wa-connection-status";
-
-            WaConnectionStatus status = null;
             try
             {
                 HttpResponseMessage response = await _httpClient.GetAsync(_apiUrl);
                 if (!response.IsSuccessStatusCode)
                 {
-                    return false; 
+                    return false;
                 }
                 string jsonContent = await response.Content.ReadAsStringAsync();
-                status = JsonConvert.DeserializeObject<WaConnectionStatus>(jsonContent);  // Ganti JsonSerializer dengan JsonConvert
-                
+                WaConnectionStatus status = JsonConvert.DeserializeObject<WaConnectionStatus>(jsonContent);
+
                 if (status == null)
                 {
                     return false;
                 }
-                
+
                 if (status.QrAvailable)
                 {
                     return false;
@@ -1142,7 +1144,7 @@ namespace KASIR.OfflineMode
         {
             try
             {
-                if (datas?.data == null )
+                if (datas?.data == null)
                 {
                     return;
                 }
@@ -2004,7 +2006,7 @@ namespace KASIR.OfflineMode
             {
                 isChangeCmbPayment = false;
             }
-           
+
         }
     }
 }
